@@ -63,7 +63,7 @@ protected void explode( TraceResults tr )
 				{
 				if (flashPower > 0.5F);
 					// have the player scream if they're significantly affected
-					playerEnt.sound(NativeEntity.CHAN_VOICE, Engine.getSoundIndex("player/burn1.wav"), (flashPower > 1 ? 1 : flashPower), NativeEntity.ATTN_NORM, 0);					
+					Game.getSoundSupport().fireEvent(playerEnt, NativeEntity.CHAN_VOICE, Engine.getSoundIndex("player/burn1.wav"), (flashPower > 1 ? 1 : flashPower), NativeEntity.ATTN_NORM, 0);					
 				new FlashBlindness(p, flashPower);
 				}
 			}

@@ -15,7 +15,7 @@ public final class PlayerMoveSupport extends GenericEventSupport
 	
 public void addPlayerMoveListener(PlayerMoveListener listener)
 	{
-	addListener(listener);
+	addListener(listener, false);
 	}
 /**
  * Let interested listeners know about the player moving.
@@ -32,13 +32,13 @@ public void fireEvent( Player p, PlayerCmd move )
 	if (array.length == 0)
 		return;
 		
-	PlayerMoveEvent evt = PlayerMoveEvent.getEvent( p, move );
+	PlayerMoveEvent pme = PlayerMoveEvent.getEvent( p, move );
 
 	for (int i = 0; i < array.length; i++)
 		{
 		try
 			{
-			((PlayerMoveListener)array[i]).playerMoved(evt);
+			((PlayerMoveListener)array[i]).playerMoved(pme);
 			}
 		catch (Throwable t) 
 			{
@@ -46,7 +46,7 @@ public void fireEvent( Player p, PlayerCmd move )
 			}
 		}
 
-	PlayerMoveEvent.releaseEvent(evt);
+	pme.recycle();
 	}
 public void removePlayerMoveListener(PlayerMoveListener listener)
 	{

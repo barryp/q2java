@@ -190,7 +190,7 @@ public void weaponThink()
 				{
 				//if (level.time >= ent->pain_debounce_time)
 					//{
-					fEntity.sound(NativeEntity.CHAN_VOICE, Engine.getSoundIndex("weapons/noammo.wav"), 1, NativeEntity.ATTN_NORM, 0);
+					Game.getSoundSupport().fireEvent(fEntity, NativeEntity.CHAN_VOICE, Engine.getSoundIndex("weapons/noammo.wav"), 1, NativeEntity.ATTN_NORM, 0);
 					//ent->pain_debounce_time = level.time + 1;
 					//}
 				fPlayer.changeWeapon();
@@ -215,7 +215,7 @@ public void weaponThink()
 	if (fWeaponState == WEAPON_FIRING)
 		{
 		if (fGunFrame == 5)		// 5 seems to be the frame where the grenade is armed...
-			fEntity.sound(NativeEntity.CHAN_WEAPON, Engine.getSoundIndex("weapons/hgrena1b.wav"), 1, NativeEntity.ATTN_NORM, 0);
+			Game.getSoundSupport().fireEvent(fEntity, NativeEntity.CHAN_WEAPON, Engine.getSoundIndex("weapons/hgrena1b.wav"), 1, NativeEntity.ATTN_NORM, 0);
 
 		if (fGunFrame == 11)	// 11 seems to be the frame where the grenade is held behind the player (resting...)
 			{

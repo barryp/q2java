@@ -146,7 +146,7 @@ public void close()
 			if (!isGroupSlave())
 				{
 				if (fSoundStart != 0)
-					fEntity.sound(NativeEntity.CHAN_NO_PHS_ADD + NativeEntity.CHAN_VOICE, fSoundStart, 1, NativeEntity.ATTN_STATIC, 0);
+					Game.getSoundSupport().fireEvent(fEntity, NativeEntity.CHAN_NO_PHS_ADD + NativeEntity.CHAN_VOICE, fSoundStart, 1, NativeEntity.ATTN_STATIC, 0);
 				fEntity.setSound(fSoundMiddle);					
 				}
 			break;			
@@ -209,7 +209,7 @@ public void moveFinished()
 	if (!isGroupSlave())
 		{
 		if (fSoundEnd != 0)
-			fEntity.sound(NativeEntity.CHAN_NO_PHS_ADD + NativeEntity.CHAN_VOICE, fSoundEnd, 1, NativeEntity.ATTN_STATIC, 0);
+			Game.getSoundSupport().fireEvent(fEntity, NativeEntity.CHAN_NO_PHS_ADD + NativeEntity.CHAN_VOICE, fSoundEnd, 1, NativeEntity.ATTN_STATIC, 0);
 		fEntity.setSound(0);			
 		}		
 	}
@@ -233,7 +233,7 @@ public void open()
 			if (!isGroupSlave())
 				{
 				if (fSoundStart != 0)
-					fEntity.sound(NativeEntity.CHAN_NO_PHS_ADD + NativeEntity.CHAN_VOICE, fSoundStart, 1, NativeEntity.ATTN_STATIC, 0);
+					Game.getSoundSupport().fireEvent(fEntity, NativeEntity.CHAN_NO_PHS_ADD + NativeEntity.CHAN_VOICE, fSoundStart, 1, NativeEntity.ATTN_STATIC, 0);
 				fEntity.setSound(fSoundMiddle);
 				}
 			break;	

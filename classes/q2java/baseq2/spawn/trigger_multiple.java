@@ -159,7 +159,7 @@ public void trigger(Object activator)
 	useTargets( activator );
 
 	if( fSound != 0 )
-		fEntity.sound( NativeEntity.CHAN_AUTO, fSound, 1.0f, NativeEntity.ATTN_NORM, 0.0f );
+		Game.getSoundSupport().fireEvent(fEntity, NativeEntity.CHAN_AUTO, fSound, 1.0f, NativeEntity.ATTN_NORM, 0.0f );
 
 	if( fMessage != null && activator != null && activator instanceof GameObject )
 		((GameObject)activator).fEntity.cprint( Engine.PRINT_MEDIUM , fMessage + "\n" );

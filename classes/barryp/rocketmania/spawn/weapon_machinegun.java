@@ -60,7 +60,7 @@ public void fire()
 		setWeaponFrame(6);
 //		if (level.time >= ent->pain_debounce_time)
 			{
-			fEntity.sound(NativeEntity.CHAN_VOICE, Engine.getSoundIndex("weapons/noammo.wav"), 1, NativeEntity.ATTN_NORM, 0);
+			Game.getSoundSupport().fireEvent(fEntity, NativeEntity.CHAN_VOICE, Engine.getSoundIndex("weapons/noammo.wav"), 1, NativeEntity.ATTN_NORM, 0);
 //			ent->pain_debounce_time = level.time + 1;
 			}
 		if (isAutoSwitch())
@@ -112,7 +112,7 @@ public void fire()
 		
 	Engine.writeByte(Engine.SVC_MUZZLEFLASH);
 	Engine.writeShort(fEntity.getEntityIndex());
-	Engine.writeByte(Engine.MZ_MACHINEGUN /*| is_silenced */);
+	Engine.writeByte(Game.getSoundSupport().fireMuzzleEvent(fEntity, Engine.MZ_MACHINEGUN));
 	Engine.multicast(fEntity.getOrigin(), Engine.MULTICAST_PVS);
 
 //	PlayerNoise(ent, start, PNOISE_WEAPON);

@@ -26,7 +26,7 @@ public final class PlayerInfoSupport extends GenericEventSupport
 	
 public void addPlayerInfoListener(PlayerInfoListener pil)
 	{
-	addListener(pil);
+	addListener(pil, false);
 	}
 public void fireEvent(Player p, String key, String newValue, String oldValue )
 	throws PropertyVetoException

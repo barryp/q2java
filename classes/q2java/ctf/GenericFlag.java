@@ -292,7 +292,7 @@ public void becomeExplosion(int tempEntity)
 
 		fEntity.setSVFlags(fEntity.getSVFlags() & ~NativeEntity.SVF_NOCLIENT);
 		fEntity.setSolid(NativeEntity.SOLID_TRIGGER);
-		fEntity.setEvent(NativeEntity.EV_ITEM_RESPAWN);
+		Game.getSoundSupport().fireTempEvent(fEntity, NativeEntity.EV_ITEM_RESPAWN);
 		fEntity.linkEntity();
 
 		// ask to be called back each server frame to animate the wave

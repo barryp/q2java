@@ -130,18 +130,18 @@ public void runFrame(int Phase)
 		{
 		if (fFirstSound)
 			{
-			fOwner.fEntity.sound( NativeEntity.CHAN_ITEM, Engine.getSoundIndex("player/u_breath1.wav"), 1, NativeEntity.ATTN_NORM, 0);
+			Game.getSoundSupport().fireEvent(fOwner.fEntity, NativeEntity.CHAN_ITEM, Engine.getSoundIndex("player/u_breath1.wav"), 1, NativeEntity.ATTN_NORM, 0);
 			fFirstSound = false;
 			}
 		else
 			{
-			fOwner.fEntity.sound( NativeEntity.CHAN_ITEM, Engine.getSoundIndex("player/u_breath2.wav"), 1, NativeEntity.ATTN_NORM, 0);
+			Game.getSoundSupport().fireEvent(fOwner.fEntity, NativeEntity.CHAN_ITEM, Engine.getSoundIndex("player/u_breath2.wav"), 1, NativeEntity.ATTN_NORM, 0);
 			fFirstSound = true;
 			}
 		}
 		
 	if (fMillis == 30)
-		fOwner.fEntity.sound( NativeEntity.CHAN_ITEM, Engine.getSoundIndex("items/airout.wav"), 1, NativeEntity.ATTN_NORM, 0);
+		Game.getSoundSupport().fireEvent(fOwner.fEntity, NativeEntity.CHAN_ITEM, Engine.getSoundIndex("items/airout.wav"), 1, NativeEntity.ATTN_NORM, 0);
 		
 	if (fMillis == 0)
 		reset();

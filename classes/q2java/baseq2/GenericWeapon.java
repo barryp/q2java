@@ -365,7 +365,7 @@ public void weaponThink()
 				}
 			else
 				{
-				fEntity.sound(NativeEntity.CHAN_VOICE, Engine.getSoundIndex("weapons/noammo.wav"), 1, NativeEntity.ATTN_NORM, 0);
+				Game.getSoundSupport().fireEvent(fEntity, NativeEntity.CHAN_VOICE, Engine.getSoundIndex("weapons/noammo.wav"), 1, NativeEntity.ATTN_NORM, 0);
 				if (fIsAutoSwitch)
   					deactivate();
 				return;

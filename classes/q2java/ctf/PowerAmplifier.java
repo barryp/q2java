@@ -88,7 +88,7 @@ public class PowerAmplifier extends GenericTech implements ServerFrameListener
 				//	gi.sound(ent, CHAN_VOICE, gi.soundindex("ctf/tech2x.wav"), volume, ATTN_NORM, 0);
 				//else
 				//	gi.sound(ent, CHAN_VOICE, gi.soundindex("ctf/tech2.wav"), volume, ATTN_NORM, 0);
-				getOwner().fEntity.sound( NativeEntity.CHAN_VOICE, Engine.getSoundIndex("ctf/tech2.wav"), volume, NativeEntity.ATTN_NORM, 0);
+				Game.getSoundSupport().fireEvent(getOwner().fEntity, NativeEntity.CHAN_VOICE, Engine.getSoundIndex("ctf/tech2.wav"), volume, NativeEntity.ATTN_NORM, 0);
 			}
 		}
 	}

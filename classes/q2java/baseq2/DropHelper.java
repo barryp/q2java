@@ -244,7 +244,7 @@ public void runFrame(int phase)
 		fEntity.setVelocity(v);
 
 		// play a splash sound
-		fEntity.sound(NativeEntity.CHAN_BODY, Engine.getSoundIndex("player/watr_in.wav"), 1, NativeEntity.ATTN_NORM, 0);
+		Game.getSoundSupport().fireEvent(fEntity, NativeEntity.CHAN_BODY, Engine.getSoundIndex("player/watr_in.wav"), 1, NativeEntity.ATTN_NORM, 0);
 		return;
 		}
 		

@@ -27,7 +27,7 @@ public final class InventorySupport extends GenericEventSupport
 	
 public void addInventoryListener(InventoryListener il)
 	{
-	addListener(il);
+	addListener(il, false);
 	}
 public void fireEvent( Player p, GenericItem item, boolean isPickingUp )
 	throws PropertyVetoException

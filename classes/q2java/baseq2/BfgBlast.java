@@ -151,7 +151,7 @@ protected void prepareExplosion(TraceResults tr)
 
 	MiscUtil.radiusDamage(this, fOwner, 200, victim.fEntity, 100, "bfg_effect");
 
-	fEntity.sound(NativeEntity.CHAN_VOICE, Engine.getSoundIndex("weapons/bfg__x1b.wav"), 1, NativeEntity.ATTN_NORM, 0);
+	Game.getSoundSupport().fireEvent(fEntity, NativeEntity.CHAN_VOICE, Engine.getSoundIndex("weapons/bfg__x1b.wav"), 1, NativeEntity.ATTN_NORM, 0);
 	fEntity.setSolid(NativeEntity.SOLID_NOT);
 	org.scaleAdd( -Engine.SECONDS_PER_FRAME, fEntity.getVelocity(), fEntity.getOrigin() );
 	fEntity.setOrigin( org );

@@ -27,7 +27,7 @@ public final class GameStatusSupport extends GenericEventSupport
 	
 public void addGameStatusListener(GameStatusListener gsl)
 	{
-	if (addListener(gsl))
+	if (addListener(gsl, false))
 		{
 		// if we're adding a listener right in the middle of firing off
 		// an event, let the new listener in on the action

@@ -31,7 +31,7 @@ public final class GameletSupport extends GenericEventSupport
 	
 public void addGameletListener(GameletListener gl)
 	{
-	addListener(gl);
+	addListener(gl, false);
 	}
 public void fireEvent(int state, Gamelet g, Document d) throws PropertyVetoException
 	{

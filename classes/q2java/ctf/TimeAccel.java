@@ -76,7 +76,7 @@ public class TimeAccel extends GenericTech implements ServerFrameListener
 			if ( fNextSoundTime < Game.getGameTime() )
 			{
 				fNextSoundTime = Game.getGameTime() + 1;
-				getOwner().fEntity.sound( NativeEntity.CHAN_VOICE, Engine.getSoundIndex("ctf/tech3.wav"), volume, NativeEntity.ATTN_NORM, 0);
+				Game.getSoundSupport().fireEvent(getOwner().fEntity, NativeEntity.CHAN_VOICE, Engine.getSoundIndex("ctf/tech3.wav"), volume, NativeEntity.ATTN_NORM, 0);
 			}
 		}
 	}

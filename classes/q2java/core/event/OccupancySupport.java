@@ -25,7 +25,7 @@ public final class OccupancySupport extends GenericEventSupport
 	
 public void addOccupancyListener(OccupancyListener ol)
 	{
-	addListener(ol);
+	addListener(ol, false);
 	}
 public void fireEvent(NativeEntity playerEnt, int state) throws PropertyVetoException
 	{

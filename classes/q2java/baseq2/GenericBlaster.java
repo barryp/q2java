@@ -71,7 +71,7 @@ public void fire()
 	// send muzzle flash
 	Engine.writeByte(Engine.SVC_MUZZLEFLASH);
 	Engine.writeShort(fEntity.getEntityIndex());
-	Engine.writeByte(fMuzzleFlash);
+	Engine.writeByte(Game.getSoundSupport().fireMuzzleEvent(fEntity, fMuzzleFlash));
 	Engine.multicast(fEntity.getOrigin(), Engine.MULTICAST_PVS);
 
 //	PlayerNoise(ent, start, PNOISE_WEAPON);	

@@ -31,7 +31,7 @@ public final class PlayerStateSupport extends GenericEventSupport
 	
 public void addPlayerStateListener(PlayerStateListener listener)
 	{
-	addListener(listener);
+	addListener(listener, false);
 	}	
 public void fireEvent( Player p, int stateChanged, GameObject source )
 	{

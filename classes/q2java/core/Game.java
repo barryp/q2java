@@ -40,6 +40,9 @@ public class Game implements GameListener, JavaConsoleListener
 
 	// Manage PrintListeners
 	private static PrintSupport gPrintSupport;
+
+	// Manage SoundListeners
+	private static SoundSupport gSoundSupport;
 	
 	// leighd 04/07/99
 	// Manage gamelets and game classes
@@ -455,6 +458,14 @@ public static ResourceGroup getResourceGroup(Locale loc)
 	return grp;
 	}
 /**
+ * Get the SoundSupport object the game is using.
+ * @return q2java.core.event.SoundSupport
+ */
+public static SoundSupport getSoundSupport() 
+	{
+	return gSoundSupport;
+	}
+/**
  * Called by the DLL when Quake II calls the DLL's init() function.
  */
 public void init()
@@ -479,6 +490,9 @@ public void init()
 	// setup to manage PrintListeners
 	gPrintSupport = new PrintSupport();
 	Engine.setJavaConsoleListener(this);
+
+	// setup to manage SoundListeners
+	gSoundSupport = new SoundSupport();
 	
 	// setup to manage BroadcastListeners and cached ResourceBundles
 	gResourceGroups = new Vector();

@@ -914,7 +914,7 @@ protected void calcClientEvent()
 	
 	if ((fEntity.getGroundEntity() != null) && (fXYSpeed > 225))
 		if ((int)(fBobTime + fBobMove) != fBobCycle)
-			fEntity.setEvent(NativeEntity.EV_FOOTSTEP);
+			Game.getSoundSupport().fireTempEvent(fEntity, NativeEntity.EV_FOOTSTEP);
 	}
 /**
  * This method was created by a SmartGuide.
@@ -1923,9 +1923,9 @@ public void damage(DamageEvent damage)
 		if (damage.fObitKey.equals("lava") && (Game.getGameTime() > fPainDebounceTime)) 
 			{
 			if ((GameUtil.randomInt() & 1) != 0)
-				fEntity.sound(NativeEntity.CHAN_VOICE, Engine.getSoundIndex("player/burn1.wav"), 1, NativeEntity.ATTN_NORM, 0);
+				Game.getSoundSupport().fireEvent(fEntity, NativeEntity.CHAN_VOICE, Engine.getSoundIndex("player/burn1.wav"), 1, NativeEntity.ATTN_NORM, 0);
 			else
-				fEntity.sound(NativeEntity.CHAN_VOICE, Engine.getSoundIndex("player/burn2.wav"), 1, NativeEntity.ATTN_NORM, 0);
+				Game.getSoundSupport().fireEvent(fEntity, NativeEntity.CHAN_VOICE, Engine.getSoundIndex("player/burn2.wav"), 1, NativeEntity.ATTN_NORM, 0);
 			fPainDebounceTime = Game.getGameTime() + 1;
 			}		
 
@@ -1993,7 +1993,7 @@ protected void damageFeedback()
 			n = 75;
 		else
 			n = 100;
-		fEntity.sound(NativeEntity.CHAN_VOICE, getSexedSoundIndex( "pain" + Integer.toString(n) + "_" + Integer.toString((1 + ((int)Math.random() & 1))) ), 1, NativeEntity.ATTN_NORM, 0);
+		Game.getSoundSupport().fireEvent(fEntity, NativeEntity.CHAN_VOICE, getSexedSoundIndex( "pain" + Integer.toString(n) + "_" + Integer.toString((1 + ((int)Math.random() & 1))) ), 1, NativeEntity.ATTN_NORM, 0);
 		}
 
 	if (damageBlend.w < 0)
@@ -2115,7 +2115,7 @@ protected void die(DamageEvent de)
 		{	// normal death
 		fEntity.setPlayerPMType(NativeEntity.PM_DEAD);		
 		setAnimation(ANIMATE_DEATH);
-		fEntity.sound(NativeEntity.CHAN_VOICE, getSexedSoundIndex("death"+((GameUtil.randomInt() & 0x03) + 1)), 1, NativeEntity.ATTN_NORM, 0);
+		Game.getSoundSupport().fireEvent(fEntity, NativeEntity.CHAN_VOICE, getSexedSoundIndex("death"+((GameUtil.randomInt() & 0x03) + 1)), 1, NativeEntity.ATTN_NORM, 0);
 		}
 		
 	fEntity.linkEntity();
@@ -2245,7 +2245,7 @@ protected void fallingDamage()
 	// land with a regular footstep noise
 	if (delta < 15)
 		{
-		fEntity.setEvent(NativeEntity.EV_FOOTSTEP);
+		Game.getSoundSupport().fireTempEvent(fEntity, NativeEntity.EV_FOOTSTEP);
 		return;
 		}
 		
@@ -2260,7 +2260,7 @@ protected void fallingDamage()
 	// land a little heavier		
 	if (delta < 30)
 		{
-		fEntity.setEvent(NativeEntity.EV_FALLSHORT);
+		Game.getSoundSupport().fireTempEvent(fEntity, NativeEntity.EV_FALLSHORT);
 		return;
 		}			
 
@@ -2268,9 +2268,9 @@ protected void fallingDamage()
 	if (fHealth > 0)
 		{
 		if (delta >= 55)
-			fEntity.setEvent(NativeEntity.EV_FALLFAR);
+			Game.getSoundSupport().fireTempEvent(fEntity, NativeEntity.EV_FALLFAR);
 		else
-			fEntity.setEvent(NativeEntity.EV_FALL);
+			Game.getSoundSupport().fireTempEvent(fEntity, NativeEntity.EV_FALL);
 		}
 
 //	ent->pain_debounce_time = level.time;	// no normal pain sound
@@ -2581,7 +2581,7 @@ public void gib(DamageEvent de)
 	fIsGibbed = true;
 
 	// make a nasty noise
-	fEntity.sound(NativeEntity.CHAN_BODY, Engine.getSoundIndex("misc/udeath.wav"), 1, NativeEntity.ATTN_NORM, 0);
+	Game.getSoundSupport().fireEvent(fEntity, NativeEntity.CHAN_BODY, Engine.getSoundIndex("misc/udeath.wav"), 1, NativeEntity.ATTN_NORM, 0);
 
 	// throw meaty chunks
 	for (int n = 0; n < 4; n++)
@@ -2970,7 +2970,7 @@ public void playerInfoChanged(String playerInfo)
  */
 protected void playerJumped() 
 	{
-	fEntity.sound(NativeEntity.CHAN_VOICE, getSexedSoundIndex("jump1"), 1, NativeEntity.ATTN_NORM, 0);	
+	Game.getSoundSupport().fireEvent(fEntity, NativeEntity.CHAN_VOICE, getSexedSoundIndex("jump1"), 1, NativeEntity.ATTN_NORM, 0);	
 	}
 /**
  * All player entities get a chance to think.  When
@@ -3411,7 +3411,7 @@ protected void respawn()
 	spawn();
 	
 	// add a teleportation effect
-	fEntity.setEvent(NativeEntity.EV_PLAYER_TELEPORT);
+	Game.getSoundSupport().fireTempEvent(fEntity, NativeEntity.EV_PLAYER_TELEPORT);
 	
 	// hold in place briefly
 	fEntity.setPlayerPMTime((byte)50);
@@ -3849,7 +3849,7 @@ public void teleport(Point3f origin, Angle3f angles)
 	fEntity.setPlayerPMFlags((byte)(fEntity.getPlayerPMFlags() | NativeEntity.PMF_TIME_TELEPORT));
 
 	// draw the teleport splash at source and on the player
-	fEntity.setEvent(NativeEntity.EV_PLAYER_TELEPORT);
+	Game.getSoundSupport().fireTempEvent(fEntity, NativeEntity.EV_PLAYER_TELEPORT);
 
 	// set angles
 	angles.sub(fCmdAngles);
@@ -3918,30 +3918,30 @@ protected void worldEffects()
 	if ((fWaterLevel != 0) && (oldWaterLevel == 0))
 		{
 		if ((fWaterType & Engine.CONTENTS_LAVA) != 0)
-			fEntity.sound(NativeEntity.CHAN_BODY, Engine.getSoundIndex("player/lava_in.wav"), 1, NativeEntity.ATTN_NORM, 0);
+			Game.getSoundSupport().fireEvent(fEntity, NativeEntity.CHAN_BODY, Engine.getSoundIndex("player/lava_in.wav"), 1, NativeEntity.ATTN_NORM, 0);
 		else if ((fWaterType & Engine.CONTENTS_SLIME) != 0)
-			fEntity.sound(NativeEntity.CHAN_BODY, Engine.getSoundIndex("player/watr_in.wav"), 1, NativeEntity.ATTN_NORM, 0);
+			Game.getSoundSupport().fireEvent(fEntity, NativeEntity.CHAN_BODY, Engine.getSoundIndex("player/watr_in.wav"), 1, NativeEntity.ATTN_NORM, 0);
 		else if ((fWaterType & Engine.CONTENTS_WATER) != 0)
-			fEntity.sound(NativeEntity.CHAN_BODY, Engine.getSoundIndex("player/watr_in.wav"), 1, NativeEntity.ATTN_NORM, 0);			
+			Game.getSoundSupport().fireEvent(fEntity, NativeEntity.CHAN_BODY, Engine.getSoundIndex("player/watr_in.wav"), 1, NativeEntity.ATTN_NORM, 0);			
 		}
 
 	//
 	// if just completely exited a water volume, play a sound
 	//
 	if ((fWaterLevel == 0) && (oldWaterLevel != 0))
-		fEntity.sound(NativeEntity.CHAN_BODY, Engine.getSoundIndex("player/watr_out.wav"), 1, NativeEntity.ATTN_NORM, 0);
+		Game.getSoundSupport().fireEvent(fEntity, NativeEntity.CHAN_BODY, Engine.getSoundIndex("player/watr_out.wav"), 1, NativeEntity.ATTN_NORM, 0);
 
 	//
 	// check for head just going under water
 	//
 	if ((fWaterLevel == 3) && (oldWaterLevel != 3))
-		fEntity.sound(NativeEntity.CHAN_BODY, Engine.getSoundIndex("player/watr_un.wav"), 1, NativeEntity.ATTN_NORM, 0);
+		Game.getSoundSupport().fireEvent(fEntity, NativeEntity.CHAN_BODY, Engine.getSoundIndex("player/watr_un.wav"), 1, NativeEntity.ATTN_NORM, 0);
 
 	//
 	// check for head just coming out of water
 	//
 	if ((fWaterLevel != 3) && (oldWaterLevel == 3))
-		fEntity.sound(NativeEntity.CHAN_VOICE, Engine.getSoundIndex("player/gasp2.wav"), 1, NativeEntity.ATTN_NORM, 0);
+		Game.getSoundSupport().fireEvent(fEntity, NativeEntity.CHAN_VOICE, Engine.getSoundIndex("player/gasp2.wav"), 1, NativeEntity.ATTN_NORM, 0);
 
 	// generate a zero vector for use in damage funcs	
 	Vector3f origin = Q2Recycler.getVector3f();
@@ -3969,11 +3969,11 @@ protected void worldEffects()
 
 				// play a gurp sound instead of a normal pain sound
 				if (fHealth <= fDrownDamage)
-					fEntity.sound(NativeEntity.CHAN_VOICE, Engine.getSoundIndex("player/drown1.wav"), 1, NativeEntity.ATTN_NORM, 0);
+					Game.getSoundSupport().fireEvent(fEntity, NativeEntity.CHAN_VOICE, Engine.getSoundIndex("player/drown1.wav"), 1, NativeEntity.ATTN_NORM, 0);
 				else if ((GameUtil.randomInt() & 1) != 0)
-					fEntity.sound(NativeEntity.CHAN_VOICE, Engine.getSoundIndex("*gurp1.wav"), 1, NativeEntity.ATTN_NORM, 0);
+					Game.getSoundSupport().fireEvent(fEntity, NativeEntity.CHAN_VOICE, Engine.getSoundIndex("*gurp1.wav"), 1, NativeEntity.ATTN_NORM, 0);
 				else
-					fEntity.sound(NativeEntity.CHAN_VOICE, Engine.getSoundIndex("*gurp2.wav"), 1, NativeEntity.ATTN_NORM, 0);
+					Game.getSoundSupport().fireEvent(fEntity, NativeEntity.CHAN_VOICE, Engine.getSoundIndex("*gurp2.wav"), 1, NativeEntity.ATTN_NORM, 0);
 
 				fPainDebounceTime = Game.getGameTime();
 

@@ -93,7 +93,7 @@ public class GrappleWeapon extends GenericWeapon implements PlayerMoveListener
 		//if (ent->client->silencer_shots)
 		//	volume = 0.2;
 
-		fEntity.sound(NativeEntity.CHAN_RELIABLE+NativeEntity.CHAN_WEAPON, Engine.getSoundIndex("weapons/grapple/grfire.wav"), volume, NativeEntity.ATTN_NORM, 0);
+		Game.getSoundSupport().fireEvent(fEntity, NativeEntity.CHAN_RELIABLE+NativeEntity.CHAN_WEAPON, Engine.getSoundIndex("weapons/grapple/grfire.wav"), volume, NativeEntity.ATTN_NORM, 0);
 		fPlayer.addPlayerMoveListener(this);
 		try
 		{
@@ -170,7 +170,7 @@ public class GrappleWeapon extends GenericWeapon implements PlayerMoveListener
 	}
 	public void reset()
 	{
-		fEntity.sound(NativeEntity.CHAN_RELIABLE+NativeEntity.CHAN_WEAPON, Engine.getSoundIndex("weapons/grapple/grreset.wav"), 1, NativeEntity.ATTN_NORM, 0);
+		Game.getSoundSupport().fireEvent(fEntity, NativeEntity.CHAN_RELIABLE+NativeEntity.CHAN_WEAPON, Engine.getSoundIndex("weapons/grapple/grreset.wav"), 1, NativeEntity.ATTN_NORM, 0);
 		if ( fHook != null )
 		{
 			fHook.dispose();

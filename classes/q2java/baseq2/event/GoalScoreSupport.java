@@ -26,7 +26,7 @@ public final class GoalScoreSupport extends GenericEventSupport
 	
 public void addGoalScoreListener(GoalScoreListener gsl)
 	{
-	addListener(gsl);
+	addListener(gsl, false);
 	}
 public void fireEvent(GameObject active, GameObject passive, String goalKey, int scoreChange)
 	{

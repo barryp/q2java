@@ -39,9 +39,12 @@ protected GenericEventSupport()
 /**
  * Add a listener
  *
+ * @param listener
+ * @param highPriority true if the listener should be put on the front of the list,
+ *   false if it should be added to the end.
  * @return true if the listener was added, false if it was already present
  */
-protected final boolean addListener(Object listener)
+protected final boolean addListener(Object listener, boolean highPriority)
 	{
 	// bail if the listener is already added
 	for (int i = 0; i < fListeners.length; i++)
@@ -53,8 +56,18 @@ protected final boolean addListener(Object listener)
 	// make a new listener array, one element larger than the old one
 	// and add the new listener to the end
 	Object[] newArray = new Object[fListeners.length+1];
-	System.arraycopy(fListeners, 0, newArray, 0, fListeners.length);
-	newArray[fListeners.length] = listener;
+	if (highPriority)
+		{
+		// add to front of list
+		System.arraycopy(fListeners, 0, newArray, 1, fListeners.length);
+		newArray[0] = listener;
+		}
+	else
+		{
+		// add to end of list
+		System.arraycopy(fListeners, 0, newArray, 0, fListeners.length);
+		newArray[fListeners.length] = listener;
+		}
 
 	// make it the active array
 	fListeners = newArray;

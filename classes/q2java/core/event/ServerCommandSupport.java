@@ -27,7 +27,7 @@ public final class ServerCommandSupport extends GenericEventSupport
 	
 public void addServerCommandListener(ServerCommandListener scl)
 	{
-	addListener(scl);
+	addListener(scl, false);
 	}
 /**
  * Fire a ServerCommandEvent

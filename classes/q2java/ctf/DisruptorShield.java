@@ -38,7 +38,7 @@ public class DisruptorShield extends GenericTech implements q2java.baseq2.event.
 		float volume = 1f;
 		//if (self->owner->client->silencer_shots)
 		//	volume = 0.2;
-		getOwner().fEntity.sound( NativeEntity.CHAN_VOICE, Engine.getSoundIndex("ctf/tech1.wav"), volume, NativeEntity.ATTN_NORM, 0);
+		Game.getSoundSupport().fireEvent(getOwner().fEntity, NativeEntity.CHAN_VOICE, Engine.getSoundIndex("ctf/tech1.wav"), volume, NativeEntity.ATTN_NORM, 0);
 	
 		damage.fAmount *= DAMAGE_MULTIPLIER;
 	}

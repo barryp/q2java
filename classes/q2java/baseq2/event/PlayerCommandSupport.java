@@ -26,7 +26,7 @@ public final class PlayerCommandSupport extends GenericEventSupport
 	
 public void addPlayerCommandListener(PlayerCommandListener pcl)
 	{
-	addListener(pcl);
+	addListener(pcl, false);
 	}
 /**
  * Fire an Event

@@ -46,7 +46,7 @@ public void fire()
 		// send muzzle flash
 		Engine.writeByte(Engine.SVC_MUZZLEFLASH);
 		Engine.writeShort(fEntity.getEntityIndex());
-		Engine.writeByte(Engine.MZ_BFG /*| is_silenced */);
+		Engine.writeByte(Game.getSoundSupport().fireMuzzleEvent(fEntity, Engine.MZ_BFG));
 		Engine.multicast(fEntity.getOrigin(), Engine.MULTICAST_PVS);
 
 		incWeaponFrame();

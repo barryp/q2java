@@ -62,7 +62,7 @@ public void damage(DamageEvent de)
 	else
 		{
 		// make a nasty sound
-		fEntity.sound(NativeEntity.CHAN_BODY, Engine.getSoundIndex("misc/udeath.wav"), 1, NativeEntity.ATTN_NORM, 0);
+		Game.getSoundSupport().fireEvent(fEntity, NativeEntity.CHAN_BODY, Engine.getSoundIndex("misc/udeath.wav"), 1, NativeEntity.ATTN_NORM, 0);
 
 		// toss chunks
 		for (int n = 0; n < 4; n++)

@@ -78,7 +78,7 @@ public class GrappleHook extends GameObject implements ServerFrameListener
 
 		if ( fOwner != null )
 		{
-			fOwner.fEntity.sound( NativeEntity.CHAN_RELIABLE+NativeEntity.CHAN_WEAPON, 0, 0, NativeEntity.ATTN_NORM, 0);
+			Game.getSoundSupport().fireEvent(fOwner.fEntity, NativeEntity.CHAN_RELIABLE+NativeEntity.CHAN_WEAPON, 0, 0, NativeEntity.ATTN_NORM, 0);
 			fOwner.fEntity.setPlayerPMFlags( (byte)(fOwner.fEntity.getPlayerPMFlags() & ~NativeEntity.PMF_NO_PREDICTION) );
 		}
 		fOwner = null;
@@ -173,7 +173,7 @@ public class GrappleHook extends GameObject implements ServerFrameListener
 			//if (self->owner->client->silencer_shots)
 			//	volume = 0.2;
 
-			player.fEntity.sound( NativeEntity.CHAN_RELIABLE+NativeEntity.CHAN_WEAPON, Engine.getSoundIndex("weapons/grapple/grhang.wav"), volume, NativeEntity.ATTN_NORM, 0);
+			Game.getSoundSupport().fireEvent(player.fEntity, NativeEntity.CHAN_RELIABLE+NativeEntity.CHAN_WEAPON, Engine.getSoundIndex("weapons/grapple/grhang.wav"), volume, NativeEntity.ATTN_NORM, 0);
 			fState = CTF_GRAPPLE_STATE_HANGING;
 			fOwner.fEntity.setPlayerPMFlags( (byte)(fOwner.fEntity.getPlayerPMFlags() | NativeEntity.PMF_NO_PREDICTION) );
 		}
@@ -220,8 +220,8 @@ public class GrappleHook extends GameObject implements ServerFrameListener
 			return;
 		}
 
-		fOwner.fEntity.sound( NativeEntity.CHAN_RELIABLE+NativeEntity.CHAN_WEAPON, Engine.getSoundIndex("weapons/grapple/grpull.wav"), volume, NativeEntity.ATTN_NORM, 0);
-		fEntity.sound( NativeEntity.CHAN_WEAPON, Engine.getSoundIndex("weapons/grapple/grhit.wav"), volume, NativeEntity.ATTN_NORM, 0);
+		Game.getSoundSupport().fireEvent(fOwner.fEntity, NativeEntity.CHAN_RELIABLE+NativeEntity.CHAN_WEAPON, Engine.getSoundIndex("weapons/grapple/grpull.wav"), volume, NativeEntity.ATTN_NORM, 0);
+		Game.getSoundSupport().fireEvent(fEntity, NativeEntity.CHAN_WEAPON, Engine.getSoundIndex("weapons/grapple/grhit.wav"), volume, NativeEntity.ATTN_NORM, 0);
 		fEntity.setSolid( NativeEntity.SOLID_NOT );
 		fState = CTF_GRAPPLE_STATE_PULLING;
 

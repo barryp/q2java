@@ -74,7 +74,7 @@ public void fire()
 
 	if (getWeaponFrame() == 12)
 		{
-		fEntity.sound(NativeEntity.CHAN_AUTO, Engine.getSoundIndex("weapons/hyprbd1a.wav"), 1, NativeEntity.ATTN_NORM, 0);
+		Game.getSoundSupport().fireEvent(fEntity, NativeEntity.CHAN_AUTO, Engine.getSoundIndex("weapons/hyprbd1a.wav"), 1, NativeEntity.ATTN_NORM, 0);
 //		ent->client->weapon_sound = 0;
 		}		
 	}

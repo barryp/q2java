@@ -116,7 +116,7 @@ public void runFrame(int Phase)
 		float i;
 		if ( (i = Game.getGameTime()) > fDebounceTime)
 			{
-			fOwner.fEntity.sound( NativeEntity.CHAN_ITEM, Engine.getSoundIndex("items/damage3.wav"), volume, NativeEntity.ATTN_NORM, 0);
+			Game.getSoundSupport().fireEvent(fOwner.fEntity, NativeEntity.CHAN_ITEM, Engine.getSoundIndex("items/damage3.wav"), volume, NativeEntity.ATTN_NORM, 0);
 			fDebounceTime = i+1;
 			}
 		}
@@ -142,7 +142,7 @@ public void runFrame(int Phase)
 	
 	if (fMillis == 30)
 		{
-		fOwner.fEntity.sound( NativeEntity.CHAN_ITEM, Engine.getSoundIndex("items/damage2.wav"), 1, NativeEntity.ATTN_NORM, 0);
+		Game.getSoundSupport().fireEvent(fOwner.fEntity, NativeEntity.CHAN_ITEM, Engine.getSoundIndex("items/damage2.wav"), 1, NativeEntity.ATTN_NORM, 0);
 		}
 	
 	if (fMillis == 0)
@@ -176,7 +176,7 @@ public void use(Player p)
 		fHUDTimer.setRunning(true);
 		}
 	
-	fOwner.fEntity.sound( NativeEntity.CHAN_ITEM, Engine.getSoundIndex("items/damage.wav"), 1, NativeEntity.ATTN_NORM, 0);
+	Game.getSoundSupport().fireEvent(fOwner.fEntity, NativeEntity.CHAN_ITEM, Engine.getSoundIndex("items/damage.wav"), 1, NativeEntity.ATTN_NORM, 0);
 	fOwner.fEntity.setEffects(fOwner.fEntity.getEffects() | NativeEntity.EF_QUAD);
 	}
 }

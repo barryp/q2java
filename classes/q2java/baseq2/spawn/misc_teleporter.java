@@ -71,7 +71,7 @@ public void touch(Player touchedBy)
 	Point3f destOrigin = dest.fEntity.getOrigin();
 	destOrigin.z += 10;
 
-	fEntity.setEvent(NativeEntity.EV_PLAYER_TELEPORT);
+	Game.getSoundSupport().fireTempEvent(fEntity, NativeEntity.EV_PLAYER_TELEPORT);
 
 	touchedBy.teleport(destOrigin, dest.fEntity.getAngles());
 	}

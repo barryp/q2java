@@ -345,7 +345,7 @@ public void respawn()
 	// make the hidden entity visible again
 	ent.setSVFlags(ent.getSVFlags() & ~NativeEntity.SVF_NOCLIENT);
 	ent.setSolid(NativeEntity.SOLID_TRIGGER);
-	ent.setEvent(NativeEntity.EV_ITEM_RESPAWN);
+	Game.getSoundSupport().fireTempEvent(ent, NativeEntity.EV_ITEM_RESPAWN);
 	ent.linkEntity();
 	}
 /**
@@ -499,7 +499,7 @@ protected void touchFinish(Player p, GenericItem itemTaken)
 		}
 		
 	// play the pickup sound
-	fEntity.sound(NativeEntity.CHAN_ITEM, fPickupSoundIndex, 1, NativeEntity.ATTN_NORM, 0);
+	Game.getSoundSupport().fireEvent(fEntity, NativeEntity.CHAN_ITEM, fPickupSoundIndex, 1, NativeEntity.ATTN_NORM, 0);
 
 	// Notify the player what they picked up
 	p.notifyPickup(getItemName(), getIconName());

@@ -38,6 +38,7 @@ abstract public class GenericEvent extends java.util.EventObject
 	public final static int GAME_GAMELET_EVENT			= 2050;
 	public final static int GAME_SERVERCOMMAND_EVENT	= 2051;
 	public final static int GAME_PRINT_EVENT			= 2052;
+	public final static int GAME_SOUND_EVENT			= 2053;
 	public final static int LAST_GAME_EVENT				= 4095;
 
 	protected int fType = NULL_EVENT;

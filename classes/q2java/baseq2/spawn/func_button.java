@@ -90,7 +90,7 @@ public void activate()
 			fButtonState = STATE_BUTTON_ACTIVATING;
 			moveTo(fOnOrigin);
 			if ((fSoundStart != 0) && !isGroupSlave())
-				fEntity.sound(NativeEntity.CHAN_NO_PHS_ADD + NativeEntity.CHAN_VOICE, fSoundStart, 1, NativeEntity.ATTN_STATIC, 0);			
+				Game.getSoundSupport().fireEvent(fEntity, NativeEntity.CHAN_NO_PHS_ADD + NativeEntity.CHAN_VOICE, fSoundStart, 1, NativeEntity.ATTN_STATIC, 0);			
 			break;	
 			
 		case STATE_BUTTON_ONWAIT:

@@ -14,7 +14,7 @@ public final class DamageSupport extends GenericEventSupport
 	
 public void addDamageListener(DamageListener dl)
 	{
-	addListener(dl);
+	addListener(dl, false);
 	}
 public void fireEvent(DamageEvent e)
 	{

@@ -51,7 +51,7 @@ public void fire()
 
 
 	if (getWeaponFrame() == 5)
-		fEntity.sound(NativeEntity.CHAN_AUTO, Engine.getSoundIndex("weapons/chngnu1a.wav"), 1, NativeEntity.ATTN_IDLE, 0);
+		Game.getSoundSupport().fireEvent(fEntity, NativeEntity.CHAN_AUTO, Engine.getSoundIndex("weapons/chngnu1a.wav"), 1, NativeEntity.ATTN_IDLE, 0);
 
 	if ((getWeaponFrame() == 14) && ((fPlayer.fButtons & PlayerCmd.BUTTON_ATTACK) == 0))
 		{
@@ -72,7 +72,7 @@ public void fire()
 	if (getWeaponFrame() == 22)
 		{
 //		ent->client->weapon_sound = 0;
-		fEntity.sound(NativeEntity.CHAN_AUTO, Engine.getSoundIndex("weapons/chngnd1a.wav"), 1, NativeEntity.ATTN_IDLE, 0);
+		Game.getSoundSupport().fireEvent(fEntity, NativeEntity.CHAN_AUTO, Engine.getSoundIndex("weapons/chngnd1a.wav"), 1, NativeEntity.ATTN_IDLE, 0);
 		}
 	else
 		{
@@ -100,7 +100,7 @@ public void fire()
 		{
 //		if (level.time >= ent->pain_debounce_time)
 			{
-			fEntity.sound(NativeEntity.CHAN_VOICE, Engine.getSoundIndex("weapons/noammo.wav"), 1, NativeEntity.ATTN_NORM, 0);
+			Game.getSoundSupport().fireEvent(fEntity, NativeEntity.CHAN_VOICE, Engine.getSoundIndex("weapons/noammo.wav"), 1, NativeEntity.ATTN_NORM, 0);
 //			ent->pain_debounce_time = level.time + 1;
 			}
 		if (isAutoSwitch())
@@ -129,7 +129,7 @@ public void fire()
 	// send muzzle flash
 	Engine.writeByte(Engine.SVC_MUZZLEFLASH);
 	Engine.writeShort(fEntity.getEntityIndex());
-	Engine.writeByte(Engine.MZ_CHAINGUN1 + shots - 1 /*| is_silenced */);
+	Engine.writeByte(Game.getSoundSupport().fireMuzzleEvent(fEntity, Engine.MZ_CHAINGUN1 + shots - 1));
 	Engine.multicast(fEntity.getOrigin(), Engine.MULTICAST_PVS);
 	
 //	PlayerNoise(ent, start, PNOISE_WEAPON);

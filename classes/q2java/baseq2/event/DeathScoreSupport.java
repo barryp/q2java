@@ -28,7 +28,7 @@ public final class DeathScoreSupport extends GenericEventSupport
 	
 public void addDeathScoreListener(DeathScoreListener dsl)
 	{
-	addListener(dsl);
+	addListener(dsl, false);
 	}
 public void fireEvent(DeathScoreEvent dse)
 	{

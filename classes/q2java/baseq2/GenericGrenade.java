@@ -191,7 +191,7 @@ public void runFrame(int phase)
 	else	//we hit a solid object, so let's bounce...
 		{
 		clipVelocity(tr.fPlaneNormal, 1.5f);
-		fEntity.sound (NativeEntity.CHAN_VOICE, Engine.getSoundIndex("weapons/grenlb1b.wav"), 1, NativeEntity.ATTN_NORM, 0);
+		Game.getSoundSupport().fireEvent(fEntity, NativeEntity.CHAN_VOICE, Engine.getSoundIndex("weapons/grenlb1b.wav"), 1, NativeEntity.ATTN_NORM, 0);
 		}
 	}
 /**
