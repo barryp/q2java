@@ -4,9 +4,8 @@ on the command line -->
 
 <startup>
 
-  <!-- Player DM with CTF Techs and Flashgrenades -->
+  <!-- Play DM with Flashgrenades -->
   <gamelet class="q2java.baseq2.Deathmatch"/>    
-  <gamelet class="q2java.ctf.CTFTechs"/>
   <gamelet class="barryp.flashgrenade.FlashGrenades"/>
   
   <!-- keep the maps changing every 15 min -->

@@ -21,12 +21,15 @@ import java.io.Serializable;
 
 /**
  * A single precision floating point 4 by 4 matrix.
- * @version specification 1.1, implementation $Revision: 1.12 $, $Date: 1999/03/04 09:16:33 $
+ * @version specification 1.1, implementation $Revision: 1.1 $, $Date: 2000/01/02 02:32:58 $
  * @author Kenji hiranabe
  */
 public class Matrix4f implements Serializable {
 /*
  * $Log: Matrix4f.java,v $
+ * Revision 1.1  2000/01/02 02:32:58  barryp
+ * Initial revision
+ *
  * Revision 1.12  1999/03/04  09:16:33  hiranabe
  * small bug fix and copyright change
  *

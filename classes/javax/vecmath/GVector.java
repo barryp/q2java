@@ -22,12 +22,15 @@ import java.io.Serializable;
 /**
  * A double precision, general, and dynamically resizeable one 
  * dimensional vector class. Index numbering begins with zero.
- * @version specification 1.1, implementation $Revision: 1.9 $, $Date: 1999/03/04 09:16:33 $
+ * @version specification 1.1, implementation $Revision: 1.1 $, $Date: 2000/01/02 02:32:58 $
  * @author Kenji hiranabe
  */
 public class GVector implements Serializable {
 /*
  * $Log: GVector.java,v $
+ * Revision 1.1  2000/01/02 02:32:58  barryp
+ * Initial revision
+ *
  * Revision 1.9  1999/03/04  09:16:33  hiranabe
  * small bug fix and copyright change
  *

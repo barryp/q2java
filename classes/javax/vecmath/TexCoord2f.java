@@ -22,7 +22,7 @@ import java.io.Serializable;
 /**
   * A 2 element texture coordinate that is represented by single precision
   * floating point x,y coordinates.
-  * @version specification 1.1, implementation $Revision: 1.7 $, $Date: 1999/03/04 09:16:33 $
+  * @version specification 1.1, implementation $Revision: 1.1 $, $Date: 2000/01/02 02:32:58 $
   * @author Kenji hiranabe
   */
 public class TexCoord2f extends Tuple2f implements Serializable {
@@ -41,6 +41,9 @@ public class TexCoord2f extends Tuple2f implements Serializable {
 	}
 /*
  * $Log: TexCoord2f.java,v $
+ * Revision 1.1  2000/01/02 02:32:58  barryp
+ * Initial revision
+ *
  * Revision 1.7  1999/03/04  09:16:33  hiranabe
  * small bug fix and copyright change
  *

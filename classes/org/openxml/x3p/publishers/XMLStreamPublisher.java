@@ -57,7 +57,7 @@ import org.openxml.x3p.*;
  * used to provide accurate and fast output.
  *
  *
- * @version $Revision: 1.2 $ $Date: 1999/04/12 06:12:32 $
+ * @version $Revision: 1.1 $ $Date: 2000/01/02 02:33:03 $
  * @author <a href="mailto:arkin@trendline.co.il">Assaf Arkin</a>
  * @see org.w3c.dom.Node
  * @see XMLStreamWriter

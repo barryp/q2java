@@ -1,4 +1,4 @@
-# @version $Revision: 1.1.1.1 $ $Date: 1999/02/09 05:09:15 $
+# @version $Revision: 1.1 $ $Date: 2000/01/02 02:32:58 $
 # @author <a href="mailto:arkin@trendline.co.il">Assaf Arkin</a>
 #
 # Character entity references for markup-significant

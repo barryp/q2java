@@ -21,7 +21,7 @@ import java.io.Serializable;
 
 /**
   * A four byte colors  (mostly used for colors with alpha).
-  * @version specification 1.1, implementation $Revision: 1.7 $, $Date: 1999/03/04 09:16:33 $
+  * @version specification 1.1, implementation $Revision: 1.1 $, $Date: 2000/01/02 02:32:58 $
   * @author Kenji hiranabe
   */
 public class Color4b extends Tuple4b implements Serializable {
@@ -41,6 +41,9 @@ public class Color4b extends Tuple4b implements Serializable {
 	}
 /*
  * $Log: Color4b.java,v $
+ * Revision 1.1  2000/01/02 02:32:58  barryp
+ * Initial revision
+ *
  * Revision 1.7  1999/03/04  09:16:33  hiranabe
  * small bug fix and copyright change
  *

@@ -30,6 +30,9 @@ package javax.vecmath;
 public class VecmathTest {
 /*
  * $Log: VecmathTest.java,v $
+ * Revision 1.1  2000/01/02 02:32:58  barryp
+ * Initial revision
+ *
  * Revision 1.8  1999/03/11  00:17:50  hiranabe
  * removed some println's
  *

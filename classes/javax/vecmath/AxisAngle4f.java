@@ -23,12 +23,15 @@ import java.io.Serializable;
   * A 4 element axis angle represented by single precision floating point
   * x,y,z,angle components. An axis angle is a rotation of angle (radians) about
   * the vector (x,y,z).
-  * @version specification 1.1, implementation $Revision: 1.9 $, $Date: 1999/03/04 09:16:33 $
+  * @version specification 1.1, implementation $Revision: 1.1 $, $Date: 2000/01/02 02:32:58 $
   * @author Kenji hiranabe
   */
 public class AxisAngle4f implements Serializable {
 /*
  * $Log: AxisAngle4f.java,v $
+ * Revision 1.1  2000/01/02 02:32:58  barryp
+ * Initial revision
+ *
  * Revision 1.9  1999/03/04  09:16:33  hiranabe
  * small bug fix and copyright change
  *
