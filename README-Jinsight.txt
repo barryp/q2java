@@ -44,10 +44,10 @@ you're only tracing a small section of code).
 
 A fancier version of this document is available as:
 
-    http://www.openquake.org/jquake/q2java/jinsight
+    http://www.planetquake.com/q2java/docs/jinsight
     
 which includes a description of analyzing trace data gathered from Q2Java.
 
 -----------------------------------------------------------------------------
-                                                        Barry (3/27/99)
+                                                        Barry (4/7/2000)
        

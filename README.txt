@@ -1,8 +1,8 @@
 Q2Java v0.9.x -  Quake II Game programming in Java
 
     Author:   Barry Pederson <bpederson@geocities.com>
-    Homepage: http://www.openquake.org/jquake/q2java
-    Date:     March 9th, 1999
+    Homepage: http://www.planetquake.com/q2java
+    Date:     April 7th, 2000
 
     Description: A DLL and Java classes that allow a QuakeII game
                  to be written in Java.

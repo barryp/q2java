@@ -76,9 +76,9 @@ Most successful testing has been done using the glibc versions of Quake2
 
 I myself am fairly clueless about Linux (as you may suspect from the shell
 script and makefile provided), so if you have Linux-specific 
-questions, you'd be much better off sending them to the JavaQuake mailing
-list (subscribe through majordomo@openquake.org), or to 
-Bernd Kreimeier <bk@gamers.org> who's been working with Quake2/Java/Linux
+questions, you'd be much better off sending them to the quake-dev mailing
+list (subscribe through http://www.planetquake.com/q2java/discussion.html), 
+or to Bernd Kreimeier <bk@gamers.org> who's been working with Quake2/Java/Linux
 for quite some time.
 
     Barry
