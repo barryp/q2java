@@ -1,8 +1,8 @@
-Q2Java v0.9.x -  Quake II Game programming in Java
+Q2Java v1.0.0 -  Quake II Game programming in Java
 
     Author:   Barry Pederson <bpederson@geocities.com>
     Homepage: http://www.planetquake.com/q2java
-    Date:     April 7th, 2000
+    Date:     June 17th, 2000
 
     Description: A DLL and Java classes that allow a QuakeII game
                  to be written in Java.
@@ -309,8 +309,8 @@ JAVADOCS
     
     The sourcecode has quite a few JavaDoc comments, and you can generate
     documentation using normal JavaDoc tools.  For Win32 users who have 
-    a JDK loaded, you can run the "jdocs.bat" batch file to quickly generate
-    docs.
+    a JDK loaded, you can run the "make-javadocs.bat" batch file to quickly
+    generate docs.
 
 MODIFYING THE JAVA CODE
 

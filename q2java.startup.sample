@@ -1,6 +1,10 @@
-<!-- Fancy startup file, load with 
-  +set q2java_startup q2java.startup.sample
-on the command line -->
+<!-- 
+    Fancy startup file, load with 
+
+       +set q2java_startup q2java.startup.sample
+
+    on the command line. 
+-->
 
 <startup>
 

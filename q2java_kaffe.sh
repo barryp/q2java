@@ -1,8 +1,9 @@
 #!/bin/sh
+#
+# Sample shell script for running Q2Java using the Kaffe JVM
+#
 
-JAVA_HOME="/usr/local/java/jdk117_v1a"
 QUAKE2_HOME="/usr/local/games/quake2"
-#QUAKE2_PARAMS="+set vid_ref softx"
 
 # Preload JVM DLL, call quake2 next.
 #
@@ -20,14 +21,14 @@ QUAKE2_HOME="/usr/local/games/quake2"
 #  on every RH 5.x and Debian 2.x tried so far.
 
 
-LD_PRELOAD="libjava.so"
+LD_PRELOAD="libkaffevm.so"
 export LD_PRELOAD
 
-LD_LIBRARY_PATH=$JAVA_HOME"/lib/i386/native_threads"
+LD_LIBRARY_PATH="/usr/local/lib:/usr/local/lib/kaffe"
 export LD_LIBRARY_PATH
 
-Q2JAVA_CLASSPATH=$JAVA_HOME"/lib/classes.zip:"$QUAKE2_HOME"/q2java/classes"
+Q2JAVA_CLASSPATH="/usr/local/share/kaffe/Klasses.jar:"$QUAKE2_HOME"/q2java/classes"
 export Q2JAVA_CLASSPATH
 
 cd $QUAKE2_HOME
-./quake2 +set game q2java $QUAKE2_PARAMS $@
+./quake2 +set game q2java $@

@@ -1,0 +1,187 @@
+<html>
+<head>
+<title>Q2Java Overview</title>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<style type="text/css">
+<!--
+h2 {  font-family: Arial, Helvetica, sans-serif}
+-->
+</style></head>
+
+<body bgcolor="#000000" text="#FFFFFF" link="#e7ad67" vlink="#e7ad67" alink="#e7ad67">
+<h1>Q2Java Overview - Part 2</h1>
+This document will attempt to give a broad overview of how the Java classes in 
+Q2Java are structured. 
+<h2>Packages &amp; Classes &amp; Methods, oh my!</h2>
+<p>There are dozens of packages, hundreds of classes and thousands of methods 
+  in Q2Java, how do you begin to make sense of all of this? </p>
+<p>It might help to compare how Q2Java is structured with how a typical operating 
+  system (such as Linux or Windows) is arranged. They have quite a bit in common, 
+  and in some ways you can think of Q2Java as a sort of Quake II Game Operating 
+  System. </p>
+<table border="0" cellspacing="4" cellpadding="8">
+  <tr> 
+    <td colspan="3">
+      <div align="center"><i>Typical Operating System</i></div>
+    </td>
+    <td rowspan="7">&nbsp;</td>
+    <td colspan="3">
+      <div align="center"><i>Q2Java</i></div>
+    </td>
+  </tr>
+  <tr bgcolor="#009900"> 
+    <td>Application</td>
+    <td>Application</td>
+    <td>Application</td>
+    <td>Gamelet</td>
+    <td>Gamelet</td>
+    <td>Gamelet</td>
+  </tr>
+  <tr> 
+    <td colspan="3" bgcolor="#000099"> 
+      <div align="center">Kernel</div>
+    </td>
+    <td colspan="3" bgcolor="#000099"> 
+      <div align="center"><font face="Courier New, Courier, mono">q2java.core 
+        </font>packages<font face="Courier New, Courier, mono"> </font></div>
+    </td>
+  </tr>
+  <tr> 
+    <td colspan="3" bgcolor="#FFFF00"> 
+      <div align="center"><font color="#000000">Device Drivers</font></div>
+    </td>
+    <td colspan="3" bgcolor="#FFFF00"> 
+      <div align="center"><font face="Courier New, Courier, mono" color="#000000">q2java</font><font color="#000000"> 
+        package</font></div>
+    </td>
+  </tr>
+  <tr> 
+    <td rowspan="3" colspan="3" bgcolor="#CC0000"> 
+      <div align="center">Hardware</div>
+    </td>
+    <td colspan="3" bgcolor="#CC0000"> 
+      <div align="center">Java Virtual Machine</div>
+    </td>
+  </tr>
+  <tr> 
+    <td colspan="3" bgcolor="#CC0000"> 
+      <div align="center">Game DLL</div>
+    </td>
+  </tr>
+  <tr> 
+    <td colspan="3" bgcolor="#CC0000"> 
+      <div align="center">Quake II Engine</div>
+    </td>
+  </tr>
+</table>
+<p>Just as a typical OS has device drivers that allow software to work with underlying 
+  hardware, Q2Java's <tt>q2java</tt> package is the interface between Java game 
+  software and the underlying Quake II Engine. Device drivers are usually fairly 
+  small (at least compared to the kernel and to applications), and the <tt>q2java</tt> 
+  package is similarly small, since all it does is provide access to the underlying 
+  engine. These classes are the only ones with native methods, everything else 
+  in Q2Java is 100% pure Java.</p>
+<p>In a typical OS, the kernel is at the heart of things, coordinating interactions 
+  between applications and device drivers. The Q2Java equivalents are the classes 
+  in the <tt>q2java.core</tt> packages - which manage interactions between gamelets. 
+  Just as an OS kernel loads/unloads applications and schedules their execution, 
+  the <tt>q2java.core</tt> packages are responsible for loading/unloading gamelets, 
+  and controlling when they get a chance to run.</p>
+<p>Gamelets are the equivalent of an OS's applications, and just as the whole 
+  point of having a kernel and device drivers is so that you can run applications, 
+  the reason for the existance of the <tt>q2java</tt> and <tt>q2java.core</tt> 
+  packages is to support the running of gamelets. You -have- to run an application 
+  on an OS, to do anything useful (even if it's just a command shell). Similarly, 
+  Q2Java -has- to run at least one gamelet, otherwise nothing useful will happen.</p>
+<h2>Types of Gamelets</h2>
+<p>An operating system like Linux or Windows can run a wide variety of applications 
+  - spreadsheets, disk utilities, paint programs, you name it. Similarly, there 
+  are a whole slew of Q2Java gamelets that can be run in various combinations. 
+  To give you some idea of what's possible here are examples of three general 
+  types of gamelets currently available for Q2Java.</p>
+<table border="0" cellspacing="4" cellpadding="8">
+  <tr> 
+    <td valign="top" bgcolor="#000000"> 
+      <div align="center"><i>Type</i></div>
+    </td>
+    <td valign="top" colspan="2"> 
+      <div align="center"><i>Examples</i></div>
+    </td>
+  </tr>
+  <tr> 
+    <td valign="top" rowspan="3" bgcolor="#333333">Rule Gamelets - provide the 
+      general structure/rules of a Game.</td>
+    <td valign="top" bgcolor="#5c6446"><tt>q2java.baseq2.BaseQ2</tt></td>
+    <td valign="top" bgcolor="#5c6446">provides a basic deathmatch game</td>
+  </tr>
+  <tr> 
+    <td valign="top" bgcolor="#5c6446"><tt>q2java.ctf.CTF</tt></td>
+    <td valign="top" bgcolor="#5c6446">Full implementation of Threewave CTF</td>
+  </tr>
+  <tr> 
+    <td valign="top" bgcolor="#5c6446"><tt>barryp.paranoia.Paranoia</tt></td>
+    <td valign="top" bgcolor="#5c6446">Variation of Deathmatch </td>
+  </tr>
+  <tr> 
+    <td valign="top" rowspan="3" bgcolor="#333333">Item Gamelets - change the 
+      way particular items work or add new items</td>
+    <td valign="top" bgcolor="#5c6446"><tt>q2java.ctf.CTFTechs</tt></td>
+    <td valign="top" bgcolor="#5c6446">Just the powerups from CTF - can be mixed 
+      with games other than CTF. </td>
+  </tr>
+  <tr> 
+    <td valign="top" bgcolor="#5c6446"><tt>barryp.flashgrenade.FlashGrenades</tt></td>
+    <td valign="top" bgcolor="#5c6446">Changes handgrenades so that they also 
+      temporarily blind enemies</td>
+  </tr>
+  <tr> 
+    <td valign="top" bgcolor="#5c6446"><tt>barryp.rocketmania</tt></td>
+    <td valign="top" bgcolor="#5c6446">Alters handblasters so that they fire rockets.</td>
+  </tr>
+  <tr> 
+    <td valign="top" bgcolor="#333333" rowspan="3">Utility Gamelets - change the 
+      way Q2Java works</td>
+    <td valign="top" bgcolor="#5c6446"><tt>barryp.telnet.GameModule</tt></td>
+    <td valign="top" bgcolor="#5c6446">Implements a telnet server - so people 
+      can connect to a Q2Java server with a Telnet or MUD client.</td>
+  </tr>
+  <tr> 
+    <td valign="top" bgcolor="#5c6446"><tt>barryp.map.XMLMaps</tt></td>
+    <td valign="top" bgcolor="#5c6446">Causes game to look for map data in external 
+      XML files</td>
+  </tr>
+  <tr> 
+    <td valign="top" bgcolor="#5c6446"><tt>donaldp.ipban.GameModule</tt></td>
+    <td valign="top" bgcolor="#5c6446">Provides IP/Name banning</td>
+  </tr>
+</table>
+<p>That's just a small sample of the gamelets included in Q2Java. Some gamelets, 
+  such as <tt>barryp.map.XMLMaps</tt> are totally standalone, and just interact 
+  with the <tt>q2java.core</tt> package, while others such as <tt>barryp.rocketmania</tt> 
+  interact closely with or are even dependant on other gamelets. </p>
+<h2>Summary</h2>
+<p>So basically, when you're browsing through the Java code in Q2Java, you can 
+  figure that:</p>
+<ul>
+  <li>The classes in the <tt>q2java</tt> package (there are only 18 or so), such 
+    as <tt>Engine</tt> and <tt>NativeEntity</tt> are there to allow the rest of 
+    the Java code to work with the underlying Quake II Engine</li>
+  <li>The classes that are in packages that begin with <tt>q2java.core</tt> coordinate 
+    the general flow of control between various sections of Java code.</li>
+  <li>Everything else is part of a gamelet. Either a gamelet proper (a class that's 
+    a subclass of <tt>q2java.core.Gamelet</tt>), or a class that supports a gamelet 
+    class. Gamelets and their supporting classes do all the work that actually 
+    makes up &quot;a game&quot;- such as weapons firing, flags being captured, 
+    gibstats being collected, people running around, chatting, winning, losing, 
+    dying, kicking butt and taking names. </li>
+</ul>
+<p>There are some exceptions and variations, but that's the general scheme of 
+  things. </p>
+<hr>
+<div align="right">
+  <p><font size="-1">Barry Pederson &lt;<a href="mailto:barryp@planetquake.com">barryp@planetquake.com</a>&gt;<br>
+    </font><i><font size="-1">revised 4/25/99</font></i><font size="-1"></font> 
+  </p>
+  </div>
+</body>
+</html>

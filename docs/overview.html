@@ -1,0 +1,347 @@
+<html>
+<head>
+<title>Q2Java Overview</title>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<style type="text/css">
+<!--
+h2 {  font-family: Arial, Helvetica, sans-serif}
+-->
+</style></head>
+
+<body bgcolor="#000000" text="#FFFFFF" link="#e7ad67" vlink="#e7ad67" alink="#e7ad67">
+<h1>Q2Java Overview</h1>
+This document will attempt to give a broad overview of Q2Java, how in fits in 
+with Quake2, and why you would want to use Java with Quake2. 
+<h2>What is Q2Java? </h2>
+<p>When people first hear of Q2Java, they often think we've tried to completely 
+  rewrite Quake2 in Java - but that's not the case. Q2Java runs on top of the 
+  Quake2 executable (provided by id Software), just like a normal Q2 mod. </p>
+<p>There's no need to worry about how Java could possibly be fast enough to handle 
+  rendering scenes as fast as C code can - because it doesn't even try. All that 
+  really speed-sensitive stuff is still handled by the Quake2 executable. The 
+  time spent executing the code in game mods (any game mod - not just Q2Java) 
+  is actually pretty small. </p>
+<p>The diagram below shows how Q2Java stacks up against traditional Q2 mods (using 
+  the Win32 platform for the sake of discussion).</p>
+<table border="0" cellspacing="2" cellpadding="8">
+  <tr bgcolor="#000000"> 
+    <td width="50%"> 
+      <div align="center"><font size="+1"><b><i>Traditional Q2 Mod</i></b></font></div>
+    </td>
+    <td> 
+      <div align="center"><font size="+1"><b><i>Q2Java</i></b></font></div>
+    </td>
+  </tr>
+  <tr> 
+    <td rowspan="3" width="50%" bgcolor="#FFFF00"> 
+      <div align="center"><font face="Courier New, Courier, mono" color="#000000">gamex86.dll</font></div>
+    </td>
+    <td bgcolor="#009933"> 
+      <div align="center">Java game code</div>
+    </td>
+  </tr>
+  <tr> 
+    <td bgcolor="#0033CC"> 
+      <div align="center">Java Virtual Machine</div>
+    </td>
+  </tr>
+  <tr> 
+    <td bgcolor="#FFFF00"> 
+      <div align="center"><font face="Courier New, Courier, mono" color="#000000">gamex86.dll</font></div>
+    </td>
+  </tr>
+  <tr bgcolor="#CC0000"> 
+    <td colspan="2" height="33"> 
+      <div align="center"><font face="Courier New, Courier, mono">quake2.exe</font></div>
+    </td>
+  </tr>
+</table>
+<p>A traditional mod is written in C and compiled into a single file named <font face="Courier New, Courier, mono">gamex86.dll</font>. 
+  The Quake2 executable calls on this DLL to handle the actual running of the 
+  game. Various mods such as CTF and RocketArena2 are distributed as separate 
+  <font face="Courier New, Courier, mono">gamex86.dll</font> files, and are fairly 
+  large - usually 600kB or more of sourcecode.</p>
+<p>Q2Java also has a <font face="Courier New, Courier, mono">gamex86.dll</font>, 
+  written in C just like a traditional mod, but it's quite a bit smaller (only 
+  about 155kB of sourcecode). Its main job is to invoke a Java Virtual Machine 
+  (JVM) and act as an intermediary between the Quake2 executable and the Java 
+  code. Most of the things handled by a normal mod in C have been rewritten in 
+  Java, and are executed by the JVM.</p>
+<p>While the Q2Java <font face="Courier New, Courier, mono">gamex86.dll</font> 
+  sourcecode is available, there should be no real need to change it, since it 
+  does so little. All the interesting things happen up in the Java code, and that's 
+  where Q2Java mod authors will be doing their coding. </p>
+<h2>Q2Java on various platforms</h2>
+<p>Currently, Q2Java runs on 3 platforms with 5 different JVMs. The table below 
+  shows the various component combinations. The important thing to note about 
+  Q2Java is that its Java Game Code covers all the supported platforms, without 
+  even having to be recompiled.</p>
+<table width="100%" border="0" cellspacing="2" cellpadding="4">
+  <tr valign="top" bgcolor="#000000"> 
+    <td colspan="3" rowspan="2"> 
+      <div align="center"><font size="+1"><b><i>Win32 - Intel</i></b></font></div>
+      <div align="center"></div>
+    </td>
+    <td colspan="2" rowspan="2"> 
+      <div align="center"><font size="+1"><b><i>Linux - Intel</i></b></font></div>
+      <div align="center"></div>
+    </td>
+    <td colspan="4" rowspan="2"> 
+      <div align="center"><font size="+1"><b><i>Solaris - SPARC</i></b></font></div>
+    </td>
+  </tr>
+  <tr valign="top"> </tr>
+  <tr bgcolor="#009933"> 
+    <td colspan="9"> 
+      <div align="center">Java Game Code</div>
+      <div align="center"></div>
+      <div align="center"></div>
+    </td>
+  </tr>
+  <tr bgcolor="#0033CC"> 
+    <td colspan="2"> 
+      <div align="center"><font color="#FFFFFF" face="Courier New, Courier, mono">javai.dll<br>
+        </font><font color="#FFFFFF" size="-1">(JDK 1.1.x)</font></div>
+    </td>
+    <td> 
+      <div align="center"><font color="#FFFFFF" face="Courier New, Courier, mono">jvm.dll<br>
+        </font><font color="#FFFFFF" size="-1">(JDK 1.2.x)</font></div>
+    </td>
+    <td> 
+      <div align="center"><font color="#FFFFFF" face="Courier New, Courier, mono">libjava.so</font></div>
+    </td>
+    <td> 
+      <div align="center"><font color="#FFFFFF" face="Courier New, Courier, mono">libkaffe.so</font></div>
+    </td>
+    <td colspan="4"> 
+      <div align="center"><font color="#FFFFFF" face="Courier New, Courier, mono">libjava.so</font></div>
+    </td>
+  </tr>
+  <tr bgcolor="#FFFF00"> 
+    <td colspan="3"> 
+      <div align="center"><font color="#000000" face="Courier New, Courier, mono">gamex86.dll</font></div>
+    </td>
+    <td> 
+      <p align="center"><font color="#000000" face="Courier New, Courier, mono">gamei386.so 
+        </font></p>
+    </td>
+    <td> 
+      <div align="center"><font color="#000000" face="Courier New, Courier, mono">gamei386.so</font></div>
+    </td>
+    <td colspan="4"> 
+      <div align="center"><font color="#000000" face="Courier New, Courier, mono">gamesparc.so</font></div>
+    </td>
+  </tr>
+  <tr bgcolor="#CC0000"> 
+    <td colspan="3"> 
+      <div align="center"><font face="Courier New, Courier, mono">quake2.exe</font></div>
+    </td>
+    <td colspan="2"> 
+      <div align="center"><font face="Courier New, Courier, mono">quake2</font></div>
+    </td>
+    <td colspan="4"> 
+      <div align="center"><font face="Courier New, Courier, mono">quake2</font></div>
+    </td>
+  </tr>
+</table>
+<p>Porting Q2Java to other platforms that have an implementation of Quake2 and 
+  a JVM should just be a matter of altering and recompiling the gamex86.dll - 
+  all the Java code should theoretically run unchanged.</p>
+<h2>Why Java</h2>
+<p>Writing game code in Java has several advantages over coding in C. Q2Java tries 
+  to make good use of Java features such as: <br>
+  &nbsp; 
+<table cellspacing=2 cellpadding=4 cols=1 width="100%" >
+  <tr> 
+    <td bgcolor="#333333"><b><font face="Arial, Helvetica, sans-serif">Object-orientation</font></b></td>
+  </tr>
+  <tr> 
+    <td bgcolor="#5C6446">
+      <p>Various Quake II entities are represented by corresponding Java classes.&nbsp; 
+        For example, there is a class that represents Players, a separate class 
+        for each kind of weapon, each kind of ammo box, doors, platforms, trains, 
+        and so on. </p>
+      <p>This makes game code quite a bit easier to maintain, unlike the C sourcecode 
+        which is all jumbled together, and one single structure, the edict_t, 
+        is used to represent every single thing that can possibly show up in a 
+        game - with all kinds of fields that are only used in some cases, or used 
+        for multiple purposes depending on what kind of item it's representing. 
+      </p>
+    </td>
+  </tr>
+</table>
+<table cellspacing=2 cellpadding=4 cols=1 width="100%" >
+  <tr> 
+    <td bgcolor="#333333"><b><font face="Arial, Helvetica, sans-serif">Inheritance</font></b></td>
+  </tr>
+  <tr> 
+    <td bgcolor="#5C6446">Classes with similar functions are grouped together, 
+      and their common methods are stored in a superclass.&nbsp; For example: 
+      there's a GenericWeapon class which contains fields and methods common to 
+      all weapons, and subclasses such as Shotgun and RocketLauncher that implement 
+      specific weapon behaviors.</td>
+  </tr>
+</table>
+<table cellspacing=2 cellpadding=4 cols=1 width="100%" >
+  <tr> 
+    <td bgcolor="#333333"><b><font face="Arial, Helvetica, sans-serif">Encapsulation 
+      of Data and Methods</font></b></td>
+  </tr>
+  <tr> 
+    <td bgcolor="#5C6446">Classes can have fields and methods declared private 
+      or protected, so that code outside the class itself or its descendants can't 
+      accidentally muck with the object's state.&nbsp; For example, there is a 
+      <tt>func_door</tt> class, with the public methods <tt>open()</tt> and <tt>close()</tt>,&nbsp; 
+      but the class hides the fields and methods it uses to implement the actual 
+      mechanics of opening and closing doors.</td>
+  </tr>
+</table>
+<table cellspacing=2 cellpadding=4 cols=1 width="100%" >
+  <tr> 
+    <td bgcolor="#333333"><b><font face="Arial, Helvetica, sans-serif">Event Delegation</font></b></td>
+  </tr>
+  <tr> 
+    <td bgcolor="#5C6446">
+      <p>Event Delegation is actually more of a programming style than a language 
+        feature, but it's very common in Java GUI apps, and is made practical 
+        by the language's <i>interface</i> feature. Basically, with event delegation, 
+        a Java object that implements a <i>listener</i> interface can be registered 
+        with an event-source to be called when some interesting event occurs. 
+        In typical GUI apps, events are things like mouseclicks, keyboard presses, 
+        window-resizings, etc. </p>
+      <p>With Q2Java, we've taken the same idea and applied it to events such 
+        as: new levels starting, players connecting, players picking something 
+        up, players being injured, etc. Objects that want to be called when a 
+        particular type of event occurs simply have to implement a particular 
+        interface, and register themselves with the source of that kind of event. 
+      </p>
+      </td>
+  </tr>
+</table>
+<table cellspacing=2 cellpadding=4 cols=1 width="100%" >
+  <tr> 
+    <td bgcolor="#333333"><b><font face="Arial, Helvetica, sans-serif">Dynamic 
+      Linking</font></b></td>
+  </tr>
+  <tr> 
+    <td bgcolor="#5C6446">
+      <p>Dynamic Linking allows arbitrary Java classes to be loaded into memory 
+        at run-time (unlike traditional C mods which are statically-linked - meaning 
+        all the code is joined together at compile-time - basically set in stone). 
+      </p>
+      <p>Q2Java uses dynamic linking to load <i>gamelets</i>, which are modules 
+        of Java code that can exist independently of each other to some degree 
+        - that implement some game feature. When a gamelet is loaded, it usually 
+        hooks itself into the rest of the game through the event-delegation feature 
+        mentioned above, so that it's called when events that it's interested 
+        in occur. Since the linking is dynamic, new gamelets can be brought into 
+        the system while a game is running - adding new features to a game without 
+        requiring a recompile of the main game code.</p>
+      <p>Dynamic Linking is also used in spawning entities when a map is loaded.&nbsp; 
+        When the Q2Java Game class's spawnEntities() method is called, one of 
+        the parameters is a very large string describing all the entities that 
+        should be placed on the map.&nbsp; The entity string is parsed, and for 
+        each entity, the Q2Java game appends the name of the entity class, such 
+        as <tt>item_armor_combat</tt>, or <tt>weapon_chaingun</tt> to a fixed 
+        package name such as <tt>q2java.baseq2.spawn </tt>to come up with a Java 
+        classname such as <tt>q2java.baseq2.spawn.weapon_chaingun</tt>.&nbsp; 
+        The Q2Java game then tries to locate an actual class with that name, and 
+        if it can find it, it creates and instance of it, passing the other entity 
+        string parameters as arguments to the class's constructor. </p>
+      <p>The advantage to this feature is that you can add new entity classes 
+        to a game <i>without having to modify and&nbsp; recompile the original 
+        game code</i>.&nbsp; If you wanted to create a map and stick in a new 
+        kind of entity called, say, <tt>item_armor_facemask</tt>, you could create 
+        a corresponding Java class named <tt>q2java.baseq2.spawn.item_armor_facemask</tt>, 
+        and when you ran the game and loaded the map, you new type of item would 
+        be spawned along with everything else. 
+      </td>
+  </tr>
+</table>
+<table cellspacing=2 cellpadding=4 cols=1 width="100%" bgcolor="#666666" >
+  <tr> 
+    <td bgcolor="#333333"><b><font face="Arial, Helvetica, sans-serif">Security</font></b></td>
+  </tr>
+  <tr> 
+    <td bgcolor="#5C6446">Java has the ability to block all "dangerous" actions 
+      a program might try to perform such as reading or writing files, opening 
+      or accepting connections on IP sockets, or accessing classes or libraries 
+      it shouldn't. 
+      <p>The Q2Java DLL implements a simple security manager under JDK 1.1.x that 
+        lets an admin run a Java game at one of three security levels by setting 
+        a cvar named <tt>q2java_security</tt> at the command line, or in a Java-style 
+        Game Properties file.&nbsp; The three levels are: <br>
+        &nbsp; 
+      <table cellpadding=5 width="100%" bgcolor="#333333" >
+        <tr> 
+          <td valign=TOP>Level 0</td>
+          <td><i>No security at all, the Java code can do anything it wants (fairly 
+            dangerous) - basically how DLL games written in C operate.</i></td>
+        </tr>
+        <tr> 
+          <td valign=TOP>Level 1</td>
+          <td><i>Intermediate security, the Java code can read/write files only 
+            in a subdirectory of the game dir named "sandbox", and can only connect 
+            to or accept IP connections on ports greater than 1023</i></td>
+        </tr>
+        <tr> 
+          <td valign=TOP>Level 2</td>
+          <td><i>The Default: same as Level 1 but without the IP access. Not quite 
+            as restrictive as the old QuakeC, but still fairly safe since all 
+            the game code can access are files within certain subdirectories.</i></td>
+        </tr>
+      </table>
+      <p>With JDK 1.2, admins have even finer control over what game code is or 
+        isn't allowed to do through <i>Security Policy Files</i> - simple text 
+        files where an admin lists exactly which files, directories, network ports, 
+        and other machine resources game code is allowed to access.
+    </td>
+  </tr>
+</table>
+<table cellspacing=2 cellpadding=4 cols=1 width="100%" >
+  <tr> 
+    <td bgcolor="#333333"><font face="Arial,Helvetica">Internationalization &amp; 
+      Localization</font></td>
+  </tr>
+  <tr> 
+    <td bgcolor="#5C6446">Q2Java stores most Player message files in Java Resource 
+      Bundles&nbsp; - and each player can select for themselves what language 
+      they want to see their messages in.&nbsp; Currently Q2Java has versions 
+      of messages in English, Dutch, and German.&nbsp; Supporting other languages 
+      is just a matter of creating text files with the appropriate translated 
+      strings.&nbsp; No code need be altered or recompiled to support new languages...they 
+      can even be added on-the-fly without even restarting the server.</td>
+  </tr>
+</table>
+<table cellspacing=2 cellpadding=4 cols=1 width="100%" >
+  <tr> 
+    <td bgcolor="#333333"><font face="Arial,Helvetica">Multithreading</font></td>
+  </tr>
+  <tr> 
+    <td bgcolor="#5C6446">Java game code can spin off multiple threads of execution 
+      <i>(although some care is required when interacting with the main Quake2 
+      Engine)</i>.&nbsp; A sample Telnet-Server is included which uses additional 
+      threads to communicate with Telnet-Clients over IP Sockets - without interfering 
+      with the main Game thread.</td>
+  </tr>
+</table>
+<table cellspacing=2 cellpadding=4 cols=1 width="100%" >
+  <tr> 
+    <td bgcolor="#333333"><font face="Arial,Helvetica">Off-the-shelf Libraries</font></td>
+  </tr>
+  <tr> 
+    <td bgcolor="#5C6446">There's an awful lot of Java code being written, and 
+      it's very easy to use other bits of Java code with Q2Java - because of the 
+      portability of the language and its classfiles. For example, we are currently 
+      using the <a href="http://www.openxml.org" target="_top">OpenXML</a> class 
+      libraries to add XML/DOM features to Q2Java - and it was a trivial matter 
+      to do so. Doing something similar in C would be quite a bit of work - especially 
+      if you wanted to make sure it ran on several platforms.</td>
+  </tr>
+</table>
+<hr>
+<div align="right"><font size="-1">Barry Pederson &lt;<a href="mailto:barryp@planetquake.com">barryp@planetquake.com</a>&gt;<br>
+  </font><i><font size="-1">revised 4/19/99</font></i><font size="-1"></font> 
+</div>
+</body>
+</html>

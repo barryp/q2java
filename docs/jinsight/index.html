@@ -1,0 +1,193 @@
+<html>
+<head>
+<title>Q2Java and JInsight</title>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<style type="text/css">
+<!--
+h1 {  font-family: Arial, Helvetica, sans-serif; font-size: x-large; font-style: italic; font-weight: bold}
+h2 {  font-family: Arial, Helvetica, sans-serif; font-size: large; font-style: italic; font-weight: bold}
+-->
+</style></head>
+
+<body bgcolor="#000000" text="#FFFFFF" link="#e7ad67" vlink="#e7ad67" alink="#e7ad67">
+<h1>Using IBM's Jinsight with Q2Java </h1>
+<p><img src="../redline.gif" width="492" height="13"> </p>
+<p>Jinsight is a software package <a href="http://www.alphaworks.ibm.com/tech/Jinsight">available 
+  from IBM</a> that contains a specially modified Java Virtual Machine which collects 
+  trace information from a running Java program, and a visual tool for analyzing 
+  the data. This page will describe how it can be used to trace and analyze <a href="../index.html">Q2Java</a> 
+  0.9.1 or later gamecode on the Win32 platform<i> (sorry, the only other version 
+  of Jinsight available is for AIX. Linux and Solaris users are SOL</i>).</p>
+<p>There's some sort of unfortunate interaction between Q2Java and Jinsight 1.1a 
+  that goofs up the keyboard and mouse buttons. Everytime you hit a key or click 
+  the mouse - Quake2 acts as if you hit ESC. This somewhat limits what you can 
+  test, but by turning freelook off (under the game control options - which you 
+  -can- get into) you can at least use the mouse to walk around a level and gather 
+  some basic profiling information.</p>
+<h2>Configuring Q2Java</h2>
+<p>First, you'll need to modify some game code to tell Jinsight when to start 
+  tracing. You do this by adding this line somewhere:</p>
+<table border="1" cellpadding="8" align="left" bgcolor="#666666">
+  <tr bgcolor="#666666" nowrap> 
+    <td> 
+      <p><tt>Runtime.getRuntime().traceMethodCalls(true);</tt></p>
+    </td>
+  </tr>
+</table>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p>I've found that <tt>q2java.baseq2.Player.connect()</tt> is a good place, since 
+  it turns tracing on when a player first connects. Calling the same method with 
+  a <tt>false</tt> parameter turns tracing off, so if you're only interested in 
+  tracing a particular bit of code, you can bracket it with those calls and avoid 
+  tracing the entire game. Be sure to recompile after any changes.</p>
+<p>Next, you'll need to tell Q2Java to use the Jinsight VM, instead of the standard 
+  JDK VM, and the easiest way to do this is in the <tt>q2java.properties</tt> 
+  file, with lines like this:</p>
+<table border="1" cellpadding="8" align="left" bgcolor="#666666">
+  <tr bgcolor="#666666" nowrap> 
+    <td> 
+      <p><tt>q2java_vmdll=c:\jinsight1.1\jdk1.1.7-1.1\bin\javai_g.dll<br>
+        q2java_jinsight=1</tt></p>
+      </td>
+  </tr>
+</table>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p>Make sure the path on the <tt>q2java_vmdll</tt> line reflects the Jinsight 
+  installation directory on your computer. The <tt>q2java_jinsight</tt> line tells 
+  the DLL to avoid doing a few JNI calls that crash the game when Jinsight is 
+  the active VM (but the downside is that there will be a small memory leak)</p>
+<p>Lastly, you'll need to set a couple environment variables, open a Windows command 
+  prompt window and type:</p>
+<table border="1" cellpadding="8" align="left" bgcolor="#666666">
+  <tr bgcolor="#666666" nowrap> 
+    <td> 
+      <p><tt>set JINSIGHT=YES<br>
+        set JINSIGHT_TRACEFILE_NAME=c:\q2java.trc</tt></p>
+    </td>
+  </tr>
+</table>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p>To tell Jinsight to gather tracing information, and where to store it. If you'd 
+  don't set <tt>JINSIGHT=YES</tt>, you'll get a ton of tracing info displayed 
+  on the Q2 console, so you've been warned.</p>
+<p>Now, we're ready to run. In the same command prompt window that you set those 
+  variables, change to the Quake2 directory and type:</p>
+<table border="1" cellpadding="8" align="left" bgcolor="#666666">
+  <tr bgcolor="#666666" nowrap> 
+    <td> 
+      <p><tt>quake2 +set game q2java +map q2dm1</tt></p>
+    </td>
+  </tr>
+</table>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p>This will start the game and place you in one of the maps. If you placed the 
+  <tt>Runtime.getRuntime().traceMethodCalls(true);</tt> statement in the <tt>Player.connect()</tt> 
+  method as I suggested above, Jinsight should be furiously collecting data to 
+  whatever file you specified in the <tt>JINSIGHT_TRACEFILE_NAME</tt> environment 
+  variable. You'll probably only want to run around for a minute or less, since 
+  the tracefile gets to be pretty big - several megabytes per minute if you trace 
+  the entire game. So you'll have to quit the game after a pretty short time.</p>
+<h2>Analyzing your trace</h2>
+<p>Now the fun begins. Look in your Jinsight installation directory, you should 
+  find a batch file named <tt>jinsight.bat</tt>. It was created when you first 
+  installed Jinsight <i>(if you have problems, you might want to check it to be 
+  sure it uses the right paths to your plain JDK installation)</i>. If it starts, 
+  you should see this window:</p>
+<p><img src="Image1.gif" width="400" height="120"></p>
+<p>Select <tt>File/Open...</tt> and open your tracefile (<tt>c:\q2java.trc</tt> 
+  in the example above). The window should update to show the name of your tracefile, 
+  and the <tt>Run</tt> button will no longer be greyed out. Hit Run, and Jinsight 
+  will start digesting your trace. It will count the number of events read, and 
+  after maybe 20 or 30 seconds, it will stop counting. For the short traces 45-60 
+  second traces I've done, I get numbers like 90-100 thousand events.</p>
+<p>Now we can start using the stuff under the <tt>Views</tt> menu. One good place 
+  to start is with the Histogram. It usually comes up with a histogram of objects, 
+  but I think it's more useful to look at the histogram of methods.</p>
+<p><img src="Image2.gif" width="561" height="402"></p>
+<p>In the window displayed above, I made sure the radio button down in the bottom 
+  left labeled <tt>Methods</tt> was checked, then from the menu selected <tt>Options/Recalibrate 
+  Colors</tt> and <tt>Options/Sort Class Colors Now</tt>.</p>
+<p>This window displays each class on one line, the colors indicating how much 
+  time is spent executing that class's methods (Red being more, blue less, purple 
+  in the middle). Each box to the right of a class represents an indivdual method, 
+  also color-coded, indicating time spent within that particular method. The methods 
+  are sorted alphabetically, and when you move the mouse over one, its name is 
+  displayed at the bottom of the window.</p>
+<p>If all the methods look about the same color, you can select <tt>Options/Decrease 
+  Color Scale</tt> from the menu, to make the differences stand out more, and 
+  more easily tell which methods withing a class are chewing up CPU cycles.</p>
+<h2>Analyzing a method</h2>
+<p>The <tt>q2java.baseq2.Player</tt> class is numero uno for time spent executing 
+  code, and one of the methods that's almost certainly marked bright red is <tt>playerThink()</tt> 
+  - which isn't terribly surprising since it's executed 10 times per-second per-player. 
+  Let's take a look at it, by clicking on its box so it's highlighted yellow <i>(you'll 
+  probably have to scroll the histogram window to the right to find it)</i>. Then 
+  from the main Jinsight window (not the histogram window) select <tt>Views/Invocation 
+  Browser</tt>. </p>
+<p>A new window will pop up showing a detailed trace of that particular method. 
+  The playerThink() method should have executed a whole bunch of times while you 
+  were gathering date, and you can use the Previous and Next buttons to look at 
+  individual instances - but they should all look about the same. <i>(A few instances 
+  will be <b>way</b> longer than others, I think that may be because your machine 
+  switched tasks in the middle of the method for a period of time - just use the 
+  Previous and Next buttons to look at a few and find one that seems typical.)</i></p>
+<p>You'll probably want to stretch your window, use the <tt>Options/Expand Time</tt> 
+  or <tt>Options/Compress Time</tt> menu items, or use the mouse to draw a box 
+  around a particular area to zoom in on it - so you can see what's going on. 
+  With a bit of dinking around you should be able to see something like this:</p>
+<p><img src="Image3.gif" width="464" height="668"></p>
+<p>Now this is the good stuff! The vertical axis on this chart indicates time, 
+  there's a scale over on the right. Each rectangle represents a method, and when 
+  a method calls another method, the callee is drawn to the right of the caller. 
+  As you move your mouse over the various rectangles, the status bar on the bottom 
+  tells you various bits of info like the method name and time. If you click on 
+  or to the left of a method, the yellow hightlighting changes to show just that 
+  particular method. </p>
+<p>In the chart above, you can see that playerThink() calls other methods like 
+  <tt>fireEvent()</tt> and <tt>pMove()</tt>. One thing I found alarming was how 
+  much time was spent on the <tt>fireEvent()</tt> call, especially since there 
+  weren't any listeners registered, and it was basically not doing anything useful. 
+  Almost a third of the time spent executing <tt>playerThink()</tt> was completely 
+  wasted! This is exactly the kind of thing a program like Jinsight is great for 
+  uncovering. </p>
+<p>I added a small bit of code to the beginning of <tt>q2java.baseq2.event.PlayerMoveSupport.fireEvent()</tt>: 
+</p>
+<table border="1" cellpadding="8" align="left" bgcolor="#666666">
+  <tr bgcolor="#666666" nowrap> 
+    <td> 
+      <p><tt>if (fListeners.size() == 0)<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;return;</tt></p>
+      <p></p>
+</td>
+  </tr>
+</table>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p>So the game doesn't waste its time cloning events and copying arrays when there's 
+  nobody to fire an event off to. After recompiling, and re-tracing, I came up 
+  with this:</p>
+<p><img src="Image4.gif" width="481" height="590"></p>
+<p>Nice! now <tt>fireEvent()</tt> is down to almost nothing and we shaved off 
+  about 20% of the execution time from this very important method with just two 
+  lines of code added. There are certainly plenty of other places where Q2Java 
+  can be tightened up, and with Jinsight they'll be very easy to find.</p>
+<h2>Summary</h2>
+<p>They say a picture is worth a thousand words, and Jinsight sure gives you a 
+  good picture of what's going on inside a program. It can also display things 
+  like memory usage, number of times a method is called, numbers of objects created, 
+  and draw diagrams showing which methods are calling each other. </p>
+<p>This page just tried to give a taste of using Jinsight. The main distribution 
+  comes with much more detailed documentation explaining how the various screens 
+  are used, be sure to check it out.</p>
+<p>Unfortunately, the keyboard problem prevents tracing things in the game such 
+  as weapons fire, but I hope that can be worked out in a future version of Q2Java 
+  and/or Jinsight.</p>
+<hr>
+<p align="right"><font size="-1"><i>Barry Pederson &lt;<a href="mailto:barryp@planetquake.com">barryp@planetquake.com</a>&gt;<br>
+  3/21/99</i></font></p>
+</body>
+</html>

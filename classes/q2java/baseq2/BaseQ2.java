@@ -349,7 +349,7 @@ public static String getSpawnpoint()
  */
 public static String getVersion() 
 	{
-	return "Q2Java Base Game, v0.9.5";
+	return "Q2Java Base Game, v1.0";
 	}
 /**
  * Check whether a given deathmatch flag is set.  Use the Game.DF_* constants.

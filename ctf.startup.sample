@@ -1,5 +1,11 @@
-<!-- Startup file somewhat equivalent to plain Threewave CTF -->
-<!-- add "+set q2java_startup ctf.startup.sample" to command line to use this -->
+<!-- 
+   This startup file will cause Q2Java to play a game 
+   almost identical to classic Threewave CTF. Add 
+
+      +set q2java_startup ctf.startup.sample
+
+   to command line to use this 
+-->
 <startup>
   <gamelet class="q2java.ctf.CTF"/>    
   <gamelet class="q2java.baseq2.LevelChanger"/>   

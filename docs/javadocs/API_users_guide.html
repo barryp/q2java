@@ -1,0 +1,109 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <meta name="Author" content="Barry Pederson">
+   <meta name="GENERATOR" content="Mozilla/4.5 [en] (WinNT; U) [Netscape]">
+   <title>Q2Java API User's Guide v0.5</title>
+</head>
+<body>
+
+<pre><a href="packages.html" target="">All Packages</a>&nbsp; <a href="tree.html">Class Hierarchy</a>&nbsp; <a href="AllNames.html">Index</a></pre>
+
+<h1>
+
+<hr></h1>
+
+<h1>
+Q2Java API Users's Guide v0.7</h1>
+These are the JavaDocs for the Q2Java Interface and sample game classes.&nbsp;
+There are some gaps in the documentation, but hopefully they'll be filled
+in as time goes by.&nbsp; There should be enough here to give a good overview
+of the structure of the code.
+<h2>
+Name Changes</h2>
+Since this is pretty much a rewrite of the original Quake II game code,
+I took some liberties changing the names of functions and fields.&nbsp;
+The Coding Conventions section below lists the stylistic changes made,
+but a few other major ones are:
+<ul>
+<li>
+In the C code, the terms "player", "user", and "client" all mean pretty
+much the same thing.&nbsp; The Java code sticks to the term "player", so
+the equivalent to the <tt>ClientThink()</tt> function is named <tt>playerThink()</tt>,
+and the <tt>usercmd_t</tt> structure's Java equivalent is named <tt>PlayerCmd</tt>,
+and so on.</li>
+
+<li>
+In the C code, the terms "edict" and "entity" seem to mean the same thing.
+Q2Java sticks to the term "entity" <i>(according to the dictionary, an
+edict is "a proclamation having the force of law" - kind of a strange thing
+to call a datastructure)</i></li>
+
+<li>
+The C <tt>SpawnEntities()</tt> function is renamed to <tt>Game.startLevel()</tt>,
+which seemed more descriptive of its actual significance.</li>
+
+<li>
+Many other C function names have been Java-ized by prefixing the names
+with "get" or "set" as in: <tt>getSoundIndex()</tt> instead of <tt>soundindex()</tt>,
+and <tt>setConfigString()</tt> instead of <tt>configstring()</tt>.</li>
+</ul>
+
+<h2>
+Coding Conventions</h2>
+The coding conventions used in the Q2Java packages are generally based
+on the way Sun does things, with a little bit of Taligent and Netscape
+conventions thrown in too.
+<ul>
+<li>
+Package names are all lowercase, such as: <tt>q2java</tt></li>
+
+<li>
+Class names begin with an uppercase character, have mixed case and no underscores,
+such as: <tt>TraceResults</tt>. <i>(The classes in the <tt>baseq2.spawn</tt>
+package are an exception, they're named to match the entity classes found
+in maps)</i></li>
+
+<li>
+Method names begin with a lowercase character, have mixed case and no underscores,
+such as: <tt>getPlayerKickAngles()</tt>. <i>(The <tt>Player</tt> class
+is an exception, in that methods to handle player commands are all lowercase
+and start with <tt>cmd_</tt>)</i></li>
+
+<li>
+Instance fields begin with a lowercase "<tt>f</tt>", have mixed case and
+no underscores, such as <tt>fTargetGroup</tt>.&nbsp; This makes it easy
+to distinguish object fields from automatic variables that will go away
+when a block is exited.</li>
+
+<li>
+Static fields begin with a lowercase "<tt>g</tt>", have mixed case and
+no underscores, such as: <tt>gGameTime</tt>.</li>
+
+<li>
+Constants (final statics) are all uppercase, with underscores used to separate
+words, such as: <tt>DAMAGE_NO_KNOCKBACK</tt>.</li>
+</ul>
+Throughout the code, I used the indentation style where the opening and
+closing brackets in a block are both indented, such as:
+<pre>while (true)
+&nbsp;&nbsp;&nbsp; {
+&nbsp;&nbsp;&nbsp; foo(a);
+&nbsp;&nbsp;&nbsp; bar(b);
+&nbsp;&nbsp;&nbsp; }</pre>
+I realize that there are other styles more commonly used, but I'd ask that
+you don't mix styles within a single file - as Netscape says in their <a href="http://developer.netscape.com/library/technote/java/codestyle.html">Java
+coding guidelines</a>:
+<blockquote>When you pick a style, stick to it.&nbsp; When editing another
+person's code, respect the code, copy the style. (When in Rome, do as the
+Romans do).</blockquote>
+Unfortunately, the overall indentation of the source files is a bit whacked
+because I used IBM's VisualAge for Java - and when it exports source code,
+it's not so smart about it.&nbsp; Sorry about that - maybe I can get something
+to fix it up for later versions.&nbsp;
+<hr WIDTH="100%">
+<div align=right><i><font size=-1>Barry Pederson &lt;<a href="mailto:bpederson@geocities.com">bpederson@geocities.com</a>></font></i></div>
+
+</body>
+</html>

@@ -12,4 +12,4 @@ dir /s/b classes\*.java >classes.list
 
 rem Process the whole works
 echo Starting javadoc
-javadoc -author -d docs @classes.list
+javadoc -author -d docs\javadocs @classes.list

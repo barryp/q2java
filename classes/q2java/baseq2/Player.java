@@ -542,7 +542,7 @@ protected boolean addAmmo(AmmoHolder ah)
  * @param y		Green
  * @param z		Blue
  * @param w		Alpha
- * @see			#addBlend(java.vecmath.Color4f color)
+ * @see			#addBlend(javax.vecmath.Color4f color)
  */
 public void addBlend(float x, float y, float z, float w)
 	{
