@@ -21,7 +21,7 @@ import q2jgame.*;
 import baseq2.*;
 
 /**
- * Rockets that have been fired, and are flying through the air.
+ * The business end of a Grappling hook.
  */
   
 public class GrappleHook extends GameObject implements FrameListener
@@ -234,4 +234,4 @@ public class GrappleHook extends GameObject implements FrameListener
 		// but let Player.playerThink() call our pull() function...
 		Game.removeFrameListener( this );
 	}
-}	
+}

@@ -38,18 +38,18 @@ public func_door(String[] spawnArgs) throws GameException
 	fOpenedOrigin = new Point3f();
 	fOpenedOrigin.scaleAdd(fMoveDistance, moveDir, fClosedOrigin);
 	
-	if ((fSpawnFlags & DOOR_START_OPEN) != 0)
-		{
-		fDoorStateInitial = STATE_DOOR_OPENED;
-		fEntity.setOrigin(fOpenedOrigin);
-		setPortals(true);
-		}
+	if ((fSpawnFlags & DOOR_START_OPEN) == 0)
+		setPortals(false);
 	else		
 		{
-		fDoorStateInitial = STATE_DOOR_CLOSED;
-		setPortals(false);
+		fEntity.setOrigin(fOpenedOrigin);
+		Point3f temp = fOpenedOrigin;
+		fOpenedOrigin = fClosedOrigin;
+		fClosedOrigin = temp;
+		setPortals(true);
 		}
 		
+	fDoorStateInitial = STATE_DOOR_CLOSED;
 	if (fDoorState != STATE_DOOR_SPAWNTRIGGER)
 		fDoorState = fDoorStateInitial;
 			

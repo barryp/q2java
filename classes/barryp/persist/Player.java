@@ -69,7 +69,7 @@ public static void connect(NativeEntity ent, boolean loadgame) throws GameExcept
 		ent.setReference(p);
 
 		// hook our weapon back up
-		p.fWeapon.activate();
+		p.getCurrentWeapon().activate();
 
 		// sign up to receive server frame notices at the beginning and end of server frames
 		Game.addFrameListener(p, Game.FRAME_BEGINNING + Game.FRAME_END, 0, 0);		

@@ -323,6 +323,11 @@ public static GenericSpawnpoint getSpawnpointRandom()
 	
 	// find the two deathmatch spawnpoints that are closest to any players
 	Vector list = Game.getLevelRegistryList(baseq2.spawn.info_player_deathmatch.REGISTRY_KEY);
+
+	// if no deathmatch spawnpoint, try single-player ones
+	if (list.size() < 1)
+		list = Game.getLevelRegistryList(baseq2.spawn.info_player_start.REGISTRY_KEY);
+		
 	Enumeration enum = list.elements();
 	while (enum.hasMoreElements())
 		{

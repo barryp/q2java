@@ -80,4 +80,38 @@ public class item_tech3 extends GenericTech
 			}
 		}
 	}
+	/**
+	 * Play noises when the player is firing his weapon, and
+	 * double his firing.
+	 * @param phase int
+	 */
+	public void runFrame(int phase) 
+	{
+		super.runFrame(phase);
+
+		if ((phase == Game.FRAME_BEGINNING) && (fOwner != null))
+		{
+			baseq2.GenericWeapon gw = fOwner.getCurrentWeapon();
+			if ( (!(gw instanceof weapon_grapple)) && fOwner.getCurrentWeapon().isFiring() )
+			{
+				gw.weaponThink();
+				playSound();
+			}
+		}
+	}
+	/**
+	 * Set which player is holding the tech.
+	 * @param p menno.ctf.Player
+	 */
+	public void setOwner(Player p) 
+	{
+		super.setOwner(p);
+
+		// ask to be or not be called back each server frame so we can play noises
+		if (p == null)
+			Game.removeFrameListener(this, Game.FRAME_BEGINNING);
+		else
+			Game.addFrameListener(this, Game.FRAME_BEGINNING, 0, 0);
+		
+	}
 }

@@ -1,0 +1,209 @@
+CHANGES from v0.6.6 to v0.6.6
+
+---------------------------------------------------------------------------
+This file will just list changes in the core packages 
+(q2java, q2jgame, baseq2, menno.ctf). Add-ons will have to list their own changes.
+---------------------------------------------------------------------------
+
+DLL CHANGES ===============================================================
+
+    (No changes)
+    
+JAVA CHANGES ==============================================================
+
+javax.vecmath.*
+
+    Changed: Kenji Hiranabe updated his implementation of this package, his
+             current version is: 1.1-1.7  None of the changes really 
+             affect Q2Java though.
+                 
+q2java.Angle3f
+
+    Added:   set(Point3f, Point3f) and set(Vector3f), to cause an existing
+             Angle3f to change its values.
+             
+q2java.gui.AnimatedCrosshair
+    
+    New class that implements a weapon crosshair that flashes to get attention
+    
+q2java.gui.BarGraph
+
+    New class that implements a small bargraph on the HUD
+    
+q2java.gui.DirectionIndicator
+
+    New class that implements a little widget that points roughly in
+    a given direction.
+    
+q2java.gui.DirectionTracker
+
+    New class that will automatically track a target NativeEntity and update 
+    a DirectionIndicator to point towards the specified target.
+    
+q2java.gui.FloatIndicator
+
+    New class that is a superclass for AnimatedCrosshair, BarGraph, 
+    and Direction Indicator.
+    
+q2java.gui.GenericMenu
+
+    Reworked version of Menno's CTF GenericMenu, not tied to any particular
+    mod.
+    
+q2java.gui.RangeTracker
+
+    New class that will automatically track a target NativeEntity and update 
+    a BarGraph to indicate the distance to the target.
+    
+q2java.gui.SmartCrosshair
+
+    New class that will automatically watch for a NativeEntity and update 
+    flash an AnimatedCrosshair when the target is in front of the owner.
+    
+q2java.gui.Tracker
+
+    New class that is a superclass for DirectionTracker, RangeTracker,
+    and SmartCrosshair.
+    
+menno.ctf.CTFMenu
+
+    Changed: Reworked to use the new q2java.gui.GenericMenu as its
+             superclass.
+             
+menno.ctf.GameModule
+
+    Changed: Reworked to not be a descendant of baseq2.GameModule, so
+             it now implements the LevelListener interface itself.
+             
+    Added:   levelEntitiesSpawned() handles spawning the powerup
+             techs, instead of the worldspawn() class.
+             
+menno.ctf.GenericFlag
+
+    Changed: Reworked to be a subclass of baseq2.GenericItem, so that
+             it can make use of GenericItem's picking up and dropping
+             methods.  This simplified the class quite a bit.
+             
+menno.ctf.GenericMenu
+
+    Removed - formed the basis for the new q2java.gui.GenericMenu  
+    
+menno.ctf.GenericTech
+
+    Changed: Altered slightly so that it will work even if not 
+             in deathmatch mode.     
+             
+menno.ctf.Player
+
+    Changed: Reworked to support GenericFlags that are now subclasses
+             of GenericItem, simplifying several methods
+             
+             Behavior of 3 of the tech powerups (Autodoc, Power Amplifier,
+             Time Accelerator) was removed from the Player class and 
+             placed directly in the tech classes.  This allowed
+             beginServerFrame() to be removed.  For those 3 techs, all 
+             the Player class worries about is picking them up and dropping
+             them.  How they actually function is their problem. 
+             
+             cmd_inven() and cmd_invuse() altered to work with the altered
+             Menu classes.
+             
+             damage() altered to allow rocket-jumping       
+             
+             getFragBonus() renamed and reworked as registerKill(), overriding
+             the new baseq2.Player.registerKill() method to change the 
+             way scores are calculated to the way CTF needs it. 
+             
+             spawn() simplified now that there is a separate method for 
+             choosing spawnpoints.  This also fixes the problem with CTF 
+             players spawning and facing in strange directions - since 
+             the baseq2.Player class handles facing directions properly.
+             
+    Added:   getSpawnpoint() overrides the new baseq2.Player.getSpawnpoint()
+             so that CTF players pick team spawnpoints instead of 
+             deathmatch spawnpoints.
+             
+             
+menno.ctf.flag_team*
+
+    Changed: reworked to fit in with the GenericItem class
+    
+menno.ctf.item_tech2
+
+    Changed: Implements the behaviors of the Power Amplifier
+    
+menno.ctf.item_tech3
+
+    Changed: Implements the behaviors of the Time Accelerator                     
+    
+menno.ctf.item_tech4
+
+    Changed: Implements the behaviors of the AutoDoc
+
+menno.ctf.spawn.worldspawn
+
+    Removed - was used to spawn tech powerups, but that's now handled by
+    the CTF GameModule.             
+                 
+baseq2.BfgBlast
+baseq2.BlasterBolt
+baseq2.GenericGrenade
+baseq2.Rocket
+
+    Changed: fix for problem with firing into nearby players or walls       
+             
+baseq2.Door
+
+    Changed: In deathmatch, doors open twice as fast - like the C game.                          
+    
+baseq2.GameObject
+
+    Added: registerKill() method called to let an object know it killed
+           a player.  The Player class overrides this to update scores,
+           and other mods like CTF can override it too, if they
+           want to score games differently.
+
+baseq2.GenericItem
+
+    Changed: runFrame() checks which phase is being passed as a parameter
+             before doing anything.   
+             
+baseq2.MiscUtil
+
+    Changed: getSpawnpointRandom() will use single-player spawnpoints
+             if no DM spawnpoints are available.     
+             
+baseq2.Player
+
+    Added:   broadcastObituary() - code split off from die() so that it
+             can easily be overriden by mods that want to handle
+             obituaries differently       
+             
+             getCurrentWeapon() - for getting a reference to the weapon
+             the player is currently using.
+             
+             getSpawnpoint() - code split off from spawn() for choosing a 
+             spawnpoint.  Mods like CTF can override this to alter the way 
+             spawnpoints are chosen.
+             
+             registerKill() - code split off from die() to react to someone
+             dying by changing the score.  Other mods can override this to 
+             change the way games are scored.
+             
+    Changed: damage() causes explosive effects to occur when rockets and
+             grenades hit players - fixing minor cosmetic bug.
+             
+             die() now calls broadcastObituary() to announce a players death
+             instead of handling it itself, and registerKill() to update
+             scores rather than keeping score itself.
+             
+             spawn() now calls getSpawnpoint() to choose where the player
+             will appear. 
+             
+baseq2.spawn.func_door
+baseq2.spawn.func_door_rotating
+
+    Changed: handles doors with the DOOR_START_OPEN spawnflag differently,
+             to fix the bug with the walkway not extending in q2dm5    
+                    
+----------- End of List -------------------------------------------------------             

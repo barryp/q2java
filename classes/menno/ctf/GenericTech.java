@@ -38,14 +38,6 @@ public abstract class GenericTech extends baseq2.GenericItem
 	{
 		super( null );
 
-		// Don't spawn tech if not in deathmatch
-		// This causes nullpointer-exceptions, cause deathmatch-spawnpoints,
-		// which are needed by techs, are not spawned.
-		if ( !GameModule.gIsDeathmatch )
-		{
-			throw new InhibitedException( "Techs not spawned in non-deathmatch." );
-		}
-
 		// cause a timeout to be triggered right away so the tech
 		// gets to reposition itself.
 		setDropTimeout(0);
@@ -67,20 +59,20 @@ public abstract class GenericTech extends baseq2.GenericItem
 		// fling it with a random speed 300..800
 		drop(point, ang, (Game.randomFloat() * 500) + 300, GenericTech.CTF_TECH_TIMEOUT);
 	}
-/**
- * Set which player is holding the tech.
- * @param p menno.ctf.Player
- */
-public void setOwner(Player p) 
+	/**
+	 * Set which player is holding the tech.
+	 * @param p menno.ctf.Player
+	 */
+	public void setOwner(Player p) 
 	{
-	fOwner = p;
+		fOwner = p;
 	}
-/**
- * Setup this item's NativeEntity.
- */
-public void setupEntity() 
+	/**
+	 * Setup this item's NativeEntity.
+	 */
+	public void setupEntity() 
 	{
-	super.setupEntity();
-	fEntity.setEffects(NativeEntity.EF_ROTATE); // all techs rotate
+		super.setupEntity();
+		fEntity.setEffects(NativeEntity.EF_ROTATE); // all techs rotate
 	}
 }

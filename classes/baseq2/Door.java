@@ -64,6 +64,9 @@ public Door(String[] spawnArgs) throws GameException
 		fEntity.setModel(s);
 
 	fSpeed = getSpawnArg("speed", 100.0F);
+	if (GameModule.gIsDeathmatch)
+		fSpeed *= 2;
+	
 	fAccel = getSpawnArg("accel", fSpeed);
 	fDecel = getSpawnArg("decel", fSpeed);	
 	fWait = getSpawnArg("wait", 3.0F);	

@@ -45,18 +45,19 @@ public func_door_rotating(java.lang.String[] spawnArgs) throws q2java.GameExcept
 		
 	fOpenedAngle.scale(fMoveDistance);
 
-	if ((fSpawnFlags & DOOR_START_OPEN) != 0)
+	if ((fSpawnFlags & DOOR_START_OPEN) == 0)
+		setPortals(false);
+	else
 		{
-		fDoorStateInitial = STATE_DOOR_OPENED;
 		fEntity.setAngles(fOpenedAngle);
+		Angle3f temp = fOpenedAngle;
+		fOpenedAngle = fClosedAngle;
+		fClosedAngle = temp;
+		
 		setPortals(true);
 		}
-	else		
-		{
-		fDoorStateInitial = STATE_DOOR_CLOSED;
-		setPortals(false);
-		}
 		
+	fDoorStateInitial = STATE_DOOR_CLOSED;		
 	if (fDoorState != STATE_DOOR_SPAWNTRIGGER)
 		fDoorState = fDoorStateInitial;
 				

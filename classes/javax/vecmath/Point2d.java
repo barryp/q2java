@@ -16,7 +16,7 @@ import java.io.Serializable;
 /**
   * A 2 element point that is represented by double precision
   * doubleing point x,y coordinates.
-  * @version specification 1.1, implementation $Revision: 1.2 $, $Date: 1998/10/14 00:49:10 $
+  * @version specification 1.1, implementation $Revision: 1.3 $, $Date: 1998/10/16 00:10:11 $
   * @author Kenji hiranabe
   */
 public class Point2d extends Tuple2d implements Serializable {
@@ -35,9 +35,12 @@ public class Point2d extends Tuple2d implements Serializable {
 	}
 /*
  * $Log: Point2d.java,v $
-# Revision 1.2  1998/10/14  00:49:10  hiranabe
-# API1.1 Beta02
-#
+ * Revision 1.3  1998/10/16  00:10:11  hiranabe
+ * distanceSquared bug(thanks > nhv@laserplot.com)
+ *
+ * Revision 1.2  1998/10/14  00:49:10  hiranabe
+ * API1.1 Beta02
+ *
 # Revision 1.1  1998/07/27  04:28:13  hiranabe
 # API1.1Alpha01 ->API1.1Alpha03
 #
@@ -109,7 +112,7 @@ public class Point2d extends Tuple2d implements Serializable {
 	  */
 	public final double distanceSquared(Point2d p1) {
 	double dx = x - p1.x;
-	double dy = x - p1.y;
+	double dy = y - p1.y;
 	return dx*dx + dy*dy;
 	}
 }

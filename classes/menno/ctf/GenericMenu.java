@@ -1,13 +1,15 @@
-package menno.ctf;
+package q2java.gui;
 
-/*
+/**
+ * Base class for game menus.
+ *
+ * Somewhat more like a java.awt.List than an AWT menu.
+ *
+ * @author Menno van Gangelen &lt;menno@element.nl&gt;
+ */
+
+/* 
 ======================================================================================
-==                                 Q2JAVA CTF                                       ==
-==                                                                                  ==
-==                   Author: Menno van Gangelen <menno@element.nl>                  ==
-==                                                                                  ==
-==            Based on q2java by: Barry Pederson <bpederson@geocities.com>          ==
-==                                                                                  ==
 == All sources are free for non-commercial use, as long as the licence agreement of ==
 == ID software's quake2 is not violated and the names of the authors of q2java and  ==
 == q2java-ctf are included.                                                         ==
@@ -18,15 +20,10 @@ package menno.ctf;
 import java.util.*;
 import java.awt.Rectangle;
 import q2java.*;
-import q2jgame.*;
-import javax.vecmath.*;
-
-
 
 public class GenericMenu
 {
-	protected Player      fOwner;
-	protected GenericMenu fLastMenu;
+	protected NativeEntity      fOwner;
 
 	protected String[]    fHeader;
 	protected String[]    fFooter;
@@ -39,10 +36,9 @@ public class GenericMenu
 	protected int         fPercAbove;
 	protected int         fPercBeneath;
 
-	public GenericMenu( Player owner, GenericMenu lastMenu )
+	public GenericMenu( NativeEntity owner )
 	{
 		fOwner       = owner;
-		fLastMenu    = lastMenu;
 
 		fHeader     = new String[0];
 		fFooter     = new String[0];
@@ -54,35 +50,82 @@ public class GenericMenu
 	{
 		fMenuItems.addElement( s );
 	}
+	/**
+	 * Remove the menu from the player's screen
+	 */
 	public void close()
 	{
 		// close the menu;
-		fOwner.cmd_inven( null );
+		fOwner.setPlayerStat(NativeEntity.STAT_LAYOUTS, (short)0);
 	}
-	private String createBotsel( int linelength )
+	private char[] createBotsel( int linelength )
 	{
-		String s = "\u0018";
+		char[] result = new char[linelength+2];
+		
+		result[0] = '\u0018';
+		for (int i = 1; i <= linelength; i++)
+			result[i] = '\u0019';
+		result[linelength+1] = '\u001A';
 
-		for ( int i=0; i<linelength; i++ )
-			s += "\u0019";
-
-		return s + "\u001A";
+		return result;
 	}
-	private String createTopsel( int linelength )
+	private char[] createTopsel( int linelength )
 	{
-		String s = "\u0012";
+		char[] result = new char[linelength+2];
+		
+		result[0] = '\u0012';
+		for (int i = 1; i <= linelength; i++)
+			result[i] = '\u0013';
+		result[linelength+1] = '\u0014';
 
-		for ( int i=0; i<linelength; i++ )
-			s += "\u0013";
-
-		return s + "\u0014";
+		return result;
 	}
 	/**
-	* Sets the fVerticalShift needed to shift the area up or down
-	* to make the selected item visable.
-	* It also sets the percentages which are NOT visible above
-	* and beneath the visible area.
-	**/
+	 * Actually show the menu on the player's screen.
+	 *
+	 * @param prefixString info to be prepended to beginning of layout string sent to client.  May be null or empty.
+	 * @param screen a java.awt.rectangle that describes the area the menu should take up.
+	 */
+	protected void displayMenu( String prefixString, Rectangle screen )
+	{
+		StringBuffer sb = new StringBuffer();
+		int         x, y;
+		Enumeration enum;
+
+		if (prefixString != null)
+			sb.append(prefixString);
+
+		// show the header and substract its area from the screen
+		sb.append(getHeader( screen ));
+
+		// show the footer and substract its area from the screen
+		sb.append(getFooter( screen ));
+
+		// OK, we now have the free area rect into the screen
+		// we can paint the selector and the items into the area		
+		sb.append(getMenu( screen ));
+
+		// make sure the layout string isn't too long
+		if ( sb.length() > 1023 )
+		{
+			System.out.println( "size too big: " + sb.length() );
+			sb.setLength(1023); // truncate the StringBuffer
+		}	
+
+		// send the menu to the client
+		Engine.writeByte( Engine.SVC_LAYOUT );
+		Engine.writeString( sb.toString() );
+		Engine.unicast( fOwner, true );
+
+		// display it
+		fOwner.setPlayerStat(NativeEntity.STAT_LAYOUTS, (short)1);				
+	}
+	/**
+	 * Sets the fVerticalShift needed to shift the area up or down
+ 	 * to make the selected item visable.
+	 * It also sets the percentages which are NOT visible above
+	 * and beneath the visible area.
+	 **/
 	private void ensureSelectedVisable( Rectangle area )
 	{
 		int         y = area.y + fVerticalShift;
@@ -125,44 +168,67 @@ public class GenericMenu
 		//System.out.println( "this: " + area     );
 		//System.out.println( "above: " + fPercAbove + " beneath: " + fPercBeneath );
 	}
+	/**
+	 * Get the menu's footer.
+	 *
+	 * @return The footer formatted as a Q2 client layout string.
+	 */
 	private String getFooter( Rectangle area )
 	{
-		String s    = "", line;
+		StringBuffer sb = new StringBuffer();
 		int    x;
 		int    y    = area.y + area.height;
 		int    xmid = area.x + ( area.width/2 );
 
 		for ( int i=fFooter.length-1; i>=0; i-- )
 		{
-			line = fFooter[i];
+			String line = fFooter[i];
 			y   -= 8;
 			x    = xmid - ( 4*line.length() );
-			s   += " xv " + x + " yv " + y + " string \"" + line +"\"";
+			sb.append(" xv ");
+			sb.append( x );
+			sb.append(" yv ");
+			sb.append( y );
+			sb.append(" string \"");
+			sb.append( line );
+			sb.append('\"');
 		}
 
 		// substract the header-area
 		area.height = y - area.y;
-		return s;
+		return sb.toString();
 	}
+	/**
+	 * Get the menu's header.
+	 *
+	 * @return The header formatted as a Q2 client layout string.
+	 */
 	private String getHeader( Rectangle area )
 	{
-		String s    = "", line;
+		StringBuffer sb = new StringBuffer();
+		
 		int    x;
 		int    y    = area.y;
 		int    xmid = area.x + ( area.width/2 );
 
 		for ( int i=0; i<fHeader.length; i++ )
 		{
-			line = fHeader[i];
+			String line = fHeader[i];
 			x    = xmid - ( 4*line.length() );
-			s   += " xv " + x + " yv " + y + " string \"" + line +"\"";
+			sb.append(" xv ");
+			sb.append( x );
+			sb.append(" yv ");
+			sb.append( y );
+			sb.append(" string \"");
+			sb.append(line);
+			sb.append('\"');
 			y   += 8;
 		}
 
 		// substract the header-area
 		area.height -= (y-area.y);
 		area.y       = y;
-		return s;
+		return sb.toString();
 	}
 	/**
 	* Paints the menu into the area
@@ -189,7 +255,7 @@ public class GenericMenu
 	protected String getMenuItems( Rectangle area )
 	{
 		// paint the items into the area	
-		String      s = "", line;
+		StringBuffer sb = new StringBuffer();
 		int         x = area.x;
 		int         y;
 		int         numlines;
@@ -206,7 +272,7 @@ public class GenericMenu
 
 			// if the item is selected, paint the selector
 			if ( lines == fMenuItems.elementAt(fSelectedItem) )
-				s += getSelector( lines, x, y );
+				sb.append(getSelector( lines, x, y ));
 
 			for ( int i=0; i<lines.length; i++, y+=8 )
 			{
@@ -216,15 +282,21 @@ public class GenericMenu
 				if ( (y+12) > (area.y+area.height) )
 					break;
 
-				line = lines[i];
+				String line = lines[i];
 				if ( line.length() > fMaxLineLength )
 					line = line.substring( 0, fMaxLineLength );
-				s   += " xv " + (x+4) + " yv " + (y+4) + " string2 \"" + line +"\"";
+				sb.append(" xv ");
+				sb.append(x+4);
+				sb.append(" yv ");
+				sb.append(y+4);
+				sb.append(" string2 \"");
+				sb.append(line);
+				sb.append('\"');
 			}
 			y += 4;
 		}
 
-		return s;
+		return sb.toString();
 	}
 	protected String getScrollbar( Rectangle area )
 	{
@@ -269,40 +341,82 @@ public class GenericMenu
 
 		return s;
 	}
+	/**
+	 * Get the index of the currently selected menu item.
+	 */
+	public int getSelectedIndex()
+	{
+		return fSelectedItem;
+	}
+	/**
+	 * Get the currently selected item in the menu.
+	 * @return java.lang.String[]
+	 */
+	public String[] getSelectedItem() 
+	{
+		return (String[]) fMenuItems.elementAt(fSelectedItem);
+	}
 	private String getSelector( String[] lines, int x, int y )
 	{
-		String s = "";
+		StringBuffer sb = new StringBuffer();
 
-		String topsel   = createTopsel( fMaxLineLength );
-		String botsel   = createBotsel( fMaxLineLength );
-		String leftsel  = "\u0015";
-		String rightsel = "\u0017";
+		char[] topsel   = createTopsel( fMaxLineLength );
+		char[] botsel   = createBotsel( fMaxLineLength );
+		char leftsel  = '\u0015';
+		char rightsel = '\u0017';
 		
-		s += " xv " + x + " yv " + y + " string \"" + topsel + "\"";	// top
+		// top
+		sb.append(" xv ");
+		sb.append( x );
+		sb.append(" yv ");
+		sb.append( y );
+		sb.append(" string \"");
+		sb.append( topsel );
+		sb.append('\"');	
+		
 		y += 8;
 
 		for ( int i=1; i<lines.length; i++ )
-			s += " yv " + (y+8*(i-1)) + " string \"" + leftsel + "\"";	// leftsel
-
-		if (lines.length > 1)
-			s += " xv " + (x + 8*(fMaxLineLength+1));
-
-		for ( int i=1; i<lines.length; i++ )
-			s += " yv " + (y+8*(i-1)) + " string \"" + rightsel + "\"";	// rightsel
+		{
+			// leftsel
+			sb.append(" yv ");
+			sb.append( y+8*(i-1) );
+			sb.append(" string \"");
+			sb.append( leftsel );
+			sb.append('\"');
+		}
 
 		if (lines.length > 1)
 		{
-			s += " xv " + x;
+			sb.append(" xv ");
+			sb.append(x + 8*(fMaxLineLength+1));
+		}
+
+		for ( int i=1; i<lines.length; i++ )
+		{
+			// rightsel
+			sb.append(" yv ");
+			sb.append(y+8*(i-1));
+			sb.append(" string \"");
+			sb.append( rightsel );
+			sb.append('\"');
+		}
+
+		if (lines.length > 1)
+		{
+			sb.append(" xv ");
+			sb.append( x );
 			y += 8*(lines.length-1);
 		}
 
-		s += " yv " + y + " string \"" + botsel + "\"";	// bottom
+		// bottom
+		sb.append(" yv ");
+		sb.append( y );
+		sb.append(" string \"");
+		sb.append( botsel );
+		sb.append('\"');	
 
-		return s;
-	}
-	public void select()
-	{
-		fOwner.fEntity.cprint( Engine.PRINT_HIGH, "selected: " + (String)fMenuItems.elementAt(fSelectedItem) + "\n" );
+		return sb.toString();
 	}
 	public void selectNextItem()
 	{
@@ -322,37 +436,12 @@ public class GenericMenu
 	{
 		fHeader = s;
 	}
+	/**
+	 * Show the menu on the player's screen, using default settings.
+	 *
+	 */
 	public void show()
 	{
-		show( "", new Rectangle(0, 0, 320, 240) );
-	}
-	protected void show( String preString, Rectangle screen )
-	{
-		String      s, line;
-		int         x, y;
-		Enumeration enum;
-
-		s = preString;
-
-		// show the header and substract its area from the screen
-		s += getHeader( screen );
-
-		// show the footer and substract its area from the screen
-		s += getFooter( screen );
-
-		// OK, we now have the free area rect into the screen
-		// we can paint the selector and the items into the area
-		
-		s += getMenu( screen );
-		if ( s.length() > 1023 )
-		{
-			System.out.println( "size too big: " + s.length() );
-			s = s.substring( 0, 1023 );
-		}	
-
-		// send the menu to the client
-		Engine.writeByte( Engine.SVC_LAYOUT );
-		Engine.writeString( s );
-		Engine.unicast( fOwner.fEntity, true );
+		displayMenu( "", new Rectangle(0, 0, 320, 240) );
 	}
 }

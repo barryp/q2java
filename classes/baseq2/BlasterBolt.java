@@ -36,7 +36,10 @@ public BlasterBolt(GameObject owner, Point3f start, Vector3f dir, int damage, in
 	fEntity.setEffects(effect);
 	fEntity.setModelIndex(Engine.getModelIndex("models/objects/laser/tris.md2"));
 	fEntity.setSound(Engine.getSoundIndex("misc/lasfly.wav"));
+
 	fOwner = owner;
+	fEntity.setOwner(owner.fEntity); // required for initial trace to work properly
+
 	fExpires = (float)Game.getGameTime() + 2; // go away after 2 seconds
 	fDamage = damage;
 	fObitKey = obitKey;
@@ -48,7 +51,7 @@ public BlasterBolt(GameObject owner, Point3f start, Vector3f dir, int damage, in
 	if (tr.fFraction < 1.0)
 		{
 		// ran into something immediately
-		start.scaleAdd(-10, dir, start);
+		start.scaleAdd(-10F/speed, dir, start);
 		fEntity.setOrigin(start);
 		hit(tr);
 		return;

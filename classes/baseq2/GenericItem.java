@@ -294,6 +294,10 @@ public boolean isTouchable(Player p)
  */
 public void runFrame(int phase) 
 	{
+	// only deal with middle-phase calls.
+	if (phase != Game.FRAME_MIDDLE)
+		return;
+		
 	TraceResults tr;
 	
 	switch (fItemState)

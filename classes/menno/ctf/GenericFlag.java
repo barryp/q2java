@@ -22,7 +22,7 @@ import q2jgame.*;
 import javax.vecmath.*;
 
 
-public abstract class GenericFlag extends baseq2.GameObject implements FrameListener, baseq2.GameTarget
+public abstract class GenericFlag extends baseq2.GenericItem implements baseq2.GameTarget
 {
 	public static final int CTF_FLAG_STATE_STANDING = 0;
 	public static final int CTF_FLAG_STATE_DROPPED  = 1;
@@ -41,31 +41,31 @@ public abstract class GenericFlag extends baseq2.GameObject implements FrameList
 	protected int     fState;
 	protected float   fReturnTime;
 	protected float   fDroppedTime;
-	protected Point3f fBaseOrigin;			// the origin when spawned...
-	protected int     fModelIndex;
-	protected int     fIconIndex;
-	protected int     fEffects;
-	protected String  fName;           // name of flag, for debugging messages
-	protected Integer fFlagIndex;      // 1 for Red Flag, 2 for Blue flag, used in localized messages
-	protected String  fSmallIconName;
-	protected Team    fTeam;
-
+	protected Point3f fBaseOrigin;	// the origin when spawned...
+	protected Integer fFlagIndex; // index of this flag, 1=Red 2=Blue        
 	private   boolean fIconFlash;
+	private   int     fIconIndex;
 	
 	static final float STOP_EPSILON = 0.1f;
 
-	protected GenericFlag( String[] spawnArgs ) throws GameException
+	protected GenericFlag( String[] spawnArgs, int flagIndex ) throws GameException
 	{
 		super( spawnArgs );
 
-		setGenericFields();
-		setFields();
+		// pretend it's a dropped item
+		fIsDropped = true;
+		
+		// these static indices should actually be udated at the beginning of each level.
+		fCaptureSoundIndex = Engine.getSoundIndex( "ctf/flagcap.wav" );
+		fReturnSoundIndex  = Engine.getSoundIndex( "ctf/flagret.wav" );
+		fIconIndex = Engine.getImageIndex(getIconName());
+		fFlagIndex = new Integer(flagIndex);
 				
 		fIconFlash  = true;
-		fTeam.setFlag( this );
+		getTeam().setFlag( this ); // link the team and flag
 
-		fEntity.setModelIndex( fModelIndex );
-		fEntity.setEffects( fEffects );
+		fEntity.setModelIndex( Engine.getModelIndex(getModelName()) );
+		fEntity.setEffects( getFlagEffects() );
 		fEntity.setMins( -15, -15, -15);
 		fEntity.setMaxs(  15,  15,  15);
 
@@ -77,7 +77,7 @@ public abstract class GenericFlag extends baseq2.GameObject implements FrameList
 		TraceResults tr = Engine.trace( fEntity.getOrigin(), fEntity.getMins(), fEntity.getMaxs(), dest, fEntity, Engine.MASK_SOLID );
 		if ( tr.fStartSolid )
 		{
-			Engine.dprint( fName + " startsolid at " + fEntity.getOrigin() + "\n" );
+			Engine.dprint( getItemName() + " startsolid at " + fEntity.getOrigin() + "\n" );
 			dispose();
 			return;
 		}
@@ -87,113 +87,28 @@ public abstract class GenericFlag extends baseq2.GameObject implements FrameList
 
 		reset();
 	}
-	// Maybe we should make a generic class "BouncingObject" or "TossingObject"
-	int clipVelocity (Vector3f normal, float overbounce)
+	public void drop(Player dropper)
 	{
-		float	 backoff;
-		int		 i, blocked;
-		Vector3f v;
-		
-		blocked = 0;
-		if (normal.z > 0)
-			blocked |= 1;		// floor
-		if (normal.z == 0)
-			blocked |= 2;		// step
-		
-		v       = fEntity.getVelocity();
-		backoff = v.dot(normal) * overbounce;
-
-		v.x -= normal.x * backoff;
-		v.y -= normal.y * backoff;
-		v.z -= normal.z * backoff;
-
-		if (v.x > -STOP_EPSILON && v.x < STOP_EPSILON)
-			v.x = 0;
-		if (v.y > -STOP_EPSILON && v.y < STOP_EPSILON)
-			v.y = 0;
-		if (v.z > -STOP_EPSILON && v.z < STOP_EPSILON)
-			v.z = 0;
-
-		fEntity.setVelocity(v);
-
-		return blocked;
-	}
-	public void drop()
-	{
-
+		super.drop(dropper, CTF_FLAG_AUTO_RETURN_TIME);
 		fState = CTF_FLAG_STATE_DROPPED;
-
-		// Make sure we won't be touched by our tosser
-		Angle3f  angle     = fCarrier.fEntity.getAngles();
-		Vector3f forward   = new Vector3f();
-		Vector3f right     = new Vector3f();
-		Vector3f offset    = new Vector3f( 40, 0, 0 );
-		angle.getVectors( forward, right, null );
-		Point3f      point = fCarrier.projectSource( offset, forward, right );
-		TraceResults tr    = Engine.trace( fCarrier.fEntity.getOrigin(), fEntity.getMins(), fEntity.getMaxs(), point, fCarrier.fEntity, Engine.CONTENTS_SOLID );
-		fEntity.setOrigin( tr.fEndPos );
-
-		// hack the velocity to make it bounce away from the tosser
-		forward.x *= 100;
-		forward.y *= 100;
-		forward.z  = 100;
-		fEntity.setVelocity( forward );
-
-		// don't reset the carrier yet, he cannot touch us for two seconds..
-		fDroppedTime = Game.getGameTime();
-		fReturnTime  = fDroppedTime + CTF_FLAG_AUTO_RETURN_TIME;
-
-		fCarrier.fEntity.setEffects( fCarrier.fEntity.getEffects() & ~fEffects );
-		fCarrier.fEntity.setModelIndex3( 0 );
-		fCarrier.fEntity.setPlayerStat( STAT_CTF_FLAG_PIC, (short)0 );
 
 		Object[] args = {fCarrier.getName(), fFlagIndex};
 		Game.localecast("menno.ctf.CTFMessages", "lost_flag", args, Engine.PRINT_HIGH);	
-	
+
+		// forget about who was carrying the flag
+		fCarrier = null;
+		
 		//update all stats (also from spectators) that our flag is dropped
-		int index  = ( fTeam == Team.TEAM1 ? Team.STAT_CTF_TEAM1_PIC         : Team.STAT_CTF_TEAM2_PIC         );
-		int picnum = ( fTeam == Team.TEAM1 ? Engine.getImageIndex("i_ctf1d") : Engine.getImageIndex("i_ctf2d") );
-		Enumeration enum = NativeEntity.enumeratePlayers();
-		while ( enum.hasMoreElements() )
-		{
-			NativeEntity ent = (NativeEntity)enum.nextElement();
-			ent.setPlayerStat( index, (short)picnum );
-		}
-
-		// make the item appear...
-		fEntity.setSolid(NativeEntity.SOLID_TRIGGER);
-		fEntity.setSVFlags(fEntity.getSVFlags() & ~NativeEntity.SVF_NOCLIENT);
-		fEntity.setFrame( 0 );
-		fEntity.linkEntity();
-
-		// ask to be called back every frame
-		Game.addFrameListener(this, 0, 0);
+		updateAllStats(getIconName() + "d");
 	}
-	protected void dropToFloor()
+	/**
+	 * The flag has been dropped, but nobody picked it up.
+	 */
+	protected void dropTimeout() 
 	{
-		applyGravity();
-
-		TraceResults tr = fEntity.traceMove(Engine.MASK_SOLID, 1.0F);
-		
-		if (tr.fFraction == 1)
-			return;		// moved the entire distance without hitting anything
-
-		// what to do when hitting the sky...??
-		if ((tr.fSurfaceName != null) && ((tr.fSurfaceFlags & Engine.SURF_SKY) != 0))
-		{
-			reset();
-			Object[] args = {fFlagIndex};
-			Game.localecast("menno.ctf.CTFMessages", "reset_flag", args, Engine.PRINT_HIGH);				
-			return;
-		}
-		
-		if ( (clipVelocity(tr.fPlaneNormal, 1f) & 1) != 0 )
-		{
-			// laying on the ground...
-			fEntity.setVelocity( new Vector3f(0, 0, 0) );
-			fEntity.linkEntity();
-		}
-		
+		reset();
+		Object[] args = {fFlagIndex};
+		Game.localecast("menno.ctf.CTFMessages", "reset_flag", args, Engine.PRINT_HIGH);	
 	}
 	public Point3f getBaseOrigin()
 	{
@@ -201,18 +116,61 @@ public abstract class GenericFlag extends baseq2.GameObject implements FrameList
 	}
 	public Player getCarrier()
 	{
-		if ( fState == CTF_FLAG_STATE_CARRIED )
-			return fCarrier;
-		else
-			return null;
+		return fCarrier;
 	}
-	public String getSmallIconName()
+	/**
+	 * Get the effects this flag causes on the player.
+	 * @return int
+	 */
+	public abstract int getFlagEffects(); 
+	/**
+	 * Get the name of the sound to play when a flag is picked up.
+	 * @return java.lang.String
+	 */
+	public String getPickupSound() 
 	{
-		return fSmallIconName;
+		return "ctf/flagtk.wav";
 	}
+	/**
+	 * Get the name of this flag's small icon.
+	 * @return java.lang.String
+	 */
+	public abstract String getSmallIconName();
 	public int getState()
 	{
 		return fState;
+	}
+	/**
+	 * Get which team this flag belongs to.
+	 * @return menno.ctf.Team
+	 */
+	public abstract Team getTeam();
+	/**
+	 * Do we want this player touching the flag?.
+	 * @return boolean
+	 * @param p baseq2.Player
+	 */
+	public boolean isTouchable(baseq2.Player bp) 
+	{
+		// make sure player is a CTF player
+		if (!(bp instanceof Player))
+		{
+			bp.fEntity.centerprint(bp.getResourceGroup().getRandomString("menno.ctf.CTFMessages", "not_CTF"));
+			return false;
+		}
+			
+		Player p = (Player)bp;
+
+		// make sure CTF Player has joined a team
+		Team t = p.getTeam();
+		if ( t == null )
+		{
+			p.fEntity.centerprint(p.getResourceGroup().getRandomString("menno.ctf.CTFMessages", "no_team"));
+			return false;
+		}
+		
+		// let superclass have final say
+		return super.isTouchable(bp);
 	}
 	protected void pickupBy( Player p )
 	{
@@ -224,7 +182,7 @@ public abstract class GenericFlag extends baseq2.GameObject implements FrameList
 
 		// set the carrier
 		fCarrier = p;
-		fCarrier.addFlag( this, fIconIndex, fModelIndex, fEffects );
+		fCarrier.addFlag( this );
 
 		Object[] args = {fCarrier.getName(), fFlagIndex};
 		Game.localecast("menno.ctf.CTFMessages", "got_flag", args, Engine.PRINT_HIGH);	
@@ -233,15 +191,27 @@ public abstract class GenericFlag extends baseq2.GameObject implements FrameList
 		Game.addFrameListener( this, 0, 0.8F );
 
 		//update all stats (also from spectators) that our flag is being carried
-		int index  = ( fTeam == Team.TEAM1 ? Team.STAT_CTF_TEAM1_PIC         : Team.STAT_CTF_TEAM2_PIC         );
-		int picnum = ( fTeam == Team.TEAM1 ? Engine.getImageIndex("i_ctf1t") : Engine.getImageIndex("i_ctf2t") );
-		Enumeration enum = NativeEntity.enumeratePlayers();
-		while ( enum.hasMoreElements() )
-		{
-			NativeEntity ent = (NativeEntity)enum.nextElement();
-			ent.setPlayerStat( index, (short)picnum );
-		}
+		updateAllStats(getIconName() + "t");
 	}
+	/**
+	 * Player the flag capture sound.
+	 */
+	public void playCaptureSound() 
+	{
+		fEntity.sound(NativeEntity.CHAN_RELIABLE+NativeEntity.CHAN_NO_PHS_ADD+NativeEntity.CHAN_VOICE, fCaptureSoundIndex, 1, NativeEntity.ATTN_NONE, 0);	
+	}
+	/**
+	 * Player the flag return sound.
+	 */
+	public void playReturnSound() 
+	{
+		fEntity.sound(NativeEntity.CHAN_RELIABLE+NativeEntity.CHAN_NO_PHS_ADD+NativeEntity.CHAN_VOICE, fReturnSoundIndex, 1, NativeEntity.ATTN_NONE, 0);
+	}
+	/**
+	 * Reset the flag to its base position.
+	 * Called by dropTimeout() if the flag sits on the ground
+	 * too long, and touchFinish() if a player returns their flag.
+	 */
 	protected void reset()
 	{
 		fState        = CTF_FLAG_STATE_STANDING;
@@ -254,25 +224,18 @@ public abstract class GenericFlag extends baseq2.GameObject implements FrameList
 		fEntity.linkEntity();
 
 		// and switch them back on...
-		fEntity.setEffects( fEffects );
+		fEntity.setEffects( getFlagEffects() );
 
 		fEntity.setSVFlags(fEntity.getSVFlags() & ~NativeEntity.SVF_NOCLIENT);
 		fEntity.setSolid(NativeEntity.SOLID_TRIGGER);
 		fEntity.setEvent(NativeEntity.EV_ITEM_RESPAWN);
 		fEntity.linkEntity();
 
-		// ask to be called back each server frame
+		// ask to be called back each server frame to animate the wave
 		Game.addFrameListener(this, 0, 0);
 
 		//update all stats (also from spectators) that our flag is at base
-		int index  = ( fTeam == Team.TEAM1 ? Team.STAT_CTF_TEAM1_PIC        : Team.STAT_CTF_TEAM2_PIC        );
-		int picnum = ( fTeam == Team.TEAM1 ? Engine.getImageIndex("i_ctf1") : Engine.getImageIndex("i_ctf2") );
-		Enumeration enum = NativeEntity.enumeratePlayers();
-		while ( enum.hasMoreElements() )
-		{
-			NativeEntity p = (NativeEntity)enum.nextElement();
-			p.setPlayerStat( index, (short)picnum );
-		}
+		updateAllStats(getIconName());
 	}
 	/**
 	 * Animate the banner.
@@ -280,22 +243,7 @@ public abstract class GenericFlag extends baseq2.GameObject implements FrameList
 	 */
 	public void runFrame(int phase) 
 	{
-		if ( fState == CTF_FLAG_STATE_DROPPED )
-		{
-			// auto return the flag
-			if ( Game.getGameTime() > fReturnTime )
-			{
-				reset();
-				Object[] args = {fFlagIndex};
-				Game.localecast("menno.ctf.CTFMessages", "reset_flag", args, Engine.PRINT_HIGH);	
-			}
-			else
-			{
-				// drop to floor
-				dropToFloor();
-			}
-		}
-		else if ( fState == CTF_FLAG_STATE_STANDING )
+		if ( fState == CTF_FLAG_STATE_STANDING )
 		{
 			fCurrentFrame = 173 + (((fCurrentFrame - 173) + 1) % 16);
 			fEntity.setFrame(fCurrentFrame);
@@ -309,100 +257,20 @@ public abstract class GenericFlag extends baseq2.GameObject implements FrameList
 				fCarrier.fEntity.setPlayerStat( STAT_CTF_FLAG_PIC, (short)fIconIndex );
 		}
 		else
-			Engine.debugLog( "GenericFlag.runFrame(): " + fName + " in non-valid state..." );
+			super.runFrame(phase);
 	}
-	protected abstract void setFields();
-	private void setGenericFields()
-	{
-		// these static indices should actually be udated at the beginning of each level.
-		fPickupSoundIndex  = Engine.getSoundIndex( "ctf/flagtk.wav"  );
-		fCaptureSoundIndex = Engine.getSoundIndex( "ctf/flagcap.wav" );
-		fReturnSoundIndex  = Engine.getSoundIndex( "ctf/flagret.wav" );
-
-	}
-	public void touch( baseq2.Player bp )
-	{
-		// make sure player is a CTF player
-		if (!(bp instanceof Player))
+	/**
+	 * update all stats (also from spectators) to show flag status.
+	 */
+	protected void updateAllStats(String iconName) 
+	{		
+		int index  = ( getTeam() == Team.TEAM1 ? Team.STAT_CTF_TEAM1_PIC         : Team.STAT_CTF_TEAM2_PIC         );
+		int picnum = Engine.getImageIndex(iconName);
+		Enumeration enum = NativeEntity.enumeratePlayers();
+		while ( enum.hasMoreElements() )
 		{
-			bp.fEntity.centerprint(bp.getResourceGroup().getRandomString("menno.ctf.CTFMessages", "not_CTF"));
-			return;
-		}
-			
-		Player p = (Player)bp;
-
-		if ( p.getTeam() == null )
-		{
-			p.fEntity.centerprint(p.getResourceGroup().getRandomString("menno.ctf.CTFMessages", "no_team"));
-			return;
-		}
-
-		switch ( fState )
-		{
-		case CTF_FLAG_STATE_DROPPED:	touchDropped( p );
-										break;
-		case CTF_FLAG_STATE_STANDING:	touchStanding( p );
-										break;
-		default:						// Hmm, this state should NOT happen...
-										Engine.debugLog( "GenericFlag.runFrame(): " + fName + " in non-valid state..." );
-		}
-
-	}
-	protected void touchDropped( Player p )
-	{
-		if ( fTeam == p.getTeam() )
-		{
-			// on same team, so return the flag
-			p.setScore( p.getScore() + Player.CTF_RECOVERY_BONUS );
-			reset();
-			Object[] args = {p.getName(), fFlagIndex};
-			Game.localecast("menno.ctf.CTFMessages", "return_flag", args, Engine.PRINT_HIGH);	
-
-			fEntity.sound(NativeEntity.CHAN_RELIABLE+NativeEntity.CHAN_NO_PHS_ADD+NativeEntity.CHAN_VOICE, fReturnSoundIndex, 1, NativeEntity.ATTN_NONE, 0);
-			return;
-		}
-		else
-		{
-			// not on same team
-			if ( fCarrier == p && Game.getGameTime() < (fDroppedTime + 2) )
-			{
-				p.fEntity.centerprint(p.getResourceGroup().getRandomString("menno.ctf.CTFMessages", "no_touch"));
-				return;		// a player cannot touch us within 2 seconds that he dropped us...
-			}
-			else
-				pickupBy( p );
-		}
-	}
-	protected void touchStanding( Player p )
-	{
-		if ( fTeam == p.getTeam() )
-		{
-			GenericFlag otherFlag = (GenericFlag)p.getInventory("flag");
-			if ( otherFlag != null )
-			{
-				// WE HAVE A CAPTURE !!!!!
-				Object[] args = {p.getName(), otherFlag.fFlagIndex};
-				Game.localecast("menno.ctf.CTFMessages", "capture_flag", args, Engine.PRINT_HIGH);	
-
-				fEntity.sound(NativeEntity.CHAN_RELIABLE+NativeEntity.CHAN_NO_PHS_ADD+NativeEntity.CHAN_VOICE, fCaptureSoundIndex, 1, NativeEntity.ATTN_NONE, 0);
-
-
-				// reset the other flag...
-				otherFlag.reset();
-				p.fEntity.setEffects( p.fEntity.getEffects() & ~otherFlag.fEffects );
-				p.fEntity.setModelIndex3( 0 );
-				p.fEntity.setPlayerStat( STAT_CTF_FLAG_PIC, (short)0 );
-				p.removeInventory( "flag" );
-
-				// Add the bonuses...
-				fTeam.addCapture( p );
-			}
-		}
-		else
-		{
-			// player is from enemy team, so pick it up			
-			fEntity.sound(NativeEntity.CHAN_ITEM, fPickupSoundIndex, 1, NativeEntity.ATTN_NONE, 0);
-			pickupBy( p );
-		}
+			NativeEntity ent = (NativeEntity)enum.nextElement();
+			ent.setPlayerStat( index, (short)picnum );
+		}	
 	}
 }

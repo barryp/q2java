@@ -61,11 +61,30 @@ public class item_tech4 extends GenericTech
 	{
 		return "models/ctf/regeneration/tris.md2";	
 	}
-	public void heal()
+	/**
+	* This method plays a sound on the owner
+	**/
+	public void playSound()
 	{
-		if ( fOwner == null )
-			System.err.println( "AutoDoc: heal() called without owner" );
-		else
+		float volume = 1f;
+		//if (self->owner->client->silencer_shots)
+		//	volume = 0.2;
+
+		if ( fNextSoundTime < Game.getGameTime() )
+		{
+			fNextSoundTime = Game.getGameTime() + 1;
+			fOwner.fEntity.sound( NativeEntity.CHAN_VOICE, Engine.getSoundIndex("ctf/tech4.wav"), volume, NativeEntity.ATTN_NORM, 0);
+		}
+	}
+	/**
+	 * Heal the player that's holding this tech.
+	 * @param phase int
+	 */
+	public void runFrame(int phase) 
+	{
+		super.runFrame(phase);
+
+		if ((phase == Game.FRAME_BEGINNING) && (fOwner != null))
 		{
 			if ( fNextHealTime < Game.getGameTime() )
 			{
@@ -94,18 +113,17 @@ public class item_tech4 extends GenericTech
 		}
 	}
 	/**
-	* This method plays a sound on the owner
-	**/
-	public void playSound()
+	 * Set which player is holding the tech.
+	 * @param p menno.ctf.Player
+	 */
+	public void setOwner(Player p) 
 	{
-		float volume = 1f;
-		//if (self->owner->client->silencer_shots)
-		//	volume = 0.2;
+		super.setOwner(p);
 
-		if ( fNextSoundTime < Game.getGameTime() )
-		{
-			fNextSoundTime = Game.getGameTime() + 1;
-			fOwner.fEntity.sound( NativeEntity.CHAN_VOICE, Engine.getSoundIndex("ctf/tech4.wav"), volume, NativeEntity.ATTN_NORM, 0);
-		}
+		// ask to be or not be called back each server frame so we can heal the player
+		if (p == null)
+			Game.removeFrameListener(this, Game.FRAME_BEGINNING);
+		else
+			Game.addFrameListener(this, Game.FRAME_BEGINNING, 0, 0);
 	}
 }

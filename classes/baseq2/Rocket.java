@@ -15,7 +15,6 @@ public class Rocket extends GameObject implements FrameListener
 	protected int fRadiusDamage;
 	protected float fDamageRadius;
 	protected GameObject fOwner;
-	protected int fMask;
 	
 /**
  * BlasterBolt constructor comment.
@@ -36,11 +35,11 @@ public Rocket(GameObject owner, Point3f start, Vector3f dir, int damage, int spe
 	fEntity.setModelIndex(Engine.getModelIndex("models/objects/rocket/tris.md2"));
 	fEntity.setSound(Engine.getSoundIndex("weapons/rockfly.wav"));
 	fOwner = owner;
+	fEntity.setOwner(owner.fEntity);
 	fExpires = (float)Game.getGameTime() + (8000 / speed); // go away after a while
 	fDamage = damage;
 	fRadiusDamage = radiusDamage;
 	fDamageRadius = damageRadius;
-	fMask = Engine.MASK_SOLID;  // start off with MASK_SOLID, will switch to MASK_SHOT next frame.
 	fEntity.linkEntity();
 
 	// register to be called every server frame
@@ -66,8 +65,7 @@ public void runFrame(int phase)
 		return;
 		}
 
-	TraceResults tr = fEntity.traceMove(fMask, 1.0F); // was MASK_SOLID
-	fMask = Engine.MASK_SHOT;	
+	TraceResults tr = fEntity.traceMove(Engine.MASK_SHOT, 1.0F); 
 
 	if (tr.fFraction == 1)
 		return;		// moved the entire distance
@@ -98,4 +96,4 @@ public void runFrame(int phase)
 	
 	dispose();
 	}
-}	
+}

@@ -594,7 +594,7 @@ protected boolean addWeapon(String weaponClassSuffix, boolean allowSwitch)
 		}		
 	}
 /**
- * This method was created by a SmartGuide.
+ * Handle the beginning of a server frame.
  */
 protected void beginServerFrame()
 	{
@@ -619,13 +619,34 @@ protected void beginServerFrame()
 	fLatchedButtons = 0;		
 	}
 /**
+ * Announce this player's death to the world.
+ * @param attacker baseq2.GameObject the responsible party
+ */
+public void broadcastObituary(GameObject attacker, String obitKey) 
+	{
+	Object[] args = {getName(), new Integer(isFemale() ? 1 : 0), (attacker instanceof Player ? ((Player)attacker).getName() : null)};
+	if (attacker == this)
+		obitKey = "self_" + obitKey;
+		
+	if (Game.isResourceAvailable("baseq2.Messages", obitKey))		
+		Game.localecast("baseq2.Messages", obitKey, args, Engine.PRINT_MEDIUM);	
+	else
+		{
+		// must be some new kind of obitKey, use a default death message
+		if (attacker == this)
+			Game.localecast("baseq2.Messages", "self_died", args, Engine.PRINT_MEDIUM);	
+		else
+			Game.localecast("baseq2.Messages", "died", args, Engine.PRINT_MEDIUM);				
+		}	
+	}
+/**
  * This method calculates the "blend" that should affect this
  * Player's view (e.g. when you go in lava, a reddish "blend"
  * is applied). This is normally called once per frame, during
  * endServerFrame().
  */
 protected void calcBlend()
-{
+	{
 	int			contents;
 	Point3f		vieworg;
 	int			remaining;
@@ -708,7 +729,7 @@ protected void calcBlend()
 	
 	setFrameAlpha(frameAlpha);
 	fEntity.setPlayerBlend(fBlend);
-}
+	}
 protected void calcBob()
 	{
 	// setup bob calculations (we save off quite a few of the values for the other functions.
@@ -1737,8 +1758,15 @@ public void damage(GameObject inflictor, GameObject attacker,
 	
 	if (damage <= 0)
 		return;
-			
+		
+	// damaging a player causes a blood spray
 	spawnDamage(Engine.TE_BLOOD, point, normal, damage);
+
+	// also spawn explosive damage
+	if ((tempEvent == Engine.TE_ROCKET_EXPLOSION) || (tempEvent == Engine.TE_ROCKET_EXPLOSION_WATER))
+		spawnDamage(tempEvent, point, normal, damage);
+
+	
 	setHealth(fHealth - damage);
 	if (fHealth <= 0)
 		die(inflictor, attacker, damage, point, obitKey);
@@ -1889,26 +1917,14 @@ protected void die(GameObject inflictor, GameObject attacker, int damage, Point3
 	fRespawnTime = (float)(Game.getGameTime() + 1);  
 	
 	// broadcast a message announcing our death
-	Object[] args = {getName(), new Integer(isFemale() ? 1 : 0), (attacker instanceof Player ? ((Player)attacker).getName() : null)};
-	if (attacker == this)
-		obitKey = "self_" + obitKey;
-		
-	if (Game.isResourceAvailable("baseq2.Messages", obitKey))		
-		Game.localecast("baseq2.Messages", obitKey, args, Engine.PRINT_MEDIUM);	
-	else
-		{
-		// must be some new kind of obitKey, use a default death message
-		if (attacker == this)
-			Game.localecast("baseq2.Messages", "self_died", args, Engine.PRINT_MEDIUM);	
-		else
-			Game.localecast("baseq2.Messages", "died", args, Engine.PRINT_MEDIUM);				
-		}
+	broadcastObituary(attacker, obitKey);
 	
-	// either give the attacker a point or take one away from the deceased
-	if ((attacker != this) && (attacker instanceof Player))
-		((Player)attacker).setScore(1, false);
+	// let the attacker know he killed us
+	if (attacker != null)
+		attacker.registerKill(this);
 	else
-		setScore(-1, false);
+		// doh! killed by something else
+		registerKill(null);
 		
 	fEntity.setModelIndex2(0); // remove linked weapon model
 	fEntity.setSound(0);
@@ -2151,6 +2167,14 @@ public int getArmorMaxCount()
 	return fArmorMaxCount;
 	}
 /**
+ * Get which weapon the Player is currently using.
+ * @return baseq2.GenericWeapon, may be null
+ */
+public GenericWeapon getCurrentWeapon() 
+	{
+	return fWeapon;
+	}
+/**
  * Returns the current damage blend color for this frame.
  * @return float
  */
@@ -2283,6 +2307,23 @@ public int getScore()
 protected int getSexedSoundIndex(String base) 
 	{
 	return Engine.getSoundIndex((fIsFemale ? "player/female/" : "player/male/") + base + ".wav");
+	}
+/**
+ * Get a suitable Spawnpoint to jump to.  Mods like CTF might
+ * want to override this to use team spawnpoints instead.
+ * @return baseq2.GenericSpawnpoint
+ */
+protected GenericSpawnpoint getSpawnpoint() 
+	{
+	if (GameModule.gIsDeathmatch)
+		{
+		if (GameModule.isDMFlagSet(GameModule.DF_SPAWN_FARTHEST))
+			return MiscUtil.getSpawnpointFarthest();		
+		else
+			return MiscUtil.getSpawnpointRandom();
+		}
+		
+	return MiscUtil.getSpawnpointSingle();
 	}
 /**
  * This method was created by a SmartGuide.
@@ -2697,6 +2738,17 @@ public void putInventory(String itemName, Object ent)
 		}
 	}
 /**
+ * Called when this player kills someone else.
+ * @param p baseq2.Player this player's victim, may be the player himself or null.
+ */
+protected void registerKill(Player p) 
+	{
+	if ((p == this) || (p == null))
+		setScore(-1, false);
+	else
+		setScore(1, false);	
+	}	
+/**
  * This method was created by a SmartGuide.
  * @param name java.lang.String
  */
@@ -3047,18 +3099,8 @@ public void showVWep()
  */
 protected void spawn() 
 	{	
-	GenericSpawnpoint spawnPoint;
-	
-	if (GameModule.gIsDeathmatch)
-		{
-		if (GameModule.isDMFlagSet(GameModule.DF_SPAWN_FARTHEST))
-			spawnPoint = MiscUtil.getSpawnpointFarthest();		
-		else
-			spawnPoint = MiscUtil.getSpawnpointRandom();
-		}
-	else
-		spawnPoint = MiscUtil.getSpawnpointSingle();
-				
+	GenericSpawnpoint spawnPoint = getSpawnpoint();
+					
 	if (spawnPoint == null)
 		Game.dprint("Couldn't pick spawnpoint\n");
 	else

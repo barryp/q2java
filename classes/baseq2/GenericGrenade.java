@@ -17,18 +17,9 @@ public abstract class GenericGrenade extends GameObject implements FrameListener
 	protected float      fRadiusDamage;
 	protected GameObject fOwner;
 	protected Vector3f   fAvelocity;
-	protected int 	   fMask;
 	
-/*
-==================
-ClipVelocity
-
-Slide off of the impacting object
-returns the blocked flags (1 = floor, 2 = step / wall)
-==================
-*/
-static final float STOP_EPSILON = 0.1f;
-
+	static final float STOP_EPSILON = 0.1f;
+	
 /**
  * BlasterBolt constructor comment.
  * @exception q2java.GameException The exception description.
@@ -58,10 +49,10 @@ protected GenericGrenade(GameObject owner, Point3f start, Vector3f aimdir, int d
 	fEntity.setSolid(NativeEntity.SOLID_BBOX);
 	fEntity.setEffects(NativeEntity.EF_GRENADE);
 	fOwner = owner;
+	fEntity.setOwner(owner.fEntity);
 	fExpires = (float)Game.getGameTime() + timer; // explode after a while
 	fDamage = damage;
 	fRadiusDamage = radiusDamage;
-	fMask = Engine.MASK_SOLID;
 	fEntity.linkEntity();
 
 	if (timer <= 0.0)
@@ -103,8 +94,12 @@ void checkVelocity()
 
 	fEntity.setVelocity(v);
 	}
+/**
+ * Slide off of the impacting object
+ *  returns the blocked flags (1 = floor, 2 = step / wall)
+ */
 int clipVelocity (Vector3f normal, float overbounce)
-{
+	{
 	float	 backoff;
 	int		 i, blocked;
 	Vector3f v;
@@ -132,7 +127,7 @@ int clipVelocity (Vector3f normal, float overbounce)
 	fEntity.setVelocity(v);
 
 	return blocked;
-}
+	}
 /**
  * This method was created by a SmartGuide.
  */
@@ -194,8 +189,7 @@ public void runFrame(int phase)
 	checkVelocity();
 	applyGravity();
 
-	TraceResults tr = fEntity.traceMove(fMask, 1.0F); // was MASK_SOLID
-	fMask = Engine.MASK_SHOT;
+	TraceResults tr = fEntity.traceMove(Engine.MASK_SHOT, 1.0F); // was MASK_SOLID
 	
 	if (tr.fFraction == 1)
 		{
@@ -233,4 +227,4 @@ public void runFrame(int phase)
 		fEntity.sound (NativeEntity.CHAN_VOICE, Engine.getSoundIndex("weapons/grenlb1b.wav"), 1, NativeEntity.ATTN_NORM, 0);
 		}
 	}
-}	
+}

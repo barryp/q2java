@@ -123,7 +123,7 @@ public class weapon_grapple extends GenericWeapon
 	}
 	/**
 	 * Get the name of this item's model.
- 	* @return java.lang.String
+ 	 * @return java.lang.String
 	 */
 	public String getModelName() 
 	{
@@ -136,20 +136,20 @@ public class weapon_grapple extends GenericWeapon
 	{
 		return fPlayer;
 	}
-/**
- * Get the name of the model used to show the weapon from the player's POV.
- * @return java.lang.String
- */
-public String getViewModelName() 
+	/**
+	 * Get the name of the model used to show the weapon from the player's POV.
+	 * @return java.lang.String
+	 */
+	public String getViewModelName() 
 	{
-	return "models/weapons/grapple/tris.md2";
+		return "models/weapons/grapple/tris.md2";
 	}
-/**
- * Can't drop the grapple hook.
- */
-public boolean isDroppable() 
+	/**
+	 * Can't drop the grapple hook.
+	 */
+	public boolean isDroppable() 
 	{
-	return false;
+		return false;
 	}
 	public void reset()
 	{

@@ -131,4 +131,20 @@ public void getVectors(Vector3f forward, Vector3f right, Vector3f up)
 		up.z = (float) (cr*cp);
 		}
 	}
+/**
+ * Set this Angle3f to point from Point3f p1 to Point3f p2
+ */
+public void set(Point3f p1, Point3f p2) 
+	{
+	convert(p2.x - p1.x, p2.y - p1.y, p2.z - p1.z);
+	}	
+/**
+ * Set this Angle3f to point in the same direction as the 
+ * specified vector.
+ * @param v javax.vecmath.Vector3f
+ */
+public void set(Vector3f v) 
+	{
+	convert(v.x, v.y, v.z);
+	}
 }

@@ -11,7 +11,6 @@ import q2jgame.*;
   
 public class BfgBlast extends GameObject implements FrameListener
 	{
-	protected int fMask;
 	protected float fExpires;	
 	protected int fDamage;
 	protected int fRadiusDamage;
@@ -54,12 +53,12 @@ public BfgBlast(GameObject owner, Point3f start, Vector3f dir, int damage, int s
 	fEntity.setModelIndex(Engine.getModelIndex("sprites/s_bfg1.sp2"));
 	fEntity.setSound(Engine.getSoundIndex("weapons/bfg__l1a.wav"));
 	fOwner = owner;
+	fEntity.setOwner(owner.fEntity);
 	fExpires = (float)Game.getGameTime() + (8000 / speed); // go away after a while
 	fDamage = (GameModule.gIsDeathmatch ? 5 : 10);
 	fRadiusDamage = damage;
 	fDamageRadius = damageRadius;
 	fState        = FLYING;
-	fMask = Engine.MASK_SOLID;
 	fEntity.linkEntity();
 /*
 	if (self->client)
@@ -178,8 +177,7 @@ public void runFrame(int phase)
 	if (fState == EXPLODING)
 		explode();
 
-	TraceResults tr = fEntity.traceMove(fMask, 1.0F); // was MASK_SHOT
-	fMask = Engine.MASK_SHOT;
+	TraceResults tr = fEntity.traceMove(Engine.MASK_SHOT, 1.0F); 
 
 	if (tr.fFraction < 1)	// We have hit an object...let's explode..
 		{

@@ -274,6 +274,15 @@ public boolean killBox()
 	return true;		// all clear
 	}
 /**
+ * Let the object know it killed a player.
+ * @param p baseq2.Player
+ */
+protected void registerKill(Player p) 
+	{
+	// We're just a dumb object, tell the stupid player he killed himself
+	p.registerKill(null);
+	}
+/**
  * This method was created by a SmartGuide.
  * @param damageType int
  * @param origin q2java.Vec3

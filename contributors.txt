@@ -10,7 +10,7 @@ contributed Java or C code that's been incorporated in the game.
 
 Bernd Kreimeier's <bk@gamers.org>
 
-    Linux port
+    Linux port, German translations of DM and CTF messages
 
 Brian Haskin <haskin@ptway.com>
 
@@ -23,7 +23,8 @@ gorilla <gorilla@pro-ns.net>
     
 James "Skull" Bielby <james@bielby.u-net.com> 
 
-    Supplied bugfixes and implementations of various map entities.
+    Supplied valuable bugfixes and improvements to existing code, and new 
+    implementations of various map entities.
 
 Kenji Hiranabe <hiranabe@esm.co.jp>
 
@@ -52,6 +53,7 @@ Withnails <leigh@praxis.co.uk>
 --------------------------------------
 
 My apologies if I've overlooked anyone, and thanks to everyone who's 
-participated either by coding or though suggestions & encouragement.
+participated either by coding or though testing, suggestions, and
+encouragement.
 
     Barry    

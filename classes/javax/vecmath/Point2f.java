@@ -16,7 +16,7 @@ import java.io.Serializable;
 /**
   * A 2 element point that is represented by single precision
   * floating point x,y coordinates.
-  * @version specification 1.1, implementation $Revision: 1.7 $, $Date: 1998/10/14 00:49:10 $
+  * @version specification 1.1, implementation $Revision: 1.8 $, $Date: 1998/10/16 00:10:11 $
   * @author Kenji hiranabe
   */
 public class Point2f extends Tuple2f implements Serializable {
@@ -35,6 +35,9 @@ public class Point2f extends Tuple2f implements Serializable {
 	}
 /*
  * $Log: Point2f.java,v $
+ * Revision 1.8  1998/10/16  00:10:11  hiranabe
+ * distanceSquared bug(thanks > nhv@laserplot.com)
+ *
  * Revision 1.7  1998/10/14  00:49:10  hiranabe
  * API1.1 Beta02
  *
@@ -124,7 +127,7 @@ public class Point2f extends Tuple2f implements Serializable {
 	  */
 	public final float distanceSquared(Point2f p1) {
 	double dx = x - p1.x;
-	double dy = x - p1.y;
+	double dy = y - p1.y;
 	return (float)(dx*dx + dy*dy);
 	}
 }

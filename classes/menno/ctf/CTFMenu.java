@@ -18,24 +18,31 @@ package menno.ctf;
 import java.awt.Rectangle;
 import java.util.*;
 import q2java.*;
+import q2java.gui.GenericMenu;
 import q2jgame.*;
 
 
 
 public class CTFMenu extends GenericMenu
 {
-	static String[] cmdTeamRed   = { "team", "red"  };
-	static String[] cmdTeamBlue  = { "team", "blue" };
-	static String[] cmdChasecam  = { "chasecam"     };
-	static String[] cmdSpectator = { "spectator"    };
+	final static String[] cmdTeamRed   = { "team", "red"  };
+	final static String[] cmdTeamBlue  = { "team", "blue" };
+	final static String[] cmdChasecam  = { "chasecam"     };
+	final static String[] cmdSpectator = { "spectator"    };
 
 	final static String[] header = { "===== Q2Java CTF v0.6 =====", ""};
 	final static String author = "Menno van Gangelen";
-	public CTFMenu( Player owner, GenericMenu lastMenu )
+
+	protected Player fPlayer;
+	public CTFMenu( Player owner)
 	{
-		super( owner, lastMenu );
+		super( owner.fEntity );
+		fPlayer = owner;
+		
+		// Set the header of the menu
 		setHeader( header );
 
+		// Setup the body of the menu
 		ResourceGroup rg = owner.getResourceGroup();
 		Object[] msgArgs = new Object[1];
 
@@ -50,7 +57,7 @@ public class CTFMenu extends GenericMenu
 		String leavesTeam = rg.getRandomString("menno.ctf.CTFMessages", "menu_leaves_team");
 		
 		String[] item3  = { rg.getRandomString("menno.ctf.CTFMessages", "menu_spectator"), leavesTeam};
-		String[] item4  = { rg.getRandomString("menno.ctf.CTFMessages", "menu_credits") };
+//		String[] item4  = { rg.getRandomString("menno.ctf.CTFMessages", "menu_credits") };
 
 		addMenuItem( item0 );
 		addMenuItem( item1 );
@@ -65,9 +72,10 @@ public class CTFMenu extends GenericMenu
 			addMenuItem( item21 );
 			}
 		addMenuItem( item3 );
-		addMenuItem( item4 );
+//		addMenuItem( item4 );
 
 
+		// Setup the footer of the menu
 		msgArgs[0] = author;
 	    String[] footer = { "",
 	                        rg.getRandomString("menno.ctf.CTFMessages", "menu_footer_press"),
@@ -80,30 +88,34 @@ public class CTFMenu extends GenericMenu
 						  
 		setFooter( footer );
 	}
-	public void select()
+	/**
+	 * Do something, based on what menu item is selected.
+	 */
+	public void selectMenuItem()
 	{
-		switch ( fSelectedItem )
+		switch ( getSelectedIndex() )
 		{
-		case 0:		fOwner.cmd_team( cmdTeamRed );
+		case 0:		fPlayer.cmd_team( cmdTeamRed );
 					close();
 					break;
-		case 1:		fOwner.cmd_team( cmdTeamBlue );
+		case 1:		fPlayer.cmd_team( cmdTeamBlue );
 					close();
 					break;
-		case 2:		fOwner.cmd_chasecam( cmdChasecam );
+		case 2:		fPlayer.cmd_chasecam( cmdChasecam );
 					close();
 					break;
-		case 3:		fOwner.cmd_spectator( cmdSpectator );
+		case 3:		fPlayer.cmd_spectator( cmdSpectator );
 					close();
 					break;
-		default:	fOwner.fEntity.cprint( Engine.PRINT_HIGH, "Not implemented yet" );
+		default:	fPlayer.fEntity.cprint( Engine.PRINT_HIGH, "Not implemented yet" );
 		}
 	}
+	/**
+	 * Override GenericMenu.show() to add background
+	 * and constrain menu to a smaller area.
+	 */
 	public void show()
 	{
-		//show the background
-		String s = "xv 32 yv 8 picn inventory";
-
-		show( s, new Rectangle(50, 25, 222, 156) );
+		displayMenu( "xv 32 yv 8 picn inventory", new Rectangle(50, 25, 222, 156) );
 	}
 }

@@ -32,16 +32,54 @@ public class item_flag_team2 extends GenericFlag
 	
 	public item_flag_team2( String[] spawnArgs ) throws GameException
 	{
-		super( spawnArgs );
+		super( spawnArgs, 2 ); // blued flag is "2" in messages		
 	}
-	protected void setFields()
+	/**
+	 * Get the effects this flag causes on the player.
+	 * @return int
+	 */
+	public int getFlagEffects() 
 	{
-		fModelIndex    = Engine.getModelIndex( "players/male/flag2.md2" );
-		fIconIndex     = Engine.getImageIndex( "i_ctf2" );
-		fSmallIconName = "sbfctf2";
-		fEffects       = NativeEntity.EF_FLAG2;
-		fName          = "Blue Flag";
-		fFlagIndex     = new Integer(2);  // blue flag is "2" in messages
-		fTeam          = Team.TEAM2;
+		return NativeEntity.EF_FLAG2;
+	}
+	/**
+	 * Get the name of this flag's icon.
+	 * @return java.lang.String
+	 */
+	public String getIconName() 
+	{
+		return "i_ctf2";
+	}
+	/**
+	 * Get the name of this flag.
+	 * @return java.lang.String
+	 */
+	public String getItemName() 
+	{
+		return "Blue Flag";
+	}
+	/**
+	 * Get the name of this flag's model.
+	 * @return java.lang.String
+	 */
+	public String getModelName() 
+	{
+		return "players/male/flag2.md2";
+	}
+	/**
+	 * Get the name of this flag's small icon.
+	 * @return java.lang.String
+	 */
+	public String getSmallIconName() 
+	{
+		return 	"sbfctf2";
+	}
+	/**
+	 * Get which team this flag belongs to.
+	 * @return menno.ctf.Team
+	 */
+	public Team getTeam() 
+	{
+		return Team.TEAM2;
 	}
 }

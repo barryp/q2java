@@ -18,20 +18,25 @@ package menno.ctf;
 import q2java.*;
 import q2jgame.*;
 import baseq2.InventoryList;
+import menno.ctf.spawn.*;
 
 /**
- * Q2java CTF module.
+ * Q2Java CTF module.
  * 
  * @author Menno van Gangelen
  */
 
-public class GameModule extends baseq2.GameModule 
+public class GameModule extends q2jgame.GameModule implements LevelListener
 {
 
 	public GameModule(String moduleName)
 	{
 		super( moduleName );
 		
+		// ask to be called on level changes
+		Game.addLevelListener(this);
+
+		// update player inventory lists to support techs
 		InventoryList.addItem("Disruptor Shield");
 		InventoryList.addItem("AutoDoc");
 		InventoryList.addItem("Time Accel");
@@ -60,12 +65,29 @@ public class GameModule extends baseq2.GameModule
 		}
 	}
 	/**
+	 * Called when a new map is starting, after entities have been spawned.
+	 */
+	public void levelEntitiesSpawned() 
+	{
+		// now it's time to spawn the techs.
+		try 
+		{
+			new item_tech1();
+			new item_tech2();
+			new item_tech3();
+			new item_tech4();
+		}
+		catch ( Exception e )
+		{
+			// do nothing here.
+			System.out.println( "error in spwaning techs... " + e );
+		}	
+	}
+	/**
 	 * Start a new level.
 	 */
 	public void startLevel(String mapname, String entString, String spawnPoint)
 	{
-		super.startLevel( mapname, entString, spawnPoint );
-
 		// overrule the statbar
 		Engine.setConfigString (Engine.CS_STATUSBAR, Player.CTF_STATUSBAR);	
 
@@ -84,6 +106,9 @@ public class GameModule extends baseq2.GameModule
 	 */
 	public void unload() 
 	{
+		// we no longer want to be notified of level changes
+		Game.removeLevelListener(this);
+		
 		// turn the players into baseq2 players.
 		java.util.Enumeration players = NativeEntity.enumeratePlayers();
 		while (players.hasMoreElements())

@@ -173,9 +173,7 @@ public class Player extends baseq2.Player implements CameraListener
 	//=====================================================
 	// Methods for testing things (ignore)
 	//=====================================================
-	public GenericMenu fMenu = null;
-
-
+	public CTFMenu fMenu = null;
 	//========================================================================
 	// Constructors
 	//========================================================================
@@ -207,19 +205,61 @@ public class Player extends baseq2.Player implements CameraListener
 	/**
 	* Add a flag to the players inventory
 	**/
-	public boolean addFlag( GenericFlag flag, int icon, int model, int effects )
+	protected boolean addFlag( GenericFlag flag )
 	{
+		if (flag.getTeam() == getTeam())
+		{
+			// player touches their own flag
+			if (flag.getState() == GenericFlag.CTF_FLAG_STATE_STANDING)
+			{
+				// ... while it's standing
+				GenericFlag otherFlag = (GenericFlag)getInventory("flag");
+				if (otherFlag != null)
+				{
+					// WE HAVE A CAPTURE !!!!!
+					Object[] args = {getName(), otherFlag.fFlagIndex};
+					Game.localecast("menno.ctf.CTFMessages", "capture_flag", args, Engine.PRINT_HIGH);	
+
+					flag.playCaptureSound();
+		
+					// drop the captured flag and send it back to its base
+					otherFlag.drop(this, 0);
+					otherFlag.reset();
+	
+					// put the player back to normal				
+					fEntity.setEffects( fEntity.getEffects() & ~otherFlag.getFlagEffects() );
+					fEntity.setModelIndex3( 0 );
+					fEntity.setPlayerStat( GenericFlag.STAT_CTF_FLAG_PIC, (short)0 );
+					removeInventory( "flag" );
+		
+					// Add the bonuses...
+					getTeam().addCapture( this );				
+				}
+			}
+			else if (flag.getState() == GenericFlag.CTF_FLAG_STATE_DROPPED)
+			{
+				// was dropped on the ground
+				setScore( Player.CTF_RECOVERY_BONUS, false );
+				flag.reset();
+				Object[] args = {getName(), flag.fFlagIndex};
+				Game.localecast("menno.ctf.CTFMessages", "return_flag", args, Engine.PRINT_HIGH);	
+				flag.playReturnSound();
+			}
+			return false; //you don't actually take your own flag
+		}
+		
 		// Don't add flag if already have one
 		if ( isCarrying("flag") )
 			return false;
 
 		// add flag to inventory
-		fEntity.setPlayerStat( GenericFlag.STAT_CTF_FLAG_PIC, (short)icon );
-		fEntity.setEffects( fEntity.getEffects() | effects );
-		fEntity.setModelIndex3( model );
+		fEntity.setPlayerStat( GenericFlag.STAT_CTF_FLAG_PIC, (short)Engine.getImageIndex(flag.getIconName()) );
+		fEntity.setEffects( fEntity.getEffects() | flag.getFlagEffects() );
+		fEntity.setModelIndex3( Engine.getModelIndex(flag.getModelName()) );
 		putInventory( "flag", flag );
 		setScore( getScore() + CTF_FLAG_BONUS );
-
+		flag.pickupBy(this);
+		
 		return true;
 	}
 	/**
@@ -235,12 +275,15 @@ public class Player extends baseq2.Player implements CameraListener
 		if (item instanceof GenericTech)
 			return addTech((GenericTech) item);
 
+		if (item instanceof GenericFlag)
+			return addFlag((GenericFlag) item);
+			
 		return super.addItem(item);
 	}
 	/**
 	* Add a tech to the players inventory
 	**/
-	public boolean addTech( GenericTech tech )
+	protected boolean addTech( GenericTech tech )
 	{
 		// Don't add tech if already have one
 		if ( isCarrying("tech") )
@@ -259,69 +302,7 @@ public class Player extends baseq2.Player implements CameraListener
 		putInventory( "tech", tech );
 		tech.setOwner(this);
 
-		// If tech is Power Amplifier, set the damage-multiplier (>1.0)
-		if ( tech instanceof item_tech2 )
-			setDamageMultiplier( ((item_tech2)tech).getDamageMultiplier() * getDamageMultiplier() );
-
 		return true;
-	}
-	/**
-	 * This method must be overridden, cause CTF needs control by techs...
-	 */
-	protected void beginServerFrame()
-	{
-		GenericTech tech;
-
-		if (fInIntermission)
-			return;
-			
-		if (fIsDead && (Game.getGameTime() > fRespawnTime) && ((fLatchedButtons != 0) || GameModule.isDMFlagSet(GameModule.DF_FORCE_RESPAWN)))
-		{
-			respawn();
-			fLatchedButtons = 0;
-			return;
-		}
-
-		if (fInIntermission)
-			return;
-	
-		// CTF HACK: let techs do their work...
-		tech = ( fInventory != null ? (GenericTech)getInventory("tech") : null );
-
-		if ( tech instanceof item_tech4 )	// Auto doc
-		{
-			((item_tech4)tech).heal();
-		}
-				
-		if (fWeaponThunk)
-			fWeaponThunk = false;
-		else		
-		{
-			if (fWeapon != null)
-			{
-				fWeapon.weaponThink();
-
-				// CTF HACK: let techs do their work...
-				if ( !(fWeapon instanceof weapon_grapple) )
-				{
-					if ( tech instanceof item_tech2 )		// Power Amplifier
-					{
-						if ( fWeapon.isFiring() )
-							((item_tech2)tech).playSound();
-					}
-					else if ( tech instanceof item_tech3 )	// Time accell
-					{
-						if ( fWeapon.isFiring() )
-						{
-							fWeapon.weaponThink();
-							((item_tech3)tech).playSound();
-						}
-					}
-				}
-			}
-		}			
-					
-		fLatchedButtons = 0;		
 	}
 	//=====================================================
 	// Methods from CameraListener
@@ -517,15 +498,14 @@ public class Player extends baseq2.Player implements CameraListener
 		if ( fMenu == null )
 		{
 			// show the menu
-			fMenu = new CTFMenu( this, null );
+			fMenu = new CTFMenu( this );
 			fMenu.show();
-			fEntity.setPlayerStat(NativeEntity.STAT_LAYOUTS, (short)1);
 		}
 		else
 		{
 			// close the menu
+			fMenu.close();
 			fMenu = null;
-			fEntity.setPlayerStat(NativeEntity.STAT_LAYOUTS, (short)0);
 		}
 
 	}
@@ -565,13 +545,19 @@ public class Player extends baseq2.Player implements CameraListener
 		// else
 		//	super.cmd_invuse( args );
 	}
+	/**
+	 * Called when player presses Enter key
+	 */
 	public void cmd_invuse( String[] args )
 	{
-		if ( fMenu != null )
-			fMenu.select();
-		// TODO:
-		// else
-		//	super.cmd_invuse( args );
+		if ( fMenu == null )
+			super.cmd_invuse(args);
+		else		
+		{
+			fMenu.selectMenuItem();
+			fMenu.close();
+			fMenu = null;
+		}
 	}
 	/**
 	 * Put's away the scorboard
@@ -705,13 +691,13 @@ public class Player extends baseq2.Player implements CameraListener
 		if (fIsDead)
 			return;
 			
-		// CTF: if attacker is playing on same team,
-		//      we can't get hurt.
-		if ( attacker instanceof Player )
+		if ( ( attacker instanceof Player ) && ( attacker != this ))
 		{
+			// A CTF Player other than ourselves attacked us
+			
 			Player p = (Player)attacker;
 			if ( p.fTeam == fTeam )
-				return;
+				return;  // Teammates can't hurt you
 
 			// If we have a flag, and attacker is playing on other team,
 			// mark the attacker that he was aggressive to the flag-carrier.
@@ -778,7 +764,9 @@ public class Player extends baseq2.Player implements CameraListener
 		if ( flag != null )
 		{
 			fInventory.remove( "flag" );
-			flag.drop();
+			flag.drop(this);
+			fEntity.setEffects( fEntity.getEffects() & ~flag.getFlagEffects() );
+			fEntity.setModelIndex3( 0 );
 			fEntity.setPlayerStat( GenericFlag.STAT_CTF_FLAG_PIC, (short)0 );
 		}
 	}
@@ -802,32 +790,10 @@ public class Player extends baseq2.Player implements CameraListener
 		{
 			fInventory.remove( "tech" );
 
-/* Original tossing calculations from GenericTech
-		// Make sure we won't be touched by our tosser
-		Angle3f  angle   = fOwner.fEntity.getAngles();
-		Vector3f forward = new Vector3f();
-		Vector3f right   = new Vector3f();
-		Vector3f offset  = new Vector3f( 40, 0, 0 );
-		angle.getVectors( forward, right, null );
-		Point3f  point = fOwner.projectSource( offset, forward, right );
-		tr = Engine.trace( fOwner.fEntity.getOrigin(), fEntity.getMins(), fEntity.getMaxs(), point, fOwner.fEntity, Engine.CONTENTS_SOLID );
-		fEntity.setOrigin( tr.fEndPos );
-
-		// hack the velocity to make it bounce away from the tosser
-		forward.x *= 100;
-		forward.y *= 100;
-		forward.z  = 100;
-		fEntity.setVelocity( forward );
-*/
-
 			tech.setOwner(null);
 			tech.drop(this, GenericTech.CTF_TECH_TIMEOUT);
 			
 			fEntity.setPlayerStat( GenericTech.STAT_CTF_TECH, (short)0 );
-
-			// If tech is Power Amplifier, set the damage-multiplier
-			if ( tech instanceof item_tech2 )
-				setDamageMultiplier( ((item_tech2)tech).getDamageMultiplier() / getDamageMultiplier() );
 		}
 	}
 	protected void endServerFrame()
@@ -838,99 +804,16 @@ public class Player extends baseq2.Player implements CameraListener
 		super.endServerFrame();
 	}
 	/**
-	* Calculate the bonuses for flag defense, flag carrier defense, etc.
-	* Note that bonuses are not cumaltive.  You get one, they are in importance
-	* order.
-	**/
-	protected int getFragBonus( Player victim )
+	 * Override baseq2.Player.getSpawnpoint() to use team 
+	 * spawnpoints if the player belongs to a team.
+	 * @return baseq2.GenericSpawnpoint
+	 */
+	protected baseq2.GenericSpawnpoint getSpawnpoint() 
 	{
-		if ( victim.fTeam == fTeam )
-		{
-			// only add points to attacker when victim is on other team.
-			return 0;
-		}
-
-		// did the victim carry the flag?
-		if ( victim.getInventory("flag") != null )
-		{
-			Object[] args = {new Integer(CTF_FRAG_CARRIER_BONUS)};
-			fEntity.centerprint(fResourceGroup.format("menno.ctf.CTFMessages", "bonus_points", args) + "\n");
-
-			// The victim had the flag, clear the hurt carrier field on our team
-			Player[] players = fTeam.getPlayers();
-
-			for ( int i=0; i<players.length; i++) 
-				players[i].fLastCarrierHurt = 0f;
-
-			return CTF_FRAG_CARRIER_BONUS;
-		}
-
-		// was the victim aggressive against our flagcarrier lately?
-		if ( Game.getGameTime() < (victim.fLastCarrierHurt+CTF_CARRIER_DANGER_PROTECT_TIMEOUT)
-				&& getInventory("flag") == null )
-		{
-			Object[] args = {getName(), fTeam.getTeamIndex()};
-			Game.localecast("menno.ctf.CTFMessages", "defend_aggressive", args, Engine.PRINT_MEDIUM);	
-		
-			return CTF_CARRIER_DANGER_PROTECT_BONUS;
-		}
-
-		// if our flag is laying around somewhere, we can get extra bonuses
-		GenericFlag ourFlag = fTeam.getFlag();
-
-		//if ( ourFlag.getState() == GenericFlag.CTF_FLAG_STATE_CARRIED )
-		//	return;
-
-		// check to see if we are defending the base.
-		Vector3f v1 = new Vector3f( this.fEntity.getOrigin()   );
-		Vector3f v2 = new Vector3f( victim.fEntity.getOrigin() );
-		v1.sub( fTeam.getBaseOrigin() );
-		v2.sub( fTeam.getBaseOrigin() );
-		
-		//if ( v1.length() < CTF_TARGET_PROTECT_RADIUS || v2.length() < CTF_TARGET_PROTECT_RADIUS 
-		//	|| this.canSee(ourFlag) || victim.canSee(ourFlag) )
-		if ( v1.length() < CTF_TARGET_PROTECT_RADIUS || v2.length() < CTF_TARGET_PROTECT_RADIUS 
-			|| this.canSee(fTeam.getBaseOrigin()) || victim.canSee(fTeam.getBaseOrigin()) )
-		{
-			// OK, either we or our victim is in sight of our base.
-			// Send message based on if the flag is at base or not...
-			Object[] args = {getName(), fTeam.getTeamIndex()};
-			
-			if ( ourFlag.getState() == GenericFlag.CTF_FLAG_STATE_STANDING )
-				Game.localecast("menno.ctf.CTFMessages", "defend_flag", args, Engine.PRINT_MEDIUM);	
-			else
-				Game.localecast("menno.ctf.CTFMessages", "defend_base", args, Engine.PRINT_MEDIUM);	
-
-			return CTF_FLAG_DEFENSE_BONUS;
-		}
-
-		// No bonusses left if carrying flag...
-		if ( isCarrying("flag") )
-			return 0;
-
-		// check to see if we are defending someone on our team with enemy flag.
-		GenericFlag enemyFlag = ( Team.TEAM1.getFlag() == ourFlag ? Team.TEAM2.getFlag() : Team.TEAM1.getFlag() );
-
-		if ( enemyFlag.getState() == GenericFlag.CTF_FLAG_STATE_CARRIED )
-		{
-			Player carrier = enemyFlag.getCarrier();
-			v1.set( carrier.fEntity.getOrigin() );
-			v2.set( carrier.fEntity.getOrigin() );
-			v1.sub( this.fEntity.getOrigin() );
-			v2.sub( victim.fEntity.getOrigin() );
-
-			if ( v1.length() < CTF_ATTACKER_PROTECT_RADIUS || v2.length() < CTF_ATTACKER_PROTECT_RADIUS 
-				|| this.canSee(carrier.fEntity.getOrigin()) || victim.canSee(carrier.fEntity.getOrigin()) )
-			{
-				Object[] args = {getName(), fTeam.getTeamIndex()};
-				Game.localecast("menno.ctf.CTFMessages", "defend_carrier", args, Engine.PRINT_MEDIUM);	
-			
-				return CTF_CARRIER_PROTECT_BONUS;
-			}
-		}
-		
-		// Hmm, no bonusses left...
-		return 0;
+		if ( fTeam != null )
+			return fTeam.getSpawnpoint();
+		else
+			return super.getSpawnpoint();
 	}
 	public Team getTeam()
 	{
@@ -992,6 +875,101 @@ public class Player extends baseq2.Player implements CameraListener
 			fTeam.assignSkinTo( this );
 	}
 	/**
+	* Calculate the bonuses for flag defense, flag carrier defense, etc.
+	* Note that bonuses are not cumaltive.  You get one, they are in importance
+	* order.
+	**/
+	protected void registerKill( Player victim )
+	{
+		if ( victim.fTeam == fTeam )
+		{
+			// only add points to attacker when victim is on other team.
+			return;
+		}
+
+		// did the victim carry the flag?
+		if ( victim.getInventory("flag") != null )
+		{
+			Object[] args = {new Integer(CTF_FRAG_CARRIER_BONUS)};
+			fEntity.centerprint(fResourceGroup.format("menno.ctf.CTFMessages", "bonus_points", args) + "\n");
+
+			// The victim had the flag, clear the hurt carrier field on our team
+			Player[] players = fTeam.getPlayers();
+
+			for ( int i=0; i<players.length; i++) 
+				players[i].fLastCarrierHurt = 0f;
+
+			setScore(1 + CTF_FRAG_CARRIER_BONUS, false);
+		}
+
+		// was the victim aggressive against our flagcarrier lately?
+		if ( Game.getGameTime() < (victim.fLastCarrierHurt+CTF_CARRIER_DANGER_PROTECT_TIMEOUT)
+				&& getInventory("flag") == null )
+		{
+			Object[] args = {getName(), fTeam.getTeamIndex()};
+			Game.localecast("menno.ctf.CTFMessages", "defend_aggressive", args, Engine.PRINT_MEDIUM);	
+		
+			setScore(1 + CTF_CARRIER_DANGER_PROTECT_BONUS, false);
+		}
+
+		// if our flag is laying around somewhere, we can get extra bonuses
+		GenericFlag ourFlag = fTeam.getFlag();
+
+		//if ( ourFlag.getState() == GenericFlag.CTF_FLAG_STATE_CARRIED )
+		//	return;
+
+		// check to see if we are defending the base.
+		Vector3f v1 = new Vector3f( this.fEntity.getOrigin()   );
+		Vector3f v2 = new Vector3f( victim.fEntity.getOrigin() );
+		v1.sub( fTeam.getBaseOrigin() );
+		v2.sub( fTeam.getBaseOrigin() );
+		
+		//if ( v1.length() < CTF_TARGET_PROTECT_RADIUS || v2.length() < CTF_TARGET_PROTECT_RADIUS 
+		//	|| this.canSee(ourFlag) || victim.canSee(ourFlag) )
+		if ( v1.length() < CTF_TARGET_PROTECT_RADIUS || v2.length() < CTF_TARGET_PROTECT_RADIUS 
+			|| this.canSee(fTeam.getBaseOrigin()) || victim.canSee(fTeam.getBaseOrigin()) )
+		{
+			// OK, either we or our victim is in sight of our base.
+			// Send message based on if the flag is at base or not...
+			Object[] args = {getName(), fTeam.getTeamIndex()};
+			
+			if ( ourFlag.getState() == GenericFlag.CTF_FLAG_STATE_STANDING )
+				Game.localecast("menno.ctf.CTFMessages", "defend_flag", args, Engine.PRINT_MEDIUM);	
+			else
+				Game.localecast("menno.ctf.CTFMessages", "defend_base", args, Engine.PRINT_MEDIUM);	
+
+			setScore(1 + CTF_FLAG_DEFENSE_BONUS, false);
+		}
+
+		// No bonusses left if carrying flag...
+		if ( isCarrying("flag") )
+			setScore(1, false);
+
+		// check to see if we are defending someone on our team with enemy flag.
+		GenericFlag enemyFlag = ( Team.TEAM1.getFlag() == ourFlag ? Team.TEAM2.getFlag() : Team.TEAM1.getFlag() );
+
+		if ( enemyFlag.getState() == GenericFlag.CTF_FLAG_STATE_CARRIED )
+		{
+			Player carrier = enemyFlag.getCarrier();
+			v1.set( carrier.fEntity.getOrigin() );
+			v2.set( carrier.fEntity.getOrigin() );
+			v1.sub( this.fEntity.getOrigin() );
+			v2.sub( victim.fEntity.getOrigin() );
+
+			if ( v1.length() < CTF_ATTACKER_PROTECT_RADIUS || v2.length() < CTF_ATTACKER_PROTECT_RADIUS 
+				|| this.canSee(carrier.fEntity.getOrigin()) || victim.canSee(carrier.fEntity.getOrigin()) )
+			{
+				Object[] args = {getName(), fTeam.getTeamIndex()};
+				Game.localecast("menno.ctf.CTFMessages", "defend_carrier", args, Engine.PRINT_MEDIUM);	
+			
+				setScore(1 + CTF_CARRIER_PROTECT_BONUS, false);
+			}
+		}
+		
+		// Hmm, no bonusses left...
+		setScore(1, false);
+	}
+	/**
 	 * Say something to the members of our team.
 	 * @param (Ignored, uses the Engine.args() value instead)
 	 */
@@ -1011,17 +989,6 @@ public class Player extends baseq2.Player implements CameraListener
 
 		if ( fTeam != null )
 		{
-			// change to a spawnpoint for the team if there is one;
-			baseq2.GenericSpawnpoint sp = fTeam.getSpawnpoint();
-			if ( sp != null )
-			{
-				Point3f origin = sp.getOrigin();
-				Angle3f ang = sp.getAngles();
-				origin.z += 9;
-				fEntity.setOrigin( origin );
-				fEntity.setAngles( ang );
-				fEntity.setPlayerViewAngles( ang );
-			}
 			// remove from chasecam if viewing
 			if ( fViewer != null )
 			{
@@ -1088,8 +1055,8 @@ public class Player extends baseq2.Player implements CameraListener
 		Game.localecast("baseq2.Messages", "entered", args, Engine.PRINT_HIGH);		
 	}
 	/**
-	 * This method was created by a SmartGuide.
-	 * @param killer q2jgame.Player
+	 * Send CTF Scoreboard to client.
+	 * @param killer the Player who killed this one (if any).
 	 */
 	protected void writeDeathmatchScoreboardMessage( baseq2.GameObject killer ) 
 	{	
