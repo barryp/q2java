@@ -27,7 +27,7 @@ import menno.ctf.spawn.*;
  */
 
 
-public class Team implements LevelListener
+public class Team implements LevelListener, baseq2.PlayerStateListener
 {
 	public static final String CTF_TEAM1_SKIN = "ctf_r";
 	public static final String CTF_TEAM2_SKIN = "ctf_b";
@@ -89,6 +89,9 @@ public class Team implements LevelListener
 	{
 		fPlayers.addElement( p );
 
+		// make sure we find out if the team member disconnects
+		p.addPlayerStateListener(this);
+		
 		// assign new skin
 		assignSkinTo( p );
 		Object[] args = {p.getName(), fTeamIndex};
@@ -329,12 +332,22 @@ public class Team implements LevelListener
 public void levelEntitiesSpawned() {
 	return;
 }
+	/**
+	 * Called when a player dies or disconnects.
+	 * @param wasDisconnected true on disconnects, false on normal deaths.
+	 */
+	public void playerStateChanged(baseq2.Player p, int changeEvent)
+	{
+		if (changeEvent == baseq2.PlayerStateListener.PLAYER_DISCONNECT)
+			removePlayer((Player)p);
+	}
 	public boolean removePlayer( Player p )
 	{
 		//update players stats that he leaved this team (the yellow line around team-icon)
 		p.fEntity.setPlayerStat( STAT_CTF_JOINED_TEAM1_PIC, (short)0 );
 		p.fEntity.setPlayerStat( STAT_CTF_JOINED_TEAM2_PIC, (short)0 );
-
+		
+		p.removePlayerStateListener(this);
 		return fPlayers.removeElement( p );
 	}
 	/**

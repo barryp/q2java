@@ -34,6 +34,8 @@ public class Player extends GameObject implements FrameListener, PlayerListener,
 	protected Vector fWeaponOrder;
 	protected Vector fWeaponsExcluded;
 
+	protected Vector fPlayerStateListeners; // track PlayerStateListeners
+	
 	// Armor 
 	private int fArmorCount;
 	private int fArmorMaxCount;
@@ -338,6 +340,8 @@ public Player(NativeEntity ent, boolean loadgame) throws GameException
 	// Create weapon ordering vectors
 	fWeaponOrder = new Vector();
 	fWeaponsExcluded = new Vector();
+
+	fPlayerStateListeners = new Vector();
 	
 	// Setup default weapon ordering
 	fWeaponOrder.addElement("blaster");
@@ -513,8 +517,20 @@ public boolean addItem(GenericItem item)
 	if (item instanceof GenericArmor)
 		return addArmor((GenericArmor)item);
 		
-	// don't know what to do with the item, so reject it.
-	return false;
+	// assume item knows what it's doing.
+	return true;
+	}
+/**
+ * Add an object that wants to be notified when the player dies.
+ * @param pdl baseq2.PlayerDiedListener
+ */
+public void addPlayerStateListener(PlayerStateListener psl) 
+	{
+	if (psl == null)
+		return;
+		
+	if (!fPlayerStateListeners.contains(psl))
+		fPlayerStateListeners.addElement(psl);
 	}
 /**
  * Add an actual instance of a weapon to a player's inventory.
@@ -551,7 +567,7 @@ protected boolean addWeapon(GenericWeapon w, boolean allowSwitch)
 	
 	// make a note of who owns this weapon
 	w.setOwner(this);
-			
+	
 	// add the weapon to the weapon order
 	if (!fWeaponOrder.contains(w.getItemName().toLowerCase()))
 		fWeaponOrder.addElement(w.getItemName().toLowerCase());
@@ -598,6 +614,9 @@ protected boolean addWeapon(String weaponClassSuffix, boolean allowSwitch)
  */
 protected void beginServerFrame()
 	{
+	// reset the color blend for this frame.
+	resetBlend();
+	
 	if (fInIntermission)
 		return;
 		
@@ -652,12 +671,6 @@ protected void calcBlend()
 	int			remaining;
 	float		frameAlpha = getFrameAlpha();
 	Color4f		damageBlend = getDamageBlend();
-
-	// We reset the blend first
-	fBlend.x = 0.0f;	// red
-	fBlend.y = 0.0f;	// green
-	fBlend.z = 0.0f;	// blue
-	fBlend.w = 0.0f;	// alpha
 
 	// add vectors to locate what contents the Player is in: air, water, slime, solid or lava.
 	vieworg = fEntity.getOrigin();
@@ -1054,7 +1067,8 @@ protected void closeDisplay()
 	fShowInventory = false;
 	}
 /**
- * This allows us to test different blend modes.
+ * This allows us to test different blend modes.<p>
+ * This function will not work unless the setPlayerBlend in calcBlend is commented out.
  *
  * @param args java.lang.String[]
  */
@@ -1450,7 +1464,7 @@ public void cmd_use(String[] args)
 	for (int i = 2; i < args.length; i++)
 		itemName = itemName + " " + args[i];
 	
-	Object ent = fInventory.get(itemName.toLowerCase());
+	GameObject ent = (GameObject) fInventory.get(itemName.toLowerCase());
 	if (ent == null)
 		{
 		Object[] msgArgs = {itemName};
@@ -1481,8 +1495,10 @@ public void cmd_use(String[] args)
 		setAnimation(ANIMATE_VWEP_DEACTIVATE);
 		return;
 		}
-			
-//	ent.use(this);	---FIXME--
+	
+	fInventory.getPack(itemName.toLowerCase()).fAmount--;
+	ent.use(this);
+	
 	}
 /**
  * Invoke player gestures.
@@ -1935,9 +1951,9 @@ protected void die(GameObject inflictor, GameObject attacker, int damage, Point3
 //	fEntity.setSolid(NativeEntity.SOLID_NOT);
 	fEntity.setSVFlags(fEntity.getSVFlags() | NativeEntity.SVF_DEADMONSTER);
 
-	// drop some things from the inventory onto the ground.
-	dropInventory();
-
+	// let interested objects know the player died.
+	notifyPlayerStateListeners(PlayerStateListener.PLAYER_DIED);
+	
 	// remove the weapon from the POV
 	fEntity.setPlayerGunIndex(0);
 	fWeapon = null;
@@ -1976,35 +1992,14 @@ protected void die(GameObject inflictor, GameObject attacker, int damage, Point3
  */
 public void dispose() 
 	{
+	// let interested objects know we're disconnecting.
+	notifyPlayerStateListeners(PlayerStateListener.PLAYER_DISCONNECT);
+	
 	Game.removeLocaleListener(this);
 	Game.removeFrameListener(this, Game.FRAME_BEGINNING + Game.FRAME_END);	
 	fEntity.setReference(null);
 	fEntity.setPlayerListener(null);
 	fEntity = null;
-	}
-/**
- * Drop the player's inventory onto the ground, usually called on death.
- * A good thing to override if you want to drop more or fewer things
- * in a mod.
- */
-protected void dropInventory() 
-	{
-	// drop the current weapon along with some ammo if possible
-	if ((fWeapon != null) && fWeapon.isDroppable())
-		{
-		try
-			{
-			// put default amount of ammo into the weapon
-			fWeapon.setAmmoCount(fWeapon.getDefaultAmmoCount());
-
-			// toss it
-			fWeapon.drop(this, GenericItem.DROP_TIMEOUT);
-			}
-		catch (Exception e)
-			{
-			e.printStackTrace();
-			}
-		}
 	}
 /**
  * Called for each player after all the entities have 
@@ -2225,6 +2220,15 @@ public Object getInventory(String itemName)
 	return fInventory.get(itemName);
 	}
 /**
+ * Get how many of a kind of item we're carrying.
+ * @return int
+ * @param itemName java.lang.String
+ */
+public int getInventoryCount(String itemName) 
+	{
+	return fInventory.getNumberOf(itemName);
+	}
+/**
  * Returns the mass of the player (normally 200).
  * @return	The player's mass.
  */
@@ -2354,7 +2358,7 @@ protected void incFrame()
 	fEntity.setFrame(++fAnimationFrame);
 	}
 /**
- * This method was created by a SmartGuide.
+ * Is the player carrying a particular item.
  * @return boolean
  * @param itemName java.lang.String
  */
@@ -2470,6 +2474,29 @@ public void notifyPickup(String itemName, String iconName)
 	fPickupMsgTime = Game.getGameTime() + 3;
 	}
 /**
+ * Let all the registered listeners know that the player died or disconnected.
+ * @param wasDisconnected true for disconnecting players, false for normal deaths.
+ */
+protected void notifyPlayerStateListeners(int changeEvent) 
+	{
+	// make a copy of the list
+	PlayerStateListener[] psla = new PlayerStateListener[fPlayerStateListeners.size()];
+	fPlayerStateListeners.copyInto(psla);
+
+	// spread the word
+	for (int i = 0; i < psla.length; i++)
+		{
+		try
+			{
+			psla[i].playerStateChanged(this, changeEvent);
+			}
+		catch (Throwable t)
+			{
+			t.printStackTrace();
+			}
+		}
+	}
+/**
  * Called by the DLL when the player should begin playing in the game.
  * @param loadgame boolean
  */
@@ -2487,6 +2514,9 @@ public void playerBegin(boolean loadgame)
 	// things that need to be reset on map changes
 	fCmdAngles  = new Angle3f();		
 
+	// notify objects we're changing levels
+	notifyPlayerStateListeners(PlayerStateListener.PLAYER_LEVELCHANGE);	
+	
 	// things that need to be reset on map changes or respawn
 	clearSettings();
 
@@ -2550,6 +2580,7 @@ public void playerDisconnect()
 	{
 	Engine.debugLog("Player.disconnect()");
 
+	// broadcast an announcement
 	Object[] args = {getName()};
 	Game.localecast("baseq2.Messages", "disconnect", args, Engine.PRINT_HIGH);
 	
@@ -2747,7 +2778,7 @@ protected void registerKill(Player p)
 		setScore(-1, false);
 	else
 		setScore(1, false);	
-	}	
+	}
 /**
  * This method was created by a SmartGuide.
  * @param name java.lang.String
@@ -2755,6 +2786,30 @@ protected void registerKill(Player p)
 public void removeInventory(String name) 
 	{
 	fInventory.remove(name);
+	}
+/**
+ * Remove an object that was registered to be called when the player dies.
+ * @param pdl baseq2.PlayerDiedListener
+ */
+public void removePlayerStateListener(PlayerStateListener psl) 
+	{
+	if (psl == null)
+		return;
+		
+	fPlayerStateListeners.removeElement(psl);
+	}
+/**
+ * Reset the color blend.
+ * @author Brian Haskin
+ */
+protected void resetBlend()
+	{
+	fBlend.x = 0.0f;	// red
+	fBlend.y = 0.0f;	// green
+	fBlend.z = 0.0f;	// blue
+	fBlend.w = 0.0f;	// alpha
+
+	return;
 	}
 /**
  * Put a dead player back into the game
@@ -3132,7 +3187,8 @@ protected void spawn()
 	fEntity.setSkinNum(fEntity.getPlayerNum());
 	fEntity.setModelIndex(255);	// will use the skin specified model
 	showVWep();
-	
+
+	killBox();
 	fEntity.linkEntity();			
 
 	closeDisplay();
@@ -3163,7 +3219,10 @@ public void startIntermission(GenericSpawnpoint intermissionSpot)
 	fEntity.setSound(0);
 	fEntity.setGroundEntity(null);
 	fEntity.linkEntity();
-	
+
+	// notify objects we're changing levels
+	notifyPlayerStateListeners(PlayerStateListener.PLAYER_LEVELCHANGE);	
+
 	writeDeathmatchScoreboardMessage(null);
 	Engine.unicast(fEntity, true);
 	fEntity.setPlayerStat(NativeEntity.STAT_LAYOUTS, (short)1);	

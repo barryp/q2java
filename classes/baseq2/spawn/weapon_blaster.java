@@ -17,7 +17,7 @@ public class weapon_blaster extends GenericBlaster
  */
 public weapon_blaster()
 	{
-	super(NativeEntity.EF_BLASTER, 10, Engine.MZ_BLASTER, "blaster");
+	super(NativeEntity.EF_BLASTER, 15, Engine.MZ_BLASTER, "blaster");
 	}
 public weapon_blaster(String[] spawnArgs) throws GameException
 	{

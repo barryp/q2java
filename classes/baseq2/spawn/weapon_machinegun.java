@@ -72,7 +72,7 @@ public void fire()
 	fPlayer.fKickAngles.set(fShotCount * -1.5f,  Game.cRandom() * 0.7f,  Game.cRandom() * 0.7f);
 
 	// raise the gun as it is firing
-	if (true /*!deathmatch->value */)
+	if (!baseq2.GameModule.gIsDeathmatch)
 		{
 		fShotCount++;
 		if (fShotCount > 9)

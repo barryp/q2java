@@ -269,6 +269,14 @@ public String getPickupSound()
 	return "items/pkup.wav";
 	}
 /**
+ * Time it takes this item to respawn after being picked up.
+ * @return float - number of seconds to get respawned in.
+ */
+public float getRespawnTime()
+	{
+	return DEFAULT_RESPAWN;
+	}
+/**
  * Indicate if an item is willing to be dropped - default is true, 
  * but things like the hand-blaster and grapple hook can override 
  * this and return false.
@@ -475,7 +483,7 @@ public void touch(Player p)
 		if (p.addItem(this))
 			{
 			// hide the item
-			touchFinish(p);
+			touchFinish(p, this);
 			// make it permanently go away from the world
 			fEntity.freeEntity();
 			fEntity = null;
@@ -491,9 +499,9 @@ public void touch(Player p)
 			if (p.addItem(item))
 				{
 				// hide the original item
-				touchFinish(p);
+				touchFinish(p, item);
 				// make it reappear later
-				setRespawn(DEFAULT_RESPAWN);
+				setRespawn(getRespawnTime());
 				}
 			}
 		catch (Exception e)
@@ -505,8 +513,9 @@ public void touch(Player p)
 /**
  * Called if item was actually taken.
  * @param p	The Player that took this item.
+ * @param itemTaken The object given to the player, may be this object or a copy.
  */
-protected void touchFinish(Player p) 
+protected void touchFinish(Player p, GenericItem itemTaken) 
 	{
 	// cancel any timeouts or animations
 	Game.removeFrameListener(this);

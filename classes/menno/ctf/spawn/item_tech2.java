@@ -74,7 +74,7 @@ public class item_tech2 extends GenericTech
 	**/
 	public void playSound()
 	{
-		if ( fOwner == null )
+		if ( getOwner() == null )
 			System.err.println( "Power Amplifier: playSound() called without owner" );
 		else
 		{
@@ -89,7 +89,7 @@ public class item_tech2 extends GenericTech
 				//	gi.sound(ent, CHAN_VOICE, gi.soundindex("ctf/tech2x.wav"), volume, ATTN_NORM, 0);
 				//else
 				//	gi.sound(ent, CHAN_VOICE, gi.soundindex("ctf/tech2.wav"), volume, ATTN_NORM, 0);
-				fOwner.fEntity.sound( NativeEntity.CHAN_VOICE, Engine.getSoundIndex("ctf/tech2.wav"), volume, NativeEntity.ATTN_NORM, 0);
+				getOwner().fEntity.sound( NativeEntity.CHAN_VOICE, Engine.getSoundIndex("ctf/tech2.wav"), volume, NativeEntity.ATTN_NORM, 0);
 			}
 		}
 	}
@@ -101,10 +101,10 @@ public class item_tech2 extends GenericTech
 	{
 		super.runFrame(phase);
 
-		if ((phase == Game.FRAME_BEGINNING) && (fOwner != null))
+		if ((phase == Game.FRAME_BEGINNING) && (getOwner() != null))
 		{
-			baseq2.GenericWeapon gw = fOwner.getCurrentWeapon();
-			if ( (!(gw instanceof weapon_grapple)) && fOwner.getCurrentWeapon().isFiring() )
+			baseq2.GenericWeapon gw = getOwner().getCurrentWeapon();
+			if ( (!(gw instanceof weapon_grapple)) && getOwner().getCurrentWeapon().isFiring() )
 				playSound();		
 		}
 	}
@@ -120,9 +120,9 @@ public class item_tech2 extends GenericTech
 			p.setDamageMultiplier( getDamageMultiplier() * p.getDamageMultiplier() );
 		else
 			{
-			if (fOwner != null)
+			if (getOwner() != null)
 				// player giving up tech..decrease his power
-				fOwner.setDamageMultiplier( fOwner.getDamageMultiplier() / getDamageMultiplier() );
+				getOwner().setDamageMultiplier( getOwner().getDamageMultiplier() / getDamageMultiplier() );
 			}
 
 		super.setOwner(p);

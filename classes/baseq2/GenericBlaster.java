@@ -30,7 +30,7 @@ public GenericBlaster(int blasterEffect, int blasterDamage, int blasterMuzzleFla
 	fEffect = blasterEffect;
 	fObitKey = obitKey;
 	fDamage = blasterDamage;
-	fMuzzleFlash = blasterMuzzleFlash;	
+	fMuzzleFlash = blasterMuzzleFlash;
 	fBlasterOffset = new Vector3f();
 	}
 /**
@@ -41,10 +41,10 @@ public void fire()
 	Vector3f forward = new Vector3f();
 	Vector3f right = new Vector3f();
 	Vector3f offset = new Vector3f(24, 8, fPlayer.fViewHeight - 8);
-/*
-	if (is_quad)
-		damage *= 4;
-*/		
+	int damage = fDamage;
+	
+	damage *= fPlayer.getDamageMultiplier();
+	
 	Angle3f ang = fEntity.getPlayerViewAngles();
 	ang.getVectors(forward, right, null);
 	offset.add(fBlasterOffset);
@@ -56,7 +56,7 @@ public void fire()
 
 	try
 		{
-		new BlasterBolt(fPlayer, start, forward, fDamage, 1000, fEffect, fObitKey);
+		new BlasterBolt(fPlayer, start, forward, damage, 1000, fEffect, fObitKey);
 		}
 	catch (GameException e)
 		{

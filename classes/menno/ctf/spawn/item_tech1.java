@@ -73,14 +73,14 @@ public class item_tech1 extends GenericTech
 	**/
 	public void playSound()
 	{
-		if ( fOwner == null )
+		if ( getOwner() == null )
 			System.err.println( "Disruptor Shield: playSound() called without owner" );
 		else
 		{
 			float volume = 1f;
 			//if (self->owner->client->silencer_shots)
 			//	volume = 0.2;
-			fOwner.fEntity.sound( NativeEntity.CHAN_VOICE, Engine.getSoundIndex("ctf/tech1.wav"), volume, NativeEntity.ATTN_NORM, 0);
+			getOwner().fEntity.sound( NativeEntity.CHAN_VOICE, Engine.getSoundIndex("ctf/tech1.wav"), volume, NativeEntity.ATTN_NORM, 0);
 		}
 	}
 }

@@ -22,7 +22,7 @@ import q2jgame.*;
 import javax.vecmath.*;
 
 
-public abstract class GenericFlag extends baseq2.GenericItem implements baseq2.GameTarget
+public abstract class GenericFlag extends baseq2.GenericItem implements baseq2.GameTarget, baseq2.PlayerStateListener
 {
 	public static final int CTF_FLAG_STATE_STANDING = 0;
 	public static final int CTF_FLAG_STATE_DROPPED  = 1;
@@ -87,14 +87,27 @@ public abstract class GenericFlag extends baseq2.GenericItem implements baseq2.G
 
 		reset();
 	}
-	public void drop(Player dropper)
+	public void drop(baseq2.Player dropper, float timeout)
+	{
+		// drop it and say it was lost
+		drop(dropper, CTF_FLAG_AUTO_RETURN_TIME, true);
+	}
+	protected void drop(baseq2.Player dropper, float timeout, boolean lostIt)
 	{
 		super.drop(dropper, CTF_FLAG_AUTO_RETURN_TIME);
 		fState = CTF_FLAG_STATE_DROPPED;
 
-		Object[] args = {fCarrier.getName(), fFlagIndex};
-		Game.localecast("menno.ctf.CTFMessages", "lost_flag", args, Engine.PRINT_HIGH);	
+		if (lostIt)
+			{
+			Object[] args = {fCarrier.getName(), fFlagIndex};
+			Game.localecast("menno.ctf.CTFMessages", "lost_flag", args, Engine.PRINT_HIGH);
+			}
 
+		dropper.fEntity.setEffects( dropper.fEntity.getEffects() & ~getFlagEffects() );
+		dropper.fEntity.setModelIndex3( 0 );
+		dropper.fEntity.setPlayerStat( STAT_CTF_FLAG_PIC, (short)0 );
+		dropper.removePlayerStateListener(this);
+		
 		// forget about who was carrying the flag
 		fCarrier = null;
 		
@@ -169,29 +182,50 @@ public abstract class GenericFlag extends baseq2.GenericItem implements baseq2.G
 			return false;
 		}
 		
-		// let superclass have final say
-		return super.isTouchable(bp);
-	}
-	protected void pickupBy( Player p )
-	{
-		fState = CTF_FLAG_STATE_CARRIED;
-		// make the item disappear
-		fEntity.setSolid( NativeEntity.SOLID_NOT );
-		fEntity.setSVFlags( fEntity.getSVFlags() | NativeEntity.SVF_NOCLIENT );
-		fEntity.linkEntity();
+		// let superclass think about it
+		if (!super.isTouchable(bp))
+			return false;
 
-		// set the carrier
-		fCarrier = p;
-		fCarrier.addFlag( this );
+		// enemies can always pickup a flag
+		if (getTeam() != p.getTeam())
+			return true;
+			
+		// at this point, it must be a player trying to touch his own team's flag
+		// perform some actions based on the state of the flag.
+		switch (getState())
+		{
+			case CTF_FLAG_STATE_STANDING:
+				GenericFlag otherFlag = (GenericFlag) p.getInventory("flag");
+				if (otherFlag != null)
+				{
+					// WE HAVE A CAPTURE !!!!!
+					Object[] args = {p.getName(), otherFlag.fFlagIndex};
+					Game.localecast("menno.ctf.CTFMessages", "capture_flag", args, Engine.PRINT_HIGH);	
 
-		Object[] args = {fCarrier.getName(), fFlagIndex};
-		Game.localecast("menno.ctf.CTFMessages", "got_flag", args, Engine.PRINT_HIGH);	
+					playCaptureSound();
 		
-		// setup the listener so, that it's called every 0.8 seconds to flash the carriers flag-icon
-		Game.addFrameListener( this, 0, 0.8F );
+					// have the player drop the captured flag and send it back to its base
+					p.removeInventory( "flag" );
+					otherFlag.drop(p, 0, false); // use false so that it's not announced as lost
+					otherFlag.reset();
+			
+					// Add the bonuses...
+					p.getTeam().addCapture( p );				
+				}
+				break;
+				
+			case CTF_FLAG_STATE_DROPPED:			
+				// was dropped on the ground
+				p.setScore( Player.CTF_RECOVERY_BONUS, false );
+				reset();
+				Object[] args = {p.getName(), fFlagIndex};
+				Game.localecast("menno.ctf.CTFMessages", "return_flag", args, Engine.PRINT_HIGH);	
+				playReturnSound();
+				break;
+		}
 
-		//update all stats (also from spectators) that our flag is being carried
-		updateAllStats(getIconName() + "t");
+		// but return false, since you can never carry your own flag
+		return false; 
 	}
 	/**
 	 * Player the flag capture sound.
@@ -199,6 +233,19 @@ public abstract class GenericFlag extends baseq2.GenericItem implements baseq2.G
 	public void playCaptureSound() 
 	{
 		fEntity.sound(NativeEntity.CHAN_RELIABLE+NativeEntity.CHAN_NO_PHS_ADD+NativeEntity.CHAN_VOICE, fCaptureSoundIndex, 1, NativeEntity.ATTN_NONE, 0);	
+	}
+	/**
+	 * Called when a player dies or disconnects.
+	 * @param wasDisconnected true on disconnects, false on normal deaths.
+	 */
+	public void playerStateChanged(baseq2.Player p, int changeEvent)
+	{
+		if (changeEvent != baseq2.PlayerStateListener.PLAYER_LEVELCHANGE)
+			drop(p, CTF_FLAG_AUTO_RETURN_TIME); // will handle removing listener
+		else
+			p.removePlayerStateListener(this); // just remove the listener
+			
+		p.removeInventory("flag");		
 	}
 	/**
 	 * Player the flag return sound.
@@ -258,6 +305,38 @@ public abstract class GenericFlag extends baseq2.GenericItem implements baseq2.G
 		}
 		else
 			super.runFrame(phase);
+	}
+	/**
+	 * Called if item was actually taken.
+	 * @param p	The Player that took this item.
+	 */
+	protected void touchFinish(baseq2.Player p, baseq2.GenericItem itemTaken) 
+	{
+		super.touchFinish(p, itemTaken);
+		
+		// add flag to player inventory
+		p.fEntity.setPlayerStat( STAT_CTF_FLAG_PIC, (short)Engine.getImageIndex(getIconName()) );
+		p.fEntity.setEffects( p.fEntity.getEffects() | getFlagEffects() );
+		p.fEntity.setModelIndex3( Engine.getModelIndex(getModelName()) );
+		p.putInventory( "flag", this );
+		p.setScore( Player.CTF_FLAG_BONUS, false );
+
+		fState = CTF_FLAG_STATE_CARRIED;
+
+		// set the carrier
+		fCarrier = (Player) p;
+
+		Object[] args = {fCarrier.getName(), fFlagIndex};
+		Game.localecast("menno.ctf.CTFMessages", "got_flag", args, Engine.PRINT_HIGH);	
+		
+		// setup the listener so, that it's called every 0.8 seconds to flash the carriers flag-icon
+		Game.addFrameListener( this, 0, 0.8F );
+
+		// ask to be called if the player dies
+		p.addPlayerStateListener(this);
+		
+		//update all stats (also from spectators) that our flag is being carried
+		updateAllStats(getIconName() + "t");		
 	}
 	/**
 	 * update all stats (also from spectators) to show flag status.

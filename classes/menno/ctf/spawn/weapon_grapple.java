@@ -151,6 +151,15 @@ public class weapon_grapple extends GenericWeapon
 	{
 		return false;
 	}
+	/**
+	 * Called when a player dies or disconnects.
+	 * @param wasDisconnected true on disconnects, false on normal deaths.
+	 */
+	public void playerStateChanged(baseq2.Player p, int changeEvent)
+	{
+		reset();
+		super.playerStateChanged(p, changeEvent);
+	}
 	public void reset()
 	{
 		fEntity.sound(NativeEntity.CHAN_RELIABLE+NativeEntity.CHAN_WEAPON, Engine.getSoundIndex("weapons/grapple/grreset.wav"), 1, NativeEntity.ATTN_NORM, 0);

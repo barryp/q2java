@@ -12,7 +12,7 @@ import javax.vecmath.*;
  * @author Barry Pederson
  */
  
-public abstract class GenericWeapon extends AmmoHolder
+public abstract class GenericWeapon extends AmmoHolder implements PlayerStateListener
 	{
 	protected int    fVWepIndex;
 	
@@ -95,6 +95,9 @@ public void activate()
 	fWeaponState = WEAPON_ACTIVATING;
 	setWeaponFrame(0);
 	fPlayer.setAmmoType(getAmmoName());
+
+	// ask to be called back if the player dies
+	fPlayer.addPlayerStateListener(this);
 	}
 /**
  * This method was created by a SmartGuide.
@@ -102,6 +105,9 @@ public void activate()
 public void deactivate() 
 	{
 	fIsSwitching = true;
+
+	// not interested anymore if the player dies
+	fPlayer.removePlayerStateListener(this);	
 	}
 /**
  * This method was created by a SmartGuide.
@@ -190,6 +196,22 @@ public boolean isEnoughAmmo()
 public boolean isFiring() 
 	{
 	return fWeaponState == WEAPON_FIRING;
+	}
+/**
+ * Called when a player dies or disconnects.
+ * @param wasDisconnected true on disconnects, false on normal deaths.
+ */
+public void playerStateChanged(Player p, int changeEvent)
+	{
+	// not interested anymore if the player dies
+	fPlayer.removePlayerStateListener(this);
+	
+	if ((changeEvent != PlayerStateListener.PLAYER_LEVELCHANGE) && isDroppable())
+		{
+		setAmmoCount(getDefaultAmmoCount());
+		p.removeInventory(getItemName()); // not really necessary, but you never know
+		drop(p, GenericItem.DROP_TIMEOUT);
+		}
 	}
 /**
  * Make sure a weapon's VWep skin is precached.  Most useful

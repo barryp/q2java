@@ -169,6 +169,7 @@ public class Player extends baseq2.Player implements CameraListener
 
 	protected boolean  fIsSpectator;
 	protected boolean  fIsChasing;
+	protected boolean  fUseTeamSpawnpoint;
 
 	//=====================================================
 	// Methods for testing things (ignore)
@@ -197,112 +198,6 @@ public class Player extends baseq2.Player implements CameraListener
 		fEntity.setPlayerStat( Team.STAT_CTF_TEAM1_CAPS, (short)Team.TEAM1.getCaptures()       );
 		fEntity.setPlayerStat( Team.STAT_CTF_TEAM2_PIC,  (short)Engine.getImageIndex("i_ctf2") );
 		fEntity.setPlayerStat( Team.STAT_CTF_TEAM2_CAPS, (short)Team.TEAM2.getCaptures()       );
-	}
-	//========================================================================
-	// Methods
-	//========================================================================
-
-	/**
-	* Add a flag to the players inventory
-	**/
-	protected boolean addFlag( GenericFlag flag )
-	{
-		if (flag.getTeam() == getTeam())
-		{
-			// player touches their own flag
-			if (flag.getState() == GenericFlag.CTF_FLAG_STATE_STANDING)
-			{
-				// ... while it's standing
-				GenericFlag otherFlag = (GenericFlag)getInventory("flag");
-				if (otherFlag != null)
-				{
-					// WE HAVE A CAPTURE !!!!!
-					Object[] args = {getName(), otherFlag.fFlagIndex};
-					Game.localecast("menno.ctf.CTFMessages", "capture_flag", args, Engine.PRINT_HIGH);	
-
-					flag.playCaptureSound();
-		
-					// drop the captured flag and send it back to its base
-					otherFlag.drop(this, 0);
-					otherFlag.reset();
-	
-					// put the player back to normal				
-					fEntity.setEffects( fEntity.getEffects() & ~otherFlag.getFlagEffects() );
-					fEntity.setModelIndex3( 0 );
-					fEntity.setPlayerStat( GenericFlag.STAT_CTF_FLAG_PIC, (short)0 );
-					removeInventory( "flag" );
-		
-					// Add the bonuses...
-					getTeam().addCapture( this );				
-				}
-			}
-			else if (flag.getState() == GenericFlag.CTF_FLAG_STATE_DROPPED)
-			{
-				// was dropped on the ground
-				setScore( Player.CTF_RECOVERY_BONUS, false );
-				flag.reset();
-				Object[] args = {getName(), flag.fFlagIndex};
-				Game.localecast("menno.ctf.CTFMessages", "return_flag", args, Engine.PRINT_HIGH);	
-				flag.playReturnSound();
-			}
-			return false; //you don't actually take your own flag
-		}
-		
-		// Don't add flag if already have one
-		if ( isCarrying("flag") )
-			return false;
-
-		// add flag to inventory
-		fEntity.setPlayerStat( GenericFlag.STAT_CTF_FLAG_PIC, (short)Engine.getImageIndex(flag.getIconName()) );
-		fEntity.setEffects( fEntity.getEffects() | flag.getFlagEffects() );
-		fEntity.setModelIndex3( Engine.getModelIndex(flag.getModelName()) );
-		putInventory( "flag", flag );
-		setScore( getScore() + CTF_FLAG_BONUS );
-		flag.pickupBy(this);
-		
-		return true;
-	}
-	/**
-	 * Add item to the player's inventory.
-	 * @param item Item we're trying to add.
-	 * @return boolean true if the item was taken.
-	 */
-	public boolean addItem(baseq2.GenericItem item) 
-	{
-		if (item == null)
-			return false;
-
-		if (item instanceof GenericTech)
-			return addTech((GenericTech) item);
-
-		if (item instanceof GenericFlag)
-			return addFlag((GenericFlag) item);
-			
-		return super.addItem(item);
-	}
-	/**
-	* Add a tech to the players inventory
-	**/
-	protected boolean addTech( GenericTech tech )
-	{
-		// Don't add tech if already have one
-		if ( isCarrying("tech") )
-		{
-//			if ( Game.getGameTime() > (fLastTechMessage+2) )
-			{
-				fEntity.centerprint(fResourceGroup.getRandomString("menno.ctf.CTFMessages", "have_tech"));
-//				fLastTechMessage = Game.getGameTime();
-			}
-			return false;
-		}
-
-		// add tech to inventory
-		int icon = Engine.getImageIndex(tech.getIconName());
-		fEntity.setPlayerStat( GenericTech.STAT_CTF_TECH, (short)icon );
-		putInventory( "tech", tech );
-		tech.setOwner(this);
-
-		return true;
 	}
 	//=====================================================
 	// Methods from CameraListener
@@ -452,12 +347,8 @@ public class Player extends baseq2.Player implements CameraListener
 
 		if ( fViewer != null )
 		{
-			// leave any team
-			if ( fTeam != null )
-			{
-				fTeam.removePlayer( this );
-				fTeam = null;
-			}
+			// pretend we disconnected - to drop weapons and techs and leave teams
+			notifyPlayerStateListeners(baseq2.PlayerStateListener.PLAYER_DISCONNECT);
 
 			//die( null, null, 0, null );
 			//fShowScore = false;
@@ -477,21 +368,6 @@ public class Player extends baseq2.Player implements CameraListener
 		}
 		else
 			fEntity.cprint( Engine.PRINT_MEDIUM, "No players to chase..\n" );
-	}
-	/**
-	 * Drop item
-	 * @param (Ignored, uses the Engine.args() value instead)
-	 */
-	public void cmd_drop(String[] args) 
-	{
-		String itemName = Engine.getArgs().toLowerCase();
-		
-		if ( itemName.equals("flag") )
-			dropFlag();
-		else if ( itemName.equals("tech") )
-			dropTech();
-		else
-			super.cmd_drop( args );
 	}
 	public void cmd_inven(String[] args)
 	{
@@ -555,8 +431,11 @@ public class Player extends baseq2.Player implements CameraListener
 		else		
 		{
 			fMenu.selectMenuItem();
-			fMenu.close();
-			fMenu = null;
+			if (fMenu != null)
+			{
+				fMenu.close();
+				fMenu = null;
+			}
 		}
 	}
 	/**
@@ -588,16 +467,16 @@ public class Player extends baseq2.Player implements CameraListener
 			fViewer = null;
 		}
 
-		// leave any team
-		if ( fTeam != null )
-		{
-			fTeam.removePlayer( this );
-			fTeam = null;
-		}
-
+		// pretend we disconnected - to drop weapons and techs and leave teams
+		notifyPlayerStateListeners(baseq2.PlayerStateListener.PLAYER_DISCONNECT);
+		fTeam = null;
+		
 		// close menu
 		if ( fMenu != null )
-			cmd_inven( null );
+		{
+			fMenu.close();
+			fMenu = null;
+		}
 
 		// deactivate our chasecam
 		fChaser.setActive( false );
@@ -617,17 +496,15 @@ public class Player extends baseq2.Player implements CameraListener
 	public void cmd_team(String[] args) 
 	{
 		Team   oldTeam, newTeam;
-		String teamName = "";
+		String teamName = null;
 		
 		if ( args.length > 1 )
 			teamName = args[1].toLowerCase();
 
 		if ( teamName.equals("red") )
 			newTeam = Team.TEAM1;
-
 		else if ( teamName.equals("blue") )
 			newTeam = Team.TEAM2;
-
 		else
 		{
 			fEntity.cprint(Engine.PRINT_HIGH, "Unknown team: " + teamName + "\n");
@@ -639,22 +516,16 @@ public class Player extends baseq2.Player implements CameraListener
 			fEntity.cprint(Engine.PRINT_HIGH, "You are already on the " + teamName + " team.\n");
 			return;	// Can't change to same team
 		}
+		
+		// pretend we disconnected - to drop weapons and techs and leave teams
+		notifyPlayerStateListeners(baseq2.PlayerStateListener.PLAYER_DISCONNECT);
 
-		// remove from old team if was there, and join new team...
-		if ( fTeam != null )
-			fTeam.removePlayer( this );
-
+		// join new team
 		newTeam.addPlayer( this );
 		fTeam = newTeam;
 
-		// drop flag and tech if carrying
-		dropFlag();
-		dropTech();
-
 		// respawn to new base and set score to zero...
-		//die( null, null, 0, null );
 		setScore( 0 );
-		//respawn();
 		clearSettings();
 		spawn();
 	}
@@ -685,8 +556,6 @@ public class Player extends baseq2.Player implements CameraListener
 						Vector3f dir, Point3f point, Vector3f normal, 
 						int damage, int knockback, int dflags, int tempEvent, String obitKey) 
 	{
-		GenericTech tech;
-
 		// don't take any more damage if already dead
 		if (fIsDead)
 			return;
@@ -707,7 +576,7 @@ public class Player extends baseq2.Player implements CameraListener
 
 		// if we are carrying the Disruptor Shield,
 		// apply it to us and get the damage-multiplier (0.0-1.0)
-		tech = (GenericTech)getInventory( "tech" );
+		GenericTech tech = (GenericTech)getInventory( "tech" );
 		if ( tech instanceof item_tech1 )
 		{
 			damage *= ((item_tech1)tech).getDamageMultiplier();
@@ -716,35 +585,12 @@ public class Player extends baseq2.Player implements CameraListener
 
 		super.damage( inflictor, attacker, dir, point, normal, damage, knockback, dflags, tempEvent, obitKey );
 	}
-	protected void die( baseq2.GameObject inflictor, baseq2.GameObject attacker, int damage, Point3f point, String obitKey)
-	{
-		if (fIsDead)
-			return;	// already dead
-
-		// reset Grapple if carrying
-		if ( fWeapon instanceof weapon_grapple )
-			( (weapon_grapple)fWeapon ).reset();
-
-		super.die( inflictor, attacker, damage, point, obitKey );
-	}
 	/**
 	 * Disassociate the CTF player object from the rest 
 	 * of the game.
 	 */
 	public void dispose() 
 	{
-		// remove from team if was there
-		if ( fTeam != null )
-			fTeam.removePlayer( this );
-
-		// reset Grapple if carrying
-		if ( fWeapon instanceof weapon_grapple )
-			( (weapon_grapple)fWeapon ).reset();
-
-		// drop flag and tech if carrying
-		dropFlag();
-		dropTech();
-
 		// remove from chasecam if viewing
 		if ( fViewer != null )
 		{
@@ -756,45 +602,6 @@ public class Player extends baseq2.Player implements CameraListener
 		fChaser.dispose();
 		
 		super.dispose();
-	}
-	private void dropFlag()
-	{
-		// drop flag if carrying
-		GenericFlag flag = (GenericFlag) fInventory.get( "flag" );
-		if ( flag != null )
-		{
-			fInventory.remove( "flag" );
-			flag.drop(this);
-			fEntity.setEffects( fEntity.getEffects() & ~flag.getFlagEffects() );
-			fEntity.setModelIndex3( 0 );
-			fEntity.setPlayerStat( GenericFlag.STAT_CTF_FLAG_PIC, (short)0 );
-		}
-	}
-	/**
-	 * Drop things on the ground when dead.
-	 */
-	protected void dropInventory() 
-	{
-		// handle dropping the basic stuff
-		super.dropInventory();
-		
-		// drop flag and tech if carrying
-		dropFlag();
-		dropTech();	
-	}
-	private void dropTech()
-	{
-		// drop tech if carrying
-		GenericTech tech = (GenericTech) fInventory.get( "tech" );
-		if ( tech != null )
-		{
-			fInventory.remove( "tech" );
-
-			tech.setOwner(null);
-			tech.drop(this, GenericTech.CTF_TECH_TIMEOUT);
-			
-			fEntity.setPlayerStat( GenericTech.STAT_CTF_TECH, (short)0 );
-		}
 	}
 	protected void endServerFrame()
 	{
@@ -810,8 +617,11 @@ public class Player extends baseq2.Player implements CameraListener
 	 */
 	protected baseq2.GenericSpawnpoint getSpawnpoint() 
 	{
-		if ( fTeam != null )
+		if (( fTeam != null ) && fUseTeamSpawnpoint)
+			{
+			fUseTeamSpawnpoint = false; // only use team spawnpoint once per level
 			return fTeam.getSpawnpoint();
+			}
 		else
 			return super.getSpawnpoint();
 	}
@@ -822,6 +632,15 @@ public class Player extends baseq2.Player implements CameraListener
 	public boolean isChasing()
 	{
 		return fIsChasing;
+	}
+/**
+ * Called by the DLL when the player should begin playing in the game.
+ * @param loadgame boolean
+ */
+public void playerBegin(boolean loadgame) 
+	{
+	fUseTeamSpawnpoint = true;
+	super.playerBegin(loadgame);
 	}
 	/**
 	 * All player entities get a chance to think.  When
@@ -888,7 +707,7 @@ public class Player extends baseq2.Player implements CameraListener
 		}
 
 		// did the victim carry the flag?
-		if ( victim.getInventory("flag") != null )
+		if ( victim.isCarrying("flag"))
 		{
 			Object[] args = {new Integer(CTF_FRAG_CARRIER_BONUS)};
 			fEntity.centerprint(fResourceGroup.format("menno.ctf.CTFMessages", "bonus_points", args) + "\n");

@@ -80,7 +80,7 @@ public String getAmmoName()
  */
 public int getDefaultAmmoCount() 
 	{
-	return 10;
+	return 5;
 	}
 /**
  * Get the name of this item's icon.

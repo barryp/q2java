@@ -65,7 +65,7 @@ public class item_tech3 extends GenericTech
 	**/
 	public void playSound()
 	{
-		if ( fOwner == null )
+		if ( getOwner() == null )
 			System.err.println( "Time Accel: playSound() called without owner" );
 		else
 		{
@@ -76,7 +76,7 @@ public class item_tech3 extends GenericTech
 			if ( fNextSoundTime < Game.getGameTime() )
 			{
 				fNextSoundTime = Game.getGameTime() + 1;
-				fOwner.fEntity.sound( NativeEntity.CHAN_VOICE, Engine.getSoundIndex("ctf/tech3.wav"), volume, NativeEntity.ATTN_NORM, 0);
+				getOwner().fEntity.sound( NativeEntity.CHAN_VOICE, Engine.getSoundIndex("ctf/tech3.wav"), volume, NativeEntity.ATTN_NORM, 0);
 			}
 		}
 	}
@@ -89,10 +89,10 @@ public class item_tech3 extends GenericTech
 	{
 		super.runFrame(phase);
 
-		if ((phase == Game.FRAME_BEGINNING) && (fOwner != null))
+		if ((phase == Game.FRAME_BEGINNING) && (getOwner() != null))
 		{
-			baseq2.GenericWeapon gw = fOwner.getCurrentWeapon();
-			if ( (!(gw instanceof weapon_grapple)) && fOwner.getCurrentWeapon().isFiring() )
+			baseq2.GenericWeapon gw = getOwner().getCurrentWeapon();
+			if ( (!(gw instanceof weapon_grapple)) && getOwner().getCurrentWeapon().isFiring() )
 			{
 				gw.weaponThink();
 				playSound();

@@ -73,7 +73,7 @@ public class item_tech4 extends GenericTech
 		if ( fNextSoundTime < Game.getGameTime() )
 		{
 			fNextSoundTime = Game.getGameTime() + 1;
-			fOwner.fEntity.sound( NativeEntity.CHAN_VOICE, Engine.getSoundIndex("ctf/tech4.wav"), volume, NativeEntity.ATTN_NORM, 0);
+			getOwner().fEntity.sound( NativeEntity.CHAN_VOICE, Engine.getSoundIndex("ctf/tech4.wav"), volume, NativeEntity.ATTN_NORM, 0);
 		}
 	}
 	/**
@@ -83,27 +83,28 @@ public class item_tech4 extends GenericTech
 	public void runFrame(int phase) 
 	{
 		super.runFrame(phase);
-
-		if ((phase == Game.FRAME_BEGINNING) && (fOwner != null))
+		Player p = getOwner();
+		
+		if ((phase == Game.FRAME_BEGINNING) && (p != null))
 		{
 			if ( fNextHealTime < Game.getGameTime() )
 			{
 				boolean noise  = false;
-				int     health = fOwner.getHealth();
-				int     armor  = fOwner.getArmorCount();
+				int     health = p.getHealth();
+				int     armor  = p.getArmorCount();
 
 				fNextHealTime = Game.getGameTime();
 				if ( health < 150) 
 				{
-					fOwner.setHealthMax( 150 );
-					fOwner.heal( 5, false );
+					p.setHealthMax( 150 );
+					p.heal( 5, false );
 					fNextHealTime += 0.5f;
 					noise = true;
 				}
 				if ( (armor > 0) && (armor < 150) )
 				{
-					fOwner.setArmorMaxCount( 150 );
-					fOwner.setArmorCount( Math.min(150, armor+5) );
+					p.setArmorMaxCount( 150 );
+					p.setArmorCount( Math.min(150, armor+5) );
 					fNextHealTime += 0.5f;
 					noise = true;
 				}

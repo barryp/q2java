@@ -1,6 +1,5 @@
 package baseq2;
 
-
 import java.util.Hashtable;
 
 /**
@@ -55,7 +54,7 @@ public void clear()
 public Object get(String name) 
 	{
 	InventoryPack p = (InventoryPack) fItemList.get(name.toLowerCase());
-	if (p == null)
+	if (p == null || p.fAmount == 0)
 		return null;
 	else
 		return p.fItem;
