@@ -1,7 +1,8 @@
-#include "globals.h"
 #include <windows.h> // only for GetModuleFileName() in setupPaths()
 #include <stdio.h>
 #include <stdarg.h>
+#include "globals.h"
+#include "javalink.h"
 
 game_import_t	gi;
 game_export_t	ge;
@@ -53,6 +54,9 @@ static void setupPaths()
 
 	// save the name of our debugLog file
 	sprintf(debugFileName, "%s\\q2java.log", global_gameDirName);
+
+	// erase any existing debug file
+	remove(debugFileName);
 	}
 
 
@@ -61,6 +65,15 @@ game_export_t *GetGameAPI (game_import_t *import)
 	gi = *import;
 
 	setupPaths();
+
+	startJava();
+	if (java_error)
+		{
+		gi.error(java_error);
+		return 0;
+		}
+
+	gi.dprintf("Quake2 Java DLL initialized\n");
 
 	// setup the game_export_t structure
 	ge.apiversion = GAME_API_VERSION;

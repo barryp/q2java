@@ -1,6 +1,6 @@
 #include "globals.h"
 #include "javalink.h"
-#include "NativeEntity.h"
+#include "q2java_NativeEntity.h"
 
 // handles to fields in a C entity
 // (same constants as in NativeEntity.java)
@@ -58,62 +58,66 @@ static jmethodID method_PMoveResults_ctor;
 
 static JNINativeMethod Entity_methods[] = 
 	{
-	{"allocateEntity",	"(Z)I", 					Java_NativeEntity_allocateEntity},
-	{"freeEntity0",		"(I)V",						Java_NativeEntity_freeEntity0},
-	{"setInt",			"(III)V",					Java_NativeEntity_setInt},
-	{"getInt",			"(II)I",					Java_NativeEntity_getInt},
-	{"setVec3",			"(IIFFF)V",					Java_NativeEntity_setVec3},
-	{"getVec3",			"(II)Lq2java/Vec3;",		Java_NativeEntity_getVec3},
-	{"sound0",			"(FFFIIIFFFI)V",			Java_NativeEntity_sound0},
-	{"setModel0",		"(ILjava/lang/String;)V",	Java_NativeEntity_setModel0},	
-	{"linkEntity0",		"(I)V",						Java_NativeEntity_linkEntity0},
-	{"unlinkEntity0",	"(I)V",						Java_NativeEntity_unlinkEntity0},
+	{"allocateEntity",	"(Z)I", 					Java_q2java_NativeEntity_allocateEntity},
+	{"freeEntity0",		"(I)V",						Java_q2java_NativeEntity_freeEntity0},
+	{"setInt",			"(III)V",					Java_q2java_NativeEntity_setInt},
+	{"getInt",			"(II)I",					Java_q2java_NativeEntity_getInt},
+	{"setVec3",			"(IIFFF)V",					Java_q2java_NativeEntity_setVec3},
+	{"getVec3",			"(II)Lq2java/Vec3;",		Java_q2java_NativeEntity_getVec3},
+	{"sound0",			"(FFFIIIFFFI)V",			Java_q2java_NativeEntity_sound0},
+	{"setModel0",		"(ILjava/lang/String;)V",	Java_q2java_NativeEntity_setModel0},	
+	{"boxEntity0",		"(II)[Lq2java/NativeEntity;", Java_q2java_NativeEntity_boxEntity0},
+	{"linkEntity0",		"(I)V",						Java_q2java_NativeEntity_linkEntity0},
+	{"unlinkEntity0",	"(I)V",						Java_q2java_NativeEntity_unlinkEntity0},
 
 	// methods for players only
-	{"pMove0",			"(I)Lq2java/PMoveResults;",	Java_NativeEntity_pMove0},
-	{"setFloat0",		"(IIFFFF)V",				Java_NativeEntity_setFloat0},
-	{"setStat0",		"(IIS)V",					Java_NativeEntity_setStat0},
-	{"cprint0",			"(IILjava/lang/String;)V",	Java_NativeEntity_cprint0},
-	{"centerprint0",	"(ILjava/lang/String;)V",	Java_NativeEntity_centerprint0}
+	{"pMove0",			"(I)Lq2java/PMoveResults;",	Java_q2java_NativeEntity_pMove0},
+	{"setFloat0",		"(IIFFFF)V",				Java_q2java_NativeEntity_setFloat0},
+	{"setStat0",		"(IIS)V",					Java_q2java_NativeEntity_setStat0},
+	{"cprint0",			"(IILjava/lang/String;)V",	Java_q2java_NativeEntity_cprint0},
+	{"centerprint0",	"(ILjava/lang/String;)V",	Java_q2java_NativeEntity_centerprint0}
 	};
 
 void Entity_javaInit()
 	{
-	debugLog("Entity_javaInit() started\n");
-
     cvar_gravity = gi.cvar("sv_gravity", "800", 0);
 
 	class_NativeEntity = (*java_env)->FindClass(java_env, "q2java/NativeEntity");
-	CHECK_EXCEPTION();
-	if (!class_NativeEntity)
+	if(CHECK_EXCEPTION() || !class_NativeEntity)
 		{
-		debugLog("Couldn't get Java Entity class\n");
+		java_error = "Couldn't find q2java.NativeEntity\n";
 		return;
 		}
 
 	(*java_env)->RegisterNatives(java_env, class_NativeEntity, Entity_methods, sizeof(Entity_methods) / sizeof(Entity_methods[0])); 
-	CHECK_EXCEPTION();
+	if (CHECK_EXCEPTION())
+		{
+		java_error = "Couldn't register native methods for q2java.NativeEntity\n";
+		return;
+		}
 
 	field_NativeEntity_fEntityIndex = (*java_env)->GetFieldID(java_env, class_NativeEntity, "fEntityIndex", "I");
 	field_NativeEntity_fEntityArray = (*java_env)->GetStaticFieldID(java_env, class_NativeEntity, "fEntityArray", "[Lq2java/NativeEntity;");
 //	method_NativeEntity_ctor = (*java_env)->GetMethodID(java_env, class_NativeEntity, "<init>", "(I)V");
-	CHECK_EXCEPTION();
+	if (CHECK_EXCEPTION())
+		{
+		java_error = "Couldn't get field handles for NativeEntity\n";
+		return;
+		}
 
 	class_PMoveResults = (*java_env)->FindClass(java_env, "q2java/PMoveResults");
-	CHECK_EXCEPTION();
-	if (!class_PMoveResults)
+	if (CHECK_EXCEPTION() || !class_PMoveResults)
 		{
-		debugLog("Couldn't get Java PMoveResults class\n");
+		java_error = "Couldn't find q2java.PMoveResults\n";
 		return;
 		}
 
 	method_PMoveResults_ctor = (*java_env)->GetMethodID(java_env, class_PMoveResults, "<init>", "(BSSSSSSB[Lq2java/NativeEntity;FLq2java/NativeEntity;II)V");
-	CHECK_EXCEPTION();
-	if (!method_PMoveResults_ctor)
-		debugLog("Couldn't get PMoveResults constructor\n");
-
-
-	debugLog("Entity_javaInit() finished\n");
+	if (CHECK_EXCEPTION() || !method_PMoveResults_ctor)
+		{
+		java_error = "Couldn't find q2java.PMoveResults constructor\n";
+		return;
+		}
 	}
 
 void Entity_arrayInit()
@@ -123,6 +127,7 @@ void Entity_arrayInit()
 	ge.max_edicts = (*java_env)->GetArrayLength(java_env, array);
 	ge.edicts = gi.TagMalloc(ge.max_edicts * sizeof(edict_t), TAG_GAME);
 	}
+
 
 void Entity_javaFinalize()
 	{
@@ -200,12 +205,6 @@ jobject Entity_getEntity(int index)
 	jobjectArray array;
 	jobject result;
 
-	if (!field_NativeEntity_fEntityArray)
-		{			
-		debugLog("Don't have handle for Java Entity.fEntityArray field\n");
-		return 0;
-		}
-
 	array = (*java_env)->GetStaticObjectField(java_env, class_NativeEntity, field_NativeEntity_fEntityArray);
 	result = (*java_env)->GetObjectArrayElement(java_env, array, index);
 	CHECK_EXCEPTION();
@@ -215,12 +214,6 @@ jobject Entity_getEntity(int index)
 void Entity_setEntity(int index, jobject value)
 	{
 	jobjectArray array;
-
-	if (!field_NativeEntity_fEntityArray)
-		{			
-		debugLog("Don't have handle for Java Entity.fEntityArray field\n");
-		return;
-		}
 
 	array = (*java_env)->GetStaticObjectField(java_env, class_NativeEntity, field_NativeEntity_fEntityArray);
 	(*java_env)->SetObjectArrayElement(java_env, array, index, value);
@@ -232,12 +225,6 @@ int Entity_get_fEntityIndex(jobject jent)
 	{
 	int result;
 
-	if (!field_NativeEntity_fEntityIndex)
-		{
-		debugLog("Don't have handle for fEntityIndex\n");
-		return -1;						
-		}
-
 	result = (*java_env)->GetIntField(java_env, jent, field_NativeEntity_fEntityIndex);
 	CHECK_EXCEPTION();
 	return result;
@@ -245,12 +232,6 @@ int Entity_get_fEntityIndex(jobject jent)
 
 void Entity_set_fEntityIndex(jobject jent, int index)
 	{
-	if (!field_NativeEntity_fEntityIndex)
-		{
-		debugLog("Don't have handle for fEntityIndex\n");
-		return;
-		}
-
 	(*java_env)->SetIntField(java_env, jent, field_NativeEntity_fEntityIndex, index);
 	CHECK_EXCEPTION();
 	}
@@ -265,17 +246,29 @@ jobjectArray Entity_createArray(edict_t **ents, int count)
 	int realCount;
 	jobjectArray result;
 
+debugLog("Entity_createArray(%x, %d)\n", ents, count);
+
 	// sanity check
-	if ((!ents) || (count < 1) || (!class_NativeEntity))
+	if ((!ents) || (count < 1))
 		return 0;
 
 	// recount, elminiating duplicates and worldspawn
 	realCount = 0;
 	for (i = 0; i < count; i++)
 		{
+		// skip unused entities
+		if (!ents[i]->inuse)
+			{
+			debugLog("%d is not inuse\n", i);
+			continue;
+			}
+
 		// skip worldspawn
 		if (ents[i] == ge.edicts)
+			{
+			debugLog("%d is the world\n", i);
 			continue;
+			}
 
 		for (j = 0; j < i; j++)
 			{
@@ -285,7 +278,11 @@ jobjectArray Entity_createArray(edict_t **ents, int count)
 
 		if (j == i)
 			realCount++;
+		else
+			debugLog("%d is a duplicate of %d\n", i, j);
 		}
+
+debugLog("Entity_createArray() found %d entities\n");
 
 	// bail if it was just worldspawns
 	if (realCount < 1)
@@ -295,6 +292,10 @@ jobjectArray Entity_createArray(edict_t **ents, int count)
 
 	for (i = 0; i < count; i++)
 		{
+		// skip unused entities
+		if (!ents[i]->inuse)
+			continue;
+
 		// skip worldspawn
 		if (ents[i] == ge.edicts)
 			continue;
@@ -312,7 +313,8 @@ jobjectArray Entity_createArray(edict_t **ents, int count)
 	return result;
 	}
 
-static jint JNICALL Java_NativeEntity_allocateEntity(JNIEnv *env, jclass cls, jboolean isWorld)
+
+static jint JNICALL Java_q2java_NativeEntity_allocateEntity(JNIEnv *env, jclass cls, jboolean isWorld)
 	{
 	int			i;
 	edict_t		*ent;
@@ -339,7 +341,7 @@ static jint JNICALL Java_NativeEntity_allocateEntity(JNIEnv *env, jclass cls, jb
 	// we're totally drained
 	if (i == ge.max_edicts)
 		{
-		gi.dprintf("Java_NativeEntity_allocateEntity: no free entities");
+		gi.dprintf("Java_q2java_NativeEntity_allocateEntity: no free entities");
 		return -1;			
 		}
 
@@ -352,7 +354,8 @@ static jint JNICALL Java_NativeEntity_allocateEntity(JNIEnv *env, jclass cls, jb
 	return i;
 	}		
 
-static void JNICALL Java_NativeEntity_freeEntity0(JNIEnv *env, jclass cls, jint index)
+
+static void JNICALL Java_q2java_NativeEntity_freeEntity0(JNIEnv *env, jclass cls, jint index)
 	{
 	gclient_t *cli;
 	edict_t *ent;
@@ -385,7 +388,7 @@ static void JNICALL Java_NativeEntity_freeEntity0(JNIEnv *env, jclass cls, jint 
 	}		
 
 
-static void JNICALL Java_NativeEntity_setInt(JNIEnv *env, jclass cls, jint index, jint fieldNum, jint val)
+static void JNICALL Java_q2java_NativeEntity_setInt(JNIEnv *env, jclass cls, jint index, jint fieldNum, jint val)
 	{
 	int *ip = lookupInt(index, fieldNum);
 
@@ -394,7 +397,7 @@ static void JNICALL Java_NativeEntity_setInt(JNIEnv *env, jclass cls, jint index
 	}
 
 
-static jint JNICALL Java_NativeEntity_getInt(JNIEnv *env, jclass cls, jint index, jint fieldNum)
+static jint JNICALL Java_q2java_NativeEntity_getInt(JNIEnv *env, jclass cls, jint index, jint fieldNum)
 	{
 	int *ip = lookupInt(index, fieldNum);
 	if (ip)
@@ -403,7 +406,8 @@ static jint JNICALL Java_NativeEntity_getInt(JNIEnv *env, jclass cls, jint index
 		return 0;  // ---FIX--- this isn't a good error indicator
 	}
 
-static void JNICALL Java_NativeEntity_setVec3(JNIEnv *env, jclass cls, jint index, jint fieldNum, jfloat x, jfloat y, jfloat z)
+
+static void JNICALL Java_q2java_NativeEntity_setVec3(JNIEnv *env, jclass cls, jint index, jint fieldNum, jfloat x, jfloat y, jfloat z)
 	{
 	edict_t  *ent;
 	vec3_t *v = lookupVec3(index, fieldNum);
@@ -440,14 +444,14 @@ static void JNICALL Java_NativeEntity_setVec3(JNIEnv *env, jclass cls, jint inde
 	}
 
 
-static jobject JNICALL Java_NativeEntity_getVec3(JNIEnv *env, jclass cls, jint index, jint fieldNum)
+static jobject JNICALL Java_q2java_NativeEntity_getVec3(JNIEnv *env, jclass cls, jint index, jint fieldNum)
 	{
 	vec3_t *v = lookupVec3(index, fieldNum);
 	return newJavaVec3(v);
 	}
 
 
-static void JNICALL Java_NativeEntity_sound0(JNIEnv *env , jclass cls, jfloat x, jfloat y, jfloat z, jint index, jint channel, jint soundindex, jfloat volume, jfloat attenuation, jfloat timeofs, jint calltype)
+static void JNICALL Java_q2java_NativeEntity_sound0(JNIEnv *env , jclass cls, jfloat x, jfloat y, jfloat z, jint index, jint channel, jint soundindex, jfloat volume, jfloat attenuation, jfloat timeofs, jint calltype)
 	{
 	vec3_t v;
 
@@ -471,7 +475,25 @@ static void JNICALL Java_NativeEntity_sound0(JNIEnv *env , jclass cls, jfloat x,
 	}
 
 
-static void JNICALL Java_NativeEntity_setModel0(JNIEnv *env, jclass cls, jint index, jstring js)
+static jobjectArray JNICALL Java_q2java_NativeEntity_boxEntity0(JNIEnv *env, jclass cls, jint index, jint areaType)
+	{
+	edict_t *ent;
+	edict_t *list[MAX_EDICTS];
+	int count;
+// debugLog("boxEntity0(%d, %d)\n", index, areaType);
+	// sanity check
+	if ((index < 0) || (index >= ge.max_edicts))
+		return 0;
+
+	ent = ge.edicts + index;
+// debugLog("absmin = (%f, %f, %f)  absmax = (%f, %f, %f)\n", ent->absmin[0], ent->absmin[1], ent->absmin[2], ent->absmax[0], ent->absmax[1], ent->absmax[2]);
+	count = gi.BoxEdicts(ent->absmin, ent->absmax, list, MAX_EDICTS, areaType);
+
+	return Entity_createArray(list, count);
+	}
+
+
+static void JNICALL Java_q2java_NativeEntity_setModel0(JNIEnv *env, jclass cls, jint index, jstring js)
 	{
 	char *str;
 
@@ -484,16 +506,21 @@ static void JNICALL Java_NativeEntity_setModel0(JNIEnv *env, jclass cls, jint in
 	(*env)->ReleaseStringUTFChars(env, js, str);
 	}
 
-static void JNICALL Java_NativeEntity_linkEntity0(JNIEnv *env, jclass cls, jint index)
+static void JNICALL Java_q2java_NativeEntity_linkEntity0(JNIEnv *env, jclass cls, jint index)
 	{
+	edict_t *ent;
+
 	// sanity check
 	if ((index < 0) || (index >= ge.max_edicts))
 		return;
 	
+	ent = ge.edicts + index;
+debugLog("before gi.linkentity: entity %d absmin(%f, %f, %f) absmax(%f, %f, %f)\n", index, ent->absmin[0], ent->absmin[1], ent->absmin[2], ent->absmax[0], ent->absmax[1], ent->absmax[2]);
 	gi.linkentity(ge.edicts + index);
+debugLog(" after gi.linkentity:           absmin(%f, %f, %f) absmax(%f, %f, %f)\n", ent->absmin[0], ent->absmin[1], ent->absmin[2], ent->absmax[0], ent->absmax[1], ent->absmax[2]);
 	}
 
-static void JNICALL Java_NativeEntity_unlinkEntity0(JNIEnv *env, jclass cls, jint index)
+static void JNICALL Java_q2java_NativeEntity_unlinkEntity0(JNIEnv *env, jclass cls, jint index)
 	{
 	// sanity check
 	if ((index < 0) || (index >= ge.max_edicts))
@@ -517,7 +544,7 @@ static trace_t	PM_trace(vec3_t start, vec3_t mins, vec3_t maxs, vec3_t end)
 	}
 
 
-static jobject JNICALL Java_NativeEntity_pMove0(JNIEnv *env, jclass cls, jint index)
+static jobject JNICALL Java_q2java_NativeEntity_pMove0(JNIEnv *env, jclass cls, jint index)
 	{
 	jobject groundEnt;
 	jobjectArray touched;
@@ -525,8 +552,6 @@ static jobject JNICALL Java_NativeEntity_pMove0(JNIEnv *env, jclass cls, jint in
 	pmove_t pm;
 	gclient_t *client;
 	edict_t *ent;
-
-	debugLog("In C pMove0(%d)\n", index);
 
 	// sanity check
 	if ((index < 0) || (index > global_maxClients))
@@ -548,7 +573,7 @@ static jobject JNICALL Java_NativeEntity_pMove0(JNIEnv *env, jclass cls, jint in
 
 	pm.trace = PM_trace;	// adds default parms
 	pm.pointcontents = gi.pointcontents;
-debugLog("About to call gi.Pmove()\n");
+	pm_passent = ent;
 	gi.Pmove(&pm);
 
 	// save results of pmove
@@ -564,16 +589,12 @@ debugLog("About to call gi.Pmove()\n");
 		client->ps.viewangles[i] = pm.viewangles[i];
 		}
 
-	debugLog("Done with the C part of pMove0, generating java objects\n");
-
 	touched = Entity_createArray(pm.touchents, pm.numtouch);
 
 	if (!pm.groundentity)
 		groundEnt = 0;
 	else
 		groundEnt = Entity_getEntity(pm.groundentity - ge.edicts);
-
-	debugLog("About to try returning a new PMoveResult\n");
 
 	return (*env)->NewObject(env, class_PMoveResults, method_PMoveResults_ctor,
 		pm.cmd.buttons, pm.cmd.angles[0], pm.cmd.angles[1], pm.cmd.angles[2],
@@ -582,7 +603,7 @@ debugLog("About to call gi.Pmove()\n");
 	}
 
 
-static void JNICALL Java_NativeEntity_setFloat0(JNIEnv *env, jclass cls, jint index, jint fieldindex, jfloat r, jfloat g, jfloat b, jfloat a)
+static void JNICALL Java_q2java_NativeEntity_setFloat0(JNIEnv *env, jclass cls, jint index, jint fieldindex, jfloat r, jfloat g, jfloat b, jfloat a)
 	{
 	edict_t *ent;
 	
@@ -609,7 +630,7 @@ static void JNICALL Java_NativeEntity_setFloat0(JNIEnv *env, jclass cls, jint in
 		}
 	}
 
-static void JNICALL Java_NativeEntity_setStat0(JNIEnv *env, jclass cls, jint index, jint fieldindex, jshort value)
+static void JNICALL Java_q2java_NativeEntity_setStat0(JNIEnv *env, jclass cls, jint index, jint fieldindex, jshort value)
 	{
 	edict_t *ent;
 
@@ -621,7 +642,7 @@ static void JNICALL Java_NativeEntity_setStat0(JNIEnv *env, jclass cls, jint ind
 	ent->client->ps.stats[fieldindex] = value;
 	}
 
-static void JNICALL Java_NativeEntity_cprint0(JNIEnv *env , jclass cls, jint index, jint printlevel, jstring js)
+static void JNICALL Java_q2java_NativeEntity_cprint0(JNIEnv *env , jclass cls, jint index, jint printlevel, jstring js)
 	{
 	const char *str;
 	edict_t *ent;
@@ -638,7 +659,7 @@ static void JNICALL Java_NativeEntity_cprint0(JNIEnv *env , jclass cls, jint ind
 	}
 
 
-static void JNICALL Java_NativeEntity_centerprint0(JNIEnv *env, jclass cls, jint index, jstring js)
+static void JNICALL Java_q2java_NativeEntity_centerprint0(JNIEnv *env, jclass cls, jint index, jstring js)
 	{
 	const char *str;
 	edict_t *ent;
