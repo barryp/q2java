@@ -7,7 +7,19 @@
 <body bgcolor="#FFFFFF">
 <h1>WidgetWars</h1>
 <p><i>(a working title) </i></p>
-<h2>QuickStart</h2>
+<h2>Server QuickStart</h2>
+<p>WidgetWars is a team game that uses CTF maps and resources. To make those resources 
+  accessible to your server, you'll have to copy or move the CTF .pak file from 
+  your <code>quake2\ctf</code> directory to your <code>quake2\baseq2</code> directory 
+  (changing the number of the pak file if there's already a .pak file in your 
+  baseq2 directory with the same number). </p>
+<p>Start the game with a command line such as:</p>
+<p> <code>q2java +map q2ctf1 +set q2java_startup widgetwar.startup.sample</code></p>
+<p>Add <code>+set dedicated 1</code> for a dedicated server. Edit the widgetwar.startup.sample 
+  file to customize the game. If you call your startup file just <code>q2java.startup</code>, 
+  you can get by with the shorter command-line:</p>
+<p><code>q2java +map q2ctf1</code></p>
+<h2>Client QuickStart</h2>
 <h3>Game Resources</h3>
 <p>WidgetWars is a team game that uses CTF maps and resources. To make those resources 
   accessible in your client, you'll have to copy or move the CTF .pak file from 
@@ -16,9 +28,11 @@
   baseq2 directory with the same number). </p>
 <p>There are also some screen icons you need to download from the server the first 
   time you play the game. You can do this by starting the game with this command:</p>
-<p><code>quake2 +set allow_downloads 1 +connect 134.129.166.11</code></p>
-<p>Once the icons are downloaded to your disk, you don't need to do the allow_downloads 
-  bit anymore, and can start q2 without that extra parameter. </p>
+<p><code>quake2 +set allow_downloads 1 +connect www.xxx.yyy.zzz</code></p>
+<p>Where <code>www.xxx.yyy.zzz</code> is the IP address of the WidgetWar server. 
+  Once the icons are downloaded to your disk, you don't need to do the allow_downloads 
+  bit anymore, and can start q2 without that extra <code>+set allow_downloads 
+  1</code> parameter. </p>
 <h3>Commands</h3>
 <p>The commands unique to this game are:</p>
 <ul>
@@ -212,6 +226,6 @@
   where enemy players tend to congregate.</p>
 <hr>
 <div align="right"><font size="-1">Barry Pederson &lt;<a href="mailto:bpederson@geocities.com">bpederson@geocities.com</a>&gt; 
-  12/12/1999 </font></div>
+  6/17/2000 </font></div>
 </body>
 </html>
