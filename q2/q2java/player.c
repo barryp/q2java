@@ -51,7 +51,7 @@ void Player_javaInit()
 	method_player_userinfoChanged = (*java_env)->GetMethodID(java_env, class_player, "playerInfoChanged", "(Ljava/lang/String;)V");
 	method_player_command = (*java_env)->GetMethodID(java_env, class_player, "playerCommand", "()V");
 	method_player_disconnect = (*java_env)->GetMethodID(java_env, class_player, "playerDisconnect", "()V");
-	method_player_think = (*java_env)->GetMethodID(java_env, class_player, "playerThink", "(Lq2java/UserCmd;)V");
+	method_player_think = (*java_env)->GetMethodID(java_env, class_player, "playerThink", "(Lq2java/PlayerCmd;)V");
 	if (CHECK_EXCEPTION())
 		{
 		java_error = "Problem finding one or more of the player methods\n";
@@ -171,12 +171,12 @@ static void java_clientThink(edict_t *ent, usercmd_t *cmd)
 
 	javaPlayer = Entity_getEntity(index);
 
-	setUserCmd(cmd->msec, cmd->buttons, 
+	setPlayerCmd(cmd->msec, cmd->buttons, 
 		cmd->angles[0], cmd->angles[1], cmd->angles[2], 
 		cmd->forwardmove, cmd->sidemove, cmd->upmove, 
 		cmd->impulse, cmd->lightlevel);	
 
-	(*java_env)->CallVoidMethod(java_env, javaPlayer, method_player_think, userCmd);
+	(*java_env)->CallVoidMethod(java_env, javaPlayer, method_player_think, playerCmd);
 
 	CHECK_EXCEPTION();
 	}		

@@ -178,9 +178,9 @@ public void weaponThink()
 
 	if (fWeaponState == WEAPON_READY)
 		{
-		if (((fOwner.fButtons | fOwner.fLatchedButtons) & UserCmd.BUTTON_ATTACK) != 0)
+		if (((fOwner.fButtons | fOwner.fLatchedButtons) & PlayerCmd.BUTTON_ATTACK) != 0)
 			{
-			fOwner.fLatchedButtons &= ~UserCmd.BUTTON_ATTACK;
+			fOwner.fLatchedButtons &= ~PlayerCmd.BUTTON_ATTACK;
 			if (isEnoughAmmo())
 				{
 				fWeaponState = WEAPON_FIRING;

@@ -24,7 +24,7 @@ public void fire()
 	float rotation;
 	int weaponSound = Engine.soundIndex("weapons/hyprbl1a.wav");
 
-	if ((fOwner.fButtons & UserCmd.BUTTON_ATTACK) == 0)
+	if ((fOwner.fButtons & PlayerCmd.BUTTON_ATTACK) == 0)
 		incWeaponFrame();
 	else
 	

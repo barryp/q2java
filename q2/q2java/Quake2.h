@@ -8,7 +8,7 @@
 #ifndef _Included_Quake2
 #define _Included_Quake2
 
-#define GAME_API_VERSION    2
+#define GAME_API_VERSION    3
 
 #define SECONDS_PER_FRAME 0.1
 
@@ -475,6 +475,12 @@ typedef struct
     void        (*ClientThink) (edict_t *ent, usercmd_t *cmd);
 
     void        (*RunFrame) (void);
+
+	// ServerCommand will be called when an "sv <command>" command is issued on the
+	// server console.
+	// The game can issue gi.argc() / gi.argv() commands to get the rest
+	// of the parameters
+	void		(*ServerCommand) (void);
 
     //
     // global variables shared between game and server

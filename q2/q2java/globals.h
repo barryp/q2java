@@ -21,8 +21,8 @@ void enableSecurity(int level);
 jobject newPMoveResults(pmove_t pm);
 jobject newTraceResults(trace_t trace);
 jobject newJavaVec3(vec3_t *v);
-void setUserCmd(jbyte, jbyte, short, short, short, short, short, short, jbyte, jbyte);
-extern jobject userCmd;
+void setPlayerCmd(jbyte, jbyte, short, short, short, short, short, short, jbyte, jbyte);
+extern jobject playerCmd;
 
 void CVar_javaInit();
 void CVar_javaFinalize();

@@ -29,5 +29,5 @@ public abstract void playerInfoChanged(String userinfo);
  * Called by the DLL when the game should process a client frame.
  * @param cmd commands indicating movement, jumping, firing weapons, etc.
  */
-public abstract void playerThink(UserCmd cmd);
+public abstract void playerThink(PlayerCmd cmd);
 }

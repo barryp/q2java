@@ -11,6 +11,7 @@ static jmethodID method_Game_readGame;
 static jmethodID method_Game_writeLevel;
 static jmethodID method_Game_readLevel;
 static jmethodID method_Game_runFrame;
+static jmethodID method_Game_serverCommand;
 static jobject object_Game;
 
 
@@ -60,6 +61,7 @@ void Game_javaInit()
 	method_Game_writeLevel = (*java_env)->GetMethodID(java_env, class_Game, "writeLevel", "(Ljava/lang/String;)V");
 	method_Game_readLevel = (*java_env)->GetMethodID(java_env, class_Game, "readLevel", "(Ljava/lang/String;)V");
 	method_Game_runFrame = (*java_env)->GetMethodID(java_env, class_Game, "runFrame", "()V");
+	method_Game_serverCommand = (*java_env)->GetMethodID(java_env, class_Game, "serverCommand", "()V");
 	method_Game_ctor = (*java_env)->GetMethodID(java_env, class_Game, "<init>", "()V");
 	if (CHECK_EXCEPTION())
 		{
@@ -186,6 +188,13 @@ static void java_runFrame(void)
 //	debugLog("java_runFrame() finished\n");
 	}
 
+static void java_serverCommand(void)
+	{
+	(*java_env)->CallVoidMethod(java_env, object_Game, method_Game_serverCommand);
+	CHECK_EXCEPTION();
+	}
+
+
 // -------- Hook us up with the Quake II program
 
 void Game_gameInit()
@@ -200,4 +209,5 @@ void Game_gameInit()
 	ge.ReadLevel = java_readLevel;
 
 	ge.RunFrame = java_runFrame;
+	ge.ServerCommand = java_serverCommand;
 	}

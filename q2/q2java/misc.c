@@ -17,14 +17,14 @@ static jmethodID method_PMoveResults_ctor;
 static jclass class_TraceResults;
 static jmethodID method_TraceResults_ctor;
 
-// handles to q2java.UserCmd class
-static jclass class_UserCmd;
-static jmethodID method_UserCmd_set;
-jobject userCmd;
+// handles to q2java.PlayerCmd class
+static jclass class_PlayerCmd;
+static jmethodID method_PlayerCmd_set;
+jobject playerCmd;
 
 void Misc_javaInit()
 	{
-	jmethodID method_UserCmd_ctor;
+	jmethodID method_PlayerCmd_ctor;
 
 	debugLog("in Misc_javaInit()\n");
 
@@ -88,31 +88,31 @@ void Misc_javaInit()
 		return;
 		}
 
-	class_UserCmd = (*java_env)->FindClass(java_env, "q2java/UserCmd");
-	if (CHECK_EXCEPTION() || !class_UserCmd)
+	class_PlayerCmd = (*java_env)->FindClass(java_env, "q2java/PlayerCmd");
+	if (CHECK_EXCEPTION() || !class_PlayerCmd)
 		{
-		java_error = "Couldn't find q2java.UserCmd\n";
+		java_error = "Couldn't find q2java.PlayerCmd\n";
 		return;
 		}
 
-	method_UserCmd_ctor = (*java_env)->GetMethodID(java_env, class_UserCmd, "<init>", "()V");
-	if (CHECK_EXCEPTION() || !method_UserCmd_ctor)
+	method_PlayerCmd_ctor = (*java_env)->GetMethodID(java_env, class_PlayerCmd, "<init>", "()V");
+	if (CHECK_EXCEPTION() || !method_PlayerCmd_ctor)
 		{
-		java_error = "Couldn't find q2java.UserCmd constructor\n";
+		java_error = "Couldn't find q2java.PlayerCmd constructor\n";
 		return;
 		}
 
-	method_UserCmd_set = (*java_env)->GetMethodID(java_env, class_UserCmd, "set", "(BBSSSSSSBB)V");
-	if (CHECK_EXCEPTION() || !method_UserCmd_set)
+	method_PlayerCmd_set = (*java_env)->GetMethodID(java_env, class_PlayerCmd, "set", "(BBSSSSSSBB)V");
+	if (CHECK_EXCEPTION() || !method_PlayerCmd_set)
 		{
-		java_error = "Couldn't find q2java.UserCmd set()\n";
+		java_error = "Couldn't find q2java.PlayerCmd set()\n";
 		return;
 		}
 
-	userCmd = (*java_env)->NewObject(java_env, class_UserCmd, method_UserCmd_ctor);
-	if (CHECK_EXCEPTION() || !userCmd)
+	playerCmd = (*java_env)->NewObject(java_env, class_PlayerCmd, method_PlayerCmd_ctor);
+	if (CHECK_EXCEPTION() || !playerCmd)
 		{
-		java_error = "Couldn't create instance of q2java.UserCmd\n";
+		java_error = "Couldn't create instance of q2java.PlayerCmd\n";
 		return;
 		}
 	}
@@ -252,11 +252,11 @@ jobject newTraceResults(trace_t result)
 		resEnt);
 	}
 
-void setUserCmd(jbyte msec, jbyte buttons, 
+void setPlayerCmd(jbyte msec, jbyte buttons, 
 	short angle0, short angle1, short angle2,
 	short forward, short side, short up,
 	jbyte impulse, jbyte lightlevel)
 	{
-	(*java_env)->CallVoidMethod(java_env, userCmd, method_UserCmd_set,
+	(*java_env)->CallVoidMethod(java_env, playerCmd, method_PlayerCmd_set,
 		msec, buttons, angle0, angle1, angle2, forward, side, up, impulse, lightlevel);
 	}

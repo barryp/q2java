@@ -71,7 +71,7 @@ public Vec3(Vec3 v)
 	z = v.z;
 	}
 /**
- * Comvert all components into absolute values
+ * Convert all components into absolute values.
  * @return q2java.Vec3
  */
 public Vec3 abs() 
@@ -106,6 +106,22 @@ public Vec3 add(Vec3 v)
 	y += v.y;
 	z += v.z;
 	return this;
+	}
+/**
+ * This method was created by a SmartGuide.
+ * @param point q2java.Vec3
+ * @param mins q2java.Vec3
+ * @param maxs q2java.Vec3
+ */
+public static void addPointToBounds(Vec3 point, Vec3 mins, Vec3 maxs) 
+	{
+	mins.x = Math.min(mins.x, point.x);
+	mins.y = Math.min(mins.y, point.y);
+	mins.z = Math.min(mins.z, point.z);
+	
+	maxs.x = Math.max(maxs.x, point.x);
+	maxs.y = Math.max(maxs.y, point.y);
+	maxs.z = Math.max(maxs.z, point.z);
 	}
 /**
  * Given a Vec3 that represents Roll, Pitch, and Yaw angles, 
@@ -154,6 +170,19 @@ public void angleVectors(Vec3 forward, Vec3 right, Vec3 up)
 		}
 	}
 /**
+ * Clamp the vector to 1/8 units.  This way positions will
+ * be accurate for client side prediction.
+ * @return The same vector after clamping.
+ */
+public Vec3 clampEight() 
+	{
+	x = Math.round(x * 8) * 0.125F;
+	y = Math.round(y * 8) * 0.125F;
+	z = Math.round(z * 8) * 0.125F;
+	
+	return this;
+	}
+/**
  * This method was created by a SmartGuide.
  * @return q2java.Vec3
  */
@@ -186,8 +215,22 @@ public Vec3 copyTo(Vec3 v)
 	return v;
 	}
 /**
- * This method was created by a SmartGuide.
- * @return float
+ * Calculate cross product of two vectors.
+ * @return q2java.Vec3
+ * @param a q2java.Vec3
+ * @param b q2java.Vec3
+ */
+public static Vec3 crossProduct(Vec3 a, Vec3 b) 
+	{
+	Vec3 result = new Vec3();
+	result.x = (a.y * b.z) - (a.z * b.y);
+	result.y = (a.z * b.x) - (a.x * b.z);
+	result.z = (a.x * b.y) - (a.y * b.x);
+	return result;
+	}
+/**
+ * Find dot product of two vectors.
+ * @return dot product
  * @param a q2java.Vec3
  * @param b q2java.Vec3
  */
@@ -238,6 +281,24 @@ public Vec3 normalize()
 		}
 		
 	return this;
+	}
+/**
+ * Scale into a unit vector, and return the original length.
+ * @return q2java.Vec3
+ */
+public float normalizeLength() 
+	{
+	double length = Math.sqrt((x*x) + (y*y) + (z*z));
+
+	if (length != 0.0)
+		{
+		double ilength = 1 / length;
+		x *= ilength;
+		y *= ilength;
+		z *= ilength;
+		}
+		
+	return (float) length;
 	}
 /**
  * This method was created by a SmartGuide.
@@ -340,7 +401,7 @@ public String toString()
 	return x + " " + y + " " + z;
 	}   
 /**
- * This method was created by a SmartGuide.
+ * Multiply and accumulate?
  * @return q2java.Vec3
  * @param f float
  * @param v q2java.Vec3

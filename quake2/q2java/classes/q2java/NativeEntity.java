@@ -18,10 +18,9 @@ public abstract class NativeEntity
 	private static int fMaxPlayers; // set by DLL
 	private static NativeEntity[] fEntityArray;
 		
-	private static UserCmd fUserCmd = new UserCmd();			
+	private static PlayerCmd fPlayerCmd = new PlayerCmd();			
 		
 	private int fEntityIndex;
-	private NativeEntity fOwner;
 	
 	
 	// sound channels
@@ -180,6 +179,8 @@ public abstract class NativeEntity
 	private final static int INT_S_SOUND			= 13;
 	private final static int INT_S_EVENT			= 14;
 	
+	private final static int ENTITY_OWNER		= 1;
+	
 	// ONLY use these in NativePlayer
 	private final static int INT_CLIENT_PS_GUNINDEX	= 100;
 	private final static int INT_CLIENT_PS_GUNFRAME	= 101;
@@ -283,7 +284,7 @@ static NativeEntity findNext(NativeEntity start, Class targetClass)
 	NativeEntity result = null;
 	int index = (start == null ? 0 : start.fEntityIndex + 1);
 				
-	while ((result == null) && (index <fNumEntities))
+	while ((result == null) && (index < fNumEntities))
 		{
 		if (	(fEntityArray[index] != null) 
 		&& 	((targetClass == null) || (targetClass.isAssignableFrom(fEntityArray[index].getClass())))
@@ -323,6 +324,14 @@ public void freeEntity()
 
 private native static void freeEntity0(int index);
 
+public Vec3 getAbsMaxs()
+	{
+	return getVec3(fEntityIndex, VEC3_ABSMAX);
+	}
+public Vec3 getAbsMins()
+	{
+	return getVec3(fEntityIndex, VEC3_ABSMIN);
+	}
 public Vec3 getAngles()
 	{
 	return getVec3(fEntityIndex, VEC3_S_ANGLES);
@@ -334,6 +343,9 @@ public int getEffects()
 	{
 	return getInt(fEntityIndex, INT_S_EFFECTS);
 	}
+
+private native static NativeEntity getEntity(int index, int fieldNum);
+
 /**
  * This method was created by a SmartGuide.
  * @return int
@@ -363,11 +375,7 @@ public Vec3 getOrigin()
  */
 public NativeEntity getOwner() 
 	{
-	// ---FIXME--- if it turns out the engine modifies
-	// the owner field, then we'll have to use a native
-	// call to get it, rather than keep and return our own
-	// reference
-	return fOwner;
+	return getEntity(fEntityIndex, ENTITY_OWNER);
 	}
 public Vec3 getPlayerKickAngles()
 	{
@@ -423,7 +431,7 @@ private native static void linkEntity0(int index);
 /**
  * Player Only
  */
-public PMoveResults pMove(UserCmd cmd) 
+public PMoveResults pMove(PlayerCmd cmd) 
 	{
 	return pMove0(getEntityIndex(), cmd.fMsec, cmd.fButtons, 
 		cmd.fAngles0, cmd.fAngles1, cmd.fAngles2, 
@@ -466,6 +474,13 @@ public void setEffects(int val)
 	{
 	setInt(fEntityIndex, INT_S_EFFECTS, val);
 	}
+
+//
+// protected so that NativePlayer can call on it to set a few fields
+// in the client structures
+//
+private native static void setEntity(int index, int fieldNum, int valIndex);
+
 public void setEvent(int val)
 	{
 	setInt(fEntityIndex, INT_S_EVENT, val);
@@ -536,11 +551,10 @@ public void setOrigin(Vec3 v)
  */
 public void setOwner(NativeEntity ent) 
 	{
-	fOwner = ent;
-	// ---FIXME--- if it turns out the engine modifies
-	// the owner field, then we'll have to use a native
-	// call to set it, rather than keep and return our own
-	// reference
+	if (ent == null)
+		setEntity(fEntityIndex, ENTITY_OWNER, -1);
+	else		
+		setEntity(fEntityIndex, ENTITY_OWNER, ent.fEntityIndex);
 	}
 /**
  * Player Only

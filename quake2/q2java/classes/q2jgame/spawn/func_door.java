@@ -5,29 +5,13 @@ import java.util.Enumeration;
 import q2java.*;
 import q2jgame.*;
 
-public class func_door extends GameEntity
-	{
-	// possible spawn args
-	private int fLip; 
-	private int fSpeed;
-	private int fAccel;
-	private int fDecel;
-	private int fWait;
-	private int fDmg;
+public class func_door extends GenericPusher
+	{	
+	private boolean fNeedTrigger;
 	
-	private int fState;
-	private Vec3 fCurrentPos;
-	private Vec3 fClosedPos;
-	private Vec3 fOpenPos;
-	private Vec3 fMoveDir;
-	private float fCloseTime;
-	private float fOpenAmount;
-	
-	private final static int STATE_CLOSED	= 0;
-	private final static int STATE_OPENING	= 1;
-	private final static int STATE_OPENED	= 2;
-	private final static int STATE_CLOSING	= 3;
-	
+	private final static int STATE_CLOSE = 1;
+	private final static int STATE_OPEN = 2;		
+			
 	private final static int DOOR_START_OPEN		= 1;
 	private final static int DOOR_REVERSE		= 2;
 	private final static int DOOR_CRUSHER		= 4;
@@ -44,36 +28,39 @@ public func_door(String[] spawnArgs) throws GameException
 	String s = getSpawnArg("model", null);
 	if (s != null)
 		setModel(s);
-		
+
 	fSpeed = getSpawnArg("speed", 100);
 	fAccel = getSpawnArg("accel", fSpeed);
 	fDecel = getSpawnArg("decel", fSpeed);	
 	fWait = getSpawnArg("wait", 3);	
-	fLip = getSpawnArg("lip", 8);
 	fDmg = getSpawnArg("dmg", 2);
-					
+	int lip = getSpawnArg("lip", 8);
+							
 	// setup for opening and closing
-	fClosedPos = getOrigin();
-	fCurrentPos = getOrigin();
-	fOpenAmount = 0;
-	fMoveDir = getMoveDir();
+	fStartOrigin = getOrigin();
+	Vec3 moveDir = getMoveDir();
 
-	Vec3 absMoveDir = (new Vec3(fMoveDir)).abs();
+	Vec3 absMoveDir = (new Vec3(moveDir)).abs();
 	Vec3 size = getSize();
 	
-	float dist = absMoveDir.x * size.x + absMoveDir.y * size.y + absMoveDir.z * size.z - fLip;
-	fMoveDir.scale(dist);
-	fOpenPos = (new Vec3(fClosedPos)).add(fMoveDir);	
+	fMoveDistance = absMoveDir.x * size.x + absMoveDir.y * size.y + absMoveDir.z * size.z - lip;
+	fEndOrigin = fStartOrigin.vectorMA(fMoveDistance, moveDir);
 
-	// if it starts open, switch the positions
-	if ((fSpawnFlags & DOOR_START_OPEN) != 0)
+	if ((fSpawnFlags & DOOR_START_OPEN) == 0)
 		{
-		Vec3 temp = fClosedPos;
-		fClosedPos = fOpenPos;
-		fOpenPos = temp;
-		setOrigin(fOpenPos);
+		setPortals(false);
+		}
+	else		
+		{
+		// if it starts open, switch the positions
+		Vec3 temp = fStartOrigin;
+		fStartOrigin = fEndOrigin;
+		fEndOrigin = temp;
+		setOrigin(fStartOrigin);
+		setPortals(true);
 		}
 
+		
 	int effect = 0;
 	if ((fSpawnFlags & 16) != 0)
 		effect |= EF_ANIM_ALL;
@@ -81,11 +68,9 @@ public func_door(String[] spawnArgs) throws GameException
 		effect |= EF_ANIM_ALLFAST;
 	if (effect != 0)
 		setEffects(effect);
-
-	// create a trigger for this door
-	new DoorTrigger(this);
-
 	linkEntity();		
+
+	fNeedTrigger = true;
 	}
 /**
  * Get the direction the door should move.
@@ -120,52 +105,15 @@ private Vec3 getMoveDir()
 /**
  * This method was created by a SmartGuide.
  */
-public void runFrame() 
+protected void hitBottom() 
 	{
-//		ent->moveinfo.sound_middle = gi.soundindex  ("doors/dr1_mid.wav");
-
-	switch (fState)
-		{
-		case STATE_CLOSED: break;
-		case STATE_OPENED:
-			if (Game.fGameTime >= fCloseTime)		
-				fState = STATE_CLOSING;
-			break;
-		
-		case STATE_OPENING:
-			// are we just starting to open?
-			if (fOpenAmount == 0)
-				{
-				setPortals(true);
-				sound(CHAN_NO_PHS_ADD+CHAN_VOICE, Engine.soundIndex("doors/dr1_strt.wav"), 1, ATTN_STATIC, 0);				
-				}
-				
-			fOpenAmount += 0.1;
-			if (fOpenAmount < 1)
-				setOrigin(fClosedPos.vectorMA(fOpenAmount, fMoveDir));
-			else				
-				{
-				setOrigin(fOpenPos);
-				fState = STATE_OPENED;
-				fOpenAmount = 1.0F;
-				fCloseTime = (float)(Game.fGameTime + 5);  // close the door in 5 seconds
-				}
-			break;
-			
-		case STATE_CLOSING:
-			fOpenAmount -= 0.1;
-			if (fOpenAmount > 0)
-				setOrigin(fClosedPos.vectorMA(fOpenAmount, fMoveDir));
-			else
-				{
-				setOrigin(fClosedPos);				
-				fState = STATE_CLOSED;
-				fOpenAmount = 0;
-				setPortals(false);
-				sound(CHAN_NO_PHS_ADD+CHAN_VOICE, Engine.soundIndex("doors/dr1_end.wav"), 1, ATTN_STATIC, 0);				
-				}
-			break;			
-		}
+	setPortals(false);
+	}
+/**
+ * This method was created by a SmartGuide.
+ */
+protected void hitTop() 
+	{
 	}
 /**
  * This method was created by a SmartGuide.
@@ -173,21 +121,72 @@ public void runFrame()
  */
 private void setPortals(boolean state) 
 	{
-	Enumeration enum = enumerateTargets();
-	while (enum.hasMoreElements())
+	if (fTargets == null)
+		return;
+		
+	for (int i = 0; i < fTargets.size(); i++)		
 		{
-		Object obj = enum.nextElement();
+		Object obj = fTargets.elementAt(i);
 		if (obj instanceof func_areaportal)
 			((func_areaportal) obj).setPortal(state);
 		}
 	}
 /**
  * This method was created by a SmartGuide.
+ */
+private void spawnDoorTrigger() 
+	{
+	if (isGroupSlave())
+		return;		// only the team leader spawns a trigger
+
+	Vec3 mins = getAbsMins();
+	Vec3 maxs = getAbsMaxs();
+
+	if (fGroup != null)	
+		{
+		for (int i = 1; i < fGroup.size(); i++)
+			{
+			GameEntity ge = (GameEntity) fGroup.elementAt(i);
+			Vec3.addPointToBounds(ge.getAbsMins(), mins, maxs);
+			Vec3.addPointToBounds(ge.getAbsMaxs(), mins, maxs);
+			}
+		}	
+		
+	// expand 
+	mins.x -= 60;
+	mins.y -= 60;
+	maxs.x += 60;
+	maxs.y += 60;
+
+	try
+		{
+		new AreaTrigger(this, mins, maxs);
+		}
+	catch (GameException e)
+		{
+		e.printStackTrace();
+		}			
+	}
+/**
+ * This method was created by a SmartGuide.
+ */
+public void think() 
+	{
+	if (fNeedTrigger)
+		{
+		spawnDoorTrigger();
+		fNeedTrigger = false;
+		}
+		
+	super.think();
+	}
+/**
+ * This method was created by a SmartGuide.
  * @param touchedBy q2jgame.GameEntity
  */
-public void touch(Player touchedBy) 
+public void use(Player touchedBy) 
 	{
-	if ((fState == STATE_CLOSED) || (fState == STATE_CLOSING))
-		fState = STATE_OPENING;
+	if (open())
+		setPortals(true);
 	}
 }

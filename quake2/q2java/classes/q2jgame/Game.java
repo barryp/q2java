@@ -4,6 +4,7 @@ package q2jgame;
 import java.io.*;
 import java.lang.reflect.Constructor;
 import java.util.Enumeration;
+import java.util.Hashtable;
 import java.util.Random;
 import java.util.Vector;
 
@@ -22,6 +23,11 @@ public class Game implements NativeGame
 
 	// handy random number generator
 	private static Random fRandom;
+	
+	// used while spawnEntities() is running
+	// to help gather together groups
+	private static Hashtable fGroups;
+	private static Hashtable fTargets;
 	
 	// various CVars
 	public static CVar fBobUp;	
@@ -288,6 +294,27 @@ public static GameEntity getFarthestSpawnpoint()
 	return result;
 	}
 /**
+ * Lookup a group Vector, based on the name.
+ * Only good while Game.spawnEntities() is running, 
+ * once it's finished, this function will return null.
+ * Also will return null if groupName is null.
+ * @return Vector containing GameEntities belonging to the group.
+ * @param groupName Name of the group.
+ */
+public static Vector getGroup(String groupName) 
+	{
+	if ((fGroups == null) || (groupName == null))
+		return null;
+		
+	Vector v = (Vector)fGroups.get(groupName);
+	if (v == null)
+		{
+		v = new Vector();
+		fGroups.put(groupName, v);
+		}
+	return v;			
+	}
+/**
  * Select a random spawnpoint, but exclude the two points closest
  * to other players.
  * @return q2jgame.GameEntity
@@ -352,6 +379,35 @@ public static GameEntity getRandomSpawnpoint()
 
 	return spawnPoint;
 	}
+/**
+ * Lookup a target Vector, based on the name.
+ * Only good while Game.spawnEntities() is running, 
+ * once it's finished, this function will return null.
+ * Also will return null if targetName is null.
+ * @return Vector containing GameEntities belonging to the target set.
+ * @param targetName Name of the target.
+ */
+public static Vector getTarget(String targetName) 
+	{
+	if ((fTargets == null) || (targetName == null))
+		return null;
+		
+	Vector v = (Vector)fTargets.get(targetName);
+	if (v == null)
+		{
+		v = new Vector();
+		fTargets.put(targetName, v);
+		}
+	return v;			
+	}
+/**
+ * Describe this Game.
+ * @return java.lang.String
+ */
+public static String getVersion() 
+	{
+	return "Quake2Java Test Game, v0.1";
+	}	
 public void init()
 	{	
 /*	
@@ -547,6 +603,12 @@ public void runFrame()
 	}
 /**
  * This method was created by a SmartGuide.
+ */
+public void serverCommand() {
+	return;
+}
+/**
+ * This method was created by a SmartGuide.
  * @param mapname java.lang.String
  */
 public static void setNextMap(String mapname) 
@@ -566,6 +628,13 @@ public void spawnEntities(String mapname, String entString, String spawnPoint)
 	fInIntermission = false;
 	fCurrentMap = mapname;
 	fNextMap = mapname; // in case there isn't a target_changelevel entity in the entString
+
+	fGroups = new Hashtable();
+	fTargets = new Hashtable();
+
+	// force a gc, to clean things up from the last level, before
+	// spawning all the new entities
+	System.gc();		
 	
 	try
 		{
@@ -614,7 +683,7 @@ public void spawnEntities(String mapname, String entString, String spawnPoint)
 					params[0] = sa;
 					try
 						{
-						Class entClass = Class.forName("q2jgame.spawn." + className);
+						Class entClass = Class.forName("q2jgame.spawn." + className.toLowerCase());
 						Constructor ctor = entClass.getConstructor(paramTypes);							
 						GameEntity ent = (GameEntity) ctor.newInstance(params);
 						ps.println(ent);
@@ -651,12 +720,15 @@ public void spawnEntities(String mapname, String entString, String spawnPoint)
 		}
 	catch (Exception e)
 		{
-		Engine.dprint(e.getMessage() + "\n");
-		Engine.debugLog(e.getMessage());
+		e.printStackTrace();
 		}
+
+	// no more need for hashtables, free them so they can be gc'ed
+	fGroups = null;
+	fTargets = null;
 		
 	// now, right before the game starts, is a good time to 
-	// force Java to do a garbage collection
+	// force Java to do another garbage collection to tidy things up.
 	System.gc();		
 	}
 /**

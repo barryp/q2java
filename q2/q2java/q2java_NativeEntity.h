@@ -57,6 +57,14 @@ void JNICALL Java_q2java_NativeEntity_setFloat0
 
 /*
  * Class:     q2java_NativeEntity
+ * Method:    setEntity
+ * Signature: (III)V
+ */
+void JNICALL Java_q2java_NativeEntity_setEntity
+  (JNIEnv *, jclass, jint, jint, jint);
+
+/*
+ * Class:     q2java_NativeEntity
  * Method:    getByte
  * Signature: (II)B
  */
@@ -69,6 +77,14 @@ jbyte JNICALL Java_q2java_NativeEntity_getByte
  * Signature: (II)S
  */
 jshort JNICALL Java_q2java_NativeEntity_getShort
+  (JNIEnv *, jclass, jint, jint);
+
+/*
+ * Class:     q2java_NativeEntity
+ * Method:    getEntity
+ * Signature: (II)Lq2java/NativeEntity;
+ */
+jobject JNICALL Java_q2java_NativeEntity_getEntity
   (JNIEnv *, jclass, jint, jint);
 
 /*

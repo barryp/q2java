@@ -41,13 +41,13 @@ public void fire()
 	if (getWeaponFrame() == 5)
 		fOwner.sound(NativeEntity.CHAN_AUTO, Engine.soundIndex("weapons/chngnu1a.wav"), 1, NativeEntity.ATTN_IDLE, 0);
 
-	if ((getWeaponFrame() == 14) && ((fOwner.fButtons & UserCmd.BUTTON_ATTACK) == 0))
+	if ((getWeaponFrame() == 14) && ((fOwner.fButtons & PlayerCmd.BUTTON_ATTACK) == 0))
 		{
 		setWeaponFrame(32);
 //		ent->client->weapon_sound = 0;
 		return;
 		}
-	else if ((getWeaponFrame() == 21) && ((fOwner.fButtons & UserCmd.BUTTON_ATTACK) != 0)
+	else if ((getWeaponFrame() == 21) && ((fOwner.fButtons & PlayerCmd.BUTTON_ATTACK) != 0)
 		&& isEnoughAmmo())
 		{
 		setWeaponFrame(15);
@@ -73,7 +73,7 @@ public void fire()
 		{
 		if (getWeaponFrame() <= 14)
 			{
-			if ((fOwner.fButtons & UserCmd.BUTTON_ATTACK) != 0)
+			if ((fOwner.fButtons & PlayerCmd.BUTTON_ATTACK) != 0)
 				shots = 2;
 			else
 				shots = 1;

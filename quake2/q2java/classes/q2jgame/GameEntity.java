@@ -4,15 +4,19 @@ package q2jgame;
 
 import java.io.*;
 import java.util.Enumeration;
+import java.util.Vector;
 import q2java.*;
 
 public class GameEntity extends NativeEntity
 	{
+	public NativeEntity fGroundEntity;
+
+	protected int fSpawnFlags;		
+	protected Vector fGroup;
+	protected Vector fTargets;	
+	protected Vector fTargetGroup;
+
 	private String[] fSpawnArgs;
-	protected int fSpawnFlags;
-	
-	protected String fTargetName;
-	protected String fTarget;
 	
 	// damage flags
 	public final static int DAMAGE_RADIUS		= 0x00000001;	// damage was indirect
@@ -55,11 +59,21 @@ public GameEntity(String[] spawnArgs, boolean isWorld) throws GameException
 		
 	s = getSpawnArg("target", null);
 	if (s != null)
-		fTarget = s.intern();		
+		fTargets = Game.getTarget(s);		
 
 	s = getSpawnArg("targetname", null);
 	if (s != null)
-		fTargetName = s.intern();		
+		{
+		fTargetGroup = Game.getTarget(s);
+		fTargetGroup.addElement(this);
+		}
+		
+	s = getSpawnArg("team", null);
+	if (s != null)
+		{
+		fGroup = Game.getGroup(s);
+		fGroup.addElement(this);			
+		}
 	}
 /**
  * This method was created by a SmartGuide.
@@ -79,12 +93,48 @@ public void damage(GameEntity inflictor, GameEntity attacker,
 	spawnDamage(tempEvent, point, normal, damage);
 	}
 /**
- * This method was created by a SmartGuide.
- * @return java.util.Enumeration
+ * Clean a few things up before calling NativeEntity.freeEntity().
  */
-public Enumeration enumerateTargets() 
+public void freeEntity() 
 	{
-	return new TargetEnumeration(fTarget);
+	// disassociate this entity from any groups
+	if (fGroup != null)
+		{
+		fGroup.removeElement(this);
+		fGroup = null;
+		}
+		
+	// disassociate this entity from any targetlist
+	if (fTargetGroup != null)
+		{
+		fTargetGroup.removeElement(this);
+		fTargetGroup = null;
+		}
+		
+		
+	// help with GC a little
+	fSpawnArgs = null;
+	fTargets = null;
+				
+	super.freeEntity();
+	}
+/**
+ * Lookup an float spawn argument.
+ * @return value found, or defaultValue.
+ * @param name name of spawn argument.
+ * @param defaultValue value to return if "name" is not found.
+ */
+public float getSpawnArg(String keyword, float defaultValue) 
+	{
+	if (fSpawnArgs == null)
+		return defaultValue;
+
+	keyword = keyword.intern();
+	for (int i = 0; i < fSpawnArgs.length; i+=2)
+		if (keyword == fSpawnArgs[i])
+			return Float.valueOf(fSpawnArgs[i+1]).floatValue();
+
+	return defaultValue;
 	}
 /**
  * Lookup an integer spawn argument.
@@ -121,6 +171,14 @@ public String getSpawnArg(String keyword, String defaultValue)
 			return fSpawnArgs[i+1];
 
 	return defaultValue;
+	}
+/**
+ * Check whether this Entitiy is a group slave. 
+ * @return true if a group slave, false if a master or not in a group at all.
+ */
+public boolean isGroupSlave() 
+	{
+	return ((fGroup != null) && (fGroup.elementAt(0) != this));
 	}
 /**
  * This method was created by a SmartGuide.

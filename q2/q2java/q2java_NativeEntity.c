@@ -46,6 +46,8 @@
 #define VEC3_CLIENT_PS_GUNANGLES	103
 #define VEC3_CLIENT_PS_GUNOFFSET	104
 
+#define ENTITY_OWNER	1
+
 #define CALL_SOUND 1
 #define CALL_POSITIONED_SOUND 2
 
@@ -61,14 +63,16 @@ static JNINativeMethod Entity_methods[] =
 	{
 	{"allocateEntity",	"(Z)I", 					Java_q2java_NativeEntity_allocateEntity},
 	{"freeEntity0",		"(I)V",						Java_q2java_NativeEntity_freeEntity0},
-	{"setByte",			"(IIB)V",					Java_q2java_NativeEntity_setByte},
-	{"setShort",		"(IIS)V",					Java_q2java_NativeEntity_setShort},
-	{"setInt",			"(III)V",					Java_q2java_NativeEntity_setInt},
 	{"getByte",			"(II)B",					Java_q2java_NativeEntity_getByte},	
+	{"setByte",			"(IIB)V",					Java_q2java_NativeEntity_setByte},
 	{"getShort",		"(II)S",					Java_q2java_NativeEntity_getShort},	
+	{"setShort",		"(IIS)V",					Java_q2java_NativeEntity_setShort},
 	{"getInt",			"(II)I",					Java_q2java_NativeEntity_getInt},
-	{"setVec3",			"(IIFFF)V",					Java_q2java_NativeEntity_setVec3},
+	{"setInt",			"(III)V",					Java_q2java_NativeEntity_setInt},
 	{"getVec3",			"(II)Lq2java/Vec3;",		Java_q2java_NativeEntity_getVec3},
+	{"setVec3",			"(IIFFF)V",					Java_q2java_NativeEntity_setVec3},
+	{"getEntity",		"(II)Lq2java/NativeEntity;",Java_q2java_NativeEntity_getEntity},
+	{"setEntity",		"(III)V",					Java_q2java_NativeEntity_setEntity},
 	{"sound0",			"(FFFIIIFFFI)V",			Java_q2java_NativeEntity_sound0},
 	{"setModel0",		"(ILjava/lang/String;)V",	Java_q2java_NativeEntity_setModel0},	
 	{"boxEntity0",		"(II)[Lq2java/NativeEntity;", Java_q2java_NativeEntity_boxEntity0},
@@ -192,41 +196,6 @@ void Entity_javaFinalize()
 		(*java_env)->UnregisterNatives(java_env, class_NativeEntity);
 	}
 
-static vec3_t *lookupVec3(int index, int fieldNum)
-	{
-	edict_t *ent; 
-		
-	// sanity check
-	if ((index < 0) || (index >= ge.max_edicts))
-		return NULL;
-
-	ent	= ge.edicts + index;
-
-	// check for attemt to access player field in a non-player entity
-	if ((fieldNum >= 100) && !(ent->client))
-		return NULL;
-		
-
-	switch (fieldNum)
-		{
-		case VEC3_S_ORIGIN: return &(ent->s.origin);
-		case VEC3_S_ANGLES: return &(ent->s.angles); 
-		case VEC3_S_OLD_ORIGIN: return &(ent->s.old_origin);
-		case VEC3_MINS: return &(ent->mins);
-		case VEC3_MAXS: return &(ent->maxs);
-		case VEC3_ABSMIN: return &(ent->absmin);
-		case VEC3_ABSMAX: return &(ent->absmax);
-		case VEC3_SIZE: return &(ent->size);
-		case VEC3_VELOCITY: return &(ent->velocity);
-		case VEC3_CLIENT_PS_VIEWANGLES: return &(ent->client->ps.viewangles);
-		case VEC3_CLIENT_PS_VIEWOFFSET: return &(ent->client->ps.viewoffset);
-		case VEC3_CLIENT_PS_KICKANGLES: return &(ent->client->ps.kick_angles);
-		case VEC3_CLIENT_PS_GUNANGLES: return &(ent->client->ps.gunangles);
-		case VEC3_CLIENT_PS_GUNOFFSET: return &(ent->client->ps.gunoffset);
-		default: return NULL; // ---FIX--- should record an error somewhere
-		}
-	}
-
 
 static char *lookupByte(int index, int fieldNum)
 	{
@@ -250,6 +219,27 @@ static char *lookupByte(int index, int fieldNum)
 		}
 	}
 
+
+static short *lookupShort(int index, int fieldNum)
+	{
+	edict_t *ent;
+
+	// sanity check
+	if ((index < 0) || (index >= ge.max_edicts))
+		return NULL;
+
+	ent = ge.edicts + index;
+
+	// check for attemt to access player field in a non-player entity
+	if ((fieldNum >= 100) && !(ent->client))
+		return NULL;
+
+	switch (fieldNum)
+		{
+		case SHORT_CLIENT_PS_PMOVE_GRAVITY: return &(ent->client->ps.pmove.gravity);
+		default: return NULL; // ---FIX--- should record an error somewhere
+		}
+	}
 
 
 static int *lookupInt(int index, int fieldNum)
@@ -292,28 +282,63 @@ static int *lookupInt(int index, int fieldNum)
 	}
 
 
-static short *lookupShort(int index, int fieldNum)
+static vec3_t *lookupVec3(int index, int fieldNum)
 	{
-	edict_t *ent;
-
+	edict_t *ent; 
+		
 	// sanity check
 	if ((index < 0) || (index >= ge.max_edicts))
 		return NULL;
 
-	ent = ge.edicts + index;
+	ent	= ge.edicts + index;
 
 	// check for attemt to access player field in a non-player entity
 	if ((fieldNum >= 100) && !(ent->client))
 		return NULL;
+		
 
 	switch (fieldNum)
 		{
-		case SHORT_CLIENT_PS_PMOVE_GRAVITY: return &(ent->client->ps.pmove.gravity);
+		case VEC3_S_ORIGIN: return &(ent->s.origin);
+		case VEC3_S_ANGLES: return &(ent->s.angles); 
+		case VEC3_S_OLD_ORIGIN: return &(ent->s.old_origin);
+		case VEC3_MINS: return &(ent->mins);
+		case VEC3_MAXS: return &(ent->maxs);
+		case VEC3_ABSMIN: return &(ent->absmin);
+		case VEC3_ABSMAX: return &(ent->absmax);
+		case VEC3_SIZE: return &(ent->size);
+		case VEC3_VELOCITY: return &(ent->velocity);
+		case VEC3_CLIENT_PS_VIEWANGLES: return &(ent->client->ps.viewangles);
+		case VEC3_CLIENT_PS_VIEWOFFSET: return &(ent->client->ps.viewoffset);
+		case VEC3_CLIENT_PS_KICKANGLES: return &(ent->client->ps.kick_angles);
+		case VEC3_CLIENT_PS_GUNANGLES: return &(ent->client->ps.gunangles);
+		case VEC3_CLIENT_PS_GUNOFFSET: return &(ent->client->ps.gunoffset);
 		default: return NULL; // ---FIX--- should record an error somewhere
 		}
 	}
 
 
+static edict_t **lookupEntity(int index, int fieldNum)
+	{
+	edict_t *ent; 
+		
+	// sanity check
+	if ((index < 0) || (index >= ge.max_edicts))
+		return NULL;
+
+	ent	= ge.edicts + index;
+
+	// check for attemt to access player field in a non-player entity
+	if ((fieldNum >= 100) && !(ent->client))
+		return NULL;
+		
+
+	switch (fieldNum)
+		{
+		case ENTITY_OWNER: return &(ent->owner);
+		default: return NULL; // ---FIX--- should record an error somewhere
+		}
+	}
 
 
 jobject Entity_getEntity(int index)
@@ -496,32 +521,6 @@ static void JNICALL Java_q2java_NativeEntity_freeEntity0(JNIEnv *env, jclass cls
 	}		
 
 
-static void JNICALL Java_q2java_NativeEntity_setByte(JNIEnv *env, jclass cls, jint index, jint fieldNum, jbyte val)
-	{
-	char *bp = lookupByte(index, fieldNum);
-
-	if (bp)
-		*bp = val;
-	}
-
-
-static void JNICALL Java_q2java_NativeEntity_setShort(JNIEnv *env, jclass cls, jint index, jint fieldNum, jshort val)
-	{
-	short *sp = lookupShort(index, fieldNum);
-
-	if (sp)
-		*sp = val;
-	}
-
-
-static void JNICALL Java_q2java_NativeEntity_setInt(JNIEnv *env, jclass cls, jint index, jint fieldNum, jint val)
-	{
-	int *ip = lookupInt(index, fieldNum);
-
-	if (ip)
-		*ip = val;
-	}
-
 static jbyte JNICALL Java_q2java_NativeEntity_getByte(JNIEnv *env, jclass cls, jint index , jint fieldNum)
 	{
 	char *bp = lookupByte(index, fieldNum);
@@ -531,6 +530,16 @@ static jbyte JNICALL Java_q2java_NativeEntity_getByte(JNIEnv *env, jclass cls, j
 		return 0;	// ---FIXME-- should indicate an error somehow
 	}
 
+
+static void JNICALL Java_q2java_NativeEntity_setByte(JNIEnv *env, jclass cls, jint index, jint fieldNum, jbyte val)
+	{
+	char *bp = lookupByte(index, fieldNum);
+
+	if (bp)
+		*bp = val;
+	}
+
+
 static jshort JNICALL Java_q2java_NativeEntity_getShort(JNIEnv *env, jclass cls, jint index , jint fieldNum)
 	{
 	short *sp = lookupShort(index, fieldNum);
@@ -538,6 +547,15 @@ static jshort JNICALL Java_q2java_NativeEntity_getShort(JNIEnv *env, jclass cls,
 		return *sp;
 	else
 		return 0;	// ---FIXME-- should indicate an error somehow
+	}
+
+
+static void JNICALL Java_q2java_NativeEntity_setShort(JNIEnv *env, jclass cls, jint index, jint fieldNum, jshort val)
+	{
+	short *sp = lookupShort(index, fieldNum);
+
+	if (sp)
+		*sp = val;
 	}
 
 
@@ -551,14 +569,30 @@ static jint JNICALL Java_q2java_NativeEntity_getInt(JNIEnv *env, jclass cls, jin
 	}
 
 
+static void JNICALL Java_q2java_NativeEntity_setInt(JNIEnv *env, jclass cls, jint index, jint fieldNum, jint val)
+	{
+	int *ip = lookupInt(index, fieldNum);
+
+	if (ip)
+		*ip = val;
+	}
+
+
+static jobject JNICALL Java_q2java_NativeEntity_getVec3(JNIEnv *env, jclass cls, jint index, jint fieldNum)
+	{
+	vec3_t *v = lookupVec3(index, fieldNum);
+	return newJavaVec3(v);
+	}
+
+
 static void JNICALL Java_q2java_NativeEntity_setVec3(JNIEnv *env, jclass cls, jint index, jint fieldNum, jfloat x, jfloat y, jfloat z)
 	{
-	edict_t  *ent;
+	//edict_t  *ent;
 	vec3_t *v = lookupVec3(index, fieldNum);
 
 	// sanity check
-	if (!v)
-		return;
+//	if (!v)
+//		return;
 
 	if (v)
 		{
@@ -566,7 +600,7 @@ static void JNICALL Java_q2java_NativeEntity_setVec3(JNIEnv *env, jclass cls, ji
 		(*v)[1] = y;
 		(*v)[2] = z;
 		}
-
+/*
 	// handle some special cases with player fields
 	ent = ge.edicts + index;
 
@@ -584,13 +618,31 @@ static void JNICALL Java_q2java_NativeEntity_setVec3(JNIEnv *env, jclass cls, ji
 		ent->client->ps.pmove.velocity[1] = (short)(y * 8);
 		ent->client->ps.pmove.velocity[2] = (short)(z * 8);
 		}
+*/
 	}
 
 
-static jobject JNICALL Java_q2java_NativeEntity_getVec3(JNIEnv *env, jclass cls, jint index, jint fieldNum)
+static jobject JNICALL Java_q2java_NativeEntity_getEntity(JNIEnv *env, jclass cls, jint index, jint fieldNum)
 	{
-	vec3_t *v = lookupVec3(index, fieldNum);
-	return newJavaVec3(v);
+	edict_t **entp = lookupEntity(index, fieldNum);
+	if ((entp) && (*entp))
+		return Entity_getEntity((*entp) - ge.edicts);
+	else
+		return 0;
+	}
+
+
+static void JNICALL Java_q2java_NativeEntity_setEntity(JNIEnv *ent, jclass cls, jint index, jint fieldNum, jint valIndex)
+	{
+	edict_t **entp = lookupEntity(index, fieldNum);
+
+	if (entp)
+		{
+		if (valIndex >= 0)
+			*entp = ge.edicts + valIndex;
+		else
+			*entp = 0;
+		}
 	}
 
 
@@ -698,6 +750,12 @@ static jobject JNICALL Java_q2java_NativeEntity_pMove0(JNIEnv *env, jclass cls, 
 	memset (&pm, 0, sizeof(pm));
 
 	pm.s = client->ps.pmove;
+
+	for (i=0 ; i<3 ; i++)
+		{
+		pm.s.origin[i] = (short)(ent->s.origin[i] * 8);
+		pm.s.velocity[i] = (short)(ent->velocity[i] * 8);
+		}
 
 	if (memcmp(&client->old_pmove, &pm.s, sizeof(pm.s)))
 		pm.snapinitial = true;

@@ -5,100 +5,106 @@ import java.util.Enumeration;
 import q2java.*;
 import q2jgame.*;
 
-public class func_plat extends GameEntity
+public class func_plat extends GenericPusher
 	{
-	private int fState;
-	private Vec3 fCurrentPos;
-	private Vec3 fRaisedPos;
-	private Vec3 fLoweredPos;
-	private Vec3 fMoveDir;
-	private float fLowerTime;
-	private float fRaisedAmount;
-	private int fLip; //?
+	private int fLip;
 	
-	private final static int STATE_LOWERED	= 0;
-	private final static int STATE_RAISING	= 1;
-	private final static int STATE_RAISED	= 2;
-	private final static int STATE_LOWERING	= 3;
+	private final static int PLAT_LOW_TRIGGER	= 1;	
 	
 public func_plat(String[] spawnArgs) throws GameException
 	{
 	super(spawnArgs);
 	
-	setAngles(0, 0, 0); // not sure why this is necessary, but it's in the original Game DLL
+	setAngles(0, 0, 0);
 	setSolid(SOLID_BSP);
 	
 	String s = getSpawnArg("model", null);
 	if (s != null)
 		setModel(s);
 
+	fSpeed = getSpawnArg("speed", 200) * 0.1F;
+	fAccel = getSpawnArg("accel", 50) * 0.1F;
+	fDecel = getSpawnArg("decel", 50) * 0.1F;	
+	fDmg = getSpawnArg("dmg", 2);
+	fWait = 3;
 	fLip = getSpawnArg("lip", 8);
-		
-		
-	// setup for opening and closing
-	fRaisedPos = getOrigin();
+	int height = getSpawnArg("height", 0);
+
+	fEndOrigin = getOrigin();
+	fStartOrigin = new Vec3(fEndOrigin);
 	Vec3 mins = getMins();
 	Vec3 maxs = getMaxs();
 
-	fMoveDir = new Vec3(0, 0, (maxs.z - mins.z) - fLip);
-		
-	fLoweredPos = (new Vec3(fRaisedPos)).subtract(fMoveDir);	
-	fCurrentPos = new Vec3(fLoweredPos);
-	fRaisedAmount = 0.0F;
-	setOrigin(fLoweredPos);
-	linkEntity();		
+	if (height != 0)
+		fStartOrigin.z -= height;
+	else
+		fStartOrigin.z -=	 (maxs.z - mins.z) - fLip;
+
+	// pos1 is the top position, pos2 is the bottom
+						
+	// setup for opening and closing
+	setOrigin(fStartOrigin);
+	spawnInsideTrigger();	
+	linkEntity();	
 	}
 /**
  * This method was created by a SmartGuide.
  */
-public void runFrame() 
+protected void hitBottom() 
 	{
-//		ent->moveinfo.sound_middle = gi.soundindex  ("doors/pt1_mid.wav");
+	}
+/**
+ * This method was created by a SmartGuide.
+ */
+protected void hitTop() 
+	{
+	}
+/**
+ * This method was created by a SmartGuide.
+ */
+private void spawnInsideTrigger() 
+	{
+	Vec3 mins = getMins();
+	Vec3 maxs = getMaxs();
 
-	switch (fState)
-		{
-		case STATE_LOWERED:
-			if (Game.fGameTime >= fLowerTime)		
-				fState = STATE_RAISING;
-			break;
-			
-		case STATE_RAISED:
-			if (Game.fGameTime >= fLowerTime)		
-				fState = STATE_LOWERING;
-			break;
+	Vec3 tmin = new Vec3(mins);
+	Vec3 tmax = new Vec3(maxs);
 		
-		case STATE_RAISING:
-			// are we just starting to raise?
-			if (fRaisedAmount == 0)
-				{
-				sound(CHAN_NO_PHS_ADD+CHAN_VOICE, Engine.soundIndex("plats/pt1_strt.wav"), 1, ATTN_STATIC, 0);				
-				}
-				
-			fRaisedAmount += 0.1;
-			if (fRaisedAmount < 1)
-				setOrigin(fLoweredPos.vectorMA(fRaisedAmount, fMoveDir));
-			else				
-				{
-				setOrigin(fRaisedPos);
-				fState = STATE_RAISED;
-				fRaisedAmount = 1.0F;
-				fLowerTime = (float)(Game.fGameTime + 8); 
-				}
-			break;
-			
-		case STATE_LOWERING:
-			fRaisedAmount -= 0.1;
-			if (fRaisedAmount > 0)
-				setOrigin(fLoweredPos.vectorMA(fRaisedAmount, fMoveDir));
-			else
-				{
-				setOrigin(fLoweredPos);				
-				fState = STATE_LOWERED;
-				fRaisedAmount = 0;
-				fLowerTime = (float)(Game.fGameTime + 8);
-				sound(CHAN_NO_PHS_ADD+CHAN_VOICE, Engine.soundIndex("plats/pt1_end.wav"), 1, ATTN_STATIC, 0);				
-				}
-			break;			
+	tmin.add(25, 25, 0);
+	tmax.add(-25, -25, 8);
+	tmin.z = tmax.z - (fEndOrigin.z - fStartOrigin.z + fLip);	
+//	tmin[2] = tmax[2] - (ent->pos1[2] - ent->pos2[2] + st.lip);
+
+	if ((fSpawnFlags & PLAT_LOW_TRIGGER) != 0)
+		tmax.z = tmin.z + 8;
+
+	if (tmax.x - tmin.x <= 0)
+		{
+		tmin.x = (mins.x + maxs.x) * 0.5F;
+		tmax.x = tmin.x + 1;
 		}
+
+	if ((tmax.y - tmin.y) <= 0)			
+		{
+		tmin.y = (mins.y + maxs.y) * 0.5F;
+		tmax.y = tmin.y + 1;
+		}
+	
+	try
+		{
+		new AreaTrigger(this, tmin, tmax);
+		}
+	catch (GameException e)
+		{
+		e.printStackTrace();
+		}		
+	}
+/**
+ * This method was created by a SmartGuide.
+ * @param touchedBy q2jgame.GameEntity
+ */
+public void use(Player touchedBy) 
+	{
+	open();
 	}
 }
