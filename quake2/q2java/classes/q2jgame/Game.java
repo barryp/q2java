@@ -50,9 +50,7 @@ public void init()
 	// load cvars
 	fBobUp = new CVar("bob_up", "0.005", 0);	
 	fRollAngle = new CVar("sv_rollangle", "2", 0);
-	fRollSpeed = new CVar("sv_rollspeed", "200", 0);
-	
-	System.out.println("Hello from Java");
+	fRollSpeed = new CVar("sv_rollspeed", "200", 0);	
 	}
 /**
  * This method was created by a SmartGuide.

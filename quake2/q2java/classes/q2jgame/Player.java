@@ -30,16 +30,27 @@ public class Player extends GenericCharacter implements NativePlayer
 	private int fOldWaterLevel;
 	private Vec3 fOldVelocity;
 	
+	// animation variables
+	private int fAnimationPriority;
+	private int fAnimationFrame;
+	private int fAnimationEnd;
+	private boolean fIsRunning;
+	private boolean fIsDucking;
+	
+	public Vec3 fKickAngles;
+	public Vec3 fKickOrigin;
+	
 	// temp vectors for endFrame()
 	private Vec3 fRight;
 	private Vec3 fForward;
 	private Vec3 fUp;
+	private float fXYSpeed;
 	
 	// handedness values
 	public final static int RIGHT_HANDED		= 0;
 	public final static int LEFT_HANDED		= 1;
 	public final static int CENTER_HANDED	= 2;
-	
+		
 	// button bits
 	public final static int BUTTON_ATTACK	= 1;
 	public final static int BUTTON_USE		= 2;
@@ -107,6 +118,70 @@ public class Player extends GenericCharacter implements NativePlayer
 		"yt 2 " +
 		"num 3 14" 
 		;		
+		
+	// animation priority
+	private final static int ANIM_BASIC		= 0; // stand / run
+	private final static int ANIM_WAVE		= 1;
+	private final static int ANIM_JUMP		= 2;
+	private final static int ANIM_PAIN		= 3;
+	private final static int ANIM_ATTACK		= 4;
+	private final static int ANIM_DEATH		= 5;			
+	
+	private final static int[] fAnims = {
+		// special animations
+		ANIM_WAVE, 72, 83,		// flip
+		ANIM_WAVE, 84, 94,		// salute
+		ANIM_WAVE, 95, 111,	// taunt
+		ANIM_WAVE, 112, 122,	// wave
+		ANIM_WAVE, 123, 134,	// point
+		ANIM_JUMP, 66, 71,		// jump
+		ANIM_JUMP, 66, 67,		// flail around in the air
+		ANIM_WAVE, 68, 71,		// land on the ground
+		
+		// standing animations
+		ANIM_BASIC, 0, 39,		// stand
+		ANIM_BASIC, 40, 45	,	// run
+		ANIM_ATTACK, 46, 53,	// attack
+		ANIM_PAIN, 54, 57,		// pain1
+		ANIM_PAIN, 58, 61,		// pain2
+		ANIM_PAIN, 62, 65,		// pain3
+		ANIM_DEATH, 178, 183,	// death1
+		ANIM_DEATH, 184, 189,	// death2
+		ANIM_DEATH, 190, 197	// death3
+		
+		// croutching animations
+		ANIM_BASIC, 135, 153,	// crstnd
+		ANIM_BASIC, 154, 159,	// crwalk
+		ANIM_ATTACK, 160, 168,	// crattack
+		ANIM_PAIN, 169, 172,	// crpain
+		ANIM_PAIN, 169, 172,	// crpain
+		ANIM_PAIN, 169, 172,	// crpain
+		ANIM_DEATH, 173, 177,	// crdeath
+		ANIM_DEATH, 173, 177,	// crdeath
+		ANIM_DEATH, 173, 177,	// crdeath
+		};
+
+		
+	public final static int ANIMATE_FLIP		= 0;
+	public final static int ANIMATE_SALUTE	= 1;
+	public final static int ANIMATE_TAUNT	= 2;
+	public final static int ANIMATE_WAVE		= 3;
+	public final static int ANIMATE_POINT	= 4;
+	public final static int ANIMATE_JUMP		= 5;
+	public final static int ANIMATE_FLAIL	= 6;
+	public final static int ANIMATE_LAND		= 7;
+
+	public final static int ANIMATE_BASIC	= 8; // basic = stand, basic+1 = run
+	public final static int ANIMATE_ATTACK	= 10;
+	public final static int ANIMATE_PAIN		= 11;
+	public final static int ANIMATE_DEATH	= 14;
+/*
+	public final static int ANIMATE_CROUCH_STAND	= 16;
+	public final static int ANIMATE_CROUCH_WALK	= 17;
+	public final static int ANIMATE_CROUCH_ATTACK	= 18;
+	public final static int ANIMATE_CROUCH_PAIN	= 19;
+	public final static int ANIMATE_CROUCH_DEATH	= 22;
+*/	
 	
 /**
  * The DLL will call this constructor when a new player 
@@ -124,6 +199,8 @@ public Player(String userinfo, boolean loadgame) throws GameException
 	fRight = new Vec3();
 	fForward = new Vec3();
 	fUp = new Vec3();
+	fKickAngles = new Vec3();
+	fKickOrigin = new Vec3();	
 	}
 /**
  * This method was created by a SmartGuide.
@@ -135,9 +212,12 @@ public void addAmmo(String ammoType, int count)
 	{
 	AmmoPack pack = (AmmoPack) fAmmoBelt.get(ammoType);
 	if (pack == null)
-		fAmmoBelt.put(ammoType, new AmmoPack(-1, 0));
+		fAmmoBelt.put(ammoType, new AmmoPack(Integer.MAX_VALUE, null));
 	else
 		{
+		// make sure we don't overfill the ammo pack
+		count = Math.min(count, pack.fMaxAmount - pack.fAmount);
+		
 		if (pack == fAmmo)
 			alterAmmoCount(count);  // will also update HUD
 		else			
@@ -166,6 +246,7 @@ public void begin(boolean loadgame)
 	
 	fInventory = new Hashtable();
 	fAmmoBelt = new Hashtable();
+
 	
 	GameEntity spawnPoint = null;
 	java.util.Enumeration enum = enumerateEntities("q2jgame.spawn.info_player_start");
@@ -191,22 +272,22 @@ public void begin(boolean loadgame)
 	setClipmask(Engine.MASK_PLAYERSOLID);
 	
 	// initialize the AmmoBelt
-	fAmmoBelt.put("bullets", new AmmoPack(100, Engine.imageIndex("a_bullets")));
-	fAmmoBelt.put("cells", new AmmoPack(100, Engine.imageIndex("a_cells")));
-	fAmmoBelt.put("grenades", new AmmoPack(100, Engine.imageIndex("a_grenades")));
-	fAmmoBelt.put("rockets", new AmmoPack(100, Engine.imageIndex("a_rockets")));
-	fAmmoBelt.put("shells", new AmmoPack(100, Engine.imageIndex("a_shells")));
-	fAmmoBelt.put("slugs", new AmmoPack(100, Engine.imageIndex("a_slugs")));
+	fAmmoBelt.put("shells", new AmmoPack(100, "a_shells"));
+	fAmmoBelt.put("bullets", new AmmoPack(200, "a_bullets"));
+	fAmmoBelt.put("grenades", new AmmoPack(50, "a_grenades"));
+	fAmmoBelt.put("rockets", new AmmoPack(50, "a_rockets"));
+	fAmmoBelt.put("cells", new AmmoPack(200, "a_cells"));
+	fAmmoBelt.put("slugs", new AmmoPack(50, "a_slugs"));
 
 	// bring up the initial weapon
 	try
 		{
 		// start off with a plain blaster
 		fWeapon = new Blaster();
-		fWeapon.use(this);
-
-		// stick it in our inventory too
 		putInventory("blaster", fWeapon);
+		fWeapon.setOwner(this);
+		fWeapon.activate();
+		
 /*		
 		// give the user other weapons too, for testing
 		putInventory("hyperblaster", new weapon_hyperblaster());
@@ -230,6 +311,7 @@ public void begin(boolean loadgame)
 	setMins(-16, -16, 24);
 	setMaxs(16, 16, 32);
 	setStat(STAT_HEALTH_ICON, (short)worldspawn.fHealthPic);
+	setAnimation(ANIMATE_BASIC);
 	linkEntity();	
 	}
 /**
@@ -239,6 +321,58 @@ public void beginFrame()
 	{
 	if (fWeapon != null)
 		fWeapon.weaponThink();
+	}
+/**
+ * This method was created by a SmartGuide.
+ */
+private void calcClientFrame() 
+	{
+/*	
+	if (ent->s.modelindex != 255)
+		return;		// not in the player model
+*/
+	boolean isDucking = ((getPMFlags() & PMF_DUCKED) != 0);
+	boolean isRunning = (fXYSpeed != 0);
+
+	// check for stand/duck and stop/go transitions
+	//
+	// this is a nasty "if" statement, but basically: if we're not making
+	// a transition, then run the animations normally
+	if (!(	((fIsDucking != isDucking)	&& (fAnimationPriority < ANIM_DEATH))
+	||		((fIsRunning != isRunning)  	&& (fAnimationPriority == ANIM_BASIC))
+	||		((!fIsGrounded)             	&& (fAnimationPriority <= ANIM_WAVE))
+	))
+		{		
+		if (fAnimationFrame < fAnimationEnd)
+			{
+			incFrame();
+			return;
+			}
+		
+		if (fAnimationPriority == ANIM_DEATH)
+			return;		// stay there
+		
+		if (fAnimationPriority == ANIM_JUMP)
+			{
+			if (fIsGrounded)
+				setAnimation(ANIMATE_LAND);	
+			return;
+			}
+		}
+	
+	// at this point, we're either here because we're making
+	// a transition, or we didn't return from the normal 
+	// animation handling, so reset to a basic state
+					
+	fIsDucking = isDucking;
+	fIsRunning = isRunning;
+
+	if (fIsGrounded)
+		setAnimation(ANIMATE_FLAIL);
+//		if (ent->s.frame != FRAME_jump2)
+//			ent->s.frame = FRAME_jump1;
+	else
+		setAnimation(ANIMATE_BASIC);	
 	}
 /**
  * This method was created by a SmartGuide.
@@ -272,20 +406,26 @@ private void calcViewOffset()
 	{
 	Vec3 v = new Vec3(0, 0, fViewHeight);
 	float bobMove = 0.0F;
+
+	setKickAngles(fKickAngles);	
 	
+	// add fall height
+	// ---FIXME---
+	
+	// setup bob calculations
 	Vec3 velocity = getVelocity();
-	float xyspeed = (float)Math.sqrt((velocity.x*velocity.x) + (velocity.y*velocity.y));
+	fXYSpeed = (float)Math.sqrt((velocity.x*velocity.x) + (velocity.y*velocity.y));
 	
-	if (xyspeed < 5.0)
+	if (fXYSpeed < 5.0)
 		{
 		bobMove = 0;
 		fBobTime = 0;
 		}
 	else if (fIsGrounded)
 		{
-		if (xyspeed > 210)
+		if (fXYSpeed > 210)
 			bobMove = 0.25F;
-		else if (xyspeed > 100)
+		else if (fXYSpeed > 100)
 			bobMove = 0.125F;
 		else
 			bobMove = 0.0625F;		
@@ -294,15 +434,18 @@ private void calcViewOffset()
 	fBobTime += bobMove;
 	
 	float bobfracsin = (float) Math.abs(Math.sin(fBobTime*Math.PI));			
+
 	// add bob height
-	float bob = bobfracsin * xyspeed * Game.fBobUp.getFloat(); // *3 added to magnify effect
+	float bob = bobfracsin * fXYSpeed * Game.fBobUp.getFloat(); // *3 added to magnify effect
 	if (bob > 6)
 		bob = 6.0F;
 	v.z += bob;	
+		
+	// add kick offset
+	v.add(fKickOrigin);
 	
 	// absolutely bound offsets
-	// so the view can never be outside the player box
-		
+	// so the view can never be outside the player box		
 	if (v.x < -14)
 		v.x = -14;
 	else if (v.x > 14)
@@ -325,12 +468,13 @@ private void calcViewOffset()
  */
 public void changeWeapon() 
 	{
-	if (fNextWeapon == null)
-		return;
-		
-	fWeapon = fNextWeapon;
+	if (fNextWeapon != null) 
+		fWeapon = fNextWeapon;
+	else
+		fWeapon = nextAvailableWeapon();
+						
 	fNextWeapon = null;
-	fWeapon.use(this);		
+	fWeapon.activate();		
 	}
 /**
  * This method was created by a SmartGuide.
@@ -389,6 +533,10 @@ public void endFrame()
 	worldEffects();
 	fallingDamage();
 	calcViewOffset();	
+	calcClientFrame();
+	
+	fKickAngles.clear();
+	fKickOrigin.clear();
 	}
 /**
  * This method was created by a SmartGuide.
@@ -475,10 +623,32 @@ private void fallingDamage()
  */
 public int getAmmoCount(String ammoName) 
 	{
-	if (fAmmo == null)
+	if (ammoName == null)
 		return 0;
+		
+	AmmoPack p = (AmmoPack) fAmmoBelt.get(ammoName);
+	
+	if (p == null)
+		return 0;		
 	else
-		return fAmmo.fAmount;				
+		return p.fAmount;				
+	}
+/**
+ * This method was created by a SmartGuide.
+ * @return int
+ * @param itemname java.lang.String
+ */
+public int getMaxAmmoCount(String ammoName) 
+	{
+	if (ammoName == null)
+		return Integer.MAX_VALUE;
+		
+	AmmoPack p = (AmmoPack) fAmmoBelt.get(ammoName);
+	
+	if (p == null)
+		return Integer.MAX_VALUE;		
+	else
+		return p.fMaxAmount;				
 	}
 /**
  * This method was created by a SmartGuide.
@@ -490,6 +660,13 @@ public String getUserInfo(String key)
 	if (fUserInfo == null)
 		return null;
 	return (String) fUserInfo.get(key);		
+	}
+/**
+ * This method was created by a SmartGuide.
+ */
+private void incFrame() 
+	{
+	super.setFrame(++fAnimationFrame);
 	}
 /**
  * This method was created by a SmartGuide.
@@ -507,6 +684,40 @@ public boolean isAttacking()
 public boolean isCarrying(String itemName) 
 	{
 	return (fInventory.containsKey(itemName));
+	}
+/**
+ * This method was created by a SmartGuide.
+ * @return q2jgame.weapon.PlayerWeapon
+ */
+private PlayerWeapon nextAvailableWeapon() 
+	{
+	PlayerWeapon w;
+	
+	w = (PlayerWeapon) fInventory.get("railgun");
+	if ((w != null) && w.isEnoughAmmo())
+		return w;
+		
+	w = (PlayerWeapon) fInventory.get("hyperblaster");
+	if ((w != null) && w.isEnoughAmmo())
+		return w;
+
+	w = (PlayerWeapon) fInventory.get("chaingun");
+	if ((w != null) && w.isEnoughAmmo())
+		return w;
+
+	w = (PlayerWeapon) fInventory.get("machinegun");
+	if ((w != null) && w.isEnoughAmmo())
+		return w;
+
+	w = (PlayerWeapon) fInventory.get("super shotgun");
+	if ((w != null) && w.isEnoughAmmo())
+		return w;
+
+	w = (PlayerWeapon) fInventory.get("shotgun");
+	if ((w != null) && w.isEnoughAmmo())
+		return w;
+
+	return (PlayerWeapon) fInventory.get("blaster");
 	}
 /**
  * This method was created by a SmartGuide.
@@ -549,6 +760,37 @@ public void setAmmoType(String ammoType)
 		setStat(STAT_AMMO, (short) fAmmo.fAmount);
 		setStat(STAT_AMMO_ICON, (short) fAmmo.fIcon);
 		}	
+	}
+/**
+ * This method was created by a SmartGuide.
+ * @param animation int
+ */
+public void setAnimation(int animation) 
+	{
+	// pain and death can have 3 variations...pick one randomly
+	if ((animation == ANIMATE_PAIN) || (animation == ANIMATE_DEATH))
+		animation += Game.randomFloat() * 3;
+		
+	// use different animations when crouching		
+	if ((animation > ANIMATE_LAND) && ((getPMFlags() & PMF_DUCKED) != 0))
+		animation += 9;
+		
+	int newPriority = fAnims[animation * 3];
+	if (newPriority >= fAnimationPriority)
+		{
+		fAnimationPriority = newPriority;
+		setFrame(fAnims[(animation*3) + 1]);
+		fAnimationEnd = fAnims[(animation*3)+2];
+		}
+	}
+/**
+ * This method was created by a SmartGuide.
+ * @param n int
+ */
+public void setFrame(int n) 
+	{
+	fAnimationFrame = n;
+	super.setFrame(n);
 	}
 /**
  * This method was created by a SmartGuide.
@@ -615,7 +857,7 @@ public void use(String itemName)
 	Object ent = fInventory.get(itemName.toLowerCase());
 	if (ent == null)
 		{
-		cprint(Engine.PRINT_HIGH, "You don't have a " + itemName);
+		cprint(Engine.PRINT_HIGH, "You don't have a " + itemName + "\n");
 		return;
 		}
 
@@ -627,10 +869,16 @@ public void use(String itemName)
 		
 		// make a note of what the next weapon will be	
 		fNextWeapon = (PlayerWeapon) ent;
+		if (!fNextWeapon.isEnoughAmmo())
+			{
+			cprint(Engine.PRINT_HIGH, "You don't have enough ammo to use a " + itemName + "\n");
+			fNextWeapon = null;
+			return;
+			}
 		
 		// signal the current weapon to deactivate..when it's
 		// done deactivating, it will signal back to the player to 
-		// switchWeapons() and we'll use() the next weapon		
+		// changeWeapon() and we'll use() the next weapon		
 		fWeapon.deactivate();	
 
 		return;

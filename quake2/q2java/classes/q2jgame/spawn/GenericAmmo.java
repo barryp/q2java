@@ -23,12 +23,17 @@ public GenericAmmo(String[] spawnArgs, String ammoType, int count, String modelN
  */
 public void touch(GenericCharacter mob) 
 	{
+	Player p = (Player) mob;
+	
+	// don't do anything if the player is already maxed out on this ammo
+	if (p.getAmmoCount(fAmmoType) >= p.getMaxAmmoCount(fAmmoType))
+		return;
+		
 	super.touch(mob);
 
+	p.addAmmo(fAmmoType, fCount);
+
 	// bring the ammo back in 30 seconds
-	setRespawn(30);
-	
-	if (mob instanceof Player)
-		((Player)mob).addAmmo(fAmmoType, fCount);
+	setRespawn(30);	
 	}
 }

@@ -25,14 +25,6 @@ jint JNICALL Java_q2java_NativeEntity_allocateEntity
 
 /*
  * Class:     q2java_NativeEntity
- * Method:    traceMove0
- * Signature: (IIF)Lq2java/TraceResults;
- */
-jobject JNICALL Java_q2java_NativeEntity_traceMove0
-  (JNIEnv *, jclass, jint, jint, jfloat);
-
-/*
- * Class:     q2java_NativeEntity
  * Method:    pMove0
  * Signature: (I)Lq2java/PMoveResults;
  */
@@ -65,6 +57,22 @@ void JNICALL Java_q2java_NativeEntity_setFloat0
 
 /*
  * Class:     q2java_NativeEntity
+ * Method:    getByte
+ * Signature: (II)B
+ */
+jbyte JNICALL Java_q2java_NativeEntity_getByte
+  (JNIEnv *, jclass, jint, jint);
+
+/*
+ * Class:     q2java_NativeEntity
+ * Method:    traceMove0
+ * Signature: (IIF)Lq2java/TraceResults;
+ */
+jobject JNICALL Java_q2java_NativeEntity_traceMove0
+  (JNIEnv *, jclass, jint, jint, jfloat);
+
+/*
+ * Class:     q2java_NativeEntity
  * Method:    sound0
  * Signature: (FFFIIIFFFI)V
  */
@@ -94,6 +102,14 @@ void JNICALL Java_q2java_NativeEntity_cprint0
  */
 jobject JNICALL Java_q2java_NativeEntity_getVec3
   (JNIEnv *, jclass, jint, jint);
+
+/*
+ * Class:     q2java_NativeEntity
+ * Method:    setByte
+ * Signature: (IIB)V
+ */
+void JNICALL Java_q2java_NativeEntity_setByte
+  (JNIEnv *, jclass, jint, jint, jbyte);
 
 /*
  * Class:     q2java_NativeEntity

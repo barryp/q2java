@@ -47,9 +47,8 @@ public void fire()
 */
 
 	fOwner.getViewAngles().angleVectors(forward, right, null);
-
-//	VectorScale (forward, -3, ent->client->kick_origin);
-//	ent->client->kick_angles[0] = -3;
+	fOwner.fKickOrigin.copyFrom(forward).scale(-3);
+	fOwner.fKickAngles.x = -3;
 
 	offset = new Vec3(0, 7,  fOwner.fViewHeight - 8);
 	start = fOwner.projectSource(offset, forward, right);
@@ -64,6 +63,6 @@ public void fire()
 	incWeaponFrame();
 	
 //	PlayerNoise(ent, start, PNOISE_WEAPON);
-//	ent->client->pers.inventory[ent->client->ammo_index] -= ent->client->pers.weapon->quantity;		
+	fOwner.alterAmmoCount(-1);
 	}
 }

@@ -33,9 +33,8 @@ public void fire()
 		}
 
 	fOwner.getViewAngles().angleVectors(forward, right, null);
-
-//	VectorScale (forward, -2, ent->client->kick_origin);
-//	ent->client->kick_angles[0] = -2;
+	fOwner.fKickOrigin.copyFrom(forward).scale(-2);
+	fOwner.fKickAngles.x = -2;
 
 	offset = new Vec3(0, 8,  fOwner.fViewHeight-8);
 	start = fOwner.projectSource(offset, forward, right);

@@ -62,6 +62,16 @@ Engine.debugLog("Created weapon with ammoType = " + fAmmoType);
 /**
  * This method was created by a SmartGuide.
  */
+public void activate() 
+	{
+	fIsSwitching = true;
+	fWeaponState = WEAPON_ACTIVATING;
+	setWeaponFrame(0);
+	fOwner.setAmmoType(fAmmoType);
+	}
+/**
+ * This method was created by a SmartGuide.
+ */
 public void deactivate() 
 	{
 	fIsSwitching = true;
@@ -312,23 +322,33 @@ public final void incWeaponFrame()
 	fOwner.setGunFrame(++fGunFrame);
 	}
 /**
+ * Check whether this weapon has enough ammo to fire.  One unit of
+ * ammo is good enough for most weapons.  Special weapons will 
+ * override this.
+ * @return boolean
+ */
+public boolean isEnoughAmmo() 
+	{
+	if (fAmmoType == null)
+		return true;
+	else		
+		return (fOwner.getAmmoCount(fAmmoType) >= 1);
+	}
+/**
+ * This method was created by a SmartGuide.
+ * @param p q2jgame.Player
+ */
+public void setOwner(Player p) 
+	{
+	fOwner = p;
+	}
+/**
  * This method was created by a SmartGuide.
  */
 public final void setWeaponFrame(int newFrame) 
 	{
 	fGunFrame = newFrame;
 	fOwner.setGunFrame(fGunFrame);
-	}
-/**
- * This method was created by a SmartGuide.
- */
-public void use(Player p) 
-	{
-	fIsSwitching = true;
-	fWeaponState = WEAPON_ACTIVATING;
-	fOwner = p;
-	setWeaponFrame(0);
-	fOwner.setAmmoType(fAmmoType);
 	}
 /**
  * This method was created by a SmartGuide.
@@ -385,8 +405,18 @@ public void weaponThink()
 		{
 		if (fOwner.isAttacking())
 			{
-			fWeaponState = WEAPON_FIRING;
-			setWeaponFrame(fFrameActivateLast + 1); // FRAME_FIRE_FIRST = FRAME_ACTIVATE_LAST + 1
+			if (isEnoughAmmo())
+				{
+				fWeaponState = WEAPON_FIRING;
+				setWeaponFrame(fFrameActivateLast + 1); // FRAME_FIRE_FIRST = FRAME_ACTIVATE_LAST + 1
+				}
+			else
+				{
+				fOwner.sound(NativeEntity.CHAN_VOICE, Engine.soundIndex("weapons/noammo.wav"), 1, NativeEntity.ATTN_NORM, 0);
+				fWeaponState = WEAPON_DROPPING;
+				setWeaponFrame(fFrameIdleLast + 1); // FRAME_DEACTIVATE_FIRST = FRAME_IDLE_LAST + 1
+				return;
+				}				
 			}
 		else
 /*		

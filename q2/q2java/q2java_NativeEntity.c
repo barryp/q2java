@@ -36,6 +36,9 @@
 #define INT_CLIENT_PS_GUNFRAME 101
 #define INT_CLIENT_PS_RDFLAGS 102
 
+#define	BYTE_CLIENT_PS_PMOVE_PMFLAGS 100
+#define BYTE_CLIENT_PS_PMOVE_TELEPORTTIME 101
+
 #define CALL_SOUND 1
 #define CALL_POSITIONED_SOUND 2
 
@@ -58,7 +61,9 @@ static JNINativeMethod Entity_methods[] =
 	{
 	{"allocateEntity",	"(Z)I", 					Java_q2java_NativeEntity_allocateEntity},
 	{"freeEntity0",		"(I)V",						Java_q2java_NativeEntity_freeEntity0},
+	{"setByte",			"(IIB)V",					Java_q2java_NativeEntity_setByte},
 	{"setInt",			"(III)V",					Java_q2java_NativeEntity_setInt},
+	{"getByte",			"(II)B",					Java_q2java_NativeEntity_getByte},	
 	{"getInt",			"(II)I",					Java_q2java_NativeEntity_getInt},
 	{"setVec3",			"(IIFFF)V",					Java_q2java_NativeEntity_setVec3},
 	{"getVec3",			"(II)Lq2java/Vec3;",		Java_q2java_NativeEntity_getVec3},
@@ -189,6 +194,30 @@ static vec3_t *lookupVec3(int index, int fieldNum)
 		default: return NULL; // ---FIX--- should record an error somewhere
 		}
 	}
+
+
+static char *lookupByte(int index, int fieldNum)
+	{
+	edict_t *ent;
+
+	// sanity check
+	if ((index < 0) || (index >= ge.max_edicts))
+		return NULL;
+
+	ent = ge.edicts + index;
+
+	// check for attemt to access player field in a non-player entity
+	if ((fieldNum >= 100) && !(ent->client))
+		return NULL;
+
+	switch (fieldNum)
+		{
+		case BYTE_CLIENT_PS_PMOVE_PMFLAGS: return &(ent->client->ps.pmove.pm_flags);
+		case BYTE_CLIENT_PS_PMOVE_TELEPORTTIME: return &(ent->client->ps.pmove.teleport_time);
+		default: return NULL; // ---FIX--- should record an error somewhere
+		}
+	}
+
 
 
 static int *lookupInt(int index, int fieldNum)
@@ -409,6 +438,15 @@ static void JNICALL Java_q2java_NativeEntity_freeEntity0(JNIEnv *env, jclass cls
 	}		
 
 
+static void JNICALL Java_q2java_NativeEntity_setByte(JNIEnv *env, jclass cls, jint index, jint fieldNum, jbyte val)
+	{
+	char *bp = lookupByte(index, fieldNum);
+
+	if (bp)
+		*bp = val;
+	}
+
+
 static void JNICALL Java_q2java_NativeEntity_setInt(JNIEnv *env, jclass cls, jint index, jint fieldNum, jint val)
 	{
 	int *ip = lookupInt(index, fieldNum);
@@ -417,6 +455,14 @@ static void JNICALL Java_q2java_NativeEntity_setInt(JNIEnv *env, jclass cls, jin
 		*ip = val;
 	}
 
+static jbyte JNICALL Java_q2java_NativeEntity_getByte(JNIEnv *env, jclass cls, jint index , jint fieldNum)
+	{
+	char *bp = lookupByte(index, fieldNum);
+	if (bp)
+		return *bp;
+	else
+		return 0;	// ---FIXME-- should indicate an error somehow
+	}
 
 static jint JNICALL Java_q2java_NativeEntity_getInt(JNIEnv *env, jclass cls, jint index, jint fieldNum)
 	{

@@ -155,13 +155,26 @@ public Vec3 clear()
 	}
 /**
  * This method was created by a SmartGuide.
+ * @return q2java.Vec3
  * @param v q2java.Vec3
  */
-public void copyTo(Vec3 v) 
+public Vec3 copyFrom(Vec3 v) 
+	{
+	x = v.x;
+	y = v.y;
+	z = v.z;
+	return this;
+	}
+/**
+ * This method was created by a SmartGuide.
+ * @param v q2java.Vec3
+ */
+public Vec3 copyTo(Vec3 v) 
 	{
 	v.x = x;
 	v.y = y;
 	v.z = z;
+	return v;
 	}
 /**
  * This method was created by a SmartGuide.
@@ -232,6 +245,20 @@ public Vec3 scale(float val)
 	x *= val;
 	y *= val;
 	z *= val;
+	return this;
+	}
+/**
+ * This method was created by a SmartGuide.
+ * @return q2java.Vec3
+ * @param nx float
+ * @param ny float
+ * @param nz float
+ */
+public Vec3 set(double nx, double ny, double nz) 
+	{
+	x = (float) nx;
+	y = (float) ny;
+	z = (float) nz;
 	return this;
 	}
 /**

@@ -31,11 +31,11 @@ public void fire()
 	int			damage;
 	int			kick = 2;
 
-/*
-	if (deathmatch->value)
+
+//	if (deathmatch->value)
 		damage = 6;
-	else
-*/		damage = 8;
+//	else
+//		damage = 8;
 
 
 	if (getWeaponFrame() == 5)
@@ -69,44 +69,41 @@ public void fire()
 
 	if (getWeaponFrame() <= 9)
 		shots = 1;
-	else if (getWeaponFrame() <= 14)
+	else 
 		{
-		if (fOwner.isAttacking())
-			shots = 2;
-		else
-			shots = 1;
-		}
-	else
-		shots = 3;
-/*
-	if (ent->client->pers.inventory[ent->client->ammo_index] < shots)
-		shots = ent->client->pers.inventory[ent->client->ammo_index];
-
-	if (!shots)
-		{
-		if (level.time >= ent->pain_debounce_time)
+		if (getWeaponFrame() <= 14)
 			{
-			gi.sound(ent, CHAN_VOICE, gi.soundindex("weapons/noammo.wav"), 1, ATTN_NORM, 0);
-			ent->pain_debounce_time = level.time + 1;
+			if (fOwner.isAttacking())
+				shots = 2;
+			else
+				shots = 1;
 			}
-		NoAmmoWeaponChange (ent);
+		else
+			shots = 3;
+		}
+				
+	shots = Math.min(shots, fOwner.getAmmoCount("bullets"));
+
+	if (shots == 0)
+		{
+//		if (level.time >= ent->pain_debounce_time)
+			{
+			fOwner.sound(NativeEntity.CHAN_VOICE, Engine.soundIndex("weapons/noammo.wav"), 1, NativeEntity.ATTN_NORM, 0);
+//			ent->pain_debounce_time = level.time + 1;
+			}
+		fOwner.changeWeapon();			
 		return;
 		}
 
-
+/*
 	if (is_quad)
 		{
 		damage *= 4;
 		kick *= 4;
 		}
-
-
-	for (i=0 ; i<3 ; i++)
-		{
-		ent->client->kick_origin[i] = crandom() * 0.35;
-		ent->client->kick_angles[i] = crandom() * 0.7;
-		}
 */
+	fOwner.fKickOrigin.set(Game.cRandom() * 0.35, Game.cRandom() * 0.35, Game.cRandom() * 0.35);
+	fOwner.fKickAngles.set(Game.cRandom() * 0.7,  Game.cRandom() * 0.7,  Game.cRandom() * 0.7);
 
 	for (i=0 ; i<shots ; i++)
 		{

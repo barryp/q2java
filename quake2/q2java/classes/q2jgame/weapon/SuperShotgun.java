@@ -30,8 +30,8 @@ public void fire()
 	v = fOwner.getViewAngles();
 	v.angleVectors(forward, right, null);
 
-//	VectorScale (forward, -2, ent->client->kick_origin);
-//	ent->client->kick_angles[0] = -2;
+	fOwner.fKickOrigin.copyFrom(forward).scale(-2);
+	fOwner.fKickAngles.x = -2;
 
 	offset = new Vec3(0, 8,  fOwner.fViewHeight - 8);
 	start = fOwner.projectSource(offset, forward, right);
@@ -61,5 +61,14 @@ public void fire()
 	
 //	PlayerNoise(ent, start, PNOISE_WEAPON);
 	fOwner.alterAmmoCount(-2);
+	}
+/**
+ * Override the PlayerWeapon.isEnoughAmmo() method, since 
+ * the Super Shotgun requires two shells to fire.
+ * @return boolean
+ */
+public boolean isEnoughAmmo() 
+	{
+	return (fOwner.getAmmoCount("shells") >= 2);
 	}
 }

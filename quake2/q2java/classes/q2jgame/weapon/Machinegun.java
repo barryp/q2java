@@ -2,12 +2,15 @@
 package q2jgame.weapon;
 
 import q2java.*;
+import q2jgame.*;
 
 public class Machinegun extends PlayerWeapon
 	{
 	// all machinegun objects will share these arrays
 	private static int[] PAUSE_FRAMES = new int[] {23, 45, 0};
 	private static int[] FIRE_FRAMES = new int[] {4, 5, 0};			
+		
+	private int fShotCount;
 	
 public Machinegun() throws GameException
 	{
@@ -29,7 +32,7 @@ public void fire()
 	
 	if (!fOwner.isAttacking())
 		{
-//		ent->client->machinegun_shots = 0;
+		fShotCount = 0;
 		incWeaponFrame();
 		return;
 		}
@@ -38,46 +41,41 @@ public void fire()
 		setWeaponFrame(4);
 	else
 		setWeaponFrame(5);			
-						
-/*
-	if (ent->client->pers.inventory[ent->client->ammo_index] < 1)
+
+
+	if (!isEnoughAmmo())
 		{
-		ent->client->ps.gunframe = 6;
-		if (level.time >= ent->pain_debounce_time)
+		setWeaponFrame(6);
+//		if (level.time >= ent->pain_debounce_time)
 			{
-			gi.sound(ent, CHAN_VOICE, gi.soundindex("weapons/noammo.wav"), 1, ATTN_NORM, 0);
-			ent->pain_debounce_time = level.time + 1;
+			fOwner.sound(NativeEntity.CHAN_VOICE, Engine.soundIndex("weapons/noammo.wav"), 1, NativeEntity.ATTN_NORM, 0);
+//			ent->pain_debounce_time = level.time + 1;
 			}
-		NoAmmoWeaponChange (ent);
+		fOwner.changeWeapon();
 		return;
 		}
-
+										
+/*
 	if (is_quad)
 		{
 		damage *= 4;
 		kick *= 4;
 		}
-
-	for (i=1 ; i<3 ; i++)
-		{
-		ent->client->kick_origin[i] = crandom() * 0.35;
-		ent->client->kick_angles[i] = crandom() * 0.7;
-		}
-	ent->client->kick_origin[0] = crandom() * 0.35;
-	ent->client->kick_angles[0] = ent->client->machinegun_shots * -1.5;
-
-	// raise the gun as it is firing
-	if (!deathmatch->value)
-		{
-		ent->client->machinegun_shots++;
-		if (ent->client->machinegun_shots > 9)
-			ent->client->machinegun_shots = 9;
-		}
 */
 
+	fOwner.fKickOrigin.set(Game.cRandom() * 0.35, Game.cRandom() * 0.35, Game.cRandom() * 0.35);
+	fOwner.fKickAngles.set(fShotCount * -1.5,  Game.cRandom() * 0.7,  Game.cRandom() * 0.7);
+
+	// raise the gun as it is firing
+	if (true /*!deathmatch->value */)
+		{
+		fShotCount++;
+		if (fShotCount > 9)
+			fShotCount = 9;
+		}
+
 	// get start / end positions
-	angles = new Vec3(fOwner.getViewAngles());
-//	VectorAdd (ent->client->v_angle, ent->client->kick_angles, angles);
+	angles = new Vec3(fOwner.getViewAngles()).add(fOwner.fKickAngles);
 	angles.angleVectors(forward, right, null);
 	start = fOwner.projectSource(offset, forward, right);
 	fireLead(fOwner, start, forward, damage, kick, Engine.TE_GUNSHOT, DEFAULT_BULLET_HSPREAD, DEFAULT_BULLET_VSPREAD);

@@ -3,6 +3,7 @@ package q2jgame.spawn;
 
 import q2java.*;
 import q2jgame.*;
+import q2jgame.weapon.*;
 
 abstract class GenericWeapon extends GenericItem
 	{
@@ -28,28 +29,33 @@ public GenericWeapon(String[] spawnArgs, String className, String weaponName, St
  */
 public void touch(GenericCharacter mob) 
 	{
+	Player p = (Player) mob;
+	
+	// don't do anything if the player is already maxed out on this weapon and ammo
+	if (p.isCarrying(fWeaponName) && (p.getAmmoCount(fAmmoName) >= p.getMaxAmmoCount(fAmmoName)))
+		return;
+			
 	super.touch(mob);
 	
 	// bring the weapon back in 30 seconds
 	setRespawn(30);	
 	
-	if (mob instanceof Player)
+	if (!p.isCarrying(fWeaponName))
 		{
-		Player p = (Player) mob;
-		if (!p.isCarrying(fWeaponName))
+		try
 			{
-			try
-				{
-				p.putInventory(fWeaponName, Class.forName(fClassName).newInstance());
-				p.cprint(Engine.PRINT_HIGH, "You picked up a " + fWeaponName + "\n");
-				}
-			catch (Exception e)
-				{
-				e.printStackTrace();
-				}				
+			PlayerWeapon w = (PlayerWeapon) Class.forName(fClassName).newInstance();
+			p.putInventory(fWeaponName, w);
+			w.setOwner(p);
+			p.cprint(Engine.PRINT_HIGH, "You picked up a " + fWeaponName + "\n");
 			}
-
-		p.addAmmo(fAmmoName, fAmmoCount);			
+		catch (Exception e)
+			{
+			e.printStackTrace();
+			}				
 		}
+
+	p.addAmmo(fAmmoName, fAmmoCount);			
 	}
+
 }

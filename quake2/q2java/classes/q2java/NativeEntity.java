@@ -76,6 +76,10 @@ public abstract class NativeEntity
 	public final static int EV_FEMALE_FALLFAR	= 7;
 	public final static int EV_PLAYER_TELEPORT	= 8;
 
+	// getPMFlags() constants
+	public final static int PMF_DUCKED			= 1;
+	public final static int PMF_JUMP_HELD		= 2;
+
 	// player_state_t->refdef flags
 	public final static int RDF_UNDERWATER		= 1;		// warp the screen as apropriate
 	public final static int RDF_NOWORLDMODEL		= 2;		// used for player configuration screen
@@ -141,11 +145,11 @@ public abstract class NativeEntity
 	private final static int VEC3_VELOCITY 			= 8;
 
 	// ONLY use these in NativePlayer
-	protected final static int VEC3_CLIENT_PS_VIEWANGLES	= 100;
-	protected final static int VEC3_CLIENT_PS_VIEWOFFSET	= 101;
-	protected final static int VEC3_CLIENT_PS_KICKANGLES	= 102;
-	protected final static int VEC3_CLIENT_PS_GUNANGLES	= 103;
-	protected final static int VEC3_CLIENT_PS_GUNOFFSET	= 104;
+	private final static int VEC3_CLIENT_PS_VIEWANGLES	= 100;
+	private final static int VEC3_CLIENT_PS_VIEWOFFSET	= 101;
+	private final static int VEC3_CLIENT_PS_KICKANGLES	= 102;
+	private final static int VEC3_CLIENT_PS_GUNANGLES	= 103;
+	private final static int VEC3_CLIENT_PS_GUNOFFSET	= 104;
 	
 	private final static int INT_S_MODELINDEX	= 1;
 	private final static int INT_S_MODELINDEX2	= 2;
@@ -163,9 +167,12 @@ public abstract class NativeEntity
 	private final static int INT_S_EVENT			= 14;
 	
 	// ONLY use these in NativePlayer
-	protected final static int INT_CLIENT_PS_GUNINDEX = 100;
-	protected final static int INT_CLIENT_PS_GUNFRAME = 101;
-	protected final static int INT_CLIENT_PS_RDFLAGS	= 102;
+	private final static int INT_CLIENT_PS_GUNINDEX	= 100;
+	private final static int INT_CLIENT_PS_GUNFRAME	= 101;
+	private final static int INT_CLIENT_PS_RDFLAGS	= 102;
+	
+	private final static int BYTE_CLIENT_PS_PMOVE_PMFLAGS		= 100;
+	private final static int BYTE_CLIENT_PS_PMOVE_TELEPORTTIME	= 101;
 	
 	// private flags for setFloat0()
 	private final static int FLOAT_CLIENT_PS_FOV 		= 100;
@@ -302,6 +309,9 @@ public Vec3 getAngles()
 	{
 	return getVec3(fEntityIndex, VEC3_S_ANGLES);
 	}
+
+private native static byte getByte(int index, int fieldNum);
+
 public int getEffects()
 	{
 	return getInt(fEntityIndex, INT_S_EFFECTS);
@@ -354,6 +364,10 @@ public NativeEntity getOwner()
 public int getPlayerNum() 
 	{
 	return getEntityIndex() - 1;
+	}
+public byte getPMFlags()
+	{
+	return getByte(fEntityIndex, BYTE_CLIENT_PS_PMOVE_PMFLAGS);
 	}
 public Vec3 getSize()
 	{
@@ -417,6 +431,13 @@ public void setBlend(float r, float g, float b, float a)
 	{
 	setFloat0(getEntityIndex(), FLOAT_CLIENT_PS_BLEND, r, g, b, a);
 	}
+
+//
+// protected so that NativePlayer can call on it to set a few fields
+// in the client structures
+//
+private native static void setByte(int index, int fieldNum, byte val);
+
 public void setClipmask(int val)
 	{
 	setInt(fEntityIndex, INT_CLIPMASK, val);
@@ -483,7 +504,7 @@ public void setGunOffset(Vec3 v)
 // protected so that NativePlayer can call on it to set a few fields
 // in the client structures
 //
-protected native static void setInt(int index, int fieldNum, int val);
+private native static void setInt(int index, int fieldNum, int val);
 
 /**
  * Player Only
@@ -596,7 +617,7 @@ public void setSVFlags(int val)
 	setInt(fEntityIndex, INT_SVFLAGS, val);
 	}
 
-protected native static void setVec3(int index, int fieldNum, float x, float y, float z);
+private native static void setVec3(int index, int fieldNum, float x, float y, float z);
 
 public void setVelocity(Vec3 v)
 	{
@@ -650,7 +671,7 @@ public TraceResults traceMove(int contentMask, float frameFraction)
  * @return q2java.TraceResults
  * @param mask int
  */
-public native static TraceResults traceMove0(int index, int contentMask, float frameFraction);
+private native static TraceResults traceMove0(int index, int contentMask, float frameFraction);
 
 public void unlinkEntity()
 	{
