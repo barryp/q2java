@@ -1,0 +1,87 @@
+<!-- 
+     This is a sample Q2Java startup file for the WidgetWar gamelet, you can 
+     copy or rename this to "q2java.startup" and it will automatically be used
+     by Q2Java, or you can specify it on the Quake2 commandline with the parameters:
+
+       +set q2java_startup widgetwar.startup.sample
+-->
+
+<startup>
+
+  <gamelet class="barryp.widgetwar.WidgetWar"> 
+
+    <!-- 
+         The gamelet divides Technologies into 2 groups, the "common" ones that both
+         teams automatically get at the start of the level, and the "random" ones that 
+         are periodically handed out.  Arrange them between the two groups as you like.
+    -->
+
+	<common>
+    	<technology name="Box" class="barryp.widgetwar.body.Box" type="body" cost="20">
+	  		<description>Simple Box, sits on the ground.</description>
+    	</technology>
+
+    	<technology name="Body Harness" class="barryp.widgetwar.body.BodyHarness" type="body" cost="10">
+	  		<description>Attaches components directly to your body</description>
+    	</technology>
+
+    	<technology name="Enemy Tracker" class="barryp.widgetwar.control.EnemyTracker" type="control" cost="5">
+	  		<description>Guides a widget towards the nearest enemy player</description>
+    	</technology>
+
+    	<technology name="Enemy Widget Tracker" class="barryp.widgetwar.control.EnemyWidgetTracker" type="control" cost="5">
+	  		<description>Tracks enemy widgets</description>
+    	</technology>
+
+    	<technology name="Target Beacon Receiver" class="barryp.widgetwar.control.TargetBeaconReceiver" type="control" cost="0">
+	  		<description>Guides a widget towards another widget containing a Target Beacon</description>
+    	</technology>
+
+    	<technology name="Target Beacon" class="barryp.widgetwar.payload.TargetBeacon" type="payload" cost="0">
+	  		<description>Gives a widget with a Target Beacon Receiver something to aim at</description>
+    	</technology>
+
+    	<technology name="Missile" class="barryp.widgetwar.body.Missile" type="body" cost="40">
+	  		<description>Guided missile, launches immediately and flies either in a straight line or
+              in whatever direction specified by a control unit</description>
+    	</technology>
+
+    	<technology name="Standby Missile" class="barryp.widgetwar.body.StandbyMissile" type="body" cost="50">
+	  		<description>Guided missile, sits on the ground until a target is detected, then swivels towards it and launches</description>
+    	</technology>
+
+    	<technology name="Explosive" class="barryp.widgetwar.payload.Explosive" type="payload" cost="25">
+	  		<description>Simple explosive</description>
+    	</technology>
+
+    	<technology name="Cluster Bomb" class="barryp.widgetwar.payload.ClusterBomb" type="payload" cost="50">
+	  		<description>Throws out a shower of grenades on detonation</description>
+    	</technology>
+
+    	<technology name="Laser Guidance" class="barryp.widgetwar.control.LaserGuidance" type="control" cost="10">
+	  		<description>Guides a widget towards what the player's crosshair is pointing at, as long as this widget
+			currently selected widget, and the fire button is being pressed</description>
+    	</technology>
+
+    	<technology name="AutoDoc" class="barryp.widgetwar.payload.AutoDoc" type="payload" cost="75">
+	  		<description>Heals teammates standing near the widget containing this component</description>
+    	</technology>			
+
+    	<technology name="ForceField" class="barryp.widgetwar.payload.ForceField" type="payload" cost="100">
+	  		<description>Protects against damage.</description>
+    	</technology>			
+
+	</common>
+
+	<random>
+    	<technology name="Energy Siphon" class="barryp.widgetwar.payload.EnergySiphon" type="payload" cost="50">
+	  		<description>Drains energy from nearby players and transfers it to the widget owner</description>
+    	</technology>
+
+    	<technology name="Comm Jammer" class="barryp.widgetwar.payload.Jammer" type="payload" cost="25">
+	  		<description>Disrupts enemy team communications originating near the widget containing this component</description>
+    	</technology>			
+	</random>
+  </gamelet> 
+
+</startup>
