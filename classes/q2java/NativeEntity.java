@@ -749,6 +749,15 @@ public Vector3f getVelocity()
 	return (Vector3f) getVec3(fEntityIndex, VEC3_VELOCITY, TYPE_VECTOR);
 	}
 /**
+ * Get the one particular NativeEntity in the game that has special meaning.
+ *
+ * @return q2java.NativeEntity
+ */
+public static NativeEntity getWorldEntity() 
+	{
+	return gEntityArray[0];
+	}
+/**
  * Is this entity a player entity but not connected to
  * an actual Q2 client?
  * @return boolean
