@@ -12,7 +12,7 @@ public misc_deadsoldier(String[] spawnArgs) throws GameException
 	{
 	super(spawnArgs);
 	
-	if (GameModule.gIsDeathmatch)
+	if (baseq2.GameModule.gIsDeathmatch)
 		{
 		dispose();
 		throw new InhibitedException("misc_deadsoldier inhibited in deathmatch");

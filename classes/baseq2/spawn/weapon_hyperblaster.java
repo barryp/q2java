@@ -84,7 +84,7 @@ protected void setFields()
 	fAmmoName = "cells";
 	fAmmoCount = 50;
 	fEntityModel = "models/weapons/g_hyperb/tris.md2";	
-	fViewModel = Engine.getModelIndex("models/weapons/v_hyperb/tris.md2");
+	fViewModel = "models/weapons/v_hyperb/tris.md2";
 	
 	fFrameActivateLast		= 5;
 	fFrameFireLast 		= 20;

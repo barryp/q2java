@@ -16,8 +16,8 @@ import q2jgame.*;
 
 public abstract class GenericSpawnpoint
 	{
-	private Point3f fOrigin;
-	private Angle3f fAngles;	
+	protected Point3f fOrigin;
+	protected Angle3f fAngles;	
 	
 public GenericSpawnpoint(String[] spawnArgs) throws GameException
 	{

@@ -36,12 +36,8 @@ public void fire()
 	int		radiusDamage = 120;
 	float	damageRadius = 120;
 
-//	if (is_quad)
-//		{
-//		damage *= 4;
-//		radius_damage *= 4;
-//		}
-
+	damage *= fPlayer.getDamageMultiplier();
+	radiusDamage *= fPlayer.getDamageMultiplier();
 
 	Angle3f ang = fEntity.getPlayerViewAngles();
 	ang.getVectors(forward, right, null);
@@ -81,7 +77,7 @@ protected void setFields()
 	fAmmoName = "rockets";
 	fAmmoCount = 10;
 	fEntityModel = "models/weapons/g_rocket/tris.md2";	
-	fViewModel = Engine.getModelIndex("models/weapons/v_rocket/tris.md2");
+	fViewModel = "models/weapons/v_rocket/tris.md2";
 	
 	fFrameActivateLast		= 4;
 	fFrameFireLast 		= 12;

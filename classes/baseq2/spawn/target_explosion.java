@@ -24,7 +24,7 @@ public target_explosion(String[] spawnArgs) throws GameException
 	fDelay = getSpawnArg( "delay", 0f );
 	fDmg   = getSpawnArg( "dmg",   0f );
 	}
-private void explode()
+protected void explode()
 	{
 	float save;
 	Point3f origin = fEntity.getOrigin();

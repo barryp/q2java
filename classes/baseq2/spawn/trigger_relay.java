@@ -15,7 +15,7 @@ public class trigger_relay implements FrameListener, GameTarget
 	
 public trigger_relay(String[] spawnArgs) throws GameException
 	{
-	GameModule.checkInhibited(spawnArgs);
+	baseq2.GameModule.checkInhibited(spawnArgs);
 	
 	fDelay = Game.getSpawnArg(spawnArgs, "delay", 0.0F);
 	

@@ -41,7 +41,7 @@ protected void setFields()
 	fAmmoName = null;
 	fAmmoCount = 0;
 	fEntityModel = "models/weapons/g_blast/tris.md2";	
-	fViewModel = Engine.getModelIndex("models/weapons/v_blast/tris.md2");
+	fViewModel = "models/weapons/v_blast/tris.md2";
 	
 	fFrameActivateLast		= 4;
 	fFrameFireLast 		= 8;

@@ -24,7 +24,7 @@ public class func_timer implements FrameListener
 	
 public func_timer(String[] spawnArgs) throws GameException
 	{
-	GameModule.checkInhibited(spawnArgs);
+	baseq2.GameModule.checkInhibited(spawnArgs);
 		
 	fWait      = Game.getSpawnArg(spawnArgs, "wait",      1f );
 	fRandom    = Game.getSpawnArg(spawnArgs, "random",    0f );

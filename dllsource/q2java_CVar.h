@@ -12,15 +12,7 @@ extern "C" {
  * Method:    getFloat0
  * Signature: (I)F
  */
-jfloat JNICALL Java_q2java_CVar_getFloat0
-  (JNIEnv *, jclass, jint);
-
-/*
- * Class:     q2java_CVar
- * Method:    getString0
- * Signature: (I)Ljava/lang/String;
- */
-jstring JNICALL Java_q2java_CVar_getString0
+static jfloat JNICALL Java_q2java_CVar_getFloat0
   (JNIEnv *, jclass, jint);
 
 /*
@@ -28,8 +20,16 @@ jstring JNICALL Java_q2java_CVar_getString0
  * Method:    cvar0
  * Signature: (Ljava/lang/String;Ljava/lang/String;II)I
  */
-jint JNICALL Java_q2java_CVar_cvar0
+static jint JNICALL Java_q2java_CVar_cvar0
   (JNIEnv *, jclass, jstring, jstring, jint, jint);
+
+/*
+ * Class:     q2java_CVar
+ * Method:    getString0
+ * Signature: (I)Ljava/lang/String;
+ */
+static jstring JNICALL Java_q2java_CVar_getString0
+  (JNIEnv *, jclass, jint);
 
 #ifdef __cplusplus
 }

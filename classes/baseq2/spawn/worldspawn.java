@@ -14,7 +14,7 @@ public worldspawn(String[] spawnArgs) throws GameException
 
 	fEntity.setSolid(NativeEntity.SOLID_BSP);
 	fEntity.setModelIndex(1); 			// world model is always index 1
-	GameModule.gWorld = this;
+	baseq2.GameModule.gWorld = this;
 
 	//
 	// deal with spawn args
@@ -31,6 +31,6 @@ public worldspawn(String[] spawnArgs) throws GameException
 		
 	s = getSpawnArg("nextmap", null);
 	if (s != null)
-		GameModule.setNextMap(s);		
+		baseq2.GameModule.setNextMap(s);		
 	}
 }

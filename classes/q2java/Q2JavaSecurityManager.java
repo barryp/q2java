@@ -18,6 +18,8 @@ class Q2JavaSecurityManager extends SecurityManager
 	private ThreadGroup fGameThreadGroup;
 	private ThreadGroup fSubthreadGroup;
 	
+	private String fSecurityPropertyName = File.separator + "lib" + File.separator + "security" + File.separator + "java.security";
+	
 /**
  * Q2JavaSecurityManager constructor comment.
  */ 
@@ -149,6 +151,18 @@ public void checkRead(FileDescriptor fd)
 public void checkRead(String filename) 
 	{
 	Engine.debugLog("checkRead(\"" + filename + "\")\n");
+	
+	// this is horseshit...in order to be able to 
+	// serialize objects, you need a hash digest function,
+	// the system uses SHA from the java.security package
+	// which requires read-access to the 
+	// <jdk>\lib\security\java.security property file
+	// in order to find the security provider to supply
+	// the SHA algorithm that the java.io serialization
+	// uses.  
+	if (filename.endsWith(fSecurityPropertyName))
+		return;
+		
 	checkSandbox(filename);
 	}
 /**

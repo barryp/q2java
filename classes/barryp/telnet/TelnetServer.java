@@ -15,7 +15,7 @@ import q2jgame.*;
  * 
  * @author Barry Pederson
  */
-class TelnetServer extends Thread  implements PrintListener, FrameListener, GameStatusListener, CrossLevel
+class TelnetServer extends Thread  implements PrintListener, FrameListener, CrossLevel
 	{
 	private final static int SOCKET_TIMEOUT = 500; // milliseconds
 	private final static String GROUP_NAME = "Telnet Handlers";
@@ -197,20 +197,6 @@ void pushCommand(String s)
 		fCommandQueue.addElement(s);
 	}
 /**
- * N/A to this mod.
- * @param filename java.lang.String
- */
-public void readGame(String filename) 
-	{
-	}
-/**
- * N/A to this mod.
- * @param filename java.lang.String
- */
-public void readLevel(String filename) 
-	{
-	}
-/**
  * This method was created by a SmartGuide.
  */
 public void run()
@@ -222,8 +208,6 @@ public void run()
 	Game.addPrintListener(this);	
 	// call us so we can pass chats and commands back to the game
 	Game.addFrameListener(this, Game.FRAME_BEGINNING, 0, 0);	
-	// call us so we know when the game is shutting down
-	Game.addGameStatusListener(this);
 	
 	try
 		{
@@ -254,7 +238,6 @@ public void run()
 
 	Game.removePrintListener(this);
 	Game.removeFrameListener(this, Game.FRAME_BEGINNING);	
-	Game.removeGameStatusListener(this);
 	}
 /**
  * Relay input from the telnet clients.
@@ -273,23 +256,9 @@ public void runFrame(int phase)
 /**
  * Called when it's time to shut the server down.
  */
-public void shutdown() 
-	{	
+public void stopServer() 
+	{
 	fIsRunning = false;		
 	GameModule.removeServer(this);
-	}
-/**
- * N/A to this mod.
- * @param filename java.lang.String
- */
-public void writeGame(String filename) 
-	{
-	}
-/**
- * N/A to this mod.
- * @param filename java.lang.String
- */
-public void writeLevel(String filename) 
-	{
 	}
 }

@@ -54,10 +54,10 @@ RSC=rc.exe
 # ADD RSC /l 0x409 /d "NDEBUG"
 BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
-# ADD BSC32 /nologo
+# ADD BSC32 /nologo /o".\Release/q2java.bsc"
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /dll /machine:I386
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winmm.lib /nologo /base:"0x20000000" /subsystem:windows /dll /machine:I386 /out:"c:\quake2\q2java\gamex86.dll"
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winmm.lib /nologo /base:"0x20000000" /subsystem:windows /dll /pdb:".\Release/gamex86.pdb" /machine:I386 /out:"..\..\gamex86.dll" /implib:".\Release/gamex86.lib"
 # SUBTRACT LINK32 /pdb:none
 
 !ELSEIF  "$(CFG)" == "game - Win32 Debug"
@@ -162,7 +162,7 @@ LINK32=link.exe
 # PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;hpj;bat;for;f90"
 # Begin Source File
 
-SOURCE=.\Game.c
+SOURCE=..\game.c
 
 !IF  "$(CFG)" == "game - Win32 Release"
 
@@ -177,11 +177,7 @@ SOURCE=.\Game.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\gamedll.def
-# End Source File
-# Begin Source File
-
-SOURCE=.\globals.c
+SOURCE=..\globals.c
 
 !IF  "$(CFG)" == "game - Win32 Release"
 
@@ -196,7 +192,7 @@ SOURCE=.\globals.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\javalink.c
+SOURCE=..\javalink_win32.c
 
 !IF  "$(CFG)" == "game - Win32 Release"
 
@@ -211,7 +207,7 @@ SOURCE=.\javalink.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\misc.c
+SOURCE=..\misc.c
 
 !IF  "$(CFG)" == "game - Win32 Release"
 
@@ -226,7 +222,7 @@ SOURCE=.\misc.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\player.c
+SOURCE=..\player.c
 
 !IF  "$(CFG)" == "game - Win32 Release"
 
@@ -241,7 +237,7 @@ SOURCE=.\player.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\q2java_ConsoleOutputStream.c
+SOURCE=..\q2java_ConsoleOutputStream.c
 
 !IF  "$(CFG)" == "game - Win32 Release"
 
@@ -256,7 +252,7 @@ SOURCE=.\q2java_ConsoleOutputStream.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\q2java_CVar.c
+SOURCE=..\q2java_CVar.c
 
 !IF  "$(CFG)" == "game - Win32 Release"
 
@@ -271,7 +267,7 @@ SOURCE=.\q2java_CVar.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\q2java_Engine.c
+SOURCE=..\q2java_Engine.c
 
 !IF  "$(CFG)" == "game - Win32 Release"
 
@@ -286,7 +282,7 @@ SOURCE=.\q2java_Engine.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\q2java_NativeEntity.c
+SOURCE=..\q2java_NativeEntity.c
 
 !IF  "$(CFG)" == "game - Win32 Release"
 
@@ -298,6 +294,10 @@ SOURCE=.\q2java_NativeEntity.c
 
 !ENDIF 
 
+# End Source File
+# Begin Source File
+
+SOURCE=..\win32dll.def
 # End Source File
 # End Group
 # Begin Group "Header Files"
@@ -305,31 +305,31 @@ SOURCE=.\q2java_NativeEntity.c
 # PROP Default_Filter "h;hpp;hxx;hm;inl;fi;fd"
 # Begin Source File
 
-SOURCE=.\globals.h
+SOURCE=..\globals.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\javalink.h
+SOURCE=..\javalink.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\q2java_ConsoleOutputStream.h
+SOURCE=..\q2java_ConsoleOutputStream.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\q2java_CVar.h
+SOURCE=..\q2java_CVar.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\q2java_Engine.h
+SOURCE=..\q2java_Engine.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\q2java_NativeEntity.h
+SOURCE=..\q2java_NativeEntity.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\Quake2.h
+SOURCE=..\quake2.h
 # End Source File
 # End Group
 # Begin Group "Resource Files"

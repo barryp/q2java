@@ -7,11 +7,11 @@ package baseq2;
  
 import q2java.*;
  
-public class AmmoPack 
+public class AmmoPack implements java.io.Serializable
 	{
 	int fAmount;
 	int fMaxAmount;
-	int fIcon;
+	String fIconName;
 	
 /**
  * This method was created by a SmartGuide.
@@ -21,6 +21,6 @@ public class AmmoPack
 public AmmoPack (int maxCount, String iconName) 
 	{
 	fMaxAmount = maxCount;
-	fIcon = (iconName == null ? 0 : Engine.getImageIndex(iconName));
+	fIconName = iconName;
 	}
 }

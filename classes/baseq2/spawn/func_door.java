@@ -249,7 +249,7 @@ public void runFrame(int phase)
  * This method was created by a SmartGuide.
  * @param isOpen boolean
  */
-private void setPortals(boolean state) 
+protected void setPortals(boolean state) 
 	{
 	if (fTargets == null)
 		return;
@@ -264,7 +264,7 @@ private void setPortals(boolean state)
 /**
  * This method was created by a SmartGuide.
  */
-private void spawnDoorTrigger() 
+protected void spawnDoorTrigger() 
 	{
 	if (isGroupSlave())
 		return;		// only the team leader spawns a trigger

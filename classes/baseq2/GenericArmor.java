@@ -11,11 +11,11 @@ import q2jgame.*;
  */
 public abstract class GenericArmor extends GenericItem
 	{
-	private int fCount;
-	private int fMaxCount;
-	private float fProtection;
-	private float fEnergyProtection;
-	private int fIcon;
+	protected int fCount;
+	protected int fMaxCount;
+	protected float fProtection;
+	protected float fEnergyProtection;
+	protected int fIcon;
 	
 public GenericArmor(String[] spawnArgs, String modelName, String pickupSound, String icon, int count, int maxCount, float protection, float energyProtection) throws GameException
 	{

@@ -52,11 +52,8 @@ public void fire()
 	offset = new Vector3f(0, 8,  fPlayer.fViewHeight-8);
 	start = fPlayer.projectSource(offset, forward, right);
 
-//	if (is_quad)
-//		{
-//		damage *= 4;
-//		kick *= 4;
-//		}
+	damage *= fPlayer.getDamageMultiplier();
+	kick *= fPlayer.getDamageMultiplier();
 
 //	if (deathmatch->value)
 		MiscUtil.fireShotgun(fPlayer, start, forward, damage, kick, 500, 500, DEFAULT_DEATHMATCH_SHOTGUN_COUNT);
@@ -83,7 +80,7 @@ protected void setFields()
 	fAmmoName = "shells";
 	fAmmoCount = 10;
 	fEntityModel = "models/weapons/g_shotg/tris.md2";	
-	fViewModel = Engine.getModelIndex("models/weapons/v_shotg/tris.md2");
+	fViewModel = "models/weapons/v_shotg/tris.md2";
 	
 	fFrameActivateLast		= 7;
 	fFrameFireLast 		= 18;

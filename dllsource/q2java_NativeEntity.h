@@ -12,7 +12,7 @@ extern "C" {
  * Method:    getRadiusEntities0
  * Signature: (IFZZ)[Lq2java/NativeEntity;
  */
-jobjectArray JNICALL Java_q2java_NativeEntity_getRadiusEntities0
+static jobjectArray JNICALL Java_q2java_NativeEntity_getRadiusEntities0
   (JNIEnv *, jclass, jint, jfloat, jboolean, jboolean);
 
 /*
@@ -20,7 +20,7 @@ jobjectArray JNICALL Java_q2java_NativeEntity_getRadiusEntities0
  * Method:    getPlayerInfo0
  * Signature: (I)Ljava/lang/String;
  */
-jstring JNICALL Java_q2java_NativeEntity_getPlayerInfo0
+static jstring JNICALL Java_q2java_NativeEntity_getPlayerInfo0
   (JNIEnv *, jclass, jint);
 
 /*
@@ -28,7 +28,7 @@ jstring JNICALL Java_q2java_NativeEntity_getPlayerInfo0
  * Method:    setFloat0
  * Signature: (IIFFFF)V
  */
-void JNICALL Java_q2java_NativeEntity_setFloat0
+static void JNICALL Java_q2java_NativeEntity_setFloat0
   (JNIEnv *, jclass, jint, jint, jfloat, jfloat, jfloat, jfloat);
 
 /*
@@ -36,7 +36,7 @@ void JNICALL Java_q2java_NativeEntity_setFloat0
  * Method:    setEntity
  * Signature: (III)V
  */
-void JNICALL Java_q2java_NativeEntity_setEntity
+static void JNICALL Java_q2java_NativeEntity_setEntity
   (JNIEnv *, jclass, jint, jint, jint);
 
 /*
@@ -44,7 +44,7 @@ void JNICALL Java_q2java_NativeEntity_setEntity
  * Method:    getVec3
  * Signature: (III)Ljavax/vecmath/Tuple3f;
  */
-jobject JNICALL Java_q2java_NativeEntity_getVec3
+static jobject JNICALL Java_q2java_NativeEntity_getVec3
   (JNIEnv *, jclass, jint, jint, jint);
 
 /*
@@ -52,7 +52,7 @@ jobject JNICALL Java_q2java_NativeEntity_getVec3
  * Method:    getPlayerListener0
  * Signature: (I)Lq2java/PlayerListener;
  */
-jobject JNICALL Java_q2java_NativeEntity_getPlayerListener0
+static jobject JNICALL Java_q2java_NativeEntity_getPlayerListener0
   (JNIEnv *, jclass, jint);
 
 /*
@@ -60,7 +60,7 @@ jobject JNICALL Java_q2java_NativeEntity_getPlayerListener0
  * Method:    getShort
  * Signature: (II)S
  */
-jshort JNICALL Java_q2java_NativeEntity_getShort
+static jshort JNICALL Java_q2java_NativeEntity_getShort
   (JNIEnv *, jclass, jint, jint);
 
 /*
@@ -68,7 +68,7 @@ jshort JNICALL Java_q2java_NativeEntity_getShort
  * Method:    traceMove0
  * Signature: (IIF)Lq2java/TraceResults;
  */
-jobject JNICALL Java_q2java_NativeEntity_traceMove0
+static jobject JNICALL Java_q2java_NativeEntity_traceMove0
   (JNIEnv *, jclass, jint, jint, jfloat);
 
 /*
@@ -76,7 +76,7 @@ jobject JNICALL Java_q2java_NativeEntity_traceMove0
  * Method:    cprint0
  * Signature: (IILjava/lang/String;)V
  */
-void JNICALL Java_q2java_NativeEntity_cprint0
+static void JNICALL Java_q2java_NativeEntity_cprint0
   (JNIEnv *, jclass, jint, jint, jstring);
 
 /*
@@ -84,7 +84,7 @@ void JNICALL Java_q2java_NativeEntity_cprint0
  * Method:    unlinkEntity0
  * Signature: (I)V
  */
-void JNICALL Java_q2java_NativeEntity_unlinkEntity0
+static void JNICALL Java_q2java_NativeEntity_unlinkEntity0
   (JNIEnv *, jclass, jint);
 
 /*
@@ -92,7 +92,7 @@ void JNICALL Java_q2java_NativeEntity_unlinkEntity0
  * Method:    setInt
  * Signature: (III)V
  */
-void JNICALL Java_q2java_NativeEntity_setInt
+static void JNICALL Java_q2java_NativeEntity_setInt
   (JNIEnv *, jclass, jint, jint, jint);
 
 /*
@@ -100,7 +100,7 @@ void JNICALL Java_q2java_NativeEntity_setInt
  * Method:    setStat0
  * Signature: (IIS)V
  */
-void JNICALL Java_q2java_NativeEntity_setStat0
+static void JNICALL Java_q2java_NativeEntity_setStat0
   (JNIEnv *, jclass, jint, jint, jshort);
 
 /*
@@ -108,7 +108,7 @@ void JNICALL Java_q2java_NativeEntity_setStat0
  * Method:    freeEntity0
  * Signature: (I)V
  */
-void JNICALL Java_q2java_NativeEntity_freeEntity0
+static void JNICALL Java_q2java_NativeEntity_freeEntity0
   (JNIEnv *, jclass, jint);
 
 /*
@@ -116,7 +116,7 @@ void JNICALL Java_q2java_NativeEntity_freeEntity0
  * Method:    centerprint0
  * Signature: (ILjava/lang/String;)V
  */
-void JNICALL Java_q2java_NativeEntity_centerprint0
+static void JNICALL Java_q2java_NativeEntity_centerprint0
   (JNIEnv *, jclass, jint, jstring);
 
 /*
@@ -124,7 +124,7 @@ void JNICALL Java_q2java_NativeEntity_centerprint0
  * Method:    setVec3
  * Signature: (IIFFF)V
  */
-void JNICALL Java_q2java_NativeEntity_setVec3
+static void JNICALL Java_q2java_NativeEntity_setVec3
   (JNIEnv *, jclass, jint, jint, jfloat, jfloat, jfloat);
 
 /*
@@ -132,7 +132,7 @@ void JNICALL Java_q2java_NativeEntity_setVec3
  * Method:    allocateEntity
  * Signature: (Z)I
  */
-jint JNICALL Java_q2java_NativeEntity_allocateEntity
+static jint JNICALL Java_q2java_NativeEntity_allocateEntity
   (JNIEnv *, jclass, jboolean);
 
 /*
@@ -140,7 +140,7 @@ jint JNICALL Java_q2java_NativeEntity_allocateEntity
  * Method:    getInt
  * Signature: (II)I
  */
-jint JNICALL Java_q2java_NativeEntity_getInt
+static jint JNICALL Java_q2java_NativeEntity_getInt
   (JNIEnv *, jclass, jint, jint);
 
 /*
@@ -148,7 +148,7 @@ jint JNICALL Java_q2java_NativeEntity_getInt
  * Method:    setShort
  * Signature: (IIS)V
  */
-void JNICALL Java_q2java_NativeEntity_setShort
+static void JNICALL Java_q2java_NativeEntity_setShort
   (JNIEnv *, jclass, jint, jint, jshort);
 
 /*
@@ -156,7 +156,7 @@ void JNICALL Java_q2java_NativeEntity_setShort
  * Method:    linkEntity0
  * Signature: (I)V
  */
-void JNICALL Java_q2java_NativeEntity_linkEntity0
+static void JNICALL Java_q2java_NativeEntity_linkEntity0
   (JNIEnv *, jclass, jint);
 
 /*
@@ -164,7 +164,7 @@ void JNICALL Java_q2java_NativeEntity_linkEntity0
  * Method:    getByte
  * Signature: (II)B
  */
-jbyte JNICALL Java_q2java_NativeEntity_getByte
+static jbyte JNICALL Java_q2java_NativeEntity_getByte
   (JNIEnv *, jclass, jint, jint);
 
 /*
@@ -172,7 +172,7 @@ jbyte JNICALL Java_q2java_NativeEntity_getByte
  * Method:    getEntity
  * Signature: (II)Lq2java/NativeEntity;
  */
-jobject JNICALL Java_q2java_NativeEntity_getEntity
+static jobject JNICALL Java_q2java_NativeEntity_getEntity
   (JNIEnv *, jclass, jint, jint);
 
 /*
@@ -180,7 +180,7 @@ jobject JNICALL Java_q2java_NativeEntity_getEntity
  * Method:    sound0
  * Signature: (FFFIIIFFFI)V
  */
-void JNICALL Java_q2java_NativeEntity_sound0
+static void JNICALL Java_q2java_NativeEntity_sound0
   (JNIEnv *, jclass, jfloat, jfloat, jfloat, jint, jint, jint, jfloat, jfloat, jfloat, jint);
 
 /*
@@ -188,7 +188,7 @@ void JNICALL Java_q2java_NativeEntity_sound0
  * Method:    getBoxEntities0
  * Signature: (II)[Lq2java/NativeEntity;
  */
-jobjectArray JNICALL Java_q2java_NativeEntity_getBoxEntities0
+static jobjectArray JNICALL Java_q2java_NativeEntity_getBoxEntities0
   (JNIEnv *, jclass, jint, jint);
 
 /*
@@ -196,7 +196,7 @@ jobjectArray JNICALL Java_q2java_NativeEntity_getBoxEntities0
  * Method:    getPotentialPushed0
  * Signature: (IFFFFFF)[Lq2java/NativeEntity;
  */
-jobjectArray JNICALL Java_q2java_NativeEntity_getPotentialPushed0
+static jobjectArray JNICALL Java_q2java_NativeEntity_getPotentialPushed0
   (JNIEnv *, jclass, jint, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat);
 
 /*
@@ -204,7 +204,7 @@ jobjectArray JNICALL Java_q2java_NativeEntity_getPotentialPushed0
  * Method:    pMove0
  * Signature: (IBBSSSSSSBB)Lq2java/PMoveResults;
  */
-jobject JNICALL Java_q2java_NativeEntity_pMove0
+static jobject JNICALL Java_q2java_NativeEntity_pMove0
   (JNIEnv *, jclass, jint, jbyte, jbyte, jshort, jshort, jshort, jshort, jshort, jshort, jbyte, jbyte);
 
 /*
@@ -212,7 +212,7 @@ jobject JNICALL Java_q2java_NativeEntity_pMove0
  * Method:    setByte
  * Signature: (IIB)V
  */
-void JNICALL Java_q2java_NativeEntity_setByte
+static void JNICALL Java_q2java_NativeEntity_setByte
   (JNIEnv *, jclass, jint, jint, jbyte);
 
 /*
@@ -220,7 +220,7 @@ void JNICALL Java_q2java_NativeEntity_setByte
  * Method:    setModel0
  * Signature: (ILjava/lang/String;)V
  */
-void JNICALL Java_q2java_NativeEntity_setModel0
+static void JNICALL Java_q2java_NativeEntity_setModel0
   (JNIEnv *, jclass, jint, jstring);
 
 /*
@@ -228,7 +228,7 @@ void JNICALL Java_q2java_NativeEntity_setModel0
  * Method:    setPlayerListener0
  * Signature: (ILq2java/PlayerListener;)V
  */
-void JNICALL Java_q2java_NativeEntity_setPlayerListener0
+static void JNICALL Java_q2java_NativeEntity_setPlayerListener0
   (JNIEnv *, jclass, jint, jobject);
 
 #ifdef __cplusplus

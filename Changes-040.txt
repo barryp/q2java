@@ -1,0 +1,170 @@
+CHANGES from v0.3 to v0.4
+
+q2java.Engine
+
+    Added:
+
+    	public final static int TE_BFG_LASER			= 23;
+    	public final static int TE_GRAPPLE_CABLE		= 24;
+    	public final static int TE_WELDING_SPARKS		= 25;
+    	public final static int TE_PLASMATRAIL			= 26;
+    	public final static int TE_GREENBLOOD			= 27;
+
+        boolean isPlayer(); // to check whether an entity is
+                            // one of the special ones used for players
+
+        void setPlayerBlend(Color4f); 
+
+    Changed:
+
+        getMins(), getAbsMins(), getMaxs(), getAbsMaxs() now return Point3f
+
+        getSize() now returns Vector3f
+
+q2java.Q2JavaSecurityManager
+
+    Changed:
+
+        Now allows read-access to files ending with "\lib\security\java.security"
+        (directory separators appropriate to the OS) - required for 
+        serialization support
+
+
+q2jgame.Game
+
+    Added:
+        GameModule - an abstract class which add-on packages must subclass.  The class
+        contains a default svcmd_help() and unload() methods.  A no-arg constructor
+        is called when a package is loaded, so it can initialize itself.    
+
+
+        LoadedPackage - a class to track loaded packages.  probably needs more work
+        with get/set accessor functions.
+
+    Changed:
+
+        Now supports aliases for loaded packages, svcmds can now be called with
+        "sv <alias>:<cmd>"  Help for packages is now "sv <alias>:help"
+
+        Just typing "sv" by itself now brings up the help screen
+
+barryp.persist
+
+    New add-on package to demonstrate serializing the player object.  Requires
+    security level 0 or 1.  When this module is loaded, a disconnecting player's 
+    object is stored in the sandbox directory under his name.  When connecting, the 
+    game will first look in the sandbox directory for a stored object.  If it finds one, 
+    the player is restored with his saved weapons and ammo.  If not, a fresh player
+    object is created.
+
+barryp.rocketmania
+barryp.telnet
+
+    Altered to use new GameModule/svcmd scheme
+
+baseq2.AmmoPack
+
+    Altered to support serialization, icon stored as a string instead of an integer
+
+baseq2.BFGBlast
+baseq2.GenericGrenade
+baseq2.Grenade
+baseq2.HandGrenade
+
+    New classes by Menno
+
+baseq2.GameModule
+
+    Added:
+        gMaxVelocity CVar - for Menno's weapons
+        svcmd_scores() - Console scores from Quinn
+        
+    Changed:
+        to fit new GameModule/svcmd scheme
+        timeToQuit() now protected instead of private
+
+baseq2.GameObject
+
+    Added:
+        applyGravity() - for Menno's weapons
+
+    Changed:
+        now serializable
+        fSpawnArgs changed from private to protected
+        constructor now won't inhibit worldspawns (fixes problem in DM with jail1 map)
+
+baseq2.BlasterBolt
+baseq2.GenericArmor
+baseq2.GenericBlaster
+baseq2.GenericHealth
+baseq2.GenericItem
+baseq2.GenericSpawnpoint
+baseq2.Rocket
+
+    private fields/methods now protected
+
+baseq2.GenericPusher
+
+    Changed:
+        private fields/methods now protected
+
+        no longer creates instances of Tuple3f (a javax.vecmath class 
+        that turns out to be abstract)
+
+baseq2.GenericWeapon
+
+    Changed:
+        private fields/methods now protected
+
+        Stores weapon viewmodel as string instead of int - for serialization
+
+baseq2.MiscUtil
+
+    Changed:
+        fireRail() - Railgun trail works a -little- better, but still might be goofed 
+        when firing across a water boundary
+       
+        parseTuple3f() - removed..since Tuple3f's are abstract
+
+baseq2.Player
+
+    Added:
+        getDamageMultiplier() / setDamageMultiplier() - way for weapons to find
+        out if a quad / ctf strength-rune is in effect.  Normally set to 1.0, a
+        quad could set this to 4.0.
+
+        clearSettings() method...to reset a player's settings to a freshly spawned state.
+                
+        cmd_help() and cmd_score() methods from Badger
+
+    Changed:
+        many private fields/methods now protected
+
+        Player animations fixed
+        
+        spawn()/respawn()/playerBegin() rearranged with some code moved to new 
+        clearSettings() method. Was needed to support persistant players.
+
+        cmd_wave() now prints gesture names to screen - from Badger
+
+        
+baseq2.spawn.ammo_grenades
+
+    Cheapo implementation replaced by Menno
+
+baseq2.spawn.weapon_bfg
+    
+    Working implementation by Menno
+
+baseq2.spawn.weapon_*
+    
+    All weapons now serializable and quad-ready
+
+------------------------------------------------------------------
+
+That's about it.. there may have been some other minor tweaks, minor name changes.
+
+    Barry
+
+
+        

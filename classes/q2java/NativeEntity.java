@@ -14,6 +14,13 @@ import javax.vecmath.*;
  * @author Barry Pederson 
  */
 
+/* CHANGES
+
+1998-04-15 (BP) 
+	Changed getMins() getMaxs() getAbsMins() getAbsMaxs() to return Point3f
+	Added setPlayerBlend(Color4f c)
+
+*/
 public class NativeEntity
 	{
 	// ------------------- Instance fields ---------------------
@@ -213,7 +220,7 @@ public class NativeEntity
 	private final static int CALL_POSITIONED_SOUND = 2;
 	
 	// Tuple types
-	private final static int TYPE_TUPLE 		= 0;
+//	private final static int TYPE_TUPLE 		= 0;
 	private final static int TYPE_POINT 		= 1;
 	private final static int TYPE_VECTOR 	= 2;
 	private final static int TYPE_ANGLE 		= 3;
@@ -367,13 +374,13 @@ public void freeEntity()
 
 private native static void freeEntity0(int index);
 
-public Tuple3f getAbsMaxs()
+public Point3f getAbsMaxs()
 	{
-	return (Tuple3f) getVec3(fEntityIndex, VEC3_ABSMAX, TYPE_TUPLE);
+	return (Point3f) getVec3(fEntityIndex, VEC3_ABSMAX, TYPE_POINT);
 	}
-public Tuple3f getAbsMins()
+public Point3f getAbsMins()
 	{
-	return (Tuple3f) getVec3(fEntityIndex, VEC3_ABSMIN, TYPE_TUPLE);
+	return (Point3f) getVec3(fEntityIndex, VEC3_ABSMIN, TYPE_POINT);
 	}
 public Angle3f getAngles()
 	{
@@ -450,13 +457,13 @@ public int getLinkCount()
 	{
 	return getInt(fEntityIndex, INT_LINKCOUNT);
 	}
-public Tuple3f getMaxs()
+public Point3f getMaxs()
 	{
-	return (Tuple3f) getVec3(fEntityIndex, VEC3_MAXS, TYPE_TUPLE);
+	return (Point3f) getVec3(fEntityIndex, VEC3_MAXS, TYPE_POINT);
 	}
-public Tuple3f getMins()
+public Point3f getMins()
 	{
-	return (Tuple3f) getVec3(fEntityIndex, VEC3_MINS, TYPE_TUPLE);
+	return (Point3f) getVec3(fEntityIndex, VEC3_MINS, TYPE_POINT);
 	}
 public int getModelIndex()
 	{
@@ -616,9 +623,9 @@ public int getRenderFX()
 
 private native static short getShort(int index, int fieldNum);
 
-public Tuple3f getSize()
+public Vector3f getSize()
 	{
-	return getVec3(fEntityIndex, VEC3_SIZE, TYPE_TUPLE);
+	return (Vector3f) getVec3(fEntityIndex, VEC3_SIZE, TYPE_VECTOR);
 	}
 public int getSkinNum()
 	{
@@ -642,6 +649,14 @@ private native static Tuple3f getVec3(int index, int fieldNum, int tupleType);
 public Vector3f getVelocity()
 	{
 	return (Vector3f) getVec3(fEntityIndex, VEC3_VELOCITY, TYPE_VECTOR);
+	}
+/**
+ * Check whether or not this entity is one of the special ones used by players.
+ * @return boolean
+ */
+public boolean isPlayer() 
+	{
+	return (fEntityIndex > 0) && (fEntityIndex <= gMaxPlayers);
 	}
 public void linkEntity()
 	{
@@ -799,6 +814,14 @@ public void setOwner(NativeEntity ent)
 public void setPlayerBlend(float r, float g, float b, float a) 
 	{
 	setFloat0(getEntityIndex(), FLOAT_CLIENT_PS_BLEND, r, g, b, a);
+	}
+/**
+ * Set the blend colors on the player's screen.
+ * @param c Color4f representation of RGBA
+ */
+public void setPlayerBlend(Color4f c) 
+	{
+	setFloat0(getEntityIndex(), FLOAT_CLIENT_PS_BLEND, c.x, c.y, c.z, c.w);
 	}
 public void setPlayerDeltaAngles(float pitch, float yaw, float roll)
 	{

@@ -22,26 +22,26 @@ public abstract class GenericPusher extends GameObject implements FrameListener
 	protected float fMoveDistance;
 	
 	// stuff only the GenericPusher methods will use
-	private float fCurrentSpeed;
-	private float fNextSpeed;
-	private float fMoveSpeed;
-	private float fDecelDistance;
-	private float fRemainingDistance;	
-	private Point3f fCurrentDest;
-	private Vector3f fMoveDir;
-	private Vector3f fLinearVelocity;
-	private Angle3f fAngularVelocity;
+	protected float fCurrentSpeed;
+	protected float fNextSpeed;
+	protected float fMoveSpeed;
+	protected float fDecelDistance;
+	protected float fRemainingDistance;	
+	protected Point3f fCurrentDest;
+	protected Vector3f fMoveDir;
+	protected Vector3f fLinearVelocity;
+	protected Angle3f fAngularVelocity;
 	
-	private boolean fIsAccelerative;
-	private int fState;
-	private int fEndState;
-	private float fLastFrameTime;
+	protected boolean fIsAccelerative;
+	protected int fState;
+	protected int fEndState;
+	protected float fLastFrameTime;
 	
-	private final static int STATE_SPAWNED = 0;
-	private final static int STATE_IDLE = 1;
-	private final static int STATE_MOVING_CONSTANT = 2;
-	private final static int STATE_MOVING_ACCELERATED = 3;
-	private final static int STATE_FINALMOVE = 4;
+	protected final static int STATE_SPAWNED = 0;
+	protected final static int STATE_IDLE = 1;
+	protected final static int STATE_MOVING_CONSTANT = 2;
+	protected final static int STATE_MOVING_ACCELERATED = 3;
+	protected final static int STATE_FINALMOVE = 4;
 	
 /**
  * GenericMover constructor comment.
@@ -62,7 +62,7 @@ public GenericPusher(java.lang.String[] spawnArgs) throws q2java.GameException
 /**
  * This method was created by a SmartGuide.
  */
-private void accelerate() 
+protected void accelerate() 
 	{
 	// are we decelerating?
 	if (fRemainingDistance <= fDecelDistance)
@@ -205,7 +205,7 @@ protected void moveTo(Point3f dest)
  * This method was created by a SmartGuide.
  * @return false if blocked, true if no problems.
  */
-private boolean push() 
+protected boolean push() 
 	{
 	boolean isAngularMove = ! MiscUtil.equals(fAngularVelocity, 0, 0, 0);
 	boolean isLinearMove = ! MiscUtil.equals(fLinearVelocity, 0, 0, 0);
@@ -299,7 +299,7 @@ private boolean push()
 			// figure movement due to the pusher's amove
 			Vector3f org = new Vector3f(check.fEntity.getOrigin());
 			org.sub(pusherOrigin);
-			Tuple3f org2 = new Tuple3f();
+			Point3f org2 = new Point3f();
 			org2.x = forward.dot(org);
 			org2.y = -right.dot(org);
 			org2.z = up.dot(org);
@@ -455,7 +455,7 @@ catch (Exception e)
 /**
  * This method was created by a SmartGuide.
  */
-private void setupAcceleratedMove() 
+protected void setupAcceleratedMove() 
 	{
 	float accelDist;
 	float decelDist;
@@ -484,7 +484,7 @@ private void setupAcceleratedMove()
 /**
  * This method was created by a SmartGuide.
  */
-private void setupFinalMove() 
+protected void setupFinalMove() 
 	{
 	fLinearVelocity.set(fMoveDir);
 	fLinearVelocity.scale(fRemainingDistance / Engine.SECONDS_PER_FRAME);
@@ -501,7 +501,7 @@ protected void stopMoving()
 /**
  * Adjust the speed of group members so they finish at the same time.
  */
-private void syncGroupSpeed() 
+protected void syncGroupSpeed() 
 	{
 	if ((fGroup == null) || isGroupSlave())
 		return;		// only the group master does this
@@ -542,7 +542,7 @@ private void syncGroupSpeed()
  * @return q2java.NativeEntity
  * @param ent q2java.NativeEntity
  */
-private static GameObject testEntityPosition(NativeEntity ent) 
+protected static GameObject testEntityPosition(NativeEntity ent) 
 	{
 	Point3f origin = ent.getOrigin();
 	TraceResults tr = Engine.trace(origin, ent.getMins(), ent.getMaxs(), origin, ent, Engine.MASK_SOLID);

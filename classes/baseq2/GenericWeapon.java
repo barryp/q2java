@@ -14,7 +14,7 @@ public abstract class GenericWeapon extends GenericItem
 	protected String fWeaponName;
 	protected String fAmmoName;
 	protected int fAmmoCount;
-	protected int fViewModel;
+	protected String fViewModel;
 	protected String fEntityModel;
 	
 	// Player Weapon fields	
@@ -30,7 +30,7 @@ public abstract class GenericWeapon extends GenericItem
 	
 	// keep our own copy of the animation frame, so
 	// we don't have to go back and forth to C so much
-	private int fGunFrame;
+	protected int fGunFrame;
 
 	// animation settings
 	protected int fFrameActivateLast;
@@ -42,14 +42,14 @@ public abstract class GenericWeapon extends GenericItem
 
 	// private fields to manage the state of the weapon and
 	// its animation
-	private int fWeaponState;
-	private boolean fIsSwitching;
+	protected int fWeaponState;
+	protected boolean fIsSwitching;
 	
-	private final static int WEAPON_UNUSED		= 0;
-	private final static int WEAPON_READY		= 1;
-	private final static int WEAPON_ACTIVATING	= 2;
-	private final static int WEAPON_DROPPING		= 3;
-	private final static int WEAPON_FIRING		= 4;	
+	protected final static int WEAPON_UNUSED		= 0;
+	protected final static int WEAPON_READY		= 1;
+	protected final static int WEAPON_ACTIVATING	= 2;
+	protected final static int WEAPON_DROPPING	= 3;
+	protected final static int WEAPON_FIRING		= 4;	
 	
 /**
  * This method was created by a SmartGuide.
@@ -183,7 +183,7 @@ public void weaponThink()
 		{
 		if (fIsSwitching)
 			{
-			fEntity.setPlayerGunIndex(fViewModel);
+			fEntity.setPlayerGunIndex(Engine.getModelIndex(fViewModel));
 			fIsSwitching = false;
 			}
 			

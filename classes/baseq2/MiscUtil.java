@@ -237,19 +237,16 @@ public static void fireRail(GameObject p, Point3f start, Vector3f aimDir, int da
 	Engine.writeByte(Engine.TE_RAILTRAIL);
 	Engine.writePosition(start);
 	Engine.writePosition(tr.fEndPos);
-	Engine.multicast(tr.fEndPos, Engine.MULTICAST_PHS);
-//	Engine.multicast(start, Engine.MULTICAST_PHS);
+	Engine.multicast(p.fEntity.getOrigin(), Engine.MULTICAST_PHS);
 	if (water)
 		{
+System.out.println("Second water effect");		
 		Engine.writeByte(Engine.SVC_TEMP_ENTITY);
 		Engine.writeByte(Engine.TE_RAILTRAIL);
 		Engine.writePosition(start);
 		Engine.writePosition(tr.fEndPos);
 		Engine.multicast(tr.fEndPos, Engine.MULTICAST_PHS);
 		}
-
-//	if (self->client)
-//		PlayerNoise(self, tr.endpos, PNOISE_IMPACT);
 	}
 /**
  * Fire a shotgun shell.
@@ -427,23 +424,6 @@ public static Point3f parsePoint3f(String s)
 	float z = Float.valueOf(st.nextToken()).floatValue();
 	
 	return new Point3f(x, y, z);
-	}
-/**
- * This method was created by a SmartGuide.
- * @return javax.vecmath.Tuple3f
- * @param s java.lang.String
- */
-public static Tuple3f parseTuple3f(String s) 
-	{
-	StringTokenizer st = new StringTokenizer(s, "(, )");
-	if (st.countTokens() != 3)
-		throw new NumberFormatException("Not a valid format for Tuple3f");
-
-	float x = Float.valueOf(st.nextToken()).floatValue();
-	float y = Float.valueOf(st.nextToken()).floatValue();
-	float z = Float.valueOf(st.nextToken()).floatValue();
-	
-	return new Tuple3f(x, y, z);
 	}
 /**
  * Inflict damage on all Players within a certain radius of the inflictor.

@@ -1,72 +1,140 @@
 
 package javax.vecmath;
 
+/*
+   Copyright (C) Kenji Hiranabe 1997,1998
+   This program is free software.
+
+   This class was implemented by Kenji Hiranabe(hiranabe@esm.co.jp),
+   conforming to the Java(TM) 3D API specification version 1.1
+   by Sun Microsystems.
+
+   This program is provided AS IS, with NO WARRANTY.
+*/
+import java.io.Serializable;
+
 /**
- * A 3 element point that is represented by single precision floating point
- * x,y,z coordinates. 
- * 
- */
-public class Point3f extends Tuple3f 
-	{
-	
-/**
- * Constructs and initializes a Point3f to (0,0,0). 
- */
-public Point3f() 
-	{
+  * A 3 element point that is represented by single precision
+  * floating point x,y,z coordinates.
+  * @version specification 1.1, implementation $Revision: 1.5 $, $Date: 1998/04/10 04:52:14 $
+  * @author Kenji hiranabe
+  */
+public class Point3f extends Tuple3f implements Serializable {
+
+	/**
+	  * Constructs and initializes a Point3f to (0,0,0).
+	  */
+	public Point3f() {
 	super();
 	}
-/**
- * Constructs and initializes a Point3f from the specified xyz
- *   coordinates. 
- * @param nx float
- * @param ny float
- * @param nz float
- */
-public Point3f(float nx, float ny, float nz) 
-	{
-	super(nx, ny, nz);
-	}
-/**
- * Constructs and initializes a Point3f from the specified Point3f. 
- * @param p javax.vecmath.Point3f
- */
-public Point3f (Point3f p) 
-	{
+	/**
+	  * Constructs and initializes a Point3f from the specified array.
+	  * @param p the array of length 3 containing xyz in order
+	  */
+	public Point3f(float p[]) {
 	super(p);
 	}
-/**
- * Constructs and initializes a Point3f from the specified Tuple3f. 
- * @param t1 javax.vecmath.Tuple3f
+/*
+ * $Log: Point3f.java,v $
+ * Revision 1.5  1998/04/10  04:52:14  hiranabe
+ * API1.0 -> API1.1 (added constructors, methods)
+ *
+ * Revision 1.4  1998/04/09  08:18:15  hiranabe
+ * minor comment change
+ *
+ * Revision 1.3  1998/04/09  07:05:18  hiranabe
+ * API 1.1
+ *
+ * Revision 1.2  1998/01/05  06:29:31  hiranabe
+ * copyright 98
+ *
+ * Revision 1.1  1997/11/26  03:00:44  hiranabe
+ * Initial revision
+ *
  */
-public Point3f(Tuple3f t1) 
-	{
+
+
+	/**
+	  * Constructs and initializes a Point3f from the specified xy coordinates.
+	  * @param x the x coordinate
+	  * @param y the y coordinate
+	  * @param z the z coordinate
+	  */
+	public Point3f(float x, float y, float z) {
+	super(x, y, z);
+	}
+	/**
+	  * Constructs and initializes a Point3f from the specified Point3d.
+	  * @param p1 the Point3f containing the initialization x y z data
+	  */
+	public Point3f(Point3d p1) {
+	super(p1);
+	}
+	/**
+	  * Constructs and initializes a Point3f from the specified Point3f.
+	  * @param p1 the Point3f containing the initialization x y z data
+	  */
+	public Point3f(Point3f p1) {
+	super(p1);
+	}
+	/**
+	  * Constructs and initializes a Point3f from the specified Tuple3d.
+	  * @param t1 the Tuple3d containing the initialization x y z data
+	  */
+	public Point3f(Tuple3d t1) {
 	super(t1);
 	}
-/**
- * Computes the distance between this point and point p. 
- * @return float
- * @param p javax.vecmath.Point3f
- */
-public float distance(Point3f p) 
-	{
-	float dx = x - p.x;
-	float dy = y - p.y;
-	float dz = z - p.z;
-
-	return (float) Math.sqrt((dx * dx) + (dy * dy) + (dz * dz));
+	/**
+	  * Constructs and initializes a Point3f from the specified Tuple3f.
+	  * @param t1 the Tuple3f containing the initialization x y z data
+	  */
+	public Point3f(Tuple3f t1) {
+	super(t1);
 	}
-/**
- * Computes the square of the distance between this point and point p. 
- * @return float
- * @param p javax.vecmath.Point3f
- */
-public float distanceSquared(Point3f p) 
-	{
-	float dx = x - p.x;
-	float dy = y - p.y;
-	float dz = z - p.z;
-
-	return (float)((dx * dx) + (dy * dy) + (dz * dz));
+	/**
+	  * Returns the distance between this point and point p1.
+	  * @param p1 the other point
+	  * @return the distance between these two points
+	  */
+	public final float distance(Point3f p1) {
+	return (float)Math.sqrt(distanceSquared(p1));
 	}
+	/**
+	  * Computes the L-1 (Manhattan) distance between this point and point p1.
+	  * The L-1 distance is equal to abs(x1-x2) + abs(y1-y2) + abs(z1-z2) .
+	  * @param p1 the other point
+	  */
+	public final float distanceL1(Point3f p1) {
+	return Math.abs(x-p1.x) + Math.abs(y-p1.y) + Math.abs(z-p1.z);
+	}
+	/**
+	  * Computes the L-infinite distance between this point and point p1.
+	  * The L-infinite distance is equal to MAX[abs(x1-x2), abs(y1-y2), abs(z1-z2)].
+	  * @param p1 the other point
+	  */
+	public final float distanceLinf(Point3f p1) {
+	return Math.max(Math.max(Math.abs(x-p1.x), Math.abs(y-p1.y)), Math.abs(z-p1.z));
+	}
+	/**
+	  * Computes the square of the distance between this point and point p1.
+	  * @param  p1 the other point
+	  * @return the square of distance between these two points as a float
+	  */
+	public final float distanceSquared(Point3f p1) {
+	double dx = x - p1.x;
+	double dy = y - p1.y;
+	double dz = z - p1.z;
+	return (float)(dx*dx + dy*dy + dz*dz);
+	}
+	/**
+	  * Multiplies each of the x,y,z components of the Point4f parameter
+	  * by 1/w and places the projected values into this point.
+	  * @param p1 the source Point4d, which is not modified
+	  */
+	 public final void project(Point4f p1) {
+	 // zero div may occur.
+	 x = p1.x/p1.w;
+	 y = p1.y/p1.w;
+	 z = p1.z/p1.w;
+	 } 
 }

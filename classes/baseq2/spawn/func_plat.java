@@ -167,16 +167,16 @@ public void runFrame(int phase)
 /**
  * This method was created by a SmartGuide.
  */
-private void spawnInsideTrigger() 
+protected void spawnInsideTrigger() 
 	{
 	Tuple3f mins = fEntity.getMins();
 	Tuple3f maxs = fEntity.getMaxs();
 
-	Tuple3f tmin = new Tuple3f(mins);
-	Tuple3f tmax = new Tuple3f(maxs);
+	Point3f tmin = new Point3f(mins);
+	Point3f tmax = new Point3f(maxs);
 		
-	tmin.add(new Tuple3f(25, 25, 0));
-	tmax.add(new Tuple3f(-25, -25, 8));
+	tmin.add(new Point3f(25, 25, 0));
+	tmax.add(new Point3f(-25, -25, 8));
 	tmin.z = tmax.z - (fRaisedOrigin.z - fLoweredOrigin.z + fLip);	
 //	tmin[2] = tmax[2] - (ent->pos1[2] - ent->pos2[2] + st.lip);
 

@@ -13,9 +13,9 @@ import q2jgame.*;
  
 public class BlasterBolt extends GameObject implements FrameListener
 	{
-	private float fExpires;	
-	private int fDamage;
-	private GameObject fOwner;
+	protected float fExpires;	
+	protected int fDamage;
+	protected GameObject fOwner;
 	
 /**
  * Create a blaster bolt and send it on its way.

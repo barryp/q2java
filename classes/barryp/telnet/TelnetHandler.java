@@ -7,6 +7,7 @@ import java.net.*;
 /**
  * Handle communication with an individual Telnet client.
  * 
+ * @author Barry Pederson
  */
 class TelnetHandler extends Thread
 	{
@@ -189,6 +190,8 @@ public void run()
 		logon();
 		if (fSocket == null)
 			return; // logon must have failed
+
+		fServer.pushCommand("<Telnet>: " + fNickname + " connected");
 			
 		while (fServer.isRunning())
 			{
@@ -212,6 +215,8 @@ public void run()
 				fServer.pushCommand("<Telnet-" + fNickname + ">: " + s);
 				}
 			}
+
+		fServer.pushCommand("<Telnet>: " + fNickname + " disconnected");
 			
 		fOS.close();
 		fIS.close();							

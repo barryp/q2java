@@ -11,44 +11,16 @@ import q2jgame.*;
  * Class to hold the init method, and any server commands implemented
  * by this module.
  * 
+ * @author Barry Pederson
  */
-public class GameModule 
+public class GameModule extends q2jgame.GameModule
 	{
-	static Vector gServers;
+	private static Vector gServers;
 	
 /**
- * This method was created by a SmartGuide.
- * @param s barryp.telnet.TelnetServer
+ * Initialize a Telnet server module.
  */
-static void addServer(TelnetServer s) 
-	{
-	gServers.addElement(s);
-	}
-/**
- * Display help info to the console.
- */
-public static void help() 
-	{
-	Game.dprint("Q2Java Telnet Server\n\n");
-	Game.dprint("    commands:\n");
-	Game.dprint("       sv telnet_start <port> [-pass <password>] [-nocmd] [-nochat]\n");
-	Game.dprint("       sv telnet_stop <port>\n");
-	Game.dprint("\n");
-	Game.dprint("    active servers:\n");
-	
-	if (gServers.size() < 1)
-		Game.dprint("       (none)\n");
-		
-	for (int i = 0; i < gServers.size(); i++)
-		{
-		TelnetServer t = (TelnetServer) gServers.elementAt(i);
-		Game.dprint("       port: " + t.getPort() + " connections: " + t.getConnectionCount() + "\n");
-		}
-	}
-/**
- * This method was created by a SmartGuide.
- */
-public static void load() 
+public GameModule ( ) 
 	{
 	gServers = new Vector();
 	
@@ -67,7 +39,15 @@ public static void load()
 			{
 			e.printStackTrace();
 			}		
-		}		
+		}	
+	}
+/**
+ * This method was created by a SmartGuide.
+ * @param s barryp.telnet.TelnetServer
+ */
+static void addServer(TelnetServer s) 
+	{
+	gServers.addElement(s);
 	}
 /**
  * This method was created by a SmartGuide.
@@ -78,9 +58,103 @@ static void removeServer(TelnetServer t)
 	gServers.removeElement(t);
 	}
 /**
+ * Display help info to the console.
+ */
+public void svcmd_help(String[] args) 
+	{
+	Game.dprint("Q2Java Telnet Server\n\n");
+	Game.dprint("    sv commands:\n");
+	Game.dprint("       start <port> [-pass <password>] [-nocmd] [-nochat]\n");
+	Game.dprint("       stop <port>\n");
+	Game.dprint("\n");
+	Game.dprint("    active servers:\n");
+	
+	if (gServers.size() < 1)
+		Game.dprint("       (none)\n");
+		
+	for (int i = 0; i < gServers.size(); i++)
+		{
+		TelnetServer t = (TelnetServer) gServers.elementAt(i);
+		Game.dprint("       port: " + t.getPort() + " connections: " + t.getConnectionCount() + "\n");
+		}
+	}
+/**
+ * Run the "sv start" command.
+ * @param args java.lang.String[]
+ */
+public void svcmd_start(String[] args) 
+	{
+	if (args.length < 3)
+		{
+		Game.dprint("Usage: start <port> [-pass <password>] [-nocmd] [-nochat]\n");
+		return;
+		}
+		
+	int port = Integer.parseInt(args[2]);
+	String password = null;
+	boolean noCmd = false;
+	boolean noChat = false;
+	
+	for (int i = 3; i < args.length; i++)
+		{
+		if (args[i].equalsIgnoreCase("-pass"))
+			{
+			password = args[++i];
+			continue;
+			}
+			
+		if (args[i].equalsIgnoreCase("-nocmd"))
+			{
+			noCmd = true;
+			continue;
+			}
+			
+		if (args[i].equalsIgnoreCase("-nochat"))
+			{
+			noChat = true;
+			continue;
+			}
+		}
+			
+	try
+		{	
+		TelnetServer t = new TelnetServer(port, password, noCmd, noChat);
+		t.start();
+		addServer(t);
+		}
+	catch (Exception e)
+		{
+		e.printStackTrace();
+		}
+	}
+/**
+ * Run the "sv telnet_start" command.
+ * @param args java.lang.String[]
+ */
+public void svcmd_stop(String[] args) 
+	{
+	if (args.length < 3)
+		{
+		Game.dprint("Usage: stop <port>\n");
+		return;
+		}
+		
+	int port = Integer.parseInt(args[2]);
+	
+	for (int i = 0; i < gServers.size(); i++)
+		{
+		TelnetServer t = (TelnetServer) gServers.elementAt(i);
+		if (t.getPort() == port)
+			{
+			t.stopServer();
+			return;
+			}
+		}
+	}
+/**
  * Shutdown all the running TelnetServer objects.
  */
-public static void unload() 
+public void unload() 
 	{
 	Vector v = (Vector) gServers.clone();
 	
@@ -88,7 +162,7 @@ public static void unload()
 	while (enum.hasMoreElements())
 		{
 		TelnetServer t = (TelnetServer) enum.nextElement();
-		t.shutdown();
+		t.stopServer();
 		}		
 	}
 }

@@ -12,7 +12,7 @@ extern "C" {
  * Method:    write
  * Signature: (I)V
  */
-void JNICALL Java_q2java_ConsoleOutputStream_write__I
+static void JNICALL Java_q2java_ConsoleOutputStream_write__I
   (JNIEnv *, jobject, jint);
 
 /*
@@ -20,7 +20,7 @@ void JNICALL Java_q2java_ConsoleOutputStream_write__I
  * Method:    write
  * Signature: ([BII)V
  */
-void JNICALL Java_q2java_ConsoleOutputStream_write___3BII
+static void JNICALL Java_q2java_ConsoleOutputStream_write___3BII
   (JNIEnv *, jobject, jbyteArray, jint, jint);
 
 #ifdef __cplusplus

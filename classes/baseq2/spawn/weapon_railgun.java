@@ -50,13 +50,8 @@ public void fire()
 //		kick = 250;
 //		}
 
-/*
-	if (is_quad)
-		{
-		damage *= 4;
-		kick *= 4;
-		}
-*/
+	damage *= fPlayer.getDamageMultiplier();
+	kick *= fPlayer.getDamageMultiplier();
 
 	Angle3f ang = fEntity.getPlayerViewAngles();
 	ang.getVectors(forward, right, null);
@@ -88,7 +83,7 @@ protected void setFields()
 	fAmmoName = "slugs";
 	fAmmoCount = 10;
 	fEntityModel = "models/weapons/g_rail/tris.md2";	
-	fViewModel = Engine.getModelIndex("models/weapons/v_rail/tris.md2");
+	fViewModel = "models/weapons/v_rail/tris.md2";
 	
 	fFrameActivateLast		= 3;
 	fFrameFireLast 		= 18;

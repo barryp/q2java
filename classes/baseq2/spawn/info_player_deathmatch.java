@@ -15,7 +15,7 @@ public info_player_deathmatch(String[] spawnArgs) throws GameException
 	{
 	super(spawnArgs);
 			
-	if (!GameModule.gIsDeathmatch)
+	if (!baseq2.GameModule.gIsDeathmatch)
 		throw new InhibitedException("Inhibited in non-deathmatch");
 		
 	Game.addLevelRegistry(REGISTRY_KEY, this);

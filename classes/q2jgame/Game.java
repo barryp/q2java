@@ -39,7 +39,6 @@ public class Game implements GameListener
 	
 	// Manage mod packages
 	private static Vector gModList;
-	private static Hashtable gModHash;
 	private static Hashtable gClassHash;
 	
 	// Allow objects to find each other
@@ -128,35 +127,29 @@ public static Vector addLevelRegistry(Object key, Object value)
  * If a module has already been added, nothing happens.
  * @param packageName java.lang.String
  */
-public static void addPackage(String packageName) 
+public static void addPackage(String packageName, String alias) 
 	{
-	if (gModList.contains(packageName))
+	LoadedPackage lp = getPackage(alias);
+	if (lp != null)
+		{
+		dprint("There is already a [" + alias + "] loaded\n");
 		return;
-		
-	gModList.insertElementAt(packageName, 0);
-
-	// clear the cache so the new package will be 
-	// looked at when looking up classes
-	gClassHash.clear(); 
-	
+		}
+			
 	try
 		{
-		Class modClass = Class.forName(packageName + ".GameModule");
-		gModHash.put(packageName, modClass);
-		
-		Method loadMethod = modClass.getMethod("load", null);
-		loadMethod.invoke(null, null);
+		lp = new LoadedPackage();
+		lp.fPackageName = packageName;
+		lp.fAlias = alias;
+		lp.fModuleClass = Class.forName(packageName + ".GameModule");
+		lp.fModule = (GameModule) lp.fModuleClass.newInstance();
+
+		gModList.insertElementAt(lp, 0);
+
+		// clear the cache so the new package will be 
+		// looked at when looking up classes
+		gClassHash.clear(); 
 		}
-	catch (ClassNotFoundException cnfe)
-		{		
-		}
-	catch (NoSuchMethodException nsme)
-		{
-		}
-	catch (InvocationTargetException ite)
-		{
-		ite.getTargetException().printStackTrace();
-		}		
 	catch (Exception e)
 		{
 		e.printStackTrace();
@@ -231,6 +224,50 @@ public static void dprint(String msg)
 		}	
 	}
 /**
+ * This method was created by a SmartGuide.
+ * @return boolean
+ * @param alias java.lang.String
+ * @param cmd java.lang.String
+ * @param args java.lang.String[]
+ */
+private boolean externalServerCommand(String alias, String cmd, Class[] paramTypes, Object[] params) 
+	{
+	LoadedPackage lp = getPackage(alias);
+	if (lp == null)
+		return false;
+	else
+		return externalServerCommand(lp, cmd, paramTypes, params);
+	}
+/**
+ * This method was created by a SmartGuide.
+ * @return boolean
+ * @param alias java.lang.String
+ * @param cmd java.lang.String
+ * @param args java.lang.String[]
+ */
+private boolean externalServerCommand(LoadedPackage lp, String cmd, Class[] paramTypes, Object[] params) 
+	{
+	try
+		{
+		java.lang.reflect.Method meth = lp.fModuleClass.getMethod("svcmd_" + cmd, paramTypes);						
+		meth.invoke(lp.fModule, params);
+		}
+	catch (NoSuchMethodException nsme)
+		{
+		return false;
+		}
+	catch (java.lang.reflect.InvocationTargetException ite)		
+		{
+		ite.getTargetException().printStackTrace();
+		}
+	catch (Exception e)
+		{
+		e.printStackTrace();
+		}		
+									
+	return true;
+	}
+/**
  * Fetch the current gametime, measured as seconds since 
  * the server (not the level) started.
  * @return float
@@ -254,6 +291,22 @@ public static Vector getLevelRegistryList(Object key)
 		}
 		
 	return result;
+	}
+/**
+ * Lookup a loaded package, based on its name.
+ * @return q2jgame.LoadedPackage, null if not found.
+ * @param alias java.lang.String
+ */
+public static LoadedPackage getPackage(String alias) 
+	{
+	for (int i = 0; i < gModList.size(); i++)
+		{
+		LoadedPackage lp = (LoadedPackage) gModList.elementAt(i);
+		if (lp.fAlias.equals(alias))
+			return lp;
+		}
+		
+	return null;
 	}
 /**
  * Let the DLL know what class to use for new Players.
@@ -349,7 +402,6 @@ public void init()
 		
 	// setup to manage Game mods
 	gModList = new Vector();
-	gModHash = new Hashtable();
 	gClassHash = new Hashtable();		
 				
 	gFrameCount = 0;
@@ -362,7 +414,7 @@ public void init()
 		v.addElement(st.nextToken());
 
 	for (int i = v.size()-1; i >= 0; i--)
-		addPackage((String) v.elementAt(i));			
+		addPackage((String) v.elementAt(i), (String) v.elementAt(i));			
 
 	Engine.debugLog("Game.init() finished");
 	}
@@ -382,10 +434,10 @@ public static Class lookupClass(String classSuffix) throws ClassNotFoundExceptio
 	Enumeration enum = gModList.elements();
 	while (enum.hasMoreElements())
 		{
-		String s = (String) enum.nextElement();
+		LoadedPackage lp = (LoadedPackage) enum.nextElement();
 		try
 			{
-			result = Class.forName(s + classSuffix);
+			result = Class.forName(lp.fPackageName + classSuffix);
 			gClassHash.put(classSuffix, result);
 			return result;
 			}
@@ -518,36 +570,28 @@ public static void removeLevelRegistry(Object key, Object value)
  * Remove a module from the game's package list
  * @param packageName java.lang.String
  */
-public static void removePackage(String packageName) 
+public static void removePackage(String alias) 
 	{
-	gModList.removeElement(packageName);
-
+	LoadedPackage lp = getPackage(alias);
+	if (lp == null)
+		{
+		dprint("[" + alias + "] is not loaded\n");
+		return;
+		}
+	
 	// clear the cache so the old package won't be 
 	// looked at when looking up classes
 	gClassHash.clear(); 
 	
-	Class modClass = (Class) gModHash.get(packageName);
-	if (modClass != null)
+	gModList.removeElement(lp);
+	try
 		{
-		gModHash.remove(packageName);
-		try
-			{
-			Method unloadMethod = modClass.getMethod("unload", null);
-			unloadMethod.invoke(null, null);
-			}
-		catch (NoSuchMethodException nsme)
-			{
-			}
-		catch (InvocationTargetException ite)
-			{
-			ite.getTargetException().printStackTrace();
-			}
-		catch (Exception e)
-			{
-			e.printStackTrace();
-			}	
+		lp.fModule.unload();
 		}
-	gModHash.remove(packageName);
+	catch (Exception e)
+		{
+		e.printStackTrace();
+		}	
 	}
 /**
  * Remove a listener.
@@ -586,58 +630,76 @@ public void runFrame()
  */
 public void serverCommand() 
 	{
-	String[] sa = new String[Engine.getArgc()];
-	for (int i = 0; i < sa.length; i++)
-		sa[i] = Engine.getArgv(i);
+	// build up some arg params
+	int argc = Engine.getArgc();
+	String[] sa = new String[Math.max(argc, 2)]; // at least two args
+	for (int i = 0; i < argc; i++)
+		sa[i] = Engine.getArgv(i);			
 
+	// special case where the user just typed "sv" by itself
+	if (argc == 1)
+		sa[1] = "help";
+
+	// create parameter type array for reflection
 	Class[] paramTypes = new Class[1];
 	paramTypes[0] = sa.getClass();
+	Object[] params = new Object[1];
+	params[0] = sa;
 
-
-	// look for a built-in command first
-	try
-		{		
-		java.lang.reflect.Method meth = getClass().getMethod("svcmd_" + sa[1].toLowerCase(), paramTypes);						
-		Object[] params = new Object[1];
-		params[0] = sa;
-		meth.invoke(this, params);
+	// figure out what command we're processing, and which specific
+	// package (if any) should handle it.
+	String alias = null;
+	String cmd;
+	int colon = sa[1].indexOf(':');
+	if (colon < 0)
+		cmd = sa[1].toLowerCase();
+	else
+		{
+		alias = sa[1].substring(0, colon);
+		cmd = sa[1].substring(colon+1).toLowerCase();
 		}
-	catch (NoSuchMethodException nsme)
-		{				
-		// look for a module command second
+
+	// run the command	
+	if (alias != null)
+		{
+		if (externalServerCommand(alias, cmd, paramTypes, params))
+			return;		
+		}
+	else
+		{
+		// look for a built-in command first
 		try
-			{
-			Class cls = lookupClass(".svcmd_" + sa[1].toLowerCase());
-			java.lang.reflect.Method meth = cls.getMethod("run", paramTypes);						
-			Object[] params = new Object[1];
-			params[0] = sa;
+			{		
+			java.lang.reflect.Method meth = getClass().getMethod("svcmd_" + sa[1].toLowerCase(), paramTypes);						
 			meth.invoke(this, params);
+			return;
 			}
-		catch (ClassNotFoundException cnfe)
+		catch (NoSuchMethodException nsme)
 			{
-			// Send unrecognized input back to the console
-			dprint("serverCommand()\n");
-			dprint("    args(): [" + Engine.getArgs() + "]\n");
-			for (int i = 0; i < sa.length; i++)
-				dprint("    argv(" + i + "): [" + sa[i] + "]\n");							
 			}
-		catch (java.lang.reflect.InvocationTargetException ite)		
+		catch (java.lang.reflect.InvocationTargetException ite2)		
 			{
-			ite.getTargetException().printStackTrace();
+			ite2.getTargetException().printStackTrace();
+			}		
+		catch (Exception e2)
+			{
+			e2.printStackTrace();
 			}
-		catch (Exception e)
+								
+		// look for a module command second
+		for (int i = 0; i < gModList.size(); i++)
 			{
-			e.printStackTrace();
-			}									
+			LoadedPackage lp = (LoadedPackage) gModList.elementAt(i);
+			if (externalServerCommand(lp, cmd, paramTypes, params))
+				return;
+			}
 		}
-	catch (java.lang.reflect.InvocationTargetException ite2)		
-		{
-		ite2.getTargetException().printStackTrace();
-		}
-	catch (Exception e2)
-		{
-		e2.printStackTrace();
-		}
+	
+	// Send unrecognized input back to the console
+	dprint("Unrecognized sv command\n");
+	dprint("    args(): [" + Engine.getArgs() + "]\n");
+	for (int i = 0; i < sa.length; i++)
+		dprint("    argv(" + i + "): [" + sa[i] + "]\n");
 	}	
 /**
  * Called by the DLL when the DLL's Shutdown() function is called.
@@ -792,60 +854,36 @@ public void startLevel(String mapname, String entString, String spawnPoint)
 public static void svcmd_addpackage(String[] args) 
 	{
 	if (args.length < 3)
-		dprint("Usage: sv addpackage <package-name>\n");
+		{
+		dprint("Usage: sv addpackage <package-name> [<alias>]\n");
+		return;
+		}
+	
+	if (args.length < 4)
+		addPackage(args[2], args[2]);		
 	else
-		addPackage(args[2]);		
+		addPackage(args[2], args[3]);
 	}
 /**
  * Print timing info to the console.
  */
 public static void svcmd_help(String[] args) 
-	{
-	if (args.length > 2)		
-		{
-		Class modClass = (Class) gModHash.get(args[2]);
-		if (modClass == null)
-			{
-			dprint("Sorry, " + args[2] + " isn't a loaded mod\n");
-			return;
-			}
-			
-		try
-			{
-			Method helpMethod = modClass.getMethod("help", null);
-			helpMethod.invoke(null, null);
-			}
-		catch (NoSuchMethodException nsme)
-			{
-			dprint("Sorry, no help available for " + args[2] + "\n");
-			}
-		catch (InvocationTargetException ite)
-			{
-			ite.getTargetException().printStackTrace();
-			}
-		catch (Exception e)
-			{
-			e.printStackTrace();
-			}
-			
-		return;		
-		}
-	
+	{	
 	dprint("Q2Java Game Framework\n\n");
 	dprint("   commands:\n");
-	dprint("      sv addpackage <package-name>\n");
-	dprint("      sv removepackage <package-name>\n");
+	dprint("      sv addpackage <package-name> [<alias>]\n");
+	dprint("      sv removepackage <alias>\n");
 	dprint("\n");
 	dprint("      sv javamem\n");
 	dprint("      sv javagc\n");
 	dprint("\n");
 	dprint("      sv time\n");
-	dprint("      sv help <package-name>\n");
+	dprint("      sv help (this screen)\n");
 	dprint("\n");
 	dprint("   loaded packages:\n");
 
 	for (int i = 0; i < gModList.size(); i++)
-		dprint("      " + gModList.elementAt(i) + "\n");		
+		dprint("      " + ((LoadedPackage) gModList.elementAt(i)).fAlias + "\n");		
 	}
 /**
  * Force the Java Garbage collector to run.

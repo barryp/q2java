@@ -2,7 +2,7 @@
 #define _Included_globals
 
 #include "javalink.h"
-#include "Quake2.h"
+#include "quake2.h"
 
 // game import and export structures
 extern game_import_t	gi;
@@ -57,7 +57,7 @@ void Game_javaInit();
 void Game_javaFinalize();
 jclass Game_getPlayerClass();
 void Game_consoleOutput(const char *msg);
-int Game_playerConnect(jobject ent, qboolean loadgame);
+int Game_playerConnect(jobject ent, int loadgame);
 
 void ConsoleOutputStream_javaInit();
 void ConsoleOutputStream_javaFinalize();

@@ -120,6 +120,11 @@ public class Engine
 	public final static int TE_BFG_EXPLOSION			= 20;
 	public final static int TE_BFG_BIGEXPLOSION		= 21;
 	public final static int TE_BOSSTPORT				= 22; // used as '22' in a map, so DON'T RENUMBER!!!
+	public final static int TE_BFG_LASER				= 23;
+	public final static int TE_GRAPPLE_CABLE			= 24;
+	public final static int TE_WELDING_SPARKS		= 25;
+	public final static int TE_PLASMATRAIL			= 26;
+	public final static int TE_GREENBLOOD			= 27;
 	
 	public final static int SPLASH_UNKNOWN			= 0;
 	public final static int SPLASH_SPARKS			= 1;

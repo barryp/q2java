@@ -127,7 +127,7 @@ protected void setFields()
 	fAmmoName = "bullets";
 	fAmmoCount = 50;
 	fEntityModel = "models/weapons/g_machn/tris.md2";	
-	fViewModel = Engine.getModelIndex("models/weapons/v_machn/tris.md2");
+	fViewModel = "models/weapons/v_machn/tris.md2";
 	
 	fFrameActivateLast		= 3;
 	fFrameFireLast 		= 5;

@@ -11,11 +11,11 @@ import q2jgame.*;
   
 public class Rocket extends GameObject implements FrameListener
 	{
-	private float fExpires;	
-	private int fDamage;
-	private int fRadiusDamage;
-	private float fDamageRadius;
-	private GameObject fOwner;
+	protected float fExpires;	
+	protected int fDamage;
+	protected int fRadiusDamage;
+	protected float fDamageRadius;
+	protected GameObject fOwner;
 	
 /**
  * BlasterBolt constructor comment.

@@ -11,8 +11,8 @@ public abstract class GenericBlaster extends GenericWeapon
 	{
 	protected Vector3f fBlasterOffset;
 	protected int fEffect;  // the hyperblaster changes this as it fires
-	private int fDamage;
-	private int fMuzzleFlash;
+	protected int fDamage;
+	protected int fMuzzleFlash;
 	
 /**
  * This method was created by a SmartGuide.

@@ -106,13 +106,9 @@ public void fire()
 		return;
 		}
 
-/*
-	if (is_quad)
-		{
-		damage *= 4;
-		kick *= 4;
-		}
-*/
+	damage *= fPlayer.getDamageMultiplier();
+	kick *= fPlayer.getDamageMultiplier();
+
 	fPlayer.fKickOrigin.set(MiscUtil.cRandom() * 0.35f, MiscUtil.cRandom() * 0.35f, MiscUtil.cRandom() * 0.35f);
 	fPlayer.fKickAngles.set(MiscUtil.cRandom() * 0.7f,  MiscUtil.cRandom() * 0.7f,  MiscUtil.cRandom() * 0.7f);
 
@@ -146,7 +142,7 @@ protected void setFields()
 	fAmmoName = "bullets";
 	fAmmoCount = 50;
 	fEntityModel = "models/weapons/g_chain/tris.md2";	
-	fViewModel = Engine.getModelIndex("models/weapons/v_chain/tris.md2");
+	fViewModel = "models/weapons/v_chain/tris.md2";
 	
 	fFrameActivateLast		= 4;
 	fFrameFireLast 		= 31;

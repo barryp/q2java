@@ -11,8 +11,8 @@ import q2jgame.*;
  */
 public abstract class GenericHealth extends GenericItem
 	{
-	private int fHealthValue;
-	private boolean fOverrideMax;
+	protected int fHealthValue;
+	protected boolean fOverrideMax;
 	
 public GenericHealth(String[] spawnArgs, String modelName, String pickupSound, int healthValue, boolean overrideMax) throws GameException
 	{

@@ -12,8 +12,8 @@ import q2jgame.*;
  */
 public abstract class GenericItem extends GameObject implements FrameListener
 	{
-	private int fPickupSoundIndex;
-	private float fRespawnTime;
+	protected int fPickupSoundIndex;
+	protected float fRespawnTime;
 	
 /**
  * This method was created by a SmartGuide.

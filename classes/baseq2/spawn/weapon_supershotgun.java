@@ -47,13 +47,8 @@ public void fire()
 	offset = new Vector3f(0, 8,  fPlayer.fViewHeight - 8);
 	start = fPlayer.projectSource(offset, forward, right);
 
-/*
-	if (is_quad)
-		{
-		damage *= 4;
-		kick *= 4;
-		}
-*/
+	damage *= fPlayer.getDamageMultiplier();
+	kick *= fPlayer.getDamageMultiplier();
 
 	ang.y -= 5;
 	ang.getVectors(forward, null, null);
@@ -91,7 +86,7 @@ protected void setFields()
 	fAmmoName = "shells";
 	fAmmoCount = 10;
 	fEntityModel = "models/weapons/g_shotg2/tris.md2";	
-	fViewModel = Engine.getModelIndex("models/weapons/v_shotg2/tris.md2");
+	fViewModel = "models/weapons/v_shotg2/tris.md2";
 	
 	fFrameActivateLast		= 6;
 	fFrameFireLast 		= 17;

@@ -18,12 +18,8 @@ import q2jgame.*;
  * @author Barry Pederson 
  */
 
-public class GameModule implements GameStatusListener, FrameListener, LevelListener	, CrossLevel
+public class GameModule extends q2jgame.GameModule implements GameStatusListener, FrameListener, LevelListener	, CrossLevel
 	{	
-	// an actual object that can be registered
-	// as a listener to things.
-	private static GameModule gMod;
-	
 	// handy reference to the world
 	public static GameObject gWorld;
 		
@@ -32,6 +28,7 @@ public class GameModule implements GameStatusListener, FrameListener, LevelListe
 	public static CVar gRollAngle;
 	public static CVar gRollSpeed;
 	public static CVar gGravity;
+	public static CVar gMaxVelocity;
 	
 	// Game options
 	public static boolean gIsDeathmatch;
@@ -77,8 +74,26 @@ public class GameModule implements GameStatusListener, FrameListener, LevelListe
 /**
  * This method was created by a SmartGuide.
  */
-private GameModule ( ) {
-}
+public GameModule ( ) 
+	{
+	Game.addGameStatusListener(this);
+	Game.addFrameListener(this, 0, 0);
+	Game.addLevelListener(this);
+	
+	// load cvars
+	gBobUp = new CVar("bob_up", "0.005", 0);	
+	gRollAngle = new CVar("sv_rollangle", "2", 0);
+	gRollSpeed = new CVar("sv_rollspeed", "200", 0);	
+	gGravity = new CVar("sv_gravity", "800", 0);	
+	gMaxVelocity = new CVar("sv_maxvelocity", "2000", 0);
+	
+	gFragLimit = new CVar("fraglimit", "0", CVar.CVAR_SERVERINFO);
+	gTimeLimit = new CVar("timelimit", "0", CVar.CVAR_SERVERINFO);
+	gDMFlags = new CVar("dmflags", "0", CVar.CVAR_SERVERINFO);
+
+	gIsDeathmatch = (new CVar("deathmatch", "0", CVar.CVAR_LATCH)).getFloat() == 1.0;
+	gSkillLevel = (int) ((new CVar("skill", "1", CVar.CVAR_LATCH)).getFloat());	
+	}
 /**
  * Check whether an entity should be inhibited because
  * of its spawnargs.
@@ -135,43 +150,12 @@ public static String getVersion()
 	return "Quake2Java Test Game, v0.1";
 	}	
 /**
- * Display help info to the console.
- */
-public static void help() 
-	{
-	Game.dprint("Q2Java Base Quake2 game v0.3\n\n");
-	Game.dprint("    no commands available\n");
-	}
-/**
  * Check whether a given deathmatch flag is set.  Use the Game.DF_* constants.
  * @return true if the flag is set, false if not.
  */
 public static boolean isDMFlagSet(int flag) 
 	{
 	return (((int)gDMFlags.getFloat()) & flag) != 0;
-	}
-/**
- * Called when this module is loaded.
- */
-public static void load()
-	{	
-	gMod = new GameModule();
-	Game.addGameStatusListener(gMod);
-	Game.addFrameListener(gMod, 0, 0);
-	Game.addLevelListener(gMod);
-	
-	// load cvars
-	gBobUp = new CVar("bob_up", "0.005", 0);	
-	gRollAngle = new CVar("sv_rollangle", "2", 0);
-	gRollSpeed = new CVar("sv_rollspeed", "200", 0);	
-	gGravity = new CVar("sv_gravity", "800", 0);	
-	
-	gFragLimit = new CVar("fraglimit", "0", CVar.CVAR_SERVERINFO);
-	gTimeLimit = new CVar("timelimit", "0", CVar.CVAR_SERVERINFO);
-	gDMFlags = new CVar("dmflags", "0", CVar.CVAR_SERVERINFO);
-
-	gIsDeathmatch = (new CVar("deathmatch", "0", CVar.CVAR_LATCH)).getFloat() == 1.0;
-	gSkillLevel = (int) ((new CVar("skill", "1", CVar.CVAR_LATCH)).getFloat());
 	}
 /**
  * Called when the DLL's ReadGame() function is called.
@@ -371,11 +355,71 @@ public void startLevel(String mapname, String entString, String spawnPoint)
 	Engine.setConfigString(Engine.CS_LIGHTS+63, "a");				
 	}
 /**
+ * Display help info to the console.
+ */
+public void svcmd_help(String[] args) 
+	{
+	Game.dprint("Q2Java Base Quake2 game v0.4\n\n");
+	Game.dprint("    sv commands:\n");
+	Game.dprint("       scores\n");
+	}
+/**
+ * Runs the svcmd.  For now, ignores arguments.
+ * Later: { ping score time ascend descend }
+ * and so on.
+ * @param args java.lang.String[]
+ */
+
+public void svcmd_scores(String[] args) 
+	{
+	// _Quinn: 04/20/98: shamelessly looted from baseq2.Player
+
+	StringBuffer sb = new StringBuffer();
+	int i;
+
+	// generate a list of players sorted by score
+	Vector players = new Vector();
+	Enumeration enum = NativeEntity.enumeratePlayers();
+	while (enum.hasMoreElements())
+		{
+		Player p = (Player) ((NativeEntity)enum.nextElement()).getPlayerListener();
+		boolean isInserted = false;
+		for (i = 0; i < players.size(); i++)
+			{
+			Player p2 = (Player) players.elementAt(i);
+			if (p.fScore > p2.fScore)
+				{
+				players.insertElementAt(p, i);
+				isInserted = true;
+				break;
+				}
+			}	
+		if (!isInserted)
+			players.addElement(p);				
+		}	
+
+	int playerCount = players.size();
+	String s = "";
+
+	// generate the pretty printing.
+
+	for (i = 0; i < playerCount; i++)
+		{
+		Player p = (Player) players.elementAt(i);
+		s = p.fName + "    " + p.fScore + "    " + p.fEntity.getPlayerPing() + "    " + (int)((Game.getGameTime() - p.fStartTime) / 60) + "\n";        
+		// Last 0 should be elapsed time.  see Player for fix, when and if.
+		sb.append( s );
+		}
+
+	// there's probably a better way to do this...
+	System.out.print( sb );
+	} // end run ();
+/**
  * Check the timelimit and fraglimit values and decide
  * whether to end the level or not.
  * @return boolean true if it's time to end the level
  */
-private static boolean timeToQuit() 
+protected static boolean timeToQuit() 
 	{
 	float timeLimit = gTimeLimit.getFloat();
 
@@ -405,12 +449,11 @@ private static boolean timeToQuit()
 /**
  * Unload baseq2 from the game - do this at your own risk.
  */
-public static void unload() 
+public void unload() 
 	{
-	Game.removeGameStatusListener(gMod);
-	Game.removeFrameListener(gMod);
-	Game.removeLevelListener(gMod);
-	gMod = null;
+	Game.removeGameStatusListener(this);
+	Game.removeFrameListener(this);
+	Game.removeLevelListener(this);
 	}
 /**
  * Called when the DLL's WriteGame() function is called.

@@ -15,7 +15,7 @@ import q2jgame.*;
  * @author Barry Pederson 
  */
 
-public class GameObject implements GameTarget
+public class GameObject implements GameTarget, Serializable
 	{
 	public transient NativeEntity fEntity;
 	protected int fSpawnFlags;		
@@ -23,7 +23,7 @@ public class GameObject implements GameTarget
 	protected Vector fTargets;	
 	protected Vector fTargetGroup;
 
-	private String[] fSpawnArgs;
+	protected String[] fSpawnArgs;
 	
 	// damage flags
 	public final static int DAMAGE_RADIUS		= 0x00000001;	// damage was indirect
@@ -47,7 +47,10 @@ public GameObject(String[] spawnArgs, boolean isWorld) throws GameException
 	// look for common spawn arguments
 	fSpawnFlags = getSpawnArg("spawnflags", 0);
 
-	GameModule.checkInhibited(fSpawnFlags);
+	// The worldspawn is never inhibited..although
+	// on the jail1 map, it's flagged as if it is.
+	if (!(this instanceof baseq2.spawn.worldspawn))
+		GameModule.checkInhibited(fSpawnFlags);
 				
 	// at this point, looks like the object will be sticking around
 	// so create the entity that represents it in the Quake world
@@ -85,6 +88,16 @@ public GameObject(String[] spawnArgs, boolean isWorld) throws GameException
 	s = getSpawnArg("team", null);
 	if (s != null)
 		fGroup = Game.addLevelRegistry("team-" + s, this);
+	}
+/**
+ * Alter an object's entity's velocity based on gravity
+ */ 
+public void applyGravity()
+	{
+	Vector3f v = fEntity.getVelocity();
+	//v.z -= getGravity() * GameModule.gGravity.getFloat() * Engine.SECONDS_PER_FRAME;
+	v.z -= 1 * GameModule.gGravity.getFloat() * Engine.SECONDS_PER_FRAME;
+	fEntity.setVelocity(v);
 	}
 /**
  * This method was created by a SmartGuide.

@@ -86,7 +86,7 @@ protected void setFields()
 	fAmmoName = "rockets";
 	fAmmoCount = 10;
 	fEntityModel = "models/weapons/g_rocket/tris.md2";	
-	fViewModel = Engine.getModelIndex("models/weapons/v_rocket/tris.md2");
+	fViewModel = "models/weapons/v_rocket/tris.md2";
 	
 	fFrameActivateLast		= 4;
 	fFrameFireLast 		= 12;
