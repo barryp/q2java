@@ -24,6 +24,7 @@ void CVar_javaFinalize();
 
 void Engine_javaInit();
 void Engine_javaFinalize();
+jobject newTraceResults(trace_t trace);
 
 void Entity_javaInit();
 void Entity_arrayInit();

@@ -25,6 +25,14 @@ jint JNICALL Java_q2java_NativeEntity_allocateEntity
 
 /*
  * Class:     q2java_NativeEntity
+ * Method:    traceMove0
+ * Signature: (IIF)Lq2java/TraceResults;
+ */
+jobject JNICALL Java_q2java_NativeEntity_traceMove0
+  (JNIEnv *, jclass, jint, jint, jfloat);
+
+/*
+ * Class:     q2java_NativeEntity
  * Method:    pMove0
  * Signature: (I)Lq2java/PMoveResults;
  */
@@ -65,6 +73,14 @@ void JNICALL Java_q2java_NativeEntity_sound0
 
 /*
  * Class:     q2java_NativeEntity
+ * Method:    boxEntity0
+ * Signature: (II)[Lq2java/NativeEntity;
+ */
+jobjectArray JNICALL Java_q2java_NativeEntity_boxEntity0
+  (JNIEnv *, jclass, jint, jint);
+
+/*
+ * Class:     q2java_NativeEntity
  * Method:    cprint0
  * Signature: (IILjava/lang/String;)V
  */
@@ -102,14 +118,6 @@ void JNICALL Java_q2java_NativeEntity_setInt
  */
 void JNICALL Java_q2java_NativeEntity_setStat0
   (JNIEnv *, jclass, jint, jint, jshort);
-
-/*
- * Class:     q2java_NativeEntity
- * Method:    boxEntity0
- * Signature: (II)[Lq2java/NativeEntity;
- */
-jobjectArray JNICALL Java_q2java_NativeEntity_boxEntity0
-  (JNIEnv *, jclass, jint, jint);
 
 /*
  * Class:     q2java_NativeEntity

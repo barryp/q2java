@@ -71,6 +71,7 @@ static JNINativeMethod Entity_methods[] =
 	{"boxEntity0",		"(II)[Lq2java/NativeEntity;", Java_q2java_NativeEntity_boxEntity0},
 	{"linkEntity0",		"(I)V",						Java_q2java_NativeEntity_linkEntity0},
 	{"unlinkEntity0",	"(I)V",						Java_q2java_NativeEntity_unlinkEntity0},
+	{"traceMove0",		"(IIF)Lq2java/TraceResults;",Java_q2java_NativeEntity_traceMove0},
 
 	// methods for players only
 	{"pMove0",			"(I)Lq2java/PMoveResults;",	Java_q2java_NativeEntity_pMove0},
@@ -710,3 +711,23 @@ static void JNICALL Java_q2java_NativeEntity_centerprint0(JNIEnv *env, jclass cl
 	(*env)->ReleaseStringUTFChars(env, js, str);
 	}
 
+
+static jobject JNICALL Java_q2java_NativeEntity_traceMove0(JNIEnv *env, jclass cls, jint index, jint contentMask, float frameFraction)
+	{
+	vec3_t end;
+	edict_t *ent;
+	int i;
+	trace_t result;
+
+	ent = ge.edicts + index;
+	for (i = 0; i < 3; i++)
+		end[i] = (float)(ent->s.origin[i] + ent->velocity[i] * SECONDS_PER_FRAME * frameFraction);
+
+	result = gi.trace(ent->s.origin, ent->mins, ent->maxs, end, ent, contentMask);
+
+	// set the origin of the entity to its new position
+	for (i = 0; i < 3; i++)
+			ent->s.origin[i] = result.endpos[i];
+
+	return newTraceResults(result);
+	}

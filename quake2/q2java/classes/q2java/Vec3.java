@@ -24,7 +24,7 @@ public Vec3(float newx, float newy, float newz)
  * The values can be separated by spaces and/or commas, 
  * can can be inside parentheses.  Some valid inputs are:
  *   "1 2 3"            -- like we'll get from spawn strings
- *   "(1.0, 2.0, 3.0)"  -- like the toString() method puts out
+ *   "(1.0, 2.0, 3.0)"  -- a nice-looking way to print vectors
  *   "(1    2.0,,,,3"   -- a really ugly string that should still work
  * 
  * I wonder why the java.lang.Float class doesn't have a 

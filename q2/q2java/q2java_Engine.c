@@ -89,6 +89,43 @@ void Engine_javaFinalize()
 		(*java_env)->UnregisterNatives(java_env, class_Engine); 
 	}
 
+
+
+jobject newTraceResults(trace_t result)
+	{
+	jobject resEndpos;
+	jobject resPlaneNormal;
+	jstring resSurfaceName;
+	int resSurfaceFlags;
+	int resSurfaceValue;
+	jobject resEnt;
+
+	resEndpos = newJavaVec3(&(result.endpos));
+	resPlaneNormal = newJavaVec3(&(result.plane.normal));
+
+	if (!result.surface)
+		{
+		resSurfaceName = 0;
+		resSurfaceFlags = resSurfaceValue = 0;
+		}
+	else
+		{
+		resSurfaceName = (*java_env)->NewStringUTF(java_env, result.surface->name);
+		resSurfaceFlags = result.surface->flags;
+		resSurfaceValue = result.surface->value;
+		}
+
+	resEnt = Entity_getEntity(result.ent - ge.edicts);
+
+	return (*java_env)->NewObject(java_env, class_TraceResults, method_TraceResults_ctor, 
+		result.allsolid, result.startsolid, result.fraction, resEndpos, resPlaneNormal, 
+		result.plane.dist, result.plane.type, result.plane.signbits,
+		resSurfaceName, resSurfaceFlags, resSurfaceValue, result.contents,
+		resEnt);
+	}
+
+
+
 static void JNICALL Java_q2java_Engine_dprint(JNIEnv *env, jclass cls, jstring s)
 	{
 	const char *str;
@@ -175,15 +212,6 @@ static jobject JNICALL Java_q2java_Engine_trace0(JNIEnv *env, jclass cls,
 	vec3_t end;
 	edict_t *passEnt;
 
-	trace_t result;
-
-	jobject resEndpos;
-	jobject resPlaneNormal;
-	jstring resSurfaceName;
-	int resSurfaceFlags;
-	int resSurfaceValue;
-	jobject resEnt;
-
 	start[0] = startx;
 	start[1] = starty;
 	start[2] = startz;
@@ -202,31 +230,10 @@ static jobject JNICALL Java_q2java_Engine_trace0(JNIEnv *env, jclass cls,
 
 	passEnt = ge.edicts + Entity_get_fEntityIndex(jpassEnt);
 
-	result = gi.trace(start, mins, maxs, end, passEnt, contentMask);
-
-	resEndpos = newJavaVec3(&(result.endpos));
-	resPlaneNormal = newJavaVec3(&(result.plane.normal));
-
-	if (!result.surface)
-		{
-		resSurfaceName = 0;
-		resSurfaceFlags = resSurfaceValue = 0;
-		}
-	else
-		{
-		resSurfaceName = (*env)->NewStringUTF(env, result.surface->name);
-		resSurfaceFlags = result.surface->flags;
-		resSurfaceValue = result.surface->value;
-		}
-
-	resEnt = Entity_getEntity(result.ent - ge.edicts);
-
-	return (*env)->NewObject(java_env, class_TraceResults, method_TraceResults_ctor, 
-		result.allsolid, result.startsolid, result.fraction, resEndpos, resPlaneNormal, 
-		result.plane.dist, result.plane.type, result.plane.signbits,
-		resSurfaceName, resSurfaceFlags, resSurfaceValue, result.contents,
-		resEnt);
+	return newTraceResults(gi.trace(start, mins, maxs, end, passEnt, contentMask));
 	}
+
+
 
 
 static jint JNICALL Java_q2java_Engine_pointContents0(JNIEnv *env, jclass cls, jfloat x, jfloat y, jfloat z)
@@ -237,6 +244,7 @@ static jint JNICALL Java_q2java_Engine_pointContents0(JNIEnv *env, jclass cls, j
 	v[2] = z;
 	return gi.pointcontents(v);
 	}
+
 
 static jboolean JNICALL Java_q2java_Engine_inP0(JNIEnv *env, jclass cls, jfloat x1, jfloat y1, jfloat z1, jfloat x2, jfloat y2, jfloat z2, jint calltype)
 	{

@@ -145,11 +145,11 @@ public void begin(boolean loadgame)
 
 	fViewHeight = 22;
 	setSolid(SOLID_BBOX);
-	setClipmask(MASK_PLAYERSOLID);
+	setClipmask(Engine.MASK_PLAYERSOLID);
 	
 	try
 		{
-		fWeapon = new weapon_blaster(this);
+		fWeapon = new weapon_hyperblaster(this);
 		fWeapon.activate();
 		}
 	catch (GameException e)
@@ -438,7 +438,7 @@ public void think()
 	linkEntity();	
 	
 	// notify all the triggers we're intersecting with
-	NativeEntity[] triggers = boxEntity(AREA_TRIGGERS);
+	NativeEntity[] triggers = boxEntity(Engine.AREA_TRIGGERS);
 	if (triggers != null)
 		{
 		for (int i = 0; i < triggers.length; i++)
@@ -499,11 +499,11 @@ private void worldEffects()
 	//
 	if ((fWaterLevel != 0) && (oldWaterLevel == 0))
 		{
-		if ((fWaterType & CONTENTS_LAVA) != 0)
+		if ((fWaterType & Engine.CONTENTS_LAVA) != 0)
 			sound(CHAN_BODY, Engine.soundIndex("player/lava_in.wav"), 1, ATTN_NORM, 0);
-		else if ((fWaterType & CONTENTS_SLIME) != 0)
+		else if ((fWaterType & Engine.CONTENTS_SLIME) != 0)
 			sound(CHAN_BODY, Engine.soundIndex("player/watr_in.wav"), 1, ATTN_NORM, 0);
-		else if ((fWaterType & CONTENTS_WATER) != 0)
+		else if ((fWaterType & Engine.CONTENTS_WATER) != 0)
 			sound(CHAN_BODY, Engine.soundIndex("player/watr_in.wav"), 1, ATTN_NORM, 0);			
 		}
 

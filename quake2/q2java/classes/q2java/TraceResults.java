@@ -7,19 +7,19 @@ package q2java;
  */
 public class TraceResults 
 	{
-	public boolean fAllSolid;
-	public boolean fStartSolid;
-	public float fFraction;
-	public Vec3 fEndPos;
-	public Vec3 fPlaneNormal;
-	public float fPlaneDist;
-	public byte fPlaneType;
-	public byte fPlaneSignbits;
-	public String fSurfaceName;
-	public int fSurfaceFlags;
-	public int fSurfaceValue;	
-	public int fContents;
-	public NativeEntity fEntity;
+	public boolean 		fAllSolid;
+	public boolean 		fStartSolid;
+	public float 			fFraction;
+	public Vec3 			fEndPos;
+	public Vec3 			fPlaneNormal;
+	public float 			fPlaneDist;
+	public byte 			fPlaneType;
+	public byte 			fPlaneSignbits;
+	public String 		fSurfaceName;
+	public int 			fSurfaceFlags;
+	public int 			fSurfaceValue;	
+	public int 			fContents;
+	public NativeEntity	fEntity;
 	
 /**
  * This method was created by a SmartGuide.

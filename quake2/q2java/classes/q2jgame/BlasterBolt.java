@@ -22,7 +22,7 @@ public BlasterBolt(GameEntity owner, Vec3 start, Vec3 dir, int damage, int speed
 	setAngles(dir.toAngles());
 	dir.normalize().scale(speed);
 	setVelocity(dir);
-	setClipmask(MASK_SHOT);
+	setClipmask(Engine.MASK_SHOT);
 	setSolid(SOLID_BBOX);
 	setEffects(effect);
 	setModelIndex(Engine.modelIndex("models/objects/laser/tris.md2"));
@@ -54,7 +54,29 @@ public void runFrame()
 		freeEntity();
 		return;
 		}
-		
-	setOrigin(getOrigin().add(getVelocity().scale(Engine.SECONDS_PER_FRAME)));		
+/*			
+	Vec3 end = getOrigin().add(getVelocity().scale(Engine.SECONDS_PER_FRAME));
+	TraceResults tr = 	Engine.trace(getOrigin(), getMins(), getMaxs(), end, this, MASK_SHOT);
+*/
+	TraceResults tr = traceMove(Engine.MASK_SHOT, 1.0F);
+	
+	if (tr.fFraction == 1)
+		return;		// moved the entire distance
+
+	// 'scuse me while I kiss the sky...
+	if ((tr.fSurfaceName != null) && ((tr.fSurfaceFlags & Engine.SURF_SKY) != 0))
+		{
+		freeEntity();
+		return;
+		}
+
+	// we hit something, so make a spark and free the blaster bolt
+	Engine.writeByte(Engine.SVC_TEMP_ENTITY);
+	Engine.writeByte(Engine.TE_BLASTER);
+	Engine.writePosition(tr.fEndPos);
+	Engine.writeDir(tr.fPlaneNormal);
+	Engine.multicast(tr.fEndPos, Engine.MULTICAST_PVS);
+
+	freeEntity();
 	}
 }	

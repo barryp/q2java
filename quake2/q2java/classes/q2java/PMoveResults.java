@@ -11,19 +11,19 @@ public class PMoveResults
 	public final static int BUTTON_USE		= 2;
 	public final static int BUTTON_ANY		= 128;	// any key whatsoever
 		
-	public byte	fCmdButtons;
-	public short	fCmdAngle0;
-	public short	fCmdAngle1;
-	public short	fCmdAngle2;
-	public short	fCmdForwardMove;
-	public short	fCmdSideMove;
-	public short	fCmdUpMove;
-	public byte	fCmdLightLevel;
-	public NativeEntity[] fTouched;
-	public float	fViewHeight;
+	public byte			fCmdButtons;
+	public short			fCmdAngle0;
+	public short			fCmdAngle1;
+	public short			fCmdAngle2;
+	public short			fCmdForwardMove;
+	public short			fCmdSideMove;
+	public short			fCmdUpMove;
+	public byte			fCmdLightLevel;
+	public NativeEntity[]	fTouched;
+	public float			fViewHeight;
 	public NativeEntity	fGroundEntity;
-	public int	fWaterType;
-	public int 	fWaterLevel;
+	public int			fWaterType;
+	public int 			fWaterLevel;
 	
 /**
  * This method was created by a SmartGuide.

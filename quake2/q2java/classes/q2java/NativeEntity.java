@@ -100,60 +100,6 @@ public abstract class NativeEntity
 	public final static int SOLID_TRIGGER		= 1;		// only touch when inside, after moving
 	public final static int SOLID_BBOX			= 2;		// touch on edge
 	public final static int SOLID_BSP			= 3;		// bsp clip, touch on edge
-
-/*
-==============================================================
-
-COLLISION DETECTION
-
-==============================================================
-*/
-
-	// lower bits are stronger, and will eat weaker brushes completely
-	public final static int CONTENTS_SOLID		= 1;		// an eye is never valid in a solid
-	public final static int CONTENTS_WINDOW		= 2;		// translucent, but not watery
-	public final static int CONTENTS_AUX			= 4;
-	public final static int CONTENTS_LAVA		= 8;
-	public final static int CONTENTS_SLIME		= 16;
-	public final static int CONTENTS_WATER		= 32;
-	public final static int CONTENTS_MIST		= 64;
-	public final static int LAST_VISIBLE_CONTENTS	= 64;
-
-	// remaining contents are non-visible, and don't eat brushes
-	public final static int CONTENTS_AREAPORTAL	= 0x8000;
-	public final static int CONTENTS_PLAYERCLIP	= 0x10000;
-	public final static int CONTENTS_MONSTERCLIP	= 0x20000;
-
-	// currents can be added to any other contents, and may be mixed
-	public final static int CONTENTS_CURRENT_0	= 0x40000;
-	public final static int CONTENTS_CURRENT_90	= 0x80000;
-	public final static int CONTENTS_CURRENT_180	= 0x100000;
-	public final static int CONTENTS_CURRENT_270	= 0x200000;
-	public final static int CONTENTS_CURRENT_UP	= 0x400000;
-	public final static int CONTENTS_CURRENT_DOWN	= 0x800000;
-
-	public final static int CONTENTS_ORIGIN		= 0x1000000;	// removed before bsping an entity
-
-	public final static int CONTENTS_MONSTER		= 0x2000000;	// should never be on a brush, only in game
-	public final static int CONTENTS_DEADMONSTER	= 0x4000000;
-	public final static int CONTENTS_DETAIL		= 0x8000000;	// brushes to be added after vis leafs
-	public final static int CONTENTS_TRANSLUCENT	= 0x10000000;	// auto set if any surface has trans
-	public final static int CONTENTS_LADDER		= 0x20000000;
-
-	// content masks
-	public final static int MASK_ALL			= (-1);
-	public final static int MASK_SOLID			= (CONTENTS_SOLID|CONTENTS_WINDOW);
-	public final static int MASK_PLAYERSOLID		= (CONTENTS_SOLID|CONTENTS_PLAYERCLIP|CONTENTS_WINDOW|CONTENTS_MONSTER);
-	public final static int MASK_DEADSOLID		= (CONTENTS_SOLID|CONTENTS_PLAYERCLIP|CONTENTS_WINDOW);
-	public final static int MASK_MONSTERSOLID	= (CONTENTS_SOLID|CONTENTS_MONSTERCLIP|CONTENTS_WINDOW|CONTENTS_MONSTER);
-	public final static int MASK_WATER			= (CONTENTS_WATER|CONTENTS_LAVA|CONTENTS_SLIME);
-	public final static int MASK_OPAQUE			= (CONTENTS_SOLID|CONTENTS_SLIME|CONTENTS_LAVA);
-	public final static int MASK_SHOT			= (CONTENTS_SOLID|CONTENTS_MONSTER|CONTENTS_WINDOW|CONTENTS_DEADMONSTER);
-	public final static int MASK_CURRENT			= (CONTENTS_CURRENT_0|CONTENTS_CURRENT_90|CONTENTS_CURRENT_180|CONTENTS_CURRENT_270|CONTENTS_CURRENT_UP|CONTENTS_CURRENT_DOWN);
-	
-	// boxEntity() can return a list of either solid or trigger entities
-	public final static int AREA_SOLID			= 1;
-	public final static int AREA_TRIGGERS		= 2;	
 	
 	// setStat() field indexes
 	public final static int STAT_HEALTH_ICON		= 0;
@@ -678,6 +624,25 @@ public String toString()
 
 	return sb.toString();
 	}
+/**
+ * Shortcut method to quickly move an entity based on its velocity
+ * and return a TraceResults object.
+ *
+ * @return q2java.TraceResults
+ * @param mask int
+ */
+public TraceResults traceMove(int contentMask, float frameFraction) 
+	{
+	return traceMove0(fEntityIndex, contentMask, frameFraction);
+	}
+
+/**
+ * This method was created by a SmartGuide.
+ * @return q2java.TraceResults
+ * @param mask int
+ */
+public native static TraceResults traceMove0(int index, int contentMask, float frameFraction);
+
 public void unlinkEntity()
 	{
 	unlinkEntity0(fEntityIndex);
