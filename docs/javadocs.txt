@@ -1,0 +1,4 @@
+    The sourcecode has quite a few JavaDoc comments, and you can generate
+    documentation using normal JavaDoc tools.  For Win32 users who have 
+    a JDK loaded, you can run the "make-javadocs.bat" batch file in the 
+    q2java directory to quickly generate docs.
