@@ -1,0 +1,112 @@
+CHANGES from v0.6.8 to v0.7.0
+
+---------------------------------------------------------------------------
+This file will just list changes in the core packages 
+(q2java, q2jgame, baseq2, menno.ctf). Add-ons will have to list their own changes.
+---------------------------------------------------------------------------
+
+DLL CHANGES ===============================================================
+
+    Heavily reworked so that a single Win32 DLL supports both JDK 1.1 and 1.2,
+    and automatically locates the DLL, so no PATH changes are required under
+    Windows.  Also sort of supports the new Microsoft VM that has JNI,
+    although it's buggy and crashes quite quickly. 
+    
+    Added support for reading a Java properties file at startup, allowing
+    the user to specify the exact JavaVM DLL to use, security settings, 
+    debug log settings, and arbitrary System properties and JDK 1.2 
+    VM options.
+
+    Support for Linux - finally.  Although there may be problems with
+    multiplayer mode..since the JVM may be conflicting with Q2's network
+    code.      
+    
+    
+JAVA CHANGES ==============================================================
+
+q2java.Engine
+
+    Added:   Constants MAX_GENERAL, CS_AIRACCEL, CS_MAXCLIENTS, CS_GENERAL,
+             several TE_ values, from the 3.20 sourcecode
+            
+             getVWepIndex() - moved from q2jgame.Game
+
+q2java.GameListener
+
+    Changed: PlayerConnect() no longer takes boolean parameter
+    
+             WriteGame() added boolean parameter
+             
+q2java.NativeEntity
+
+    Added:   Several EF_ constants, EV_OTHER_TELEPORT, RDF_UVGOGGLES, 
+             RDF_IRGOGGLES, several RF_ constants, STAT_CHASE,
+             STAT_SPECTATOR, from the 3.20 sourcecode          
+             
+             getPlayerBlend() and getPlayerFOV() for the sake of completeness   
+             
+q2java.PlayerListener
+
+    Changed: playerBegin() no longer takes boolean parameter
+    
+q2java.Q2JavaSecurityManager
+
+    Changed: constructor now canonicalizes the sandbox path before storing it.                 
+    
+q2jgame.Game
+
+    Changed: init method no longers supports the CVar "q2jgame_packages",
+             people should have switched to "q2jgame_modules" a long time
+             ago.
+             
+             init method also looks for module names in the System properties
+             "q2java.module.1", "q2java.module.2", etc..
+             
+    Removed: getVWepIndex() - was moved to q2java.Engine    
+                          
+menno.ctf.GenericFlag
+menno.ctftech.GenericTech
+    Added:   becomeExplosion() to override baseq2.GameObject.becomeExplosion()
+             to prevent flags and techs from exploding when in the way 
+             of a GenericPusher.
+             
+baseq2.Door
+
+    Added:   block() - called when door is blocked by something                          
+    
+baseq2.GameObject
+
+    Added:   becomeExplosion() - a way for the game to get rid of objects
+             in the way of doors, plats, and such
+             
+baseq2.GenericPusher
+
+    Added:   block() - called when GenericPusher is blocked by something
+    
+    Changed: reworked to fix the longtime bug of pushing things 
+             out of the world.
+             
+baseq2.PlatformTrigger
+
+    Changed: touch() method now only triggers plat when it's in the lowered
+             position..making behavior more like the C game             
+             
+baseq2.Player
+
+    Changed: spawn() resets player FOV to their preferred value (it's
+             set to 90 degrees at intermission)
+             
+baseq2.spawn.func_door_secret
+baseq2.spawn.func_rotating
+baseq2.spawn.func_train
+
+    Added:   block() method called when object is blocked
+    
+baseq2.spawn.func_plat
+
+    Added:   block() method called when plat is blocked
+        
+             isLowered() method lets baseq2.PlatformTrigger tell
+             if it should operate or not
+                                           
+----------- End of List -------------------------------------------------------             

@@ -19,7 +19,7 @@ void Player_javaInit()
         return;
         }
 
-    method_player_begin = (*java_env)->GetMethodID(java_env, interface_PlayerListener, "playerBegin", "(Z)V");
+    method_player_begin = (*java_env)->GetMethodID(java_env, interface_PlayerListener, "playerBegin", "()V");
     method_player_userinfoChanged = (*java_env)->GetMethodID(java_env, interface_PlayerListener, "playerInfoChanged", "(Ljava/lang/String;)V");
     method_player_command = (*java_env)->GetMethodID(java_env, interface_PlayerListener, "playerCommand", "()V");
     method_player_disconnect = (*java_env)->GetMethodID(java_env, interface_PlayerListener, "playerDisconnect", "()V");
@@ -31,7 +31,7 @@ void Player_javaInit()
         }
     }
 
-void Player_javaFinalize()
+void Player_javaDetach()
     {
     (*java_env)->DeleteLocalRef(java_env, interface_PlayerListener);
     }
@@ -41,7 +41,7 @@ void Player_javaFinalize()
 static void java_clientDisconnect(edict_t *ent)
     {
     jobject javaPlayer;
-    int index = ent - ge.edicts;
+    int index = ent - q2java_ge.edicts;
 
     // mark ourselves as not inuse, so that if any print calls
     // go through, they're ignored.
@@ -56,7 +56,7 @@ static void java_clientDisconnect(edict_t *ent)
         }
 
     // unlink from world (---FIXME--- not sure about this)
-    gi.unlinkentity (ent);      
+    q2java_gi.unlinkentity (ent);      
 
     // make the Java Entity forget where it is in the C array
     Entity_set_fEntityIndex(javaPlayer, -1);
@@ -81,18 +81,18 @@ static void java_clientDisconnect(edict_t *ent)
     }
 
 
-static int java_clientConnect(edict_t *ent, char *userinfo, int loadgame)
+static int java_clientConnect(edict_t *ent, char *userinfo)
     {
     jmethodID method_player_ctor;
     jclass class_player;
     jobject newPlayer;
-    int index = ent - ge.edicts;
+    int index = ent - q2java_ge.edicts;
 
     // noticed in Q2 3.17 that you can connect multiple times
     // without disconnect automatically being called, try to catch that.
     if (ent->inuse)
         {
-        debugLog("player.c::java_clientConnect() caught connection to entity already in use\n");
+        javalink_debug("player.c::java_clientConnect() caught connection to entity already in use\n");
         java_clientDisconnect(ent);
         }
 
@@ -130,7 +130,7 @@ static int java_clientConnect(edict_t *ent, char *userinfo, int loadgame)
     (*java_env)->CallVoidMethod(java_env, newPlayer, method_player_ctor);
 
     // if an exception was thrown, reject the connection
-    if (CHECK_EXCEPTION() || Game_playerConnect(newPlayer, loadgame))
+    if (CHECK_EXCEPTION() || Game_playerConnect(newPlayer))
         {
         // make the Java Entity forget about itself
         Entity_set_fEntityIndex(newPlayer, -1);
@@ -168,12 +168,12 @@ static int java_clientConnect(edict_t *ent, char *userinfo, int loadgame)
     }
 
 
-static void java_clientBegin(edict_t *ent, int loadgame)
+static void java_clientBegin(edict_t *ent)
     {
     jobject javaPlayer = ent->client->listener;
     if (javaPlayer != NULL)
         {
-        (*java_env)->CallVoidMethod(java_env, javaPlayer, method_player_begin, loadgame);   
+        (*java_env)->CallVoidMethod(java_env, javaPlayer, method_player_begin);   
         CHECK_EXCEPTION();
         }
     }
@@ -234,11 +234,11 @@ static void java_clientThink(edict_t *ent, usercmd_t *cmd)
 
 void Player_gameInit()
     {
-    ge.ClientConnect = java_clientConnect;
-    ge.ClientUserinfoChanged = java_clientUserinfoChanged;
-    ge.ClientDisconnect = java_clientDisconnect;
-    ge.ClientBegin = java_clientBegin;
-    ge.ClientCommand = java_clientCommand;
-    ge.ClientThink = java_clientThink;
+    q2java_ge.ClientConnect = java_clientConnect;
+    q2java_ge.ClientUserinfoChanged = java_clientUserinfoChanged;
+    q2java_ge.ClientDisconnect = java_clientDisconnect;
+    q2java_ge.ClientBegin = java_clientBegin;
+    q2java_ge.ClientCommand = java_clientCommand;
+    q2java_ge.ClientThink = java_clientThink;
     }
 

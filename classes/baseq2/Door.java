@@ -35,11 +35,11 @@ public abstract class Door extends GenericPusher
 	protected int fSoundEnd;
 		
 	// door state constants		
-	protected final static int STATE_DOOR_SPAWNTRIGGER		= 0;
+	protected final static int STATE_DOOR_SPAWNTRIGGER	= 0;
 	protected final static int STATE_DOOR_CLOSING 		= 1;
-	protected final static int STATE_DOOR_CLOSED 			= 2;
+	protected final static int STATE_DOOR_CLOSED 		= 2;
 	protected final static int STATE_DOOR_OPENING 		= 3;
-	protected final static int STATE_DOOR_OPENED 			= 4;	
+	protected final static int STATE_DOOR_OPENED 		= 4;	
 	protected final static int STATE_DOOR_OPENWAIT 		= 5;	
 	
 	// spawn flags		
@@ -93,6 +93,41 @@ public Door(String[] spawnArgs) throws GameException
 		}
 	else
 		fDoorState = STATE_DOOR_CLOSED;		
+	}
+/**
+ * Called when the GenericPusher is blocked by another object.
+ * @param obj The GameObject that's in the way.
+ */
+public void block(GameObject obj) 
+	{
+	Vector3f origin = new Vector3f();
+
+	if (!(obj instanceof Player))
+		{
+		// give it a chance to go away on it's own terms (like gibs)
+		obj.damage(this, this, origin, obj.fEntity.getOrigin(), origin, 100000, 1, 0, 0, "crush");
+		// if it's still there, nuke it
+		if (obj.fEntity != null)
+			obj.becomeExplosion(Engine.TE_EXPLOSION1);
+		return;
+		}
+	
+	obj.damage(this, this, origin, obj.fEntity.getOrigin(), origin, (int)fDmg, 1, 0, 0, "crush");
+//	T_Damage (other, self, self, origin, other->s.origin, vec3_origin, self->dmg, 1, 0, MOD_CRUSH);
+
+	if ((fSpawnFlags & DOOR_CRUSHER) != 0)
+		return;
+
+
+	// if a door has a negative wait, it would never come back if blocked,
+	// so let it just squash the object to death real fast
+	if (fWait >= 0)
+		{
+		if (fDoorState == STATE_DOOR_CLOSING)
+			open();
+		else
+			close();
+		}	
 	}
 /**
  * Close the door.

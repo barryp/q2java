@@ -4,9 +4,11 @@
 #include "javalink.h"
 #include "quake2.h"
 
+extern char *q2java_version;
+
 // game import and export structures
-extern game_import_t	gi;
-extern game_export_t	ge;
+extern game_import_t	q2java_gi;
+extern game_export_t	q2java_ge;
 
 // to help with entity management
 extern int global_frameCount;
@@ -16,7 +18,7 @@ extern gclient_t *global_clients;
 extern jclass class_NativeEntity;
 
 void Misc_javaInit();
-void Misc_javaFinalize();
+void Misc_javaDetach();
 #define CHECK_EXCEPTION() checkException(__FILE__, __LINE__)
 int checkException(char *filename, int linenum);
 void enableSecurity(int level);
@@ -28,17 +30,18 @@ extern jobject playerCmd;
 char *convertJavaString(jstring jstr);
 
 void CVar_javaInit();
-void CVar_javaFinalize();
+void CVar_javaDetach();
 
 void Engine_javaInit();
-void Engine_javaFinalize();
+void Engine_javaDetach();
+void Engine_startLevel();
 // Engine method called by a NativeEntity method
 jobjectArray JNICALL Java_q2java_Engine_getRadiusEntities0
   (JNIEnv *, jclass, jfloat, jfloat, jfloat, jfloat, jint, jboolean, jboolean);
 
 
 void Entity_javaInit();
-void Entity_javaFinalize();
+void Entity_javaDetach();
 void Entity_gameInit();
 void Entity_arrayInit();
 void Entity_arrayReset();
@@ -50,17 +53,17 @@ jobjectArray Entity_createArray(edict_t **list, int count);
 
 void Player_gameInit();
 void Player_javaInit();
-void Player_javaFinalize();
+void Player_javaDetach();
 jobject Player_new(int index);
 
 void Game_gameInit();
 void Game_javaInit();
-void Game_javaFinalize();
+void Game_javaDetach();
 jclass Game_getPlayerClass();
 void Game_consoleOutput(const char *msg);
-int Game_playerConnect(jobject ent, int loadgame);
+int Game_playerConnect(jobject ent);
 
 void ConsoleOutputStream_javaInit();
-void ConsoleOutputStream_javaFinalize();
+void ConsoleOutputStream_javaDetach();
 
 #endif

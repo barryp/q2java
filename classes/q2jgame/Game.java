@@ -22,13 +22,10 @@ public class Game implements GameListener
 	{
 	// handy random number generator
 	private static Random gRandom = new Random();	
-	
-	// track VWep skin indexes
-	protected static Vector gVWepList = new Vector();
-		
+
 	// Manage FrameListeners
 	public final static int FRAME_BEGINNING	= 0x01;
-	public final static int FRAME_MIDDLE		= 0x02;
+	public final static int FRAME_MIDDLE	= 0x02;
 	public final static int FRAME_END		= 0x04;
 	
 	private static FrameList gFrameBeginning;
@@ -498,33 +495,6 @@ public static String getSpawnArg(String[] args, String keyword, String defaultVa
 	return defaultValue;
 	}
 /**
- * Get the index of the VWep skin for a given weapon.
- * Similar to the Engine.get*Index() methods, but this 
- * is something the game itself has to keep track of.
- *
- * The VWep indexes are assigned in the order they're 
- * requested, starting at 1.
- *
- * @return int
- * @param weaponIconName java.lang.String
- */
-public static int getVWepIndex(String weaponIconName) 
-	{
-	int nEntries = gVWepList.size();
-	
-	// look for pre-existing entries.
-	for (int i = 0; i < nEntries; i++)
-		{
-		if (((String) gVWepList.elementAt(i)).equals(weaponIconName))
-			return i+1;
-		}
-		
-	// wasn't in the list, so add it and return the new entry's index.		
-	Engine.getModelIndex("#" + weaponIconName + ".md2");
-	gVWepList.addElement(weaponIconName);
-	return nEntries + 1;		
-	}
-/**
  * Called by the DLL when Quake II calls the DLL's init() function.
  */
 public void init()
@@ -568,37 +538,58 @@ public void init()
 	gFrameCount = 0;
 	gGameTime = 0;				
 	
-	//Withnails 04/23/98 - get the modules cvar, defaulting to baseq2
-	CVar packages = new CVar("q2jgame_packages", "baseq2", 0);
-	
 	// new command-line cvar, but use the old one as the default for
 	// backwards compatibility - will remove old one somewhere down the road
-	gModules = new CVar("q2jgame_modules", packages.getString(), 0);
-		
-	//Withnails 04/23/98 - parses out multiple packages on command line, separated by ;,/\\+
-	StringTokenizer st = new StringTokenizer(gModules.getString(), ";,/\\+");
-	Vector v = new Vector();
-	while (st.hasMoreTokens())
-		v.addElement(st.nextToken());
+	gModules = new CVar("q2jgame_modules", "", 0);
+	String modules = gModules.getString();
 
-	//Quinn 06/16/98: handle commandline / stored aliases.
-	//Withnails 04/23/98 - now load each package
-	String temp = "";
-	int tidx = 0;
-	for (int i = v.size()-1; i >= 0; i--) 
+	if (!modules.equals(""))
 		{
-		temp = v.elementAt(i).toString();
-		tidx = temp.indexOf( "[" );
-		if ( tidx == -1 ) 
+		//Withnails 04/23/98 - parses out multiple modules on command line, separated by ;,/\\+
+		StringTokenizer st = new StringTokenizer(modules, ";,/\\+");
+		Vector v = new Vector();
+		while (st.hasMoreTokens())
+			v.addElement(st.nextToken());
+
+		//Quinn 06/16/98: handle commandline / stored aliases.
+		//Withnails 04/23/98 - now load each package
+		String temp = "";
+		int tidx = 0;
+		for (int i = v.size()-1; i >= 0; i--) 
 			{
-			addModule( temp, temp );
-			} // end if not aliased.
-		else 
+			temp = v.elementAt(i).toString();
+			tidx = temp.indexOf( "[" );
+			if ( tidx == -1 ) 
+				{
+				addModule( temp, temp );
+				} // end if not aliased.
+			else 
+				{
+				addModule( temp.substring( 0, tidx ), temp.substring( tidx + 1, temp.length() - 1 ) );
+				} // end if aliased.
+			} // end for loop.
+		}
+	else
+		{
+		// read module names from System properties
+		int i = 1;
+		String s;
+		while ((s = System.getProperty("q2java.module."+i, null)) != null)
 			{
-			addModule( temp.substring( 0, tidx ), temp.substring( tidx + 1, temp.length() - 1 ) );
-			} // end if aliased.
-		} // end for loop.
-		
+			StringTokenizer st = new StringTokenizer(s);
+			String name = st.nextToken();
+			if (st.hasMoreElements())
+				addModule(name, st.nextToken());
+			else
+				addModule(name, name);
+			i++;
+			}
+
+		// add default module if nothing else was loaded			
+		if (i == 1)
+			addModule("baseq2", "baseq2");
+		}
+			
 	Engine.debugLog("Game.init() finished");
 	}
 /**
@@ -712,21 +703,19 @@ protected static void notifyModuleRemoved( q2jgame.GameModule gm)
  * @param userinfo Player's basic info
  * @param loadgame boolean
  */
-public void playerConnect(NativeEntity playerEntity, boolean loadgame) throws Exception, Throwable
+public void playerConnect(NativeEntity playerEntity) throws Exception, Throwable
 	{
 	try
 		{
 		Class playerClass = gClassFactory.lookupClass(".Player");
 	
-		Class[] paramTypes = new Class[2];
+		Class[] paramTypes = new Class[1];
 		paramTypes[0] = q2java.NativeEntity.class;
-		paramTypes[1] = java.lang.Boolean.TYPE;
 
 		Method initMethod = playerClass.getMethod("connect", paramTypes);
 
-		Object[] params = new Object[2];
+		Object[] params = new Object[1];
 		params[0] = playerEntity;
-		params[1] = new Boolean(loadgame);
 
 		initMethod.invoke(null, params);		
 		}
@@ -1190,9 +1179,6 @@ public void startLevel(String mapname, String entString, String spawnPoint)
 	// clear the object registry
 	gLevelRegistry.clear();
 	
-	// reset the VWep index
-	gVWepList.removeAllElements();
-
 	// remove modules that were deferred until a level change
 	for (int i = 0; i < gLaterModuleRemove.size(); i++)
 		removeModule((String)gLaterModuleRemove.elementAt(i));
@@ -1368,6 +1354,20 @@ public static void svcmd_javamem(String[] args)
 	dprint("Total Java memory: " + totalMem + " bytes    Used: " + (totalMem - freeMem) + " Free: " + freeMem + "\n");
 	}
 /**
+ * Dump a list of system properties.
+ */
+public static void svcmd_properties(String[] args) 
+	{
+	Properties props = System.getProperties();
+	Enumeration names = props.propertyNames();
+	while (names.hasMoreElements())
+		{
+		String name = (String) names.nextElement();
+		String value = props.getProperty(name);
+		dprint("[" + name + "] = [" + value + "]\n");
+		}
+	}
+/**
  * Let the user remove a game module.
  */
 public static void svcmd_removemodule(String[] args) 
@@ -1427,7 +1427,7 @@ public static void svcmd_time(String[] args)
 /**
  * Called by the DLL when the DLL's WriteGame() function is called.
  */
-public void writeGame(String filename)
+public void writeGame(String filename, boolean autosave)
 	{
 	Enumeration enum = gGameListeners.elements();
 	while (enum.hasMoreElements())

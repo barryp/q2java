@@ -1,0 +1,19 @@
+/* Q2Java Security policy for use with JDK 1.2 */
+
+grant {
+  /* let java code access files in the sandbox */
+  permission java.io.FilePermission "c:\\quake2\\q2java\\sandbox\\-", "read, write, delete";
+  
+  /* let the java code redirect output to the Q2 console */
+  permission java.lang.RuntimePermission "setIO";    
+
+  /* allow read/write access to System properties starting with "q2java" */  
+  permission java.util.PropertyPermission "q2java.*", "read,write";
+
+  /* allow operations on non-privledged sockets 
+     uncomment this next line for the barryp.telnet module */  
+  /*  permission java.net.SocketPermission "localhost:1024-", "accept, connect, listen, resolve";  */
+
+};
+
+

@@ -125,9 +125,9 @@ public class Player extends baseq2.Player
  * Create a new Player Game object, and associate it with a Player
  * native entity.
  */
-public Player(NativeEntity ent, boolean loadgame) throws GameException
+public Player(NativeEntity ent) throws GameException
 	{
-	super(ent, loadgame);
+	super(ent);
 
 	// create a HUD DirectionTracker 
 	fTracker = new DirectionTracker(fEntity, STAT_TRACKER);
@@ -229,9 +229,9 @@ protected void clearSettings( )
  * @param playerInfo java.lang.String
  * @param loadgame boolean
  */
-public static void connect(NativeEntity ent, boolean loadgame) throws GameException
+public static void connect(NativeEntity ent) throws GameException
 	{
-	new Player(ent, loadgame);
+	new Player(ent);
 	}
 /**
  * Handle dying.

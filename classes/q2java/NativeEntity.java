@@ -14,13 +14,6 @@ import javax.vecmath.*;
  * @author Barry Pederson 
  */
 
-/* CHANGES
-
-1998-04-15 (BP) 
-	Changed getMins() getMaxs() getAbsMins() getAbsMaxs() to return Point3f
-	Added setPlayerBlend(Color4f c)
-
-*/
 public class NativeEntity
 	{
 	// ------------------- Instance fields ---------------------
@@ -93,8 +86,21 @@ public class NativeEntity
 	public final static int EF_TELEPORTER		= 0x00020000;		// particle fountain
 	public final static int EF_FLAG1			= 0x00040000;
 	public final static int EF_FLAG2			= 0x00080000;
-	public final static int EF_BOOMER			= 0x00100000;
+// RAFAEL
+	public final static int EF_IONRIPPER		= 0x00100000;
 	public final static int EF_GREENGIB			= 0x00200000;
+	public final static int EF_BLUEHYPERBLASTER = 0x00400000;
+	public final static int EF_SPINNINGLIGHTS	= 0x00800000;
+	public final static int EF_PLASMA			= 0x01000000;
+	public final static int EF_TRAP				= 0x02000000;
+//ROGUE
+	public final static int EF_TRACKER			= 0x04000000;
+	public final static int EF_DOUBLE			= 0x08000000;
+	public final static int EF_SPHERETRANS		= 0x10000000;
+	public final static int EF_TAGTRAIL			= 0x20000000;
+	public final static int EF_HALF_DAMAGE		= 0x40000000;
+	public final static int EF_TRACKERTRAIL		= 0x80000000;
+//ROGUE
 
 	// constants for setEvent()
 	// entity events are for effects that take place reletive
@@ -102,22 +108,23 @@ public class NativeEntity
 	public final static int EV_NONE				= 0;
 	public final static int EV_ITEM_RESPAWN		= 1;
 	public final static int EV_FOOTSTEP			= 2;
-	public final static int EV_FALLSHORT			= 3;
+	public final static int EV_FALLSHORT		= 3;
 	public final static int EV_FALL				= 4;
 	public final static int EV_FALLFAR			= 5;
 	public final static int EV_PLAYER_TELEPORT	= 6;
+	public final static int EV_OTHER_TELEPORT	= 7;
 
 
 	// setPMType() constants
 	// information necessary for client side movement prediction
 	//
 	// can accelerate and turn
-	public final static int PM_NORMAL	= 0;
+	public final static int PM_NORMAL		= 0;
 	public final static int PM_SPECTATOR	= 1;
 	// no acceleration or turning
-	public final static int PM_DEAD		= 2;
-	public final static int PM_GIB		= 3;	// different bounding box
-	public final static int PM_FREEZE	= 4;
+	public final static int PM_DEAD			= 2;
+	public final static int PM_GIB			= 3;	// different bounding box
+	public final static int PM_FREEZE		= 4;
 
 	// get/setPMFlags() constants
 	public final static int PMF_DUCKED			= 1;
@@ -130,22 +137,32 @@ public class NativeEntity
 
 	// player_state_t->refdef flags
 	public final static int RDF_UNDERWATER		= 1;		// warp the screen as apropriate
-	public final static int RDF_NOWORLDMODEL		= 2;		// used for player configuration screen
+	public final static int RDF_NOWORLDMODEL	= 2;		// used for player configuration screen
+//ROGUE
+	public final static int RDF_IRGOGGLES		= 4;
+	public final static int RDF_UVGOGGLES		= 8;
+//ROGUE
 
 	// constants for setRenderFX()
 	public final static int RF_MINLIGHT			= 1;		// allways have some light (viewmodel)
 	public final static int RF_VIEWERMODEL		= 2;		// don't draw through eyes, only mirrors
 	public final static int RF_WEAPONMODEL		= 4;		// only draw through eyes
 	public final static int RF_FULLBRIGHT		= 8;		// allways draw full intensity
-	public final static int RF_DEPTHHACK			= 16;	// for view weapon Z crunching
+	public final static int RF_DEPTHHACK		= 16;	// for view weapon Z crunching
 	public final static int RF_TRANSLUCENT		= 32;
-	public final static int RF_FRAMELERP			= 64;
+	public final static int RF_FRAMELERP		= 64;
 	public final static int RF_BEAM				= 128;
 	public final static int RF_CUSTOMSKIN		= 256;	// skin is an index in image_precache
 	public final static int RF_GLOW				= 512;	// pulse lighting for bonus items
-	public final static int RF_SHELL_RED			= 1024;
+	public final static int RF_SHELL_RED		= 1024;
 	public final static int RF_SHELL_GREEN		= 2048;
 	public final static int RF_SHELL_BLUE		= 4096;
+//ROGUE
+	public final static int RF_IR_VISIBLE		= 0x00008000;		// 32768
+	public final static int RF_SHELL_DOUBLE		= 0x00010000;		// 65536
+	public final static int RF_SHELL_HALF_DAM	= 0x00020000;
+	public final static int RF_USE_DISGUISE		= 0x00040000;
+//ROGUE
 
 	// constants for setSolid()
 	public final static int SOLID_NOT			= 0;		// no interaction with other objects
@@ -154,52 +171,54 @@ public class NativeEntity
 	public final static int SOLID_BSP			= 3;		// bsp clip, touch on edge
 		
 	// setStat() field indexes
-	public final static int STAT_HEALTH_ICON		= 0;
+	public final static int STAT_HEALTH_ICON	= 0;
 	public final static int STAT_HEALTH			= 1;
 	public final static int STAT_AMMO_ICON		= 2;
 	public final static int STAT_AMMO			= 3;
 	public final static int STAT_ARMOR_ICON		= 4;
 	public final static int STAT_ARMOR			= 5;
 	public final static int STAT_SELECTED_ICON	= 6;
-	public final static int STAT_PICKUP_ICON		= 7;
+	public final static int STAT_PICKUP_ICON	= 7;
 	public final static int STAT_PICKUP_STRING	= 8;
 	public final static int STAT_TIMER_ICON		= 9;
 	public final static int STAT_TIMER			= 10;
 	public final static int STAT_HELPICON		= 11;
 	public final static int STAT_SELECTED_ITEM	= 12;
-	public final static int STAT_LAYOUTS			= 13;
+	public final static int STAT_LAYOUTS		= 13;
 	public final static int STAT_FRAGS			= 14;
-	public final static int STAT_FLASHES			= 15; // cleared each frame, 1 = health, 2 = armor
+	public final static int STAT_FLASHES		= 15; // cleared each frame, 1 = health, 2 = armor
+	public final static int STAT_CHASE			= 16;
+	public final static int STAT_SPECTATOR		= 17;	
 	public final static int MAX_STATS			= 32;
 
 	// constants for setSVFlags()
-	public final static int SVF_NOCLIENT			= 0x00000001;	// don't send entity to clients, even if it has effects
+	public final static int SVF_NOCLIENT		= 0x00000001;	// don't send entity to clients, even if it has effects
 	public final static int SVF_DEADMONSTER		= 0x00000002;	// treat as CONTENTS_DEADMONSTER for collision
 	public final static int SVF_MONSTER			= 0x00000004;	// treat as CONTENTS_MONSTER for collision	
 
 
 	// --- Private constants for communicating with the DLL
-	private final static int BYTE_CLIENT_PS_PMOVE_PMFLAGS		= 100;
+	private final static int BYTE_CLIENT_PS_PMOVE_PMFLAGS	= 100;
 	private final static int BYTE_CLIENT_PS_PMOVE_PMTIME	= 101;
 	
-	private final static int SHORT_CLIENT_PS_PMOVE_GRAVITY		= 100;
+	private final static int SHORT_CLIENT_PS_PMOVE_GRAVITY	= 100;
 		
 	private final static int INT_S_MODELINDEX	= 1;
 	private final static int INT_S_MODELINDEX2	= 2;
 	private final static int INT_S_MODELINDEX3	= 3;
 	private final static int INT_S_MODELINDEX4	= 4;
-	private final static int INT_SVFLAGS			= 5;
+	private final static int INT_SVFLAGS		= 5;
 	private final static int INT_SOLID			= 6;
 	private final static int INT_CLIPMASK		= 7;
-	private final static int INT_S_FRAME			= 8;
+	private final static int INT_S_FRAME		= 8;
 	private final static int INT_S_SKINNUM		= 9;
 	private final static int INT_S_EFFECTS		= 10;
 	private final static int INT_S_RENDERFX		= 11;
-	private final static int INT_S_SOLID			= 12;
-	private final static int INT_S_SOUND			= 13;
-	private final static int INT_S_EVENT			= 14;
+	private final static int INT_S_SOLID		= 12;
+	private final static int INT_S_SOUND		= 13;
+	private final static int INT_S_EVENT		= 14;
 	private final static int INT_LINKCOUNT		= 15;
-	private final static int INT_AREANUM			= 16;
+	private final static int INT_AREANUM		= 16;
 	
 	private final static int INT_CLIENT_PS_GUNINDEX	= 100;
 	private final static int INT_CLIENT_PS_GUNFRAME	= 101;
@@ -208,7 +227,11 @@ public class NativeEntity
 	private final static int INT_CLIENT_PING			= 104;
 	
 	private final static int FLOAT_CLIENT_PS_FOV 		= 100;
-	private final static int FLOAT_CLIENT_PS_BLEND 	= 101;			
+	private final static int FLOAT_CLIENT_PS_BLEND 		= 101;			
+	private final static int FLOAT_CLIENT_PS_BLEND_R	= 102;
+	private final static int FLOAT_CLIENT_PS_BLEND_G 	= 103;
+	private final static int FLOAT_CLIENT_PS_BLEND_B 	= 104;
+	private final static int FLOAT_CLIENT_PS_BLEND_A 	= 105;
 
 	private final static int VEC3_S_ORIGIN 			= 0;
 	private final static int VEC3_S_ANGLES 			= 1;
@@ -280,7 +303,7 @@ private native static int allocateEntity(int entType);
 public void centerprint(String s)
 	{
 	if (!fIsBot)
-		centerprint0(getEntityIndex(), s);
+		centerprint0(fEntityIndex, s);
 	}
 /**
  * Player only
@@ -310,7 +333,7 @@ private native static void copySettings0(int sourceIndex, int destIndex);
 public void cprint(int printLevel, String s)
 	{
 	if (!fIsBot)
-		cprint0(getEntityIndex(), printLevel, s);
+		cprint0(fEntityIndex, printLevel, s);
 	}
 /**
  * Player Only
@@ -451,6 +474,7 @@ public int getEvent()
 	{
 	return getInt(fEntityIndex, INT_S_EVENT);
 	}
+private native static float getFloat(int index, int fieldNum);
 public int getFrame()
 	{
 	return getInt(fEntityIndex, INT_S_FRAME);
@@ -504,15 +528,37 @@ public NativeEntity getOwner()
 	{
 	return getEntity(fEntityIndex, ENTITY_OWNER);
 	}
+/**
+ * Get the blend colors on the player's screen.
+ * @param dest Color4f to place values in - if null then a new Color4f will be created and returned.
+ * @return Color4f representation of RGBA
+ */
+public Color4f getPlayerBlend(Color4f dest) 
+	{
+	float r = getFloat(fEntityIndex, FLOAT_CLIENT_PS_BLEND_R);
+	float g = getFloat(fEntityIndex, FLOAT_CLIENT_PS_BLEND_G);
+	float b = getFloat(fEntityIndex, FLOAT_CLIENT_PS_BLEND_B);
+	float a = getFloat(fEntityIndex, FLOAT_CLIENT_PS_BLEND_A);
+	
+	if (dest == null)
+		dest = new Color4f(r, g, b, a);
+	else
+		dest.set(r, g, b, a);
+
+	return dest;		
+	}
 public Angle3f getPlayerDeltaAngles()
 	{
-	Angle3f result = (Angle3f) getVec3(fEntityIndex, VEC3_CLIENT_PS_PMOVE_DELTA_ANGLES, TYPE_ANGLE);
-
-	// temporary workaround to keep the game semi-backwards-compatible with older DLLs
-	if (result == null)
-		return new Angle3f();
-	else
-		return result;
+	return (Angle3f) getVec3(fEntityIndex, VEC3_CLIENT_PS_PMOVE_DELTA_ANGLES, TYPE_ANGLE);
+	}
+/**
+ * Get the Player's Field of View. 
+ *
+ * @return Field of View in degrees
+ */
+public float getPlayerFOV() 
+	{
+	return getFloat(fEntityIndex, FLOAT_CLIENT_PS_FOV);
 	}
 public int getPlayerGunFrame()
 	{
@@ -702,7 +748,7 @@ private native static void linkEntity0(int index);
  */
 public PMoveResults pMove(PlayerCmd cmd, int traceMask) 
 	{
-	return pMove0(getEntityIndex(), cmd.fMsec, cmd.fButtons, 
+	return pMove0(fEntityIndex, cmd.fMsec, cmd.fButtons, 
 		cmd.fPitch, cmd.fYaw, cmd.fRoll, 
 		cmd.fForwardMove, cmd.fSideMove, cmd.fUpMove,
 		cmd.fImpulse, cmd.fLightLevel, traceMask);
@@ -831,7 +877,7 @@ public void setOwner(NativeEntity ent)
  */
 public void setPlayerBlend(float r, float g, float b, float a) 
 	{
-	setFloat0(getEntityIndex(), FLOAT_CLIENT_PS_BLEND, r, g, b, a);
+	setFloat0(fEntityIndex, FLOAT_CLIENT_PS_BLEND, r, g, b, a);
 	}
 /**
  * Set the blend colors on the player's screen.
@@ -839,15 +885,15 @@ public void setPlayerBlend(float r, float g, float b, float a)
  */
 public void setPlayerBlend(Color4f c) 
 	{
-	setFloat0(getEntityIndex(), FLOAT_CLIENT_PS_BLEND, c.x, c.y, c.z, c.w);
+	setFloat0(fEntityIndex, FLOAT_CLIENT_PS_BLEND, c.x, c.y, c.z, c.w);
 	}
 public void setPlayerDeltaAngles(float pitch, float yaw, float roll)
 	{
-	setVec3(getEntityIndex(), VEC3_CLIENT_PS_PMOVE_DELTA_ANGLES, pitch, yaw, roll);
+	setVec3(fEntityIndex, VEC3_CLIENT_PS_PMOVE_DELTA_ANGLES, pitch, yaw, roll);
 	}
 public void setPlayerDeltaAngles(Angle3f a)
 	{
-	setVec3(getEntityIndex(), VEC3_CLIENT_PS_PMOVE_DELTA_ANGLES, a.x, a.y, a.z);
+	setVec3(fEntityIndex, VEC3_CLIENT_PS_PMOVE_DELTA_ANGLES, a.x, a.y, a.z);
 	}
 /**
  * Set the Player's Field of View. 
@@ -856,7 +902,7 @@ public void setPlayerDeltaAngles(Angle3f a)
  */
 public void setPlayerFOV(float v) 
 	{
-	setFloat0(getEntityIndex(), FLOAT_CLIENT_PS_FOV, v, 0, 0, 0);
+	setFloat0(fEntityIndex, FLOAT_CLIENT_PS_FOV, v, 0, 0, 0);
 	}
 public void setPlayerGravity(short val)
 	{
@@ -864,23 +910,23 @@ public void setPlayerGravity(short val)
 	}
 public void setPlayerGunAngles(Angle3f a)
 	{
-	setVec3(getEntityIndex(), VEC3_CLIENT_PS_GUNANGLES, a.x, a.y, a.z);
+	setVec3(fEntityIndex, VEC3_CLIENT_PS_GUNANGLES, a.x, a.y, a.z);
 	}
 public void setPlayerGunFrame(int val)
 	{
-	setInt(getEntityIndex(), INT_CLIENT_PS_GUNFRAME, val);
+	setInt(fEntityIndex, INT_CLIENT_PS_GUNFRAME, val);
 	}
 public void setPlayerGunIndex(int val)
 	{
-	setInt(getEntityIndex(), INT_CLIENT_PS_GUNINDEX, val);
+	setInt(fEntityIndex, INT_CLIENT_PS_GUNINDEX, val);
 	}
 public void setPlayerGunOffset(Vector3f v)
 	{
-	setVec3(getEntityIndex(), VEC3_CLIENT_PS_GUNOFFSET, v.x, v.y, v.z);
+	setVec3(fEntityIndex, VEC3_CLIENT_PS_GUNOFFSET, v.x, v.y, v.z);
 	}
 public void setPlayerKickAngles(Angle3f a)
 	{
-	setVec3(getEntityIndex(), VEC3_CLIENT_PS_KICKANGLES, a.x, a.y, a.z);
+	setVec3(fEntityIndex, VEC3_CLIENT_PS_KICKANGLES, a.x, a.y, a.z);
 	}
 /**
  * Register an object to receive this entity's player events.
@@ -910,23 +956,23 @@ public void setPlayerPMType(int val)
 	}
 public void setPlayerRDFlags(int val)
 	{
-	setInt(getEntityIndex(), INT_CLIENT_PS_RDFLAGS, val);
+	setInt(fEntityIndex, INT_CLIENT_PS_RDFLAGS, val);
 	}
-public void setPlayerStat(int fieldindex, short value) 
+public void setPlayerStat(int fieldIndex, short value) 
 	{
-	setStat0(getEntityIndex(), fieldindex, value);
+	setStat0(fEntityIndex, fieldIndex, value);
 	}
 public void setPlayerViewAngles(float pitch, float yaw, float roll)
 	{
-	setVec3(getEntityIndex(), VEC3_CLIENT_PS_VIEWANGLES, pitch, yaw, roll);
+	setVec3(fEntityIndex, VEC3_CLIENT_PS_VIEWANGLES, pitch, yaw, roll);
 	}
 public void setPlayerViewAngles(Angle3f a)
 	{
-	setVec3(getEntityIndex(), VEC3_CLIENT_PS_VIEWANGLES, a.x, a.y, a.z);
+	setVec3(fEntityIndex, VEC3_CLIENT_PS_VIEWANGLES, a.x, a.y, a.z);
 	}
 public void setPlayerViewOffset(Vector3f v)
 	{
-	setVec3(getEntityIndex(), VEC3_CLIENT_PS_VIEWOFFSET, v.x, v.y, v.z);
+	setVec3(fEntityIndex, VEC3_CLIENT_PS_VIEWOFFSET, v.x, v.y, v.z);
 	}
 /**
  * Store a handle to an arbitrary object.
@@ -950,7 +996,7 @@ public void setRenderFX(int val)
 private native static void setShort(int index, int fieldNum, short val);
 public void setSkinNum(int val)
 	{
-	setInt(getEntityIndex(), INT_S_SKINNUM, val);
+	setInt(fEntityIndex, INT_S_SKINNUM, val);
 	}
 public void setSolid(int val)
 	{

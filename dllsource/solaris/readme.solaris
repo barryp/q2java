@@ -2,7 +2,6 @@ This archive contains the following files:
 
 gamesparc.so		The Solaris shared library.
 Makefile		The Makefile used to compile and link the library
-javalink_Solaris.c	The Solaris-specific code for the shared library.
 warnings.txt		A list of warning generated at compile time.
 readme.solaris		This ever-so-informative-self-referenced file.
 

@@ -68,6 +68,15 @@ public func_rotating(java.lang.String[] spawnArgs) throws q2java.GameException
 		use(null);
 	}
 /**
+ * Called when the GenericPusher is blocked by another object.
+ * @param obj The GameObject that's in the way.
+ */
+public void block(GameObject obj) 
+	{
+	Vector3f origin = new Vector3f();
+	obj.damage(this, this, origin, obj.fEntity.getOrigin(), origin, (int)fDmg, 1, 0, 0, "crush");
+	}
+/**
  * Needed by GenericPusher.
  */
 protected void moveFinished()

@@ -1,9 +1,10 @@
 package baseq2;
 
-import java.util.Enumeration;
-import javax.vecmath.*;
 import q2java.*;
 import q2jgame.*;
+import java.util.Enumeration;
+import java.util.Vector;
+import javax.vecmath.*;
  
 /**
  * Superclass for entities like doors, plats, and trains
@@ -37,6 +38,9 @@ public abstract class GenericPusher extends GameObject implements FrameListener,
 	protected int fState;
 	protected int fEndState;
 	protected float fLastFrameTime;
+
+	protected Vector fPositionStack = new Vector();
+	protected GameObject fObstacle;
 	
 	protected final static int STATE_SPAWNED = 0;
 	protected final static int STATE_IDLE = 1;
@@ -129,6 +133,13 @@ protected void accelerate()
 	return;
 	}
 /**
+ * Called when the GenericPusher is blocked by another object.
+ * @param obj The GameObject that's in the way.
+ */
+public void block(GameObject obj) 
+	{
+	}
+/**
  * This method was created by a SmartGuide.
  */
 protected abstract void moveFinished();
@@ -177,6 +188,22 @@ protected void moveTo(Point3f dest)
 		}
 	}
 /**
+ * Restore an entity's position off the stack.
+ * @return The entity that was restored
+ */
+protected NativeEntity popPosition() 
+	{
+	int n = fPositionStack.size();
+	NativeEntity ent = (NativeEntity) fPositionStack.elementAt(n - 1);
+	if (ent.isPlayer())
+		ent.setPlayerDeltaAngles((Angle3f)fPositionStack.elementAt(n - 2));
+	ent.setAngles((Angle3f)fPositionStack.elementAt(n - 3));
+	ent.setOrigin((Point3f)fPositionStack.elementAt(n - 4));
+	fPositionStack.setSize(n - 4);
+
+	return ent;
+	}
+/**
  * This method was created by a SmartGuide.
  * @return false if blocked, true if no problems.
  */
@@ -197,16 +224,9 @@ protected boolean push()
 	Tuple3f maxs = fEntity.getAbsMaxs();			
 	Point3f pusherOrigin = fEntity.getOrigin();
 
-/*	
-// save the pusher's original position
-	pushed_p->ent = pusher;
-	VectorCopy (pusher->s.origin, pushed_p->origin);
-	VectorCopy (pusher->s.angles, pushed_p->angles);
-	if (pusher->client)
-		pushed_p->deltayaw = pusher->client->ps.pmove.delta_angles[YAW];
-	pushed_p++;
-*/
-
+	// save the pusher's original position
+	pushPosition(fEntity);
+	
 	// setup if moving linearly				
 	if (isLinearMove)
 		{		
@@ -278,10 +298,7 @@ protected boolean push()
 		boolean isPlayer = check instanceof Player;
 
 		// move this entity
-//		pushed_p->ent = check;
-//		VectorCopy (check->s.origin, pushed_p->origin);
-//		VectorCopy (check->s.angles, pushed_p->angles);
-//		pushed_p++;
+		pushPosition(check.fEntity);
 
 		Point3f checkOrigin = check.fEntity.getOrigin();
 		// try moving the contacted entity 
@@ -312,52 +329,37 @@ protected boolean push()
 				}
 			}
 			
-		check.fEntity.setOrigin(checkOrigin);			
-		check.fEntity.linkEntity();
-		}
+		check.fEntity.setOrigin(checkOrigin);
 		
-/*
 		// may have pushed them off an edge
-		if (check->groundentity != pusher)
-			check->groundentity = NULL;
+//		if (check->groundentity != pusher)
+//			check->groundentity = NULL;
 
-		block = SV_TestEntityPosition (check);
-		if (!block)
-			{	// pushed ok
-			gi.linkentity (check);
-			// impact?
+		if (testEntityPosition(check.fEntity) == null)
+			{
+			check.fEntity.linkEntity();
 			continue;
 			}
 
 		// if it is ok to leave in the old position, do it
 		// this is only relevent for riding entities, not pushed
-		// FIXME: this doesn't acount for rotation
-		VectorSubtract (check->s.origin, move, check->s.origin);
-		block = SV_TestEntityPosition (check);
-		if (!block)
-			{
-			pushed_p--;
+		popPosition();
+		if (testEntityPosition(check.fEntity) == null)
 			continue;
-			}
-		
-		// save off the obstacle so we can call the block function
-		obstacle = check;
 
+		// let hte pusher know who's blocking it.
+		fObstacle = check;
+		
 		// move back any entities we already moved
 		// go backwards, so if the same entity was pushed
 		// twice, it goes back to the original position
-		for (p=pushed_p-1 ; p>=pushed ; p--)
-			{
-			VectorCopy (p->origin, p->ent->s.origin);
-			VectorCopy (p->angles, p->ent->s.angles);
-			if (p->ent->client)
-				{
-				p->ent->client->ps.pmove.delta_angles[YAW] = p->deltayaw;
-				}
-			gi.linkentity (p->ent);
-			}	
+		while (fPositionStack.size() > 0)
+			popPosition();
+			
 		return false;
 		}
+		
+/*
 
 //FIXME: is there a better way to handle this?
 	// see if anything we moved has touched a trigger
@@ -365,6 +367,17 @@ protected boolean push()
 		G_TouchTriggers (p->ent);
 */
 	return true;		
+	}
+/**
+ * Save an entity's position on the stack.
+ * @param ent q2java.NativeEntity
+ */
+protected void pushPosition(NativeEntity ent) 
+	{
+	fPositionStack.addElement(ent.getOrigin());
+	fPositionStack.addElement(ent.getAngles());
+	fPositionStack.addElement(ent.getPlayerDeltaAngles());
+	fPositionStack.addElement(ent);
 	}
 /**
  * This method was created by a SmartGuide.
@@ -418,33 +431,48 @@ public void runFrame(int phase)
 	// if not a team captain, so movement will be handled elsewhere	
 	if (isGroupSlave())
 		return;
+		
+	// clear the position stack
+	fPositionStack.setSize(0);
+	fObstacle = null;
 
-try
-	{
-	// try to push the group Master
-	if (!push())
-		return;
-			
-			
-	// make sure all team slaves can move before commiting
-	// any moves or calling any think functions
-	// if the move is blocked, all moved objects will be backed out
-	if (fGroup != null)
+	try
 		{
-		for (int i = 1; i < fGroup.size(); i++)
+		// try to push the group Master
+		boolean pushOK = push();
+			
+			
+		// make sure all team slaves can move before commiting
+		// any moves or calling any think functions
+		// if the move is blocked, all moved objects will be backed out
+		if (pushOK && (fGroup != null))
 			{
-			GenericPusher slave  = (GenericPusher) fGroup.elementAt(i);			
-			if (!slave.push())
-				break;
+			for (int i = 1; pushOK && (i < fGroup.size()); i++)
+				{
+				GenericPusher slave  = (GenericPusher) fGroup.elementAt(i);
+				pushOK = slave.push();
+				}
+			}
+
+		if (!pushOK)
+			{
+			if (fObstacle != null)
+				{
+				block(fObstacle);
+				fObstacle = null;
+				}
+			return;
 			}
 		}
-	}
-catch (Exception e)
-	{
-	System.out.println("Exception in : " + this);
-	e.printStackTrace();	
-	}
-		
+	catch (Exception e)
+		{
+		System.out.println("Exception in : " + this);
+		e.printStackTrace();	
+		}
+	
+	// clear the position stack
+	fPositionStack.setSize(0);
+
 /*					
 //retry:
 	pushed_p = pushed;
@@ -623,14 +651,18 @@ protected void syncGroupSpeed()
 		}		
 	}
 /**
- * This method was created by a SmartGuide.
- * @return q2java.NativeEntity
- * @param ent q2java.NativeEntity
+ * Check if an entity intersects with something else.
+ * @return Entity intersected with.
+ * @param ent Entity being checked.
  */
 protected static GameObject testEntityPosition(NativeEntity ent) 
 	{
+	int mask = ent.getClipmask();
+	if (mask == 0)
+		mask = Engine.MASK_SOLID;
+		
 	Point3f origin = ent.getOrigin();
-	TraceResults tr = Engine.trace(origin, ent.getMins(), ent.getMaxs(), origin, ent, Engine.MASK_SOLID);
+	TraceResults tr = Engine.trace(origin, ent.getMins(), ent.getMaxs(), origin, ent, mask);
 	if (tr.fStartSolid)
 		return GameModule.gWorld;
 		

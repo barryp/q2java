@@ -87,6 +87,15 @@ public abstract class GenericFlag extends baseq2.GenericItem implements baseq2.G
 
 		reset();
 	}
+/**
+ * Override baseq2.GameObject.becomeExplosion() to prevent flags from being destroyed.
+ *
+ * @param tempEntity effect to display, usually Engine.TE_EXPLOSION1 or
+ *  Engine.TE_EXPLOSION2
+ */
+public void becomeExplosion(int tempEntity) 
+	{
+	}
 	public void drop(baseq2.Player dropper, float timeout)
 	{
 		// drop it and say it was lost

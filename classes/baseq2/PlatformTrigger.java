@@ -36,6 +36,7 @@ public PlatformTrigger(baseq2.spawn.func_plat target, Tuple3f mins, Tuple3f maxs
  */
 public void touch(Player touchedBy) 
 	{
-	fOwner.raise();
+	if (fOwner.isLowered())
+		fOwner.raise();
 	}
 }

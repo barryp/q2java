@@ -45,7 +45,7 @@ CFG=game - Win32 Debug Alpha
 # PROP Target_Dir "."
 CPP=cl.exe
 # ADD BASE CPP /nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /YX /c
-# ADD CPP /nologo /G5 /W3 /GX /Zd /O2 /I "c:\jdk\include" /I "c:\jdk\include\win32" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /FR /YX /FD /c
+# ADD CPP /nologo /G5 /W3 /GX /Zd /O2 /I "d:\jdk1.2\include" /I "d:\jdk1.2\include\win32" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /FR /YX /FD /c
 MTL=midl.exe
 # ADD BASE MTL /nologo /D "NDEBUG" /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
@@ -57,7 +57,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo /o".\Release/q2java.bsc"
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /dll /machine:I386
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winmm.lib c:\jdk\lib\javai.lib /nologo /base:"0x20000000" /subsystem:windows /dll /pdb:".\Release/gamex86.pdb" /machine:I386 /out:"..\..\gamex86.dll" /implib:".\Release/gamex86.lib"
+# ADD LINK32 advapi32.lib kernel32.lib user32.lib gdi32.lib winmm.lib /nologo /base:"0x20000000" /subsystem:windows /dll /pdb:".\Release/gamex86.pdb" /machine:I386 /out:"..\..\gamex86.dll" /implib:".\Release/gamex86.lib"
 # SUBTRACT LINK32 /pdb:none
 
 !ELSEIF  "$(CFG)" == "game - Win32 Debug"
@@ -237,6 +237,21 @@ SOURCE=..\player.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\properties.c
+
+!IF  "$(CFG)" == "game - Win32 Release"
+
+!ELSEIF  "$(CFG)" == "game - Win32 Debug"
+
+!ELSEIF  "$(CFG)" == "game - Win32 Debug Alpha"
+
+!ELSEIF  "$(CFG)" == "game - Win32 Release Alpha"
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
 SOURCE=..\q2java_ConsoleOutputStream.c
 
 !IF  "$(CFG)" == "game - Win32 Release"
@@ -297,6 +312,21 @@ SOURCE=..\q2java_NativeEntity.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\q2string.c
+
+!IF  "$(CFG)" == "game - Win32 Release"
+
+!ELSEIF  "$(CFG)" == "game - Win32 Debug"
+
+!ELSEIF  "$(CFG)" == "game - Win32 Debug Alpha"
+
+!ELSEIF  "$(CFG)" == "game - Win32 Release Alpha"
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
 SOURCE=..\win32dll.def
 # End Source File
 # End Group
@@ -313,6 +343,10 @@ SOURCE=..\javalink.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\properties.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\q2java_ConsoleOutputStream.h
 # End Source File
 # Begin Source File
@@ -326,6 +360,10 @@ SOURCE=..\q2java_Engine.h
 # Begin Source File
 
 SOURCE=..\q2java_NativeEntity.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\q2string.h
 # End Source File
 # Begin Source File
 

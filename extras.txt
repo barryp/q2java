@@ -7,6 +7,12 @@ command line with a command like:
 
     quake2 +set game q2java +set q2jgame_modules <module>+baseq2
     
+Or in a properties file with lines like:
+
+    q2java.module.1=baseq2
+    q2java.module.2=<module> <alias-name>
+    q2java.module.3=<module> <alias-name>    
+    
 or in some cases while the game is running with a console command like:
 
     sv addmodule <module> [<alias-name>]
@@ -52,8 +58,8 @@ The <module>'s are:
     barryp.flashgrenade
     
         Replaces the baseq2.HandGrenade class to add the extra behavior
-        of temporarily blinding enemies if they're looking in the direction 
-        of the explosion.        
+        of temporarily blinding enemies - based on how far they are
+        from the explosion, and what direction they're looking.
 
     barryp.paranoia
     
@@ -86,8 +92,62 @@ The <module>'s are:
 
     barryp.telnet
 
-        Allows telnet or MUD clients to act as remote consoles. (usage is         
-        covered in the main q2java05.txt file)
+        Allows telnet or MUD clients to act as remote consoles. 
+        
+        To enable the telnet server you'll have to set the game
+        to run at either security level 0 or 1, the default level
+        of 2 will prevent the Telnet server from running.  
+        
+        For JDK 1.2, you'll need to edit your security policy file to 
+        allow access to some network ports.  The sample policy file 
+        contains a commented-out line showing what's necessary
+        
+        This is one of the oldest modules, and configuration is a bit 
+        awkward.  It really needs to be reworked to take advantage of 
+        the new property file support added with Q2Java 0.7.  What 
+        follows are the old instructions for usage....
+        
+            ----------------------
+        
+        You can load the Telnet server package at the command line
+        with a statement such as:
+
+            +set q2jgame_modules barryp.telnet+baseq2
+
+        To actually start a server session, set the port you want to 
+        run the server on (for example: 1200) at the command line with 
+        the option:
+
+            +set telnet_port 1200
+
+        where <n> is a port number (greater than 1023 if in security level 1)
+
+        You can password-protect (for example, the password: foobar) the 
+        Telnet server with the option:
+
+            +set telnet_password foobar
+
+        You can also load the Telnet server package and start a session
+        after the game has started, by typing on the console:
+
+            sv addpackage barryp.telnet
+            sv telnet_start 1200 -pass foobar
+       
+        The Telnet server will relay all Game output to any number of
+        connected telnet clients, and allow the client to send chat
+        messages or issue commands to the game.
+
+        Unfortunately, the Telnet server has no way to intercept
+        output from the Quake2.exe itself, so it's not -quite-
+        a perfect remote console..but it's still useful, especially
+        for debugging.  MUD clients work well with the server, since
+        they usually have large scrollback buffers, and separate
+        input and output windows.
+
+        If you're using a stock Telnet client, turn the "local-echo"
+        feature on to see what you're typing. MUD clients usually operate
+        this way by default.
+        
 
     barryp.testbot
 
@@ -100,8 +160,8 @@ The <module>'s are:
         single-player mode) in order to spawn bots.  Once the game is 
         started, drop down the console and type something like:
 
-            sv addmodule barryp.testbot fred             sv.addmodule 
-            barryp.testbot barney
+            sv addmodule barryp.testbot fred             
+            sv.addmodule barryp.testbot barney
 
         to create a bots named "fred" and "barney".  They will be standing         
         on map spawnpoints (finding them bot can be a pain on some maps), 
@@ -144,8 +204,7 @@ The <module>'s are:
         talk*.properties to see which locales are currently supported, and 
         feel free to create your own.            
         
-        To cause the bot to speak, injure it (although you have to aim 
-        somewhere above the head to hit it - there's a bug there)
+        To cause the bot to speak, injure it
         
 ------------------------------------        
 

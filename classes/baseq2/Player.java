@@ -296,9 +296,9 @@ public class Player extends GameObject implements FrameListener, PlayerListener,
  * Create a new Player Game object, and associate it with a Player
  * native entity.
  */
-public Player(NativeEntity ent, boolean loadgame) throws GameException
+public Player(NativeEntity ent) throws GameException
 	{
-	Engine.debugLog("baseq2.Player.<ctor>(" + ent + ", " + loadgame + ")");
+	Engine.debugLog("baseq2.Player.<ctor>(" + ent + ")");
 
 	fEntity = ent;
 	fEntity.setPlayerListener(this);
@@ -1709,10 +1709,10 @@ public void cmd_weapsetorder(String[] argv, String args)
  * @param playerInfo java.lang.String
  * @param loadgame boolean
  */
-public static void connect(NativeEntity ent, boolean loadgame) throws GameException
+public static void connect(NativeEntity ent) throws GameException
 	{
-	Engine.debugLog("baseq2.Player.connect(" + ent + ", " + loadgame + ")");
-	new Player(ent, loadgame);
+	Engine.debugLog("baseq2.Player.connect(" + ent + ")");
+	new Player(ent);
 	}
 /**
  * Inflict damage on the Player.
@@ -2556,9 +2556,9 @@ protected void notifyPlayerStateListeners(int changeEvent)
  * Called by the DLL when the player should begin playing in the game.
  * @param loadgame boolean
  */
-public void playerBegin(boolean loadgame) 
+public void playerBegin() 
 	{
-	Engine.debugLog("Player.begin(" + loadgame + ")");
+	Engine.debugLog("Player.begin()");
 
 	fStartTime = (float) Game.getGameTime();	
 	
@@ -3331,6 +3331,19 @@ protected void spawn()
 	killBox();
 	fEntity.linkEntity();			
 
+	// restore the player's FOV, it's changed at intermission, this should 
+	// set it back to the player's preference 
+	String fov = (String) fPlayerInfo.get("fov");
+	try
+		{
+		if (fov != null)
+			fEntity.setPlayerFOV(Float.valueOf(fov).floatValue());
+		}
+	catch (Exception e)
+		{
+		fEntity.cprint(Engine.PRINT_HIGH, e.getMessage());
+		}
+		
 	closeDisplay();
 	}
 /**

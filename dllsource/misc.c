@@ -52,7 +52,7 @@ void Misc_javaInit()
     {
     jmethodID method_PlayerCmd_ctor;
 
-    debugLog("in Misc_javaInit()\n");
+    javalink_debug("Misc_javaInit() starting\n");
 
     class_Throwable = (*java_env)->FindClass(java_env, "java/lang/Throwable");
     if (!class_Throwable)
@@ -124,7 +124,7 @@ void Misc_javaInit()
     method_Angle3f_ctor = (*java_env)->GetMethodID(java_env, class_Angle3f, "<init>", "(FFF)V");        
     if (CHECK_EXCEPTION() || !method_Angle3f_ctor)
         {
-        java_error = "Couldn't find q2java.Angle3 constructor method\n";
+        java_error = "Couldn't find q2java.Angle3f constructor method\n";
         return;
         }
 
@@ -183,11 +183,13 @@ void Misc_javaInit()
         java_error = "Couldn't create instance of q2java.PlayerCmd\n";
         return;
         }
+
+    javalink_debug("Misc_javaInit() finished\n");
     }
 
 
 // drop our local references
-void Misc_javaFinalize()
+void Misc_javaDetach()
     {
     (*java_env)->DeleteLocalRef(java_env, class_Throwable);
     (*java_env)->DeleteLocalRef(java_env, class_Tuple3f);
@@ -241,7 +243,7 @@ void enableSecurity(int level)
         return;
         }
 
-    jsGameDir = (*java_env)->NewStringUTF(java_env, java_gameDirName);
+    jsGameDir = (*java_env)->NewStringUTF(java_env, javalink_gameDirName);
 
     object_security_manager = (*java_env)->NewObject(java_env, class_Q2JavaSecurityManager, method_Q2JavaSecurityManager_ctor, level, jsGameDir);
     if (CHECK_EXCEPTION() || !object_security_manager)
@@ -276,7 +278,7 @@ void enableSecurity(int level)
     (*java_env)->DeleteLocalRef(java_env, object_security_manager);
     (*java_env)->DeleteLocalRef(java_env, jsGameDir);
 
-    debugLog("setSecurity() finished ok\n");
+    javalink_debug("setSecurity() finished ok\n");
     }
 
 
@@ -314,7 +316,7 @@ jobject newPMoveResults(pmove_t pm)
     if (!pm.groundentity)
         groundEnt = 0;
     else
-        groundEnt = Entity_getEntity(pm.groundentity - ge.edicts);
+        groundEnt = Entity_getEntity(pm.groundentity - q2java_ge.edicts);
 
     return (*java_env)->NewObject(java_env, class_PMoveResults, method_PMoveResults_ctor,
         touched, pm.viewheight, groundEnt, pm.watertype, pm.waterlevel);
@@ -344,7 +346,7 @@ jobject newTraceResults(trace_t result)
         resSurfaceValue = result.surface->value;
         }
 
-    resEnt = Entity_getEntity(result.ent - ge.edicts);
+    resEnt = Entity_getEntity(result.ent - q2java_ge.edicts);
 
     return (*java_env)->NewObject(java_env, class_TraceResults, method_TraceResults_ctor, 
         result.allsolid, result.startsolid, result.fraction, resEndpos, resPlaneNormal, 
@@ -375,7 +377,7 @@ static char *translateTable = "AAAAAA*CEEEEIIIIDNOOOOOxOUUUUY*saaaaaa*ceeeeiiii*
 
 // convert a Java string (which is Unicode) to reasonable
 // 7-bit ASCII
-// Be sure to gi.TagFree() the result when finished.
+// Be sure to q2java_gi.TagFree() the result when finished.
 char *convertJavaString(jstring jstr)
     {
     jsize jStrLen;
@@ -385,7 +387,7 @@ char *convertJavaString(jstring jstr)
     char *p;
     
     jStrLen = (*java_env)->GetStringLength(java_env, jstr);
-    p = result = gi.TagMalloc(jStrLen + 1, TAG_GAME);
+    p = result = q2java_gi.TagMalloc(jStrLen + 1, TAG_GAME);
     unicodeChars = (*java_env)->GetStringChars(java_env, jstr, NULL);
 
     for (i = 0; i < jStrLen; i++)

@@ -99,6 +99,26 @@ public void applyGravity()
 	fEntity.setVelocity(v);
 	}
 /**
+ * Get rid of the object by exploding it.
+ *
+ * @param tempEntity effect to display, usually Engine.TE_EXPLOSION1 or
+ *  Engine.TE_EXPLOSION2
+ */
+public void becomeExplosion(int tempEntity) 
+	{
+	if (fEntity == null)
+		return;
+		
+	Point3f origin = fEntity.getOrigin();
+	
+	Engine.writeByte(Engine.SVC_TEMP_ENTITY);
+	Engine.writeByte(tempEntity);
+	Engine.writePosition(origin);
+	Engine.multicast(origin, Engine.MULTICAST_PVS);
+
+	dispose();
+	}
+/**
  * This method points the Player view at it's killer. (?)
  * @param inflictor The thing that killed the player. (?)
  * @param attacker The player/monster/machine that used the <SAMP>inflictor</SAMP> to kill the Player. (?)

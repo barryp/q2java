@@ -3,15 +3,16 @@
 
 #include <jni.h>
 
+// global variables
 extern JNIEnv *java_env;
 extern char *java_error;
 extern char *javalink_version;
+extern char *javalink_gameDirName;
 
 // global functions
-extern char java_gameDirName[];
-void debugLog(const char *msg, ...);
-void startJava();
-void stopJava();
-
+void javalink_debug(const char *msg, ...);
+void javalink_property(const char *name, const char *value);
+void javalink_start();
+void javalink_stop();
 
 #endif

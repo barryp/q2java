@@ -32,11 +32,11 @@ public class func_plat extends GenericPusher
 	private int fSoundEnd;	
 	
 	// door state constants		
-	private final static int STATE_PLAT_LOWERING = 1;
-	private final static int STATE_PLAT_LOWERED = 2;
-	private final static int STATE_PLAT_RAISING = 3;
-	private final static int STATE_PLAT_RAISED = 4;	
-	private final static int STATE_PLAT_RAISEDWAIT = 5;	
+	private final static int STATE_PLAT_LOWERING	= 1;
+	private final static int STATE_PLAT_LOWERED		= 2;
+	private final static int STATE_PLAT_RAISING		= 3;
+	private final static int STATE_PLAT_RAISED		= 4;	
+	private final static int STATE_PLAT_RAISEDWAIT	= 5;	
 	
 	private final static int PLAT_LOW_TRIGGER	= 1;	
 	
@@ -83,6 +83,39 @@ public func_plat(String[] spawnArgs) throws GameException
 	fSoundStart = Engine.getSoundIndex("plats/pt1_strt.wav");
 	fSoundMiddle = Engine.getSoundIndex("plats/pt1_mid.wav");
 	fSoundEnd = Engine.getSoundIndex("plats/pt1_end.wav");	
+	}
+/**
+ * Called when the GenericPusher is blocked by another object.
+ * @param obj The GameObject that's in the way.
+ */
+public void block(GameObject obj) 
+	{
+	Vector3f origin = new Vector3f();
+
+	if (!(obj instanceof Player))
+		{
+		// give it a chance to go away on it's own terms (like gibs)
+		obj.damage(this, this, origin, obj.fEntity.getOrigin(), origin, 100000, 1, 0, 0, "crush");
+		// if it's still there, nuke it
+		if (obj.fEntity != null)
+			obj.becomeExplosion(Engine.TE_EXPLOSION1);
+		return;		
+		}
+	
+	obj.damage(this, this, origin, obj.fEntity.getOrigin(), origin, (int)fDmg, 1, 0, 0, "crush");
+
+	if (fPlatState == STATE_PLAT_RAISING)
+		lower();
+	else
+		raise();
+	}
+/**
+ * Is the plat resting at the bottom of it's shaft.
+ * @return boolean
+ */
+public boolean isLowered() 
+	{
+	return fPlatState == STATE_PLAT_LOWERED;
 	}
 /**
  * This method was created by a SmartGuide.

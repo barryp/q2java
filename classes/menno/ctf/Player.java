@@ -180,9 +180,9 @@ public class Player extends baseq2.Player implements CameraListener
 	* The constructor is called every time a player connects to the server.
 	* It sets some local vars which are consistent during the entire game.
 	**/
-	public Player(NativeEntity ent, boolean loadgame) throws GameException
+	public Player(NativeEntity ent) throws GameException
 	{
-		super( ent, loadgame );
+		super( ent );
 		
 		// make sure the grapple VWep skin is cached before we set the player's skin
 		baseq2.GenericWeapon.precacheVWep(".spawn.weapon_grapple");
@@ -533,9 +533,9 @@ public class Player extends baseq2.Player implements CameraListener
 	 * @param playerInfo java.lang.String
 	 * @param loadgame boolean
 	 */
-	public static void connect(NativeEntity ent, boolean loadgame) throws GameException
+	public static void connect(NativeEntity ent) throws GameException
 	{
-		new Player(ent, loadgame);
+		new Player(ent);
 	}
 	/**
 	 * Disassociate the CTF player object from the rest 
@@ -598,10 +598,10 @@ public boolean isTeammate(baseq2.Player p)
  * Called by the DLL when the player should begin playing in the game.
  * @param loadgame boolean
  */
-public void playerBegin(boolean loadgame) 
+public void playerBegin() 
 	{
 	fUseTeamSpawnpoint = true;
-	super.playerBegin(loadgame);
+	super.playerBegin();
 	}
 	/**
 	 * All player entities get a chance to think.  When

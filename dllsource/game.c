@@ -42,6 +42,7 @@ void Game_javaInit()
     levelFrameCounter = 0;
     levelTickCounter = 0;
 #endif
+    javalink_debug("Game_javaInit() started\n");
 
     interface_GameListener = (*java_env)->FindClass(java_env, "q2java/GameListener");
     if (CHECK_EXCEPTION() || !interface_GameListener)
@@ -50,7 +51,7 @@ void Game_javaInit()
         return;
         }
 
-    gameclass_cvar = gi.cvar("q2java_game", "q2jgame.Game", CVAR_NOSET);
+    gameclass_cvar = q2java_gi.cvar("q2java_game", "q2jgame.Game", CVAR_NOSET);
 
     // convert classname to the strange internal format Java
     // uses, where the periods are replaced with
@@ -81,7 +82,7 @@ void Game_javaInit()
     method_GameListener_init = (*java_env)->GetMethodID(java_env, class_Game, "init", "()V");
     method_GameListener_shutdown = (*java_env)->GetMethodID(java_env, class_Game, "shutdown", "()V");
     method_GameListener_startLevel = (*java_env)->GetMethodID(java_env, class_Game, "startLevel", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V");
-    method_GameListener_writeGame = (*java_env)->GetMethodID(java_env, class_Game, "writeGame", "(Ljava/lang/String;)V");
+    method_GameListener_writeGame = (*java_env)->GetMethodID(java_env, class_Game, "writeGame", "(Ljava/lang/String;Z)V");
     method_GameListener_readGame = (*java_env)->GetMethodID(java_env, class_Game, "readGame", "(Ljava/lang/String;)V");
     method_GameListener_writeLevel = (*java_env)->GetMethodID(java_env, class_Game, "writeLevel", "(Ljava/lang/String;)V");
     method_GameListener_readLevel = (*java_env)->GetMethodID(java_env, class_Game, "readLevel", "(Ljava/lang/String;)V");
@@ -89,7 +90,7 @@ void Game_javaInit()
     method_GameListener_serverCommand = (*java_env)->GetMethodID(java_env, class_Game, "serverCommand", "()V");
     method_GameListener_getPlayerClass = (*java_env)->GetMethodID(java_env, class_Game, "getPlayerClass", "()Ljava/lang/Class;");
     method_GameListener_consoleOutput = (*java_env)->GetMethodID(java_env, class_Game, "consoleOutput", "(Ljava/lang/String;)V");
-    method_GameListener_playerConnect = (*java_env)->GetMethodID(java_env, class_Game, "playerConnect", "(Lq2java/NativeEntity;Z)V");
+    method_GameListener_playerConnect = (*java_env)->GetMethodID(java_env, class_Game, "playerConnect", "(Lq2java/NativeEntity;)V");
     method_GameListener_ctor = (*java_env)->GetMethodID(java_env, class_Game, "<init>", "()V");
     if (CHECK_EXCEPTION())
         {
@@ -103,10 +104,12 @@ void Game_javaInit()
         java_error = "Couldn't create instance of game object\n";
         return;
         }
+
+    javalink_debug("Game_javaInit() finished\n");
     }
 
 
-void Game_javaFinalize()
+void Game_javaDetach()
     {
     (*java_env)->DeleteLocalRef(java_env, class_Game);
     (*java_env)->DeleteLocalRef(java_env, object_Game);
@@ -133,9 +136,9 @@ void Game_consoleOutput(const char *msg)
     (*java_env)->DeleteLocalRef(java_env, jmsg);
     }
 
-int Game_playerConnect(jobject ent, int loadgame)
+int Game_playerConnect(jobject ent)
     {
-    (*java_env)->CallVoidMethod(java_env, object_Game, method_GameListener_playerConnect, ent, loadgame);
+    (*java_env)->CallVoidMethod(java_env, object_Game, method_GameListener_playerConnect, ent);
     return CHECK_EXCEPTION();
     }
 
@@ -161,9 +164,9 @@ static void java_shutdown(void)
 
     // clear up Player java objects
     for (i = 1; i < global_maxClients + 1; i++)
-        if (ge.edicts[i].inuse)
+        if (q2java_ge.edicts[i].inuse)
             {
-            client = ge.edicts[i].client;
+            client = q2java_ge.edicts[i].client;
             if (client->listener)
                 {
                 (*java_env)->DeleteGlobalRef(java_env, client->listener);
@@ -178,8 +181,8 @@ static void java_shutdown(void)
             }
 
 
-    stopJava();
-    gi.FreeTags (TAG_GAME);
+    javalink_stop();
+    q2java_gi.FreeTags (TAG_GAME);
     }
 
 
@@ -190,6 +193,8 @@ static void java_startLevel(char *mapname, char *entString, char *spawnpoint)
     jstring jspawnpoint;
 
     Entity_arrayReset();
+
+    Engine_startLevel();  // so the Engine class can track VWep indexes properly
 
     jmapname = (*java_env)->NewStringUTF(java_env, mapname);
     jentString = (*java_env)->NewStringUTF(java_env, entString);
@@ -211,12 +216,12 @@ static void java_startLevel(char *mapname, char *entString, char *spawnpoint)
     }
 
 
-static void java_writeGame(char *filename)
+static void java_writeGame(char *filename, int autosave)
     {
     jstring jfilename;
 
     jfilename = (*java_env)->NewStringUTF(java_env, filename);
-    (*java_env)->CallVoidMethod(java_env, object_Game, method_GameListener_writeGame, jfilename);
+    (*java_env)->CallVoidMethod(java_env, object_Game, method_GameListener_writeGame, jfilename, autosave);
     CHECK_EXCEPTION();
 
     (*java_env)->DeleteLocalRef(java_env, jfilename);
@@ -283,10 +288,10 @@ static void java_runFrame(void)
 static void java_serverCommand(void)
     {
 #ifdef _WIN32
-    if (!strcmp(gi.argv(1), "time"))
+    if (!strcmp(q2java_gi.argv(1), "time"))
         {
         double msec = (levelTickCounter / levelFrameCounter) / ticksPerMillisecond;
-        gi.dprintf(" DLL: %.0f ticks, %d frames, %.3f ticks/msec, %.3f msec/frame average\n", (float) levelTickCounter, levelFrameCounter, ticksPerMillisecond, msec);
+        q2java_gi.dprintf(" DLL: %.0f ticks, %d frames, %.3f ticks/msec, %.3f msec/frame average\n", (float) levelTickCounter, levelFrameCounter, ticksPerMillisecond, msec);
         levelTickCounter = 0;
         levelFrameCounter = 0;
         }
@@ -301,15 +306,15 @@ static void java_serverCommand(void)
 
 void Game_gameInit()
     {
-    ge.Init = java_init;
-    ge.Shutdown = java_shutdown;
-    ge.SpawnEntities = java_startLevel;
+    q2java_ge.Init = java_init;
+    q2java_ge.Shutdown = java_shutdown;
+    q2java_ge.SpawnEntities = java_startLevel;
 
-    ge.WriteGame = java_writeGame;
-    ge.ReadGame = java_readGame;
-    ge.WriteLevel = java_writeLevel;
-    ge.ReadLevel = java_readLevel;
+    q2java_ge.WriteGame = java_writeGame;
+    q2java_ge.ReadGame = java_readGame;
+    q2java_ge.WriteLevel = java_writeLevel;
+    q2java_ge.ReadLevel = java_readLevel;
 
-    ge.RunFrame = java_runFrame;
-    ge.ServerCommand = java_serverCommand;
+    q2java_ge.RunFrame = java_runFrame;
+    q2java_ge.ServerCommand = java_serverCommand;
     }

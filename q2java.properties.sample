@@ -1,0 +1,68 @@
+#
+# Sample Properties for Q2Java 0.7 or later
+#
+# (comments begin with a '#')
+#
+
+#
+# Force the DLL to use a specific VM (Win32 only)
+#
+#q2java_vmdll=c:\jdk1.1.7b\bin\javai.dll
+#
+# The newest MS Java with JNI support will load as long as you 
+# copy the q2java\classes directory to <windows>\java\classes
+# but it crashes pretty quickly
+#q2java_vmdll=c:\winnt\system32\msjava.dll
+
+
+# Force a specific security setting
+#
+# For JDK 1.1
+#   0 = no security - everything's wide open
+#   1 = file access limited to <gamedir>\sandbox directory,
+#       network access limited to ports > 1023
+#   2 = file access limited to <gamedir>\sandbox directory,
+#       network access denied
+#
+# For JDK 1.2
+#   0 = no default security enabled - but it can still
+#       be enabled by setting the VM properties yourself,
+#       such as:
+#
+#            java.security.manager
+#            java.security.policy=file:/c:/quake2/test.policy
+#
+#   1 = <gamedir>\q2java.policy Security file enabled
+#   2 = (same as 1)
+#   <filename> = loads the specified security policy
+#
+# If nothing is specified, then level "2" is assumed
+#
+#q2java_security=0
+#q2java_security=c:\quake2\q2java\test.policy
+
+
+#
+# Enable DebugLog - values can either be a filename, or
+# just "1" to enable the default debuglog <gamedir>\q2java_debug.log
+#
+#q2java_debuglog=c:\quake2\q2java\q2java_debug.log
+#q2java_debuglog=1
+
+#
+# Include another properties file
+#
+#q2java_include=c:\quake2\q2java\paranoia.properties
+
+
+#
+# use a specific classpath instead of the default one
+#
+#java.class.path=c:\quake2\q2java\classes;
+#java.class.path=/usr/local/java/jdk117_v1a/lib/classes.zip:/usr/local/games/quake2/q2java/classes
+
+#
+# Load Modules at startup
+#
+#q2java.module.1=baseq2
+#q2java.module.2=barryp.flashgrenade flash

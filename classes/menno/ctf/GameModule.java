@@ -55,7 +55,7 @@ public class GameModule extends q2jgame.GameModule implements LevelListener
 				bp.dispose();
 
 				// create a new CTF player object
-				menno.ctf.Player p = new menno.ctf.Player(ent, false);
+				menno.ctf.Player p = new menno.ctf.Player(ent);
 //				p.playerBegin(false);
 			}
 			catch (Exception e)
@@ -125,7 +125,7 @@ public class GameModule extends q2jgame.GameModule implements LevelListener
 					p.dispose();
 
 					// replace with a baseq2.Player
-					baseq2.Player bp = new baseq2.Player(ent, false);
+					baseq2.Player bp = new baseq2.Player(ent);
 //					bp.playerBegin(false);
 				}
 			}

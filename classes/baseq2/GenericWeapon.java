@@ -62,7 +62,7 @@ public GenericWeapon()
 	setAmmoCount(getDefaultAmmoCount());
 	
 	// precache VWep
-	fVWepIndex = Game.getVWepIndex(getIconName());	
+	fVWepIndex = Engine.getVWepIndex(getIconName());
 	}
 /**
  * Construct a weapon with map spawn arguments
@@ -76,8 +76,8 @@ public GenericWeapon(String[] spawnArgs) throws GameException
 	setAmmoCount(getDefaultAmmoCount());
 	
 	// precache VWep
-	fVWepIndex = Game.getVWepIndex(getIconName());	
-
+	fVWepIndex = Engine.getVWepIndex(getIconName());
+	
 	// precache weapon sound
 	String ws = getWeaponSound();
 	if (ws != null)

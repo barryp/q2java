@@ -43,6 +43,10 @@
 
 #define FLOAT_CLIENT_PS_FOV     100
 #define FLOAT_CLIENT_PS_BLEND   101     
+#define FLOAT_CLIENT_PS_BLEND_R 102
+#define FLOAT_CLIENT_PS_BLEND_G 103
+#define FLOAT_CLIENT_PS_BLEND_B 104
+#define FLOAT_CLIENT_PS_BLEND_A 105
 
 #define VEC3_S_ORIGIN       0
 #define VEC3_S_ANGLES       1
@@ -104,6 +108,7 @@ static JNINativeMethod Entity_methods[] =
 
     // methods for players only
     {"pMove0",          "(IBBSSSSSSBBI)Lq2java/PMoveResults;",   Java_q2java_NativeEntity_pMove0},
+    {"getFloat",        "(II)F",                    Java_q2java_NativeEntity_getFloat},
     {"setFloat0",       "(IIFFFF)V",                Java_q2java_NativeEntity_setFloat0},
     {"setStat0",        "(IIS)V",                   Java_q2java_NativeEntity_setStat0},
     {"cprint0",         "(IILjava/lang/String;)V",  Java_q2java_NativeEntity_cprint0},
@@ -139,7 +144,7 @@ void Entity_javaInit()
 
 
 
-void Entity_javaFinalize()
+void Entity_javaDetach()
     {
     if (class_NativeEntity)
         (*java_env)->UnregisterNatives(java_env, class_NativeEntity);
@@ -156,14 +161,14 @@ void Entity_arrayInit()
     cvar_t *cvar_maxentities;
     int i;
 
-    debugLog("Entity_arrayInit() start\n");
+    javalink_debug("Entity_arrayInit() start\n");
 
-    cvar_maxentities = gi.cvar("maxentities", "1024", CVAR_LATCH);
-    ge.max_edicts = (int)(cvar_maxentities->value);
-    ge.edicts = gi.TagMalloc(ge.max_edicts * sizeof(edict_t), TAG_GAME);
+    cvar_maxentities = q2java_gi.cvar("maxentities", "1024", CVAR_LATCH);
+    q2java_ge.max_edicts = (int)(cvar_maxentities->value);
+    q2java_ge.edicts = q2java_gi.TagMalloc(q2java_ge.max_edicts * sizeof(edict_t), TAG_GAME);
 
     // Create a Java NativeEntity array the same size
-    ja = (*java_env)->NewObjectArray(java_env, ge.max_edicts, class_NativeEntity, 0);
+    ja = (*java_env)->NewObjectArray(java_env, q2java_ge.max_edicts, class_NativeEntity, 0);
     (*java_env)->SetStaticObjectField(java_env, class_NativeEntity, field_NativeEntity_gEntityArray, ja);
     CHECK_EXCEPTION();
 
@@ -171,27 +176,27 @@ void Entity_arrayInit()
     (*java_env)->DeleteLocalRef(java_env, ja);
 
     // make a C array for client info 
-    debugLog("Creating client array\n");
-    cvar_maxclients = gi.cvar ("maxclients", "4", CVAR_SERVERINFO | CVAR_LATCH);
+    javalink_debug("Creating client array\n");
+    cvar_maxclients = q2java_gi.cvar ("maxclients", "4", CVAR_SERVERINFO | CVAR_LATCH);
     global_maxClients = (int) (cvar_maxclients->value);
-    global_clients = gi.TagMalloc(global_maxClients * sizeof(gclient_t), TAG_GAME);
+    global_clients = q2java_gi.TagMalloc(global_maxClients * sizeof(gclient_t), TAG_GAME);
 
     // let Java know how big it is
     (*java_env)->SetStaticIntField(java_env, class_NativeEntity, field_NativeEntity_gMaxPlayers, global_maxClients);
     CHECK_EXCEPTION();
 
     // link the two C arrays together
-    debugLog("Linking C arrays\n");
+    javalink_debug("Linking C arrays\n");
     for (i = 0; i < global_maxClients; i++)
-        ge.edicts[i+1].client = global_clients + i;
+        q2java_ge.edicts[i+1].client = global_clients + i;
 
     // note in C and Java how many entities are used so far
-    debugLog("setting counters\n");
-    ge.num_edicts = global_maxClients + 1; 
-    (*java_env)->SetStaticIntField(java_env, class_NativeEntity, field_NativeEntity_gNumEntities, ge.num_edicts);
+    javalink_debug("setting counters\n");
+    q2java_ge.num_edicts = global_maxClients + 1; 
+    (*java_env)->SetStaticIntField(java_env, class_NativeEntity, field_NativeEntity_gNumEntities, q2java_ge.num_edicts);
     CHECK_EXCEPTION();
 
-    debugLog("Entity_arrayInit() finished\n");
+    javalink_debug("Entity_arrayInit() finished\n");
     }
 
 
@@ -206,37 +211,37 @@ void Entity_arrayReset()
     int i;
     float fov;
 
-    debugLog("Clearing existing arrays\n");
+    javalink_debug("Clearing existing arrays\n");
 
     // get a local reference to the Java array
     ja = (*java_env)->GetStaticObjectField(java_env, class_NativeEntity, field_NativeEntity_gEntityArray);
 
     // clear worldspawn entity
-    memset(ge.edicts, 0, sizeof (ge.edicts[0])); 
+    memset(q2java_ge.edicts, 0, sizeof (q2java_ge.edicts[0])); 
     (*java_env)->SetObjectArrayElement(java_env, ja, 0, 0);
 
     // clear player entities, except for inuse flags and fov
     // (leave java objects alone)
     for (i = 0; i < global_maxClients; i++)
         {
-        inuse = ge.edicts[i+1].inuse;
-        jobj = ge.edicts[i+1].client->listener;
-        jstr = ge.edicts[i+1].client->playerInfo;
-        fov = ge.edicts[i+1].client->ps.fov;
+        inuse = q2java_ge.edicts[i+1].inuse;
+        jobj = q2java_ge.edicts[i+1].client->listener;
+        jstr = q2java_ge.edicts[i+1].client->playerInfo;
+        fov = q2java_ge.edicts[i+1].client->ps.fov;
 
-        memset(ge.edicts + i + 1, 0, sizeof(ge.edicts[0]));
+        memset(q2java_ge.edicts + i + 1, 0, sizeof(q2java_ge.edicts[0]));
         memset(global_clients + i, 0, sizeof(global_clients[0]));
 
-        ge.edicts[i+1].client = global_clients + i;
-        ge.edicts[i+1].inuse = inuse;
-        ge.edicts[i+1].client->listener = jobj;
-        ge.edicts[i+1].client->playerInfo = jstr;
-        ge.edicts[i+1].client->ps.fov = fov;
+        q2java_ge.edicts[i+1].client = global_clients + i;
+        q2java_ge.edicts[i+1].inuse = inuse;
+        q2java_ge.edicts[i+1].client->listener = jobj;
+        q2java_ge.edicts[i+1].client->playerInfo = jstr;
+        q2java_ge.edicts[i+1].client->ps.fov = fov;
         }
 
     // clear all other non-player entities
-    memset (ge.edicts + global_maxClients + 1, 0, (ge.max_edicts - global_maxClients - 1) * sizeof (ge.edicts[0]));
-    for (i = global_maxClients + 1; i < ge.max_edicts; i++)
+    memset (q2java_ge.edicts + global_maxClients + 1, 0, (q2java_ge.max_edicts - global_maxClients - 1) * sizeof (q2java_ge.edicts[0]));
+    for (i = global_maxClients + 1; i < q2java_ge.max_edicts; i++)
         (*java_env)->SetObjectArrayElement(java_env, ja, i, 0);
 
     // drop the local reference to the Java array
@@ -251,10 +256,10 @@ static jbyte *lookupByte(int index, int fieldNum)
     edict_t *ent;
 
     // sanity check
-    if ((index < 0) || (index >= ge.max_edicts))
+    if ((index < 0) || (index >= q2java_ge.max_edicts))
         return NULL;
 
-    ent = ge.edicts + index;
+    ent = q2java_ge.edicts + index;
 
     // check for attemt to access player field in a non-player entity
     if ((fieldNum >= 100) && !(ent->client))
@@ -274,10 +279,10 @@ static short *lookupShort(int index, int fieldNum)
     edict_t *ent;
 
     // sanity check
-    if ((index < 0) || (index >= ge.max_edicts))
+    if ((index < 0) || (index >= q2java_ge.max_edicts))
         return NULL;
 
-    ent = ge.edicts + index;
+    ent = q2java_ge.edicts + index;
 
     // check for attemt to access player field in a non-player entity
     if ((fieldNum >= 100) && !(ent->client))
@@ -296,10 +301,10 @@ static int *lookupInt(int index, int fieldNum)
     edict_t *ent;
 
     // sanity check
-    if ((index < 0) || (index >= ge.max_edicts))
+    if ((index < 0) || (index >= q2java_ge.max_edicts))
         return NULL;
 
-    ent = ge.edicts + index;
+    ent = q2java_ge.edicts + index;
 
     // check for attemt to access player field in a non-player entity
     if ((fieldNum >= 100) && !(ent->client))
@@ -338,10 +343,10 @@ static vec3_t *lookupVec3(int index, int fieldNum)
     edict_t *ent; 
         
     // sanity check
-    if ((index < 0) || (index >= ge.max_edicts))
+    if ((index < 0) || (index >= q2java_ge.max_edicts))
         return NULL;
 
-    ent = ge.edicts + index;
+    ent = q2java_ge.edicts + index;
 
     // check for attemt to access player field in a non-player entity
     if ((fieldNum >= 100) && !(ent->client))
@@ -375,10 +380,10 @@ static edict_t **lookupEntity(int index, int fieldNum)
     edict_t *ent; 
         
     // sanity check
-    if ((index < 0) || (index >= ge.max_edicts))
+    if ((index < 0) || (index >= q2java_ge.max_edicts))
         return NULL;
 
-    ent = ge.edicts + index;
+    ent = q2java_ge.edicts + index;
 
     // check for attemt to access player field in a non-player entity
     if ((fieldNum >= 100) && !(ent->client))
@@ -409,6 +414,7 @@ jobject Entity_getEntity(int index)
     return result;
     }
 
+
 void Entity_setEntity(int index, jobject value)
     {
     jobjectArray array;
@@ -431,11 +437,13 @@ int Entity_get_fEntityIndex(jobject jent)
     return result;
     }
 
+
 void Entity_set_fEntityIndex(jobject jent, int index)
     {
     (*java_env)->SetIntField(java_env, jent, field_NativeEntity_fEntityIndex, index);
     CHECK_EXCEPTION();
     }
+
 
 //
 // create an array of Java Entities, removing instances of worldspawn
@@ -460,7 +468,7 @@ jobjectArray Entity_createArray(edict_t **ents, int count)
             continue;
 
         // skip worldspawn
-        if (ents[i] == ge.edicts)
+        if (ents[i] == q2java_ge.edicts)
             continue;
 
         for (j = 0; j < i; j++)
@@ -487,7 +495,7 @@ jobjectArray Entity_createArray(edict_t **ents, int count)
             continue;
 
         // skip worldspawn
-        if (ents[i] == ge.edicts)
+        if (ents[i] == q2java_ge.edicts)
             continue;
 
         for (j = 0; j < i; j++)
@@ -497,7 +505,7 @@ jobjectArray Entity_createArray(edict_t **ents, int count)
             }
 
         if (j == i)
-            (*java_env)->SetObjectArrayElement(java_env, result, --realCount, Entity_getEntity(ents[i] - ge.edicts));
+            (*java_env)->SetObjectArrayElement(java_env, result, --realCount, Entity_getEntity(ents[i] - q2java_ge.edicts));
         }
     
     return result;
@@ -512,7 +520,7 @@ static jint JNICALL Java_q2java_NativeEntity_allocateEntity(JNIEnv *env, jclass 
     // handle special case of the world entity
     if (entType == ENTITY_WORLD)
         {
-        ent = ge.edicts;
+        ent = q2java_ge.edicts;
         ent->inuse = 1;
         ent->s.number = 0;
         return 0;
@@ -523,10 +531,10 @@ static jint JNICALL Java_q2java_NativeEntity_allocateEntity(JNIEnv *env, jclass 
         {
         for (i = global_maxClients; i > 0; i--)
             {
-            if (!ge.edicts[i].inuse)
+            if (!q2java_ge.edicts[i].inuse)
                 {
-                ge.edicts[i].inuse = 1;
-                ge.edicts[i].s.number = i;
+                q2java_ge.edicts[i].inuse = 1;
+                q2java_ge.edicts[i].s.number = i;
                 return i;
                 }
             }
@@ -541,8 +549,8 @@ static jint JNICALL Java_q2java_NativeEntity_allocateEntity(JNIEnv *env, jclass 
         return -1;
 
     i = global_maxClients + 1;  
-    ent = ge.edicts + i;
-    for (; i<ge.num_edicts ; i++, ent++)
+    ent = q2java_ge.edicts + i;
+    for (; i<q2java_ge.num_edicts ; i++, ent++)
         {
         // the first couple seconds of server time can involve a lot of
         // freeing and allocating, so relax the replacement policy
@@ -551,17 +559,17 @@ static jint JNICALL Java_q2java_NativeEntity_allocateEntity(JNIEnv *env, jclass 
         }
     
     // we're totally drained
-    if (i == ge.max_edicts)
+    if (i == q2java_ge.max_edicts)
         {
-        gi.dprintf("Java_q2java_NativeEntity_allocateEntity: no free entities");
+        q2java_gi.dprintf("Java_q2java_NativeEntity_allocateEntity: no free entities");
         return -1;          
         }
 
     // a never-before used entity
-    if (i == ge.num_edicts)
+    if (i == q2java_ge.num_edicts)
         {
-        ge.num_edicts++;
-        (*java_env)->SetStaticIntField(java_env, class_NativeEntity, field_NativeEntity_gNumEntities, ge.num_edicts);
+        q2java_ge.num_edicts++;
+        (*java_env)->SetStaticIntField(java_env, class_NativeEntity, field_NativeEntity_gNumEntities, q2java_ge.num_edicts);
         }
 
     ent->inuse = 1;
@@ -576,14 +584,14 @@ static void JNICALL Java_q2java_NativeEntity_freeEntity0(JNIEnv *env, jclass cls
     gclient_t *cli;
 
     // sanity check
-    if ((index < 0) || (index >= ge.max_edicts))
+    if ((index < 0) || (index >= q2java_ge.max_edicts))
         return;
 
-    ent = ge.edicts + index;
+    ent = q2java_ge.edicts + index;
     cli = ent->client;
 
     // unlink from world
-    gi.unlinkentity (ent);      
+    q2java_gi.unlinkentity (ent);      
 
     // wipe the old entity info out
     memset(ent, 0, sizeof(*ent));
@@ -677,10 +685,14 @@ static jobject JNICALL Java_q2java_NativeEntity_getVec3(JNIEnv *env, jclass cls,
         edict_t *ent;
 
         // sanity check
-        if ((index < 0) || (index >= ge.max_edicts))
+        if ((index < 0) || (index >= q2java_ge.max_edicts))
             return 0;
 
-        ent = ge.edicts + index;
+        ent = q2java_ge.edicts + index;
+
+        // bail if not a player entity
+        if (!(ent->client))
+            return 0;
 
         result[0] = SHORT2ANGLE(ent->client->ps.pmove.delta_angles[0]);
         result[1] = SHORT2ANGLE(ent->client->ps.pmove.delta_angles[1]);
@@ -701,7 +713,7 @@ static void JNICALL Java_q2java_NativeEntity_setVec3(JNIEnv *env, jclass cls, ji
     edict_t *ent;
 
     // sanity check
-    if ((index < 0) || (index >= ge.max_edicts))
+    if ((index < 0) || (index >= q2java_ge.max_edicts))
         return;
 
     // normal vector setting
@@ -717,7 +729,7 @@ static void JNICALL Java_q2java_NativeEntity_setVec3(JNIEnv *env, jclass cls, ji
     // it makes the C code more complicated, 
     // but keeps the Java code simpler
 
-    ent = ge.edicts + index;
+    ent = q2java_ge.edicts + index;
 
     // bail if not a player entity
     if (!(ent->client))
@@ -751,7 +763,7 @@ static jobject JNICALL Java_q2java_NativeEntity_getEntity(JNIEnv *env, jclass cl
     {
     edict_t **entp = lookupEntity(index, fieldNum);
     if ((entp) && (*entp))
-        return Entity_getEntity((*entp) - ge.edicts);
+        return Entity_getEntity((*entp) - q2java_ge.edicts);
     else
         return 0;
     }
@@ -764,7 +776,7 @@ static void JNICALL Java_q2java_NativeEntity_setEntity(JNIEnv *ent, jclass cls, 
     if (entp)
         {
         if (valIndex >= 0)
-            *entp = ge.edicts + valIndex;
+            *entp = q2java_ge.edicts + valIndex;
         else
             *entp = 0;
         }
@@ -776,20 +788,20 @@ static void JNICALL Java_q2java_NativeEntity_sound0(JNIEnv *env , jclass cls, jf
     vec3_t v;
 
     // sanity check
-    if ((index < 0) || (index >= ge.max_edicts))
+    if ((index < 0) || (index >= q2java_ge.max_edicts))
         return;
     
     switch (calltype)
         {
         case CALL_SOUND: 
-            gi.sound(ge.edicts + index, channel, soundindex, volume, attenuation, timeofs); 
+            q2java_gi.sound(q2java_ge.edicts + index, channel, soundindex, volume, attenuation, timeofs); 
             break;
 
         case CALL_POSITIONED_SOUND:
             v[0] = x;
             v[1] = y;
             v[2] = z;
-            gi.positioned_sound(v, ge.edicts + index, channel, soundindex, volume, attenuation, timeofs);
+            q2java_gi.positioned_sound(v, q2java_ge.edicts + index, channel, soundindex, volume, attenuation, timeofs);
             break;
         }
     }
@@ -802,11 +814,11 @@ static jobjectArray JNICALL Java_q2java_NativeEntity_getBoxEntities0(JNIEnv *env
     int count;
 
     // sanity check
-    if ((index < 0) || (index >= ge.max_edicts))
+    if ((index < 0) || (index >= q2java_ge.max_edicts))
         return 0;
 
-    ent = ge.edicts + index;
-    count = gi.BoxEdicts(ent->absmin, ent->absmax, list, MAX_EDICTS, areaType);
+    ent = q2java_ge.edicts + index;
+    count = q2java_gi.BoxEdicts(ent->absmin, ent->absmax, list, MAX_EDICTS, areaType);
 
     return Entity_createArray(list, count);
     }
@@ -817,30 +829,32 @@ static void JNICALL Java_q2java_NativeEntity_setModel0(JNIEnv *env, jclass cls, 
     char *str;
 
     // sanity check
-    if ((index < 0) || (index >= ge.max_edicts))
+    if ((index < 0) || (index >= q2java_ge.max_edicts))
         return;
 
     str = (char *)((*env)->GetStringUTFChars(env, js, 0));
-    gi.setmodel(ge.edicts + index, str);
+    q2java_gi.setmodel(q2java_ge.edicts + index, str);
     (*env)->ReleaseStringUTFChars(env, js, str);
     }
+
 
 static void JNICALL Java_q2java_NativeEntity_linkEntity0(JNIEnv *env, jclass cls, jint index)
     {
     // sanity check
-    if ((index < 0) || (index >= ge.max_edicts))
+    if ((index < 0) || (index >= q2java_ge.max_edicts))
         return;
     
-    gi.linkentity(ge.edicts + index);
+    q2java_gi.linkentity(q2java_ge.edicts + index);
     }
+
 
 static void JNICALL Java_q2java_NativeEntity_unlinkEntity0(JNIEnv *env, jclass cls, jint index)
     {
     // sanity check
-    if ((index < 0) || (index >= ge.max_edicts))
+    if ((index < 0) || (index >= q2java_ge.max_edicts))
         return;
 
-    gi.unlinkentity(ge.edicts + index);
+    q2java_gi.unlinkentity(q2java_ge.edicts + index);
     }
 
 
@@ -849,11 +863,13 @@ static void JNICALL Java_q2java_NativeEntity_unlinkEntity0(JNIEnv *env, jclass c
 static edict_t  *pm_passent;
 static int pm_tracemask;
 
+
 // pmove doesn't need to know about passent and contentmask
 static trace_t  PM_trace(vec3_t start, vec3_t mins, vec3_t maxs, vec3_t end)
     {
-    return gi.trace (start, mins, maxs, end, pm_passent, pm_tracemask);
+    return q2java_gi.trace (start, mins, maxs, end, pm_passent, pm_tracemask);
     }
+
 
 static jobject JNICALL Java_q2java_NativeEntity_pMove0(JNIEnv *env, jclass cls, jint index, jbyte msec, jbyte buttons, jshort angle0, jshort angle1, jshort angle2, jshort forward, jshort side, jshort up, jbyte impulse, jbyte lightlevel, jint traceMask)
     {
@@ -866,7 +882,7 @@ static jobject JNICALL Java_q2java_NativeEntity_pMove0(JNIEnv *env, jclass cls, 
     if ((index < 0) || (index > global_maxClients))
         return 0;
 
-    ent = ge.edicts + index;
+    ent = q2java_ge.edicts + index;
     client = ent->client;
 
     memset (&pm, 0, sizeof(pm));
@@ -888,11 +904,11 @@ static jobject JNICALL Java_q2java_NativeEntity_pMove0(JNIEnv *env, jclass cls, 
     pm.cmd.lightlevel = lightlevel;
 
     pm.trace = PM_trace;    // adds default parms
-    pm.pointcontents = gi.pointcontents;
+    pm.pointcontents = q2java_gi.pointcontents;
     pm_passent = ent;
     pm_tracemask = traceMask;
 
-    gi.Pmove(&pm);
+    q2java_gi.Pmove(&pm);
 
     // save results of pmove
     client->ps.pmove = pm.s;
@@ -911,6 +927,43 @@ static jobject JNICALL Java_q2java_NativeEntity_pMove0(JNIEnv *env, jclass cls, 
     }
 
 
+static jfloat JNICALL Java_q2java_NativeEntity_getFloat(JNIEnv *env, jclass cls, jint index, jint fieldNum)
+    {
+    edict_t *ent;
+    
+    // sanity check
+    if ((index < 0) || (index > global_maxClients))
+        return 0; // maybe NaN would be better to return
+
+    ent = q2java_ge.edicts + index;
+
+    if (!(ent->client))
+        return 0; // maybe NaN would be better to return
+
+    switch (fieldNum)
+        {
+        case FLOAT_CLIENT_PS_FOV:
+            return ent->client->ps.fov;
+
+        case FLOAT_CLIENT_PS_BLEND_R:
+            return ent->client->ps.blend[0];
+
+        case FLOAT_CLIENT_PS_BLEND_G:
+            return ent->client->ps.blend[1];
+
+        case FLOAT_CLIENT_PS_BLEND_B:
+            return ent->client->ps.blend[2];
+
+        case FLOAT_CLIENT_PS_BLEND_A:
+            return ent->client->ps.blend[3];
+
+        default: 
+            return 0;  // ---FIXME-- should indicate an error somewhere
+                       // maybe NaN would be better to return
+        }
+    }
+
+
 static void JNICALL Java_q2java_NativeEntity_setFloat0(JNIEnv *env, jclass cls, jint index, jint fieldindex, jfloat r, jfloat g, jfloat b, jfloat a)
     {
     edict_t *ent;
@@ -919,7 +972,7 @@ static void JNICALL Java_q2java_NativeEntity_setFloat0(JNIEnv *env, jclass cls, 
     if ((index < 0) || (index > global_maxClients))
         return;
 
-    ent = ge.edicts + index;
+    ent = q2java_ge.edicts + index;
     // check for attemt to access player field in a non-player entity
     if ((fieldindex >= 100) && !(ent->client))
         return;
@@ -949,9 +1002,10 @@ static void JNICALL Java_q2java_NativeEntity_setStat0(JNIEnv *env, jclass cls, j
     if ((index < 1) || (index > global_maxClients) || (fieldindex < 0) || (fieldindex > MAX_STATS))
         return;
     
-    ent = ge.edicts + index;
+    ent = q2java_ge.edicts + index;
     ent->client->ps.stats[fieldindex] = value;
     }
+
 
 static void JNICALL Java_q2java_NativeEntity_cprint0(JNIEnv *env , jclass cls, jint index, jint printlevel, jstring js)
     {
@@ -965,7 +1019,7 @@ static void JNICALL Java_q2java_NativeEntity_cprint0(JNIEnv *env , jclass cls, j
     if (js == NULL)
         return;
 
-    ent = ge.edicts + index;
+    ent = q2java_ge.edicts + index;
 
     // it may happen that a print call is made when 
     // the client entity is in the process of disconnecting
@@ -976,9 +1030,9 @@ static void JNICALL Java_q2java_NativeEntity_cprint0(JNIEnv *env , jclass cls, j
 
 //    str = (*env)->GetStringUTFChars(env, js, 0);
     str = convertJavaString(js);
-    gi.cprintf(ent, printlevel, "%s", str);
+    q2java_gi.cprintf(ent, printlevel, "%s", str);
 //    (*env)->ReleaseStringUTFChars(env, js, str);
-    gi.TagFree(str);
+    q2java_gi.TagFree(str);
     }
 
 
@@ -994,7 +1048,7 @@ static void JNICALL Java_q2java_NativeEntity_centerprint0(JNIEnv *env, jclass cl
     if (js == NULL)
         return;
 
-    ent = ge.edicts + index;
+    ent = q2java_ge.edicts + index;
     
     // it may happen that a print call is made when 
     // the client entity is in the process of disconnecting
@@ -1005,9 +1059,9 @@ static void JNICALL Java_q2java_NativeEntity_centerprint0(JNIEnv *env, jclass cl
 
 //    str = (*env)->GetStringUTFChars(env, js, 0);
     str = convertJavaString(js);
-    gi.centerprintf(ent, "%s", str);
+    q2java_gi.centerprintf(ent, "%s", str);
 //    (*env)->ReleaseStringUTFChars(env, js, str);
-    gi.TagFree(str);
+    q2java_gi.TagFree(str);
     }
 
 
@@ -1018,17 +1072,17 @@ static jobject JNICALL Java_q2java_NativeEntity_traceMove0(JNIEnv *env, jclass c
     int i;
     trace_t result;
 
-    ent = ge.edicts + index;
+    ent = q2java_ge.edicts + index;
     for (i = 0; i < 3; i++)
         end[i] = (float)(ent->s.origin[i] + ent->velocity[i] * SECONDS_PER_FRAME * frameFraction);
 
-    result = gi.trace(ent->s.origin, ent->mins, ent->maxs, end, ent, contentMask);
+    result = q2java_gi.trace(ent->s.origin, ent->mins, ent->maxs, end, ent, contentMask);
 
     // set the origin of the entity to its new position
     for (i = 0; i < 3; i++)
             ent->s.origin[i] = result.endpos[i];
     
-    gi.linkentity(ent);
+    q2java_gi.linkentity(ent);
 
     return newTraceResults(result);
     }
@@ -1047,15 +1101,15 @@ static jobjectArray JNICALL Java_q2java_NativeEntity_getPotentialPushed0(JNIEnv 
     int i;
     int mask;
 
-    pusher = ge.edicts + index;
+    pusher = q2java_ge.edicts + index;
 
     count = 0;
-    for (i = 1; i < ge.num_edicts; i++)
+    for (i = 1; i < q2java_ge.num_edicts; i++)
         {
         if (i == index)
             continue;
 
-        check = ge.edicts + i;
+        check = q2java_ge.edicts + i;
         
         if (!check->inuse)
             continue;
@@ -1078,7 +1132,7 @@ static jobjectArray JNICALL Java_q2java_NativeEntity_getPotentialPushed0(JNIEnv 
             else
                 mask = defaultMask;
 
-            trace = gi.trace(check->s.origin, check->mins, check->maxs, check->s.origin, check, mask);
+            trace = q2java_gi.trace(check->s.origin, check->mins, check->maxs, check->s.origin, check, mask);
 
             if (!trace.startsolid)
                 continue;
@@ -1099,7 +1153,7 @@ static void JNICALL Java_q2java_NativeEntity_setPlayerListener0(JNIEnv *env, jcl
     if ((index < 0) || (index > global_maxClients))
         return;
 
-    client = ge.edicts[index].client;
+    client = q2java_ge.edicts[index].client;
 
     if (client->listener != NULL)
         (*env)->DeleteGlobalRef(env, client->listener);
@@ -1117,7 +1171,7 @@ static jobject JNICALL Java_q2java_NativeEntity_getPlayerListener0(JNIEnv *env, 
     if ((index < 0) || (index > global_maxClients))
         return NULL;
     
-    return ge.edicts[index].client->listener;
+    return q2java_ge.edicts[index].client->listener;
     }
 
 
@@ -1127,16 +1181,18 @@ static jstring JNICALL Java_q2java_NativeEntity_getPlayerInfo0(JNIEnv *env, jcla
     if ((index < 0) || (index > global_maxClients))
         return NULL;
     
-    return ge.edicts[index].client->playerInfo;
+    return q2java_ge.edicts[index].client->playerInfo;
     }
+
 
 static jobjectArray JNICALL Java_q2java_NativeEntity_getRadiusEntities0
   (JNIEnv *env, jclass cls, jint index, jfloat radius, jboolean onlyPlayers, jboolean sortResults)
     {
-    edict_t *ent = ge.edicts + index;
+    edict_t *ent = q2java_ge.edicts + index;
     return Java_q2java_Engine_getRadiusEntities0(env, cls, ent->s.origin[0], ent->s.origin[1], ent->s.origin[2],
         radius, index, onlyPlayers, sortResults);
     }
+
 
 static void JNICALL Java_q2java_NativeEntity_copySettings0(JNIEnv *env, jclass cls, jint sourceIndex, jint destIndex)
     {
@@ -1145,13 +1201,13 @@ static void JNICALL Java_q2java_NativeEntity_copySettings0(JNIEnv *env, jclass c
     int i;
 
     // sanity check
-    if ((sourceIndex < 0) || (sourceIndex >= ge.max_edicts))
+    if ((sourceIndex < 0) || (sourceIndex >= q2java_ge.max_edicts))
         return;
-    if ((destIndex < 0) || (destIndex >= ge.max_edicts))
+    if ((destIndex < 0) || (destIndex >= q2java_ge.max_edicts))
         return;
 
-    source = ge.edicts + sourceIndex;
-    dest = ge.edicts + destIndex;
+    source = q2java_ge.edicts + sourceIndex;
+    dest = q2java_ge.edicts + destIndex;
 
 	dest->s = source->s;
 	dest->s.number = destIndex;

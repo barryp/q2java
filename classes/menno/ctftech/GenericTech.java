@@ -48,6 +48,15 @@ public abstract class GenericTech extends baseq2.GenericItem implements baseq2.P
 		setDropTimeout(0);
 		fHUDStat = hudStat;
 	}
+/**
+ * Override baseq2.GameObject.becomeExplosion() to prevent techs from being destroyed.
+ *
+ * @param tempEntity effect to display, usually Engine.TE_EXPLOSION1 or
+ *  Engine.TE_EXPLOSION2
+ */
+public void becomeExplosion(int tempEntity) 
+	{
+	}
 	/**
 	 * Drops the item on the ground
 	 *

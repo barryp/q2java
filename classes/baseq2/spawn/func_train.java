@@ -19,6 +19,7 @@ public class func_train extends GenericPusher
 	// spawn parameters
 	private float fWait;
 	private int fDmg;
+	private float fTouchDebounceTime;
 		
 	// track the state of the train
 	private int fTrainState;
@@ -73,6 +74,34 @@ public func_train(String[] spawnArgs) throws GameException
 		fTrainState = STATE_TRAIN_SPAWNED;
 		Game.addFrameListener(this, 0, -1);
 		}		
+	}
+/**
+ * Called when the GenericPusher is blocked by another object.
+ * @param obj The GameObject that's in the way.
+ */
+public void block(GameObject obj) 
+	{
+	Vector3f origin = new Vector3f();
+	
+	if (!(obj instanceof Player))
+		{
+		// give it a chance to go away on it's own terms (like gibs)
+		obj.damage(this, this, origin, obj.fEntity.getOrigin(), origin, 100000, 1, 0, 0, "crush");
+		// if it's still there, nuke it
+		if (obj.fEntity != null)
+			obj.becomeExplosion(Engine.TE_EXPLOSION1);
+		return;		
+		}
+	
+	float time = Game.getGameTime();
+	if (time < fTouchDebounceTime)
+		return;
+
+	if (fDmg == 0)
+		return;
+		
+	fTouchDebounceTime = time + 0.5F;	
+	obj.damage(this, this, origin, obj.fEntity.getOrigin(), origin, (int)fDmg, 1, 0, 0, "crush");
 	}
 /**
  * This method was created by a SmartGuide.

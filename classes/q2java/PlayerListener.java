@@ -12,7 +12,7 @@ public interface PlayerListener
  * Called by the DLL when the player should begin playing in the game.
  * @param loadgame boolean
  */
-public abstract void playerBegin(boolean loadgame);
+public abstract void playerBegin();
 /**
  * Called by the DLL when the player has typed, or initiated a command.
  */

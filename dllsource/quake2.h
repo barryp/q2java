@@ -30,8 +30,7 @@
                             // but can be set from the command line
 #define CVAR_LATCH      16  // save changes until server restart
 
-
-typedef unsigned char           byte;
+typedef unsigned char byte;
 typedef float vec_t;
 typedef vec_t vec3_t[3];
 
@@ -366,7 +365,7 @@ typedef struct
     // about the world state and the clients.
     // WriteGame is called every time a level is exited.
     // ReadGame is called on a loadgame.
-    void        (*WriteGame) (char *filename);
+	void		(*WriteGame) (char *filename, int autosave);
     void        (*ReadGame) (char *filename);
 
     // ReadLevel is called after the default map information has been
@@ -375,8 +374,8 @@ typedef struct
     void        (*WriteLevel) (char *filename);
     void        (*ReadLevel) (char *filename);
 
-    int    (*ClientConnect) (edict_t *ent, char *userinfo, int loadgame);
-    void        (*ClientBegin) (edict_t *ent, int loadgame);
+	int     	(*ClientConnect) (edict_t *ent, char *userinfo);
+	void		(*ClientBegin) (edict_t *ent);
     void        (*ClientUserinfoChanged) (edict_t *ent, char *userinfo);
     void        (*ClientDisconnect) (edict_t *ent);
     void        (*ClientCommand) (edict_t *ent);

@@ -161,6 +161,14 @@ static jint JNICALL Java_q2java_NativeEntity_getInt
 
 /*
  * Class:     q2java_NativeEntity
+ * Method:    getFloat
+ * Signature: (II)F
+ */
+static jfloat JNICALL Java_q2java_NativeEntity_getFloat
+  (JNIEnv *, jclass, jint, jint);
+
+/*
+ * Class:     q2java_NativeEntity
  * Method:    setShort
  * Signature: (IIS)V
  */

@@ -32,7 +32,7 @@ void CVar_javaInit()
         }
     }
 
-void CVar_javaFinalize()
+void CVar_javaDetach()
     {
     if (class_CVar)
         (*java_env)->UnregisterNatives(java_env, class_CVar);
@@ -50,9 +50,9 @@ static jint JNICALL Java_q2java_CVar_cvar0(JNIEnv *env , jclass cls, jstring jna
     val = (char *)((*env)->GetStringUTFChars(env, jval, 0));
     switch (calltype)
         {
-        case CALL_CVAR: result = gi.cvar(name, val, flags); break;
-        case CALL_CVAR_SET: result = gi.cvar_set(name, val); break;
-        case CALL_CVAR_FORCESET: result = gi.cvar_forceset(name, val); break;
+        case CALL_CVAR: result = q2java_gi.cvar(name, val, flags); break;
+        case CALL_CVAR_SET: result = q2java_gi.cvar_set(name, val); break;
+        case CALL_CVAR_FORCESET: result = q2java_gi.cvar_forceset(name, val); break;
         default: result = 0;
         }
     (*env)->ReleaseStringUTFChars(env, jname, name);

@@ -27,7 +27,7 @@ public void init();
  * @param userinfo Player's basic info
  * @param loadgame boolean
  */
-public void playerConnect(NativeEntity playerEntity, boolean loadgame) throws Exception, Throwable;
+public void playerConnect(NativeEntity playerEntity) throws Exception, Throwable;
 public void readGame(String filename);
 public void readLevel(String filename);
 public void runFrame();
@@ -37,6 +37,6 @@ public void runFrame();
 public void serverCommand();
 public void shutdown();
 public void startLevel(String mapname, String entString, String spawnPoint);
-public void writeGame(String filename);
+public void writeGame(String filename, boolean autosave);
 public void writeLevel(String filename);
 }

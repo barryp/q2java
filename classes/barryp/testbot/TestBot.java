@@ -30,7 +30,7 @@ public class TestBot extends baseq2.Player implements LevelListener
  */
 TestBot(q2java.NativeEntity ent, String name) throws q2java.GameException
 	{
-	super(ent, false);
+	super(ent);
 
 	setName(name);
 	setSkin("male/grunt");
@@ -38,7 +38,7 @@ TestBot(q2java.NativeEntity ent, String name) throws q2java.GameException
 	fEntity.setGroundEntity(baseq2.GameModule.gWorld.fEntity);
 
 	// place the bot into the game
-	playerBegin(false);
+	playerBegin();
 
 	// ask to be notified when levels change (so the bot can respawn)
 	Game.addLevelListener(this);
@@ -132,7 +132,7 @@ public void runFrame(int phase)
 	if (fLevelChanged)
 		{
 		fLevelChanged = false;
-		playerBegin(false);
+		playerBegin();
 		}
 		
 	// if the fRespawnTime field isn't zero, then

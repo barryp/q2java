@@ -36,7 +36,17 @@ private Q2JavaSecurityManager(int level, String gamePath)
 		
 	File gameDir = new File(gamePath);
 	File sandboxDir = new File(gameDir, "sandbox");
-	fSandboxPrefix = sandboxDir.getPath() + File.separator;
+	
+	try
+		{
+		fSandboxPrefix = sandboxDir.getCanonicalPath() + File.separator;
+		}
+	catch (IOException ioe)
+		{
+		ioe.printStackTrace();
+		fSandboxPrefix = sandboxDir.getPath() + File.separator;
+		}
+		
 	fSandboxPrefix = fSandboxPrefix.toLowerCase(); // seems necessary for Win95
 	}
 /**

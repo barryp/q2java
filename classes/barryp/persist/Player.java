@@ -24,9 +24,9 @@ public class Player extends baseq2.Player
  * Create a new Player Game object, and associate it with a Player
  * native entity.
  */
-public Player(NativeEntity ent, boolean loadgame) throws GameException
+public Player(NativeEntity ent) throws GameException
 	{
-	super(ent, loadgame);
+	super(ent);
 	fWasSaved = false;
 	}
 /**
@@ -38,7 +38,7 @@ public Player(NativeEntity ent, boolean loadgame) throws GameException
  * @param playerInfo java.lang.String
  * @param loadgame boolean
  */
-public static void connect(NativeEntity ent, boolean loadgame) throws GameException
+public static void connect(NativeEntity ent) throws GameException
 	{
 	// find the player's name
 	Hashtable h = new Hashtable();
@@ -92,15 +92,15 @@ public static void connect(NativeEntity ent, boolean loadgame) throws GameExcept
 		}
 	
 	// couldn't restore a saved player, so create a new one.			
-	new Player(ent, loadgame);
+	new Player(ent);
 	}
 /**
  * Called by the DLL when the player should begin playing in the game.
  * @param loadgame boolean
  */
-public void playerBegin(boolean loadgame) 
+public void playerBegin() 
 	{		
-	Engine.debugLog("Player.begin(" + loadgame + ")");
+	Engine.debugLog("Player.begin()");
 
 	fStartTime = (float) Game.getGameTime();	
 	fEntity.setPlayerStat(NativeEntity.STAT_HEALTH_ICON, (short) Engine.getImageIndex("i_health"));	

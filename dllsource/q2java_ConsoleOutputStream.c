@@ -44,7 +44,7 @@ void ConsoleOutputStream_javaInit()
         }
     }
 
-void ConsoleOutputStream_javaFinalize()
+void ConsoleOutputStream_javaDetach()
     {
     if (class_ConsoleOutputStream)
         (*java_env)->UnregisterNatives(java_env, class_ConsoleOutputStream);
@@ -65,17 +65,17 @@ static void JNICALL Java_q2java_ConsoleOutputStream_write__I(JNIEnv *env , jobje
         case '\t': 
             // not the ideal way to handle tabs, but good enough 
             // for printing java Exceptions
-            gi.dprintf("    "); 
+            q2java_gi.dprintf("    "); 
             Game_consoleOutput("    ");
-            debugLog("    "); 
+            javalink_debug("    "); 
             break; 
 
         default: 
             ca[0] = (char) i;
             ca[1] = 0;
-            gi.dprintf("%c", i); 
+            q2java_gi.dprintf("%c", i); 
             Game_consoleOutput(ca);
-            debugLog("%c", i); 
+            javalink_debug("%c", i); 
             break;
         }
     }
@@ -102,7 +102,7 @@ static void JNICALL Java_q2java_ConsoleOutputStream_write___3BII(JNIEnv *env, jo
             count += 3;
         }
 
-    r = s = gi.TagMalloc(count, TAG_GAME);
+    r = s = q2java_gi.TagMalloc(count, TAG_GAME);
     q = p + offset;
     for (i = 0; i < len; i++, q++)
         {
@@ -122,10 +122,10 @@ static void JNICALL Java_q2java_ConsoleOutputStream_write___3BII(JNIEnv *env, jo
         }
     *r = 0;
 
-    gi.dprintf("%s", s);
+    q2java_gi.dprintf("%s", s);
     Game_consoleOutput(s);
-    debugLog("%s", s);
-    gi.TagFree(s);
+    javalink_debug("%s", s);
+    q2java_gi.TagFree(s);
 
     (*env)->ReleaseByteArrayElements(env, jba, p, JNI_ABORT);
     }

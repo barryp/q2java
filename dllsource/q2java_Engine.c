@@ -25,6 +25,7 @@
 
 // handle to Engine class
 static jclass class_Engine;
+static jmethodID method_Engine_startLevel;
 
 
 static JNINativeMethod Engine_methods[] = 
@@ -58,6 +59,8 @@ static JNINativeMethod Engine_methods[] =
 
 void Engine_javaInit()
     {
+    javalink_debug("Engine_javaInit() starting\n");
+
     class_Engine = (*java_env)->FindClass(java_env, "q2java/Engine");
     if(CHECK_EXCEPTION() || !class_Engine)
         {
@@ -71,18 +74,26 @@ void Engine_javaInit()
         java_error = "Couldn't register native methods for q2java.Engine\n";
         return;
         }
+
+    method_Engine_startLevel = (*java_env)->GetStaticMethodID(java_env, class_Engine, "startLevel", "()V");
+    if (CHECK_EXCEPTION())
+        {
+        java_error = "Couldn't locate q2java.Engine.startLevel()\n";
+        return;
+        }
+
+
+    javalink_debug("Engine_javaInit() finished\n");
     }
 
-void Engine_javaFinalize()
+
+void Engine_javaDetach()
     {
     if (class_Engine)
         (*java_env)->UnregisterNatives(java_env, class_Engine); 
 
     (*java_env)->DeleteLocalRef(java_env, class_Engine);
     }
-
-
-
 
 
 static void JNICALL Java_q2java_Engine_dprint(JNIEnv *env, jclass cls, jstring js)
@@ -93,10 +104,11 @@ static void JNICALL Java_q2java_Engine_dprint(JNIEnv *env, jclass cls, jstring j
         return;
 
     str = convertJavaString(js);
-    gi.dprintf("%s", str); 
-    debugLog(str);
-    gi.TagFree(str);
+    q2java_gi.dprintf("%s", str); 
+    javalink_debug(str);
+    q2java_gi.TagFree(str);
     }
+
 
 static void JNICALL Java_q2java_Engine_bprint(JNIEnv *env, jclass cls, jint printlevel, jstring js)
     {
@@ -106,9 +118,10 @@ static void JNICALL Java_q2java_Engine_bprint(JNIEnv *env, jclass cls, jint prin
         return;
 
     str = convertJavaString(js);
-    gi.bprintf(printlevel, "%s", str); 
-    gi.TagFree(str);
+    q2java_gi.bprintf(printlevel, "%s", str); 
+    q2java_gi.TagFree(str);
     }
+
 
 static void JNICALL Java_q2java_Engine_setConfigString(JNIEnv *env, jclass cls, jint num, jstring js)
     {
@@ -118,7 +131,7 @@ static void JNICALL Java_q2java_Engine_setConfigString(JNIEnv *env, jclass cls, 
         return;
 
     s = (char *)((*env)->GetStringUTFChars(env, js, 0));
-    gi.configstring(num, s);
+    q2java_gi.configstring(num, s);
     (*env)->ReleaseStringUTFChars(env, js, s);
     }
 
@@ -128,11 +141,11 @@ static void JNICALL Java_q2java_Engine_error(JNIEnv *env, jclass cls, jstring js
     char *s;
 
     if (js == NULL)
-        gi.error(NULL);
+        q2java_gi.error(NULL);
     else
         {
         s = (char *)((*env)->GetStringUTFChars(env, js, 0));
-        gi.error(s);
+        q2java_gi.error(s);
         (*env)->ReleaseStringUTFChars(env, js, s);
         }
     }
@@ -147,10 +160,11 @@ static jint JNICALL Java_q2java_Engine_getModelIndex(JNIEnv *env, jclass cls, js
         return 0;
 
     name = (char *)((*env)->GetStringUTFChars(env, jname, 0));
-    result = gi.modelindex(name);
+    result = q2java_gi.modelindex(name);
     (*env)->ReleaseStringUTFChars(env, jname, name);
     return result;
     }
+
 
 static jint JNICALL Java_q2java_Engine_getSoundIndex(JNIEnv *env, jclass cls, jstring jname)
     {
@@ -161,10 +175,11 @@ static jint JNICALL Java_q2java_Engine_getSoundIndex(JNIEnv *env, jclass cls, js
         return 0;
 
     name = (char *)((*env)->GetStringUTFChars(env, jname, 0));
-    result = gi.soundindex(name);
+    result = q2java_gi.soundindex(name);
     (*env)->ReleaseStringUTFChars(env, jname, name);
     return result;
     }
+
 
 static jint JNICALL Java_q2java_Engine_getImageIndex(JNIEnv *env, jclass cls, jstring jname)
     {
@@ -175,7 +190,7 @@ static jint JNICALL Java_q2java_Engine_getImageIndex(JNIEnv *env, jclass cls, js
         return 0;
 
     name = (char *)((*env)->GetStringUTFChars(env, jname, 0));
-    result = gi.imageindex(name);
+    result = q2java_gi.imageindex(name);
     (*env)->ReleaseStringUTFChars(env, jname, name);
     return result;
     }
@@ -197,7 +212,7 @@ static jobject JNICALL Java_q2java_Engine_trace0(JNIEnv *env, jclass cls,
     if (jpassEnt == NULL)
         passEnt = NULL;
     else
-        passEnt = ge.edicts + Entity_get_fEntityIndex(jpassEnt);
+        passEnt = q2java_ge.edicts + Entity_get_fEntityIndex(jpassEnt);
 
     start[0] = startx;
     start[1] = starty;
@@ -208,7 +223,7 @@ static jobject JNICALL Java_q2java_Engine_trace0(JNIEnv *env, jclass cls,
     end[2] = endz;
 
     if (!useMinMax)
-        return newTraceResults(gi.trace(start, NULL, NULL, end, passEnt, contentMask));
+        return newTraceResults(q2java_gi.trace(start, NULL, NULL, end, passEnt, contentMask));
     else        
         {
         mins[0] = minsx;
@@ -219,11 +234,9 @@ static jobject JNICALL Java_q2java_Engine_trace0(JNIEnv *env, jclass cls,
         maxs[1] = maxsy;
         maxs[2] = maxsz;
 
-        return newTraceResults(gi.trace(start, mins, maxs, end, passEnt, contentMask));
+        return newTraceResults(q2java_gi.trace(start, mins, maxs, end, passEnt, contentMask));
         }
     }
-
-
 
 
 static jint JNICALL Java_q2java_Engine_getPointContents0(JNIEnv *env, jclass cls, jfloat x, jfloat y, jfloat z)
@@ -232,7 +245,7 @@ static jint JNICALL Java_q2java_Engine_getPointContents0(JNIEnv *env, jclass cls
     v[0] = x;
     v[1] = y;
     v[2] = z;
-    return gi.pointcontents(v);
+    return q2java_gi.pointcontents(v);
     }
 
 
@@ -247,8 +260,8 @@ static jboolean JNICALL Java_q2java_Engine_inP0(JNIEnv *env, jclass cls, jfloat 
     p2[2] = z2;
     switch (calltype)
         {
-        case CALL_INPHS: return (jboolean) gi.inPHS(p1, p2);
-        case CALL_INPVS: return (jboolean) gi.inPVS(p1, p2);
+        case CALL_INPHS: return (jboolean) q2java_gi.inPHS(p1, p2);
+        case CALL_INPVS: return (jboolean) q2java_gi.inPVS(p1, p2);
         default: return 0;
         }
     }
@@ -256,13 +269,13 @@ static jboolean JNICALL Java_q2java_Engine_inP0(JNIEnv *env, jclass cls, jfloat 
 
 static void JNICALL Java_q2java_Engine_setAreaPortalState(JNIEnv *env, jclass cls, jint portalnum, jboolean open)
     {
-    gi.SetAreaPortalState(portalnum, open);
+    q2java_gi.SetAreaPortalState(portalnum, open);
     }
 
 
 static jboolean JNICALL Java_q2java_Engine_areasConnected(JNIEnv *env, jclass cls, jint area1, jint area2)
     {
-    return (jboolean) gi.AreasConnected(area1, area2);
+    return (jboolean) q2java_gi.AreasConnected(area1, area2);
     }
 
 
@@ -273,7 +286,7 @@ static jobjectArray JNICALL Java_q2java_Engine_getBoxEntities0(JNIEnv *env, jcla
     vec3_t mins;
     vec3_t maxs;
     int count;
-    edict_t **list = gi.TagMalloc(MAXTOUCH * sizeof(edict_t *), TAG_GAME);
+    edict_t **list = q2java_gi.TagMalloc(MAXTOUCH * sizeof(edict_t *), TAG_GAME);
     jobjectArray result;
 
     mins[0] = minsx;
@@ -284,10 +297,10 @@ static jobjectArray JNICALL Java_q2java_Engine_getBoxEntities0(JNIEnv *env, jcla
     maxs[1] = maxsy;
     maxs[2] = maxsz;
 
-    count = gi.BoxEdicts(mins, maxs, list, MAXTOUCH, areaType);
+    count = q2java_gi.BoxEdicts(mins, maxs, list, MAXTOUCH, areaType);
 
     result = Entity_createArray(list, count);
-    gi.TagFree(list);
+    q2java_gi.TagFree(list);
 
     return result;
     }
@@ -305,42 +318,42 @@ static void JNICALL Java_q2java_Engine_write0(JNIEnv *env, jclass cls, jobject o
             v[0] = x;
             v[1] = y;
             v[2] = z;
-            gi.multicast(v, c);
+            q2java_gi.multicast(v, c);
             break;
 
         case CALL_UNICAST:
             index = Entity_get_fEntityIndex(obj);
-            if ((index >= 0) && (index < ge.max_edicts))
-                gi.unicast(ge.edicts + index, c);
+            if ((index >= 0) && (index < q2java_ge.max_edicts))
+                q2java_gi.unicast(q2java_ge.edicts + index, c);
             break;
 
         case CALL_WRITECHAR:
-            gi.WriteChar(c);
+            q2java_gi.WriteChar(c);
             break;
 
         case CALL_WRITEBYTE:
-            gi.WriteByte(c);
+            q2java_gi.WriteByte(c);
             break;
 
         case CALL_WRITESHORT:
-            gi.WriteShort(c);
+            q2java_gi.WriteShort(c);
             break;
 
         case CALL_WRITELONG:
-            gi.WriteLong(c);
+            q2java_gi.WriteLong(c);
             break;
 
         case CALL_WRITEFLOAT:
-            gi.WriteFloat(x);
+            q2java_gi.WriteFloat(x);
             break;
 
         case CALL_WRITEANGLE:
-            gi.WriteAngle(x);
+            q2java_gi.WriteAngle(x);
             break;
 
         case CALL_WRITESTRING:
             s = (char *)((*env)->GetStringUTFChars(env, obj, 0));
-            gi.WriteString(s);
+            q2java_gi.WriteString(s);
             (*env)->ReleaseStringUTFChars(env, obj, s);
             break;
 
@@ -348,32 +361,36 @@ static void JNICALL Java_q2java_Engine_write0(JNIEnv *env, jclass cls, jobject o
             v[0] = x;
             v[1] = y;
             v[2] = z;
-            gi.WritePosition(v);
+            q2java_gi.WritePosition(v);
             break;
 
         case CALL_WRITEDIR:
             v[0] = x;
             v[1] = y;
             v[2] = z;
-            gi.WriteDir(v);
+            q2java_gi.WriteDir(v);
             break;
         }
     }
 
+
 static jint JNICALL Java_q2java_Engine_getArgc(JNIEnv *env, jclass cls)
     {
-    return gi.argc();   
+    return q2java_gi.argc();   
     }
+
 
 static jstring JNICALL Java_q2java_Engine_getArgv(JNIEnv *env, jclass cls, jint n)
     {
-    return (*env)->NewStringUTF(env, gi.argv(n));
+    return (*env)->NewStringUTF(env, q2java_gi.argv(n));
     }
+
 
 static jstring JNICALL Java_q2java_Engine_getArgs(JNIEnv *env, jclass cls)
     {
-    return (*env)->NewStringUTF(env, gi.args());
+    return (*env)->NewStringUTF(env, q2java_gi.args());
     }
+
 
 static void JNICALL Java_q2java_Engine_addCommandString(JNIEnv *env, jclass cls, jstring js)
     {
@@ -383,13 +400,14 @@ static void JNICALL Java_q2java_Engine_addCommandString(JNIEnv *env, jclass cls,
         return;
 
     s = (char *)((*env)->GetStringUTFChars(env, js, 0));
-    gi.AddCommandString(s);
+    q2java_gi.AddCommandString(s);
     (*env)->ReleaseStringUTFChars(env, js, s);
     }
 
+
 static void JNICALL Java_q2java_Engine_debugGraph(JNIEnv *env, jclass cls, jfloat value, jint color)
     {
-    gi.DebugGraph(value, color);
+    q2java_gi.DebugGraph(value, color);
     }
 
 
@@ -397,7 +415,7 @@ static void JNICALL Java_q2java_Engine_debugGraph(JNIEnv *env, jclass cls, jfloa
 
 static jstring JNICALL Java_q2java_Engine_getGamePath(JNIEnv *env, jclass cls)
     {
-    return (*env)->NewStringUTF(env, java_gameDirName);
+    return (*env)->NewStringUTF(env, javalink_gameDirName);
     }
 
 
@@ -409,10 +427,9 @@ static void JNICALL Java_q2java_Engine_debugLog(JNIEnv *env, jclass cls, jstring
         return;
 
     s = (char *)((*env)->GetStringUTFChars(env, js, 0));
-    debugLog("%s\n", s);
+    javalink_debug("%s\n", s);
     (*env)->ReleaseStringUTFChars(env, js, s);
     }
-
 
 
 static int radiusSort(const void *e1, const void *e2)
@@ -433,6 +450,7 @@ static int radiusSort(const void *e1, const void *e2)
         return -1;
     }
 
+
 jobjectArray JNICALL Java_q2java_Engine_getRadiusEntities0
   (JNIEnv *env, jclass cls, jfloat x, jfloat y, jfloat z, jfloat radius, jint ignoreIndex, jboolean onlyPlayers, jboolean sortResults)
     {
@@ -444,19 +462,19 @@ jobjectArray JNICALL Java_q2java_Engine_getRadiusEntities0
     int i;
     edict_t *check;
 
-    edict_t **list = gi.TagMalloc(MAXTOUCH * sizeof(edict_t *), TAG_GAME);
+    edict_t **list = q2java_gi.TagMalloc(MAXTOUCH * sizeof(edict_t *), TAG_GAME);
 
     radiusSquared = radius * radius;
 
     if (onlyPlayers)
         max = global_maxClients + 1;
     else
-        max = ge.num_edicts;
+        max = q2java_ge.num_edicts;
 
     count = 0;
     for (i = 1; i < max; i++)
         {
-        check = ge.edicts + i;
+        check = q2java_ge.edicts + i;
 
         if (!(check->inuse))
             continue;
@@ -485,7 +503,7 @@ jobjectArray JNICALL Java_q2java_Engine_getRadiusEntities0
         qsort(list, count, sizeof(edict_t *), &radiusSort);
 
     result = Entity_createArray(list, count);
-    gi.TagFree(list);
+    q2java_gi.TagFree(list);
 
     return result;
     }
@@ -504,6 +522,7 @@ static jlong JNICALL Java_q2java_Engine_getPerformanceFrequency(JNIEnv *env , jc
 #endif
     }
 
+
 static jlong JNICALL Java_q2java_Engine_getPerformanceCounter(JNIEnv *env , jclass cls)
     {
 #ifdef _WIN32
@@ -515,4 +534,13 @@ static jlong JNICALL Java_q2java_Engine_getPerformanceCounter(JNIEnv *env , jcla
 #else
     return clock();
 #endif
+    }
+
+/**
+ * Let the Engine know a new level is starting
+ */
+void Engine_startLevel()
+    {
+    (*java_env)->CallStaticVoidMethod(java_env, class_Engine, method_Engine_startLevel);
+    CHECK_EXCEPTION();
     }

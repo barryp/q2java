@@ -1,12 +1,9 @@
-Q2Java v0.6 Sourcecode
+Q2Java v0.7 Sourcecode
 ======================
 
 Platform-specific files
 
     javalink_generic.c  - Invokes the Sun Win32 or Unix JVMs
-    javalink_Solaris.c  - Invokes the Sun Solaris/SPARC JVM (obsolete?)
-    javalink_linux.c    - Invokes a Linux JVM by implicitly loading the .so
-    javalink_linux_dl.c - Invokes a Linux JVM by explicitly loading the .so
     win32dll.def        - Win32 DLL Definition file
 
 Compiler-specific files
