@@ -2,11 +2,11 @@ package q2java.core;
 
 import java.io.*;
 
-import org.w3c.dom.Document;
-
-import org.openxml.DOMFactory;
+import org.w3c.dom.*;
+import org.xml.sax.*;
+import org.apache.xml.serialize.*;
+import org.openxml.dom.DOMImpl;
 import org.openxml.parser.XMLParser;
-import org.openxml.x3p.*;
 
 /**
  * Use OpenXML to provide DOM/XML services.
@@ -15,43 +15,51 @@ import org.openxml.x3p.*;
  */
 public class OpenXMLFactory implements XMLFactory 
 	{
+	private DOMImplementation fDOMImpl = DOMImpl.getDOMImplementation();
 	
 /**
  * Create a blank DOM XML Document.
  */
-public org.w3c.dom.Document createXMLDocument() 
+public Document createXMLDocument(String rootNodeName) 
 	{
-	return DOMFactory.createXMLDocument();
+	return fDOMImpl.createDocument(null, rootNodeName, null);
 	}
 /**
  * Read an XML file into a DOM document.
  */
 public Document readXMLDocument(Reader r, String sourceName) throws IOException
 	{
-	XMLParser p = new XMLParser(r, sourceName);
-	return p.parseDocument();
+	InputSource is = new InputSource(r);
+	XMLParser p = new XMLParser();
+	try
+		{
+		p.parse(is);
+		}
+	catch (SAXException se)
+		{
+		throw new IOException("SAX: " + se.getMessage());
+		}
+	return p.getDocument();
 	}
 /**
  * write a DOM document to an XML stream.
  */
 public void writeXMLDocument(Document doc, Writer w, int outputStyle) throws IOException
 	{
-	StreamFormat openXMLStyle = StreamFormat.XML_PRETTY;
+	OutputFormat of = new OutputFormat();
 
-	// map XMLTools styles to OpenXML Styles
 	switch (outputStyle)
 		{
 		case XMLTools.OUTPUT_PRETTY:
-			openXMLStyle = StreamFormat.XML_PRETTY;
+			of.setIndenting(true);
 			break;
 			
 		case XMLTools.OUTPUT_COMPACT:
-			openXMLStyle = StreamFormat.XML_COMPACT;
+			of.setIndenting(false);
 			break;			
 		}
-		
-	Publisher pub = PublisherFactory.createPublisher(w, openXMLStyle );
-	pub.publish(doc);
-	pub.close();	
+	
+	XMLSerializer xs = new XMLSerializer(w, of);
+	xs.serialize(doc);
 	}
 }

@@ -509,9 +509,9 @@ public void init()
 	setClassFactory(new DefaultClassFactory());		
 
 	gDocumentHashtable = new Hashtable();
-	Document statusDoc = XMLTools.createXMLDocument();
+	Document statusDoc = XMLTools.createXMLDocument("status");
 	gDocumentHashtable.put("q2java.status", statusDoc);
-	Element root = statusDoc.createElement("status");
+	Element root = statusDoc.getDocumentElement();
 	root.setAttribute("game", "Quake2");
 	
 	CVar ipCVar = new CVar("ip", "localhost", 0);
@@ -543,7 +543,6 @@ public void init()
 	root.setAttribute("ip", ipaddr);
 	CVar portCVar = new CVar("port", "27910", 0);
 	root.setAttribute("port", portCVar.getString());	
-	statusDoc.appendChild(root);
 	
 	// Game clocks;
 	gFrameCount = 0;

@@ -27,11 +27,11 @@ public class GameUtil
 public static Document buildLevelDocument(String mapname, String entString, String spawnPoint) 
 	{
 	// create the inital, mostly empty level document
-	Document doc = XMLTools.createXMLDocument();
-	Element root = doc.createElement("map");
+	Document doc = XMLTools.createXMLDocument("map");
+	
+	Element root = doc.getDocumentElement();
 	root.setAttribute("name", mapname);
 	root.setAttribute("spawnpoint", spawnPoint);
-	doc.appendChild(root);
 
 	if (entString != null)
 		parseEntString(root, entString);

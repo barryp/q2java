@@ -90,12 +90,12 @@ public static void copy(Node source, Element dest, boolean skipSourceRootElement
  * Create a blank DOM XML document.
  * @return org.w3c.dom.Document
  */
-public static Document createXMLDocument() 
+public static Document createXMLDocument(String rootNodeName) 
 	{
 	if (gXMLFactory == null)
 		init();
 		
-	return gXMLFactory.createXMLDocument();
+	return gXMLFactory.createXMLDocument(rootNodeName);
 	}
 /**
  * Make sure the XMLTools actually has an object to create/read/write with.

@@ -118,9 +118,7 @@ public Gamelet addGamelet(String classname, String suggestedGameletName, Element
 	// empty stub
 	if (gameletDoc == null)
 		{
-		gameletDoc = XMLTools.createXMLDocument();
-		Element root= gameletDoc.createElement("gamelet");
-		gameletDoc.appendChild(root);
+		gameletDoc = XMLTools.createXMLDocument("gamelet");
 		}
 
 	// get a hold of the doc root and make sure its attributes

@@ -2,6 +2,7 @@ package q2java.core;
 
 import java.io.*;
 import org.w3c.dom.*;
+import org.xml.sax.SAXException;
 
 /**
  * Interface for classes providing XML/DOM services.
@@ -13,9 +14,11 @@ public interface XMLFactory
 	
 /**
  * Create a blank DOM document.
+ * @param rootNodeName name of the document element, which is automatically
+ *  created.
  * @return org.w3c.dom.Document
  */
-Document createXMLDocument();
+Document createXMLDocument(String rootNodeName);
 /**
  * Read an XML Document.
  * @return org.w3c.dom.Document
