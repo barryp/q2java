@@ -1,5 +1,5 @@
 
-package q2jgame;
+package baseq2;
 
 import q2java.*;
 
@@ -16,10 +16,10 @@ public abstract class GenericAmmo extends GenericItem
 public GenericAmmo(String[] spawnArgs, String ammoType, int count, String modelName) throws GameException
 	{
 	super(spawnArgs, "misc/am_pkup.wav");
-	setModel(modelName);
+	fEntity.setModel(modelName);
 	fAmmoType = ammoType;
 	fCount = count;
-	linkEntity();
+	fEntity.linkEntity();
 	}
 /**
  * This method was created by a SmartGuide.

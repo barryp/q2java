@@ -1,15 +1,16 @@
 
-package q2jgame.spawn;
+package baseq2.spawn;
 
 import q2java.*;
 import q2jgame.*;
+import baseq2.*;
 
-public class target_changelevel extends GameEntity
+public class target_changelevel extends GameObject
 	{
 	
 public target_changelevel(String[] spawnArgs) throws GameException
 	{
 	super(spawnArgs);
-	Game.setNextMap(getSpawnArg("map", null));
+	GameModule.setNextMap(getSpawnArg("map", null));
 	}
 }

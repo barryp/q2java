@@ -4,442 +4,324 @@ package q2jgame;
 import java.io.*;
 import java.lang.reflect.*;
 import java.util.*;
+import javax.vecmath.*;
 
 import q2java.*;
-import q2jgame.telnet.TelnetServer;
 
 /**
- * This class implements a Quake II Java game. All the
- * fields are static, so the GameEntities, can refer
+ * This class provides the framework for a Quake II Java game. 
+ * All the fields are static, so that objects can refer
  * to them without having to keep a reference to the solitary
  * Game object that's instantiated.
  *
  * @author Barry Pederson 
  */
 
-public class Game implements NativeGame
+public class Game implements GameListener
 	{
+	// Manage FrameListeners
+	public final static int FRAME_BEGINNING	= 0x01;
+	public final static int FRAME_MIDDLE		= 0x02;
+	public final static int FRAME_END		= 0x04;
+	
+	private static FrameList gFrameBeginning;
+	private static FrameList gFrameMiddle;
+	private static FrameList gFrameEnd;
+		
+	// Manage GameListeners
+	private static Vector gGameListeners;
+
+	// Manage LevelListeners
+	private static Vector gLevelListeners;
+		
+	// Manage PrintListeners
+	private static Vector gPrintListeners;	
+	
+	// Manage mod packages
+	private static Vector gModList;
+	private static Hashtable gModHash;
+	private static Hashtable gClassHash;
+	
+	// Allow objects to find each other
+	private static Hashtable gLevelRegistry;
+	
 	// game clocks
 	private static int gFrameCount;
-	public static float gGameTime;
-	private static long gCPUTime;
+	private static float gGameTime;
+	private static long gCPUTime;	
 	
-	// handy reference to the world
-	public static GameEntity gWorld;
+/**
+ * Register an object that implements FrameListener to 
+ * receive normal (FRAME_MIDDLE phase) frame events.
+ *
+ * @param f object that wants its runFrame() method called.
+ * @param delay Number of seconds to wait before calling the listener, use 0 to start calling right away.
+ * @param interval Number of seconds between calls, use 0 to call on every frame, a negative interval will
+ *   be a one-shot notification with the listener removed automatically afterwards.
+ */
+public static void addFrameListener(FrameListener f, float delay, float interval) 
+	{
+	gFrameMiddle.addFrameListener(f, delay, interval);
+	}
+/**
+ * Register an object that implements FrameListener to 
+ * receive frame events at specific phases of processing.
+ * Used for special cases like Player objects that want to be
+ * called both at the beginning and end of a server frame.
+ *
+ * @param f object that wants its runFrame() method called.
+ * @param phase A combination (or'ed or added together) of the FrameManager.FRAME_* constants.
+ * @param delay Number of seconds to wait before calling the listener, use 0 to start calling right away.
+ * @param interval Number of seconds between calls, use 0 to call on every frame, a negative interval will
+ *   be a one-shot notification with the listener removed automatically afterwards.
+ */
+public static void addFrameListener(FrameListener f, int phase, float delay, float interval) 
+	{
+	if ((phase & FRAME_BEGINNING) != 0)
+		gFrameBeginning.addFrameListener(f, delay, interval);
+			
+	if ((phase & FRAME_MIDDLE) != 0)
+		gFrameMiddle.addFrameListener(f, delay, interval);
+			
+	if ((phase & FRAME_END) != 0)
+		gFrameEnd.addFrameListener(f, delay, interval);
+	}
+/**
+ * Add a game listener.
+ * @param pl q2jgame.GameListener
+ */
+public static void addGameStatusListener(GameStatusListener gl) 
+	{
+	if (!gGameListeners.contains(gl))
+		gGameListeners.addElement(gl);
+	}
+/**
+ * Add a level listener.
+ * @param pl q2jgame.GameListener
+ */
+public static void addLevelListener(LevelListener x) 
+	{
+	if (!gLevelListeners.contains(x))
+		gLevelListeners.addElement(x);
+	}
+/**
+ * Add an arbitrary object to the Game's registry.
+ * @param key Key to reference the Vector that the object is added to.
+ * @param value Any object
+ * @return the Vector that the object was added to.
+ */
+public static Vector addLevelRegistry(Object key, Object value) 
+	{
+	Vector list = (Vector) gLevelRegistry.get(key);
+	if (list == null)
+		{
+		list = new Vector();
+		gLevelRegistry.put(key, list);
+		}
 		
-	// various CVars
-	public static CVar gBobUp;	
-	public static CVar gRollAngle;
-	public static CVar gRollSpeed;
-	public static CVar gGravity;
-	
-	// Game options
-	public static boolean gIsDeathmatch;
-	public static int gSkillLevel; // this probably isn't necessary since this is a DM-only mod, but wtf.
-	
-	// CVars only the Game object itself needs to worry about
-	private static CVar gFragLimit;
-	private static CVar gTimeLimit;
-	private static CVar gDMFlags;
-	
-	// used while spawnEntities() is running
-	// to help gather together groups and targets
-	private static Hashtable gGroups;
-	private static Hashtable gTargets;
-
-	// handy random number generator
-	private static Random gRandom;
-
-	// track level changes	
-	private static boolean gInIntermission;
-	private static double gIntermissionEndTime;
-	private static String gCurrentMap;
-	private static String gNextMap;
-	
-	// Telnet server support
-	private static TelnetServer gTelnet;
-
-	// ----------- Constants -------------------------
-	
-	// deathmatch flags
-	public final static int DF_NO_HEALTH			= 1;
-	public final static int DF_NO_ITEMS			= 2;
-	public final static int DF_WEAPONS_STAY		= 4;
-	public final static int DF_NO_FALLING		= 8;
-	public final static int DF_INSTANT_ITEMS		= 16;
-	public final static int DF_SAME_LEVEL		= 32;
-	public final static int DF_SKINTEAMS			= 64;
-	public final static int DF_MODELTEAMS		= 128;
-	public final static int DF_FRIENDLY_FIRE		= 256;
-	public final static int DF_SPAWN_FARTHEST	= 512;
-	public final static int DF_FORCE_RESPAWN		= 1024;
-	public final static int DF_NO_ARMOR			= 2048;
-	
-/**
- * @return A random number between -1.0 and +1.0
- */
-public static double cRandom() 
-	{
-	return (gRandom.nextFloat() - 0.5) * 2.0;
+	list.addElement(value);
+	return list;
 	}
 /**
- * Fire a lead projectile.
- * @param p q2jgame.Player
- * @param start q2java.Vec3
- * @param aimDir q2java.Vec3
- * @param damage int
- * @param kick int
- * @param teImpact int
- * @param hSpread int
- * @param vSpread int
+ * Add a new module to the game.  If the module has a class named:
+ * <packagename>.GameModule, then that classes static void load() method is called.  
+ * If a module has already been added, nothing happens.
+ * @param packageName java.lang.String
  */
-public static void fireLead(GameEntity p, Vec3 start, Vec3 aimDir, int damage, int kick, int teImpact, int hSpread, int vSpread) 
+public static void addPackage(String packageName) 
 	{
-	TraceResults	tr;
-	Vec3		dir;
-	Vec3		forward = new Vec3();
-	Vec3		right = new Vec3();
-	Vec3		up = new Vec3();
-	Vec3		end;
-	float	r;
-	float	u;
-	Vec3		waterStart = new Vec3();
-	boolean	water = false;
-	int		content_mask = Engine.MASK_SHOT | Engine.MASK_WATER;
-
-	tr = Engine.trace(p.getOrigin(), start, p, Engine.MASK_SHOT);
-	if (!(tr.fFraction < 1.0))
-		{
-		dir = aimDir.toAngles();
-		dir.angleVectors(forward, right, up);
-
-		r = (float) (Game.cRandom() * hSpread);
-		u = (float) (Game.cRandom() * vSpread);
-		end = start.vectorMA(8192, forward);
-		end = end.vectorMA(r, right);
-		end = end.vectorMA(u, up);
-
-		if ((Engine.pointContents(start) & Engine.MASK_WATER) != 0)
-			{
-			water = true;
-			waterStart = new Vec3(start);
-			content_mask &= ~Engine.MASK_WATER;
-			}
-
-		tr = Engine.trace(start, end, p, content_mask);
-
-		// see if we hit water
-		if ((tr.fContents & Engine.MASK_WATER) != 0)
-			{
-			int		color;
-
-			water = true;
-			waterStart = new Vec3(tr.fEndPos);
-
-			if (!start.equals(tr.fEndPos))
-				{
-				if ((tr.fContents & Engine.CONTENTS_WATER) != 0)
-					{
-					if (tr.fSurfaceName.equals("*brwater"))
-						color = Engine.SPLASH_BROWN_WATER;
-					else
-						color = Engine.SPLASH_BLUE_WATER;
-					}
-				else if ((tr.fContents & Engine.CONTENTS_SLIME) != 0)
-					color = Engine.SPLASH_SLIME;
-				else if ((tr.fContents & Engine.CONTENTS_LAVA) != 0)
-					color = Engine.SPLASH_LAVA;
-				else
-					color = Engine.SPLASH_UNKNOWN;
-
-				if (color != Engine.SPLASH_UNKNOWN)
-					{
-					Engine.writeByte(Engine.SVC_TEMP_ENTITY);
-					Engine.writeByte(Engine.TE_SPLASH);
-					Engine.writeByte(8);
-					Engine.writePosition(tr.fEndPos);
-					Engine.writeDir(tr.fPlaneNormal);
-					Engine.writeByte(color);
-					Engine.multicast(tr.fEndPos, Engine.MULTICAST_PVS);
-					}
-
-				// change bullet's course when it enters water
-				dir = new Vec3(end).subtract(start).toAngles();
-				dir.angleVectors(forward, right, up);
-				r = (float)(Game.cRandom() * hSpread * 2);
-				u = (float)(Game.cRandom() * vSpread * 2);
-				end = waterStart.vectorMA(8192, forward);
-				end = end.vectorMA(r, right);
-				end = end.vectorMA(u, up);
-				}
-
-			// re-trace ignoring water this time
-			tr = Engine.trace(waterStart, end, p, Engine.MASK_SHOT);
-			}
-		}
-
-	// send gun puff / flash
-	if ((tr.fSurfaceName == null) || ((tr.fSurfaceFlags & Engine.SURF_SKY) == 0))
-		{
-		if ((tr.fFraction < 1.0) && (!tr.fSurfaceName.startsWith("sky")))
-			((GameEntity)tr.fEntity).damage(p, p, aimDir, tr.fEndPos, tr.fPlaneNormal, damage, kick, GameEntity.DAMAGE_BULLET, teImpact); 
-		}
-
-	// if went through water, determine where the end and make a bubble trail
-	if (water)
-		{
-		Vec3 pos;
-
-		dir = new Vec3(tr.fEndPos).subtract(waterStart).normalize();
-		pos = tr.fEndPos.vectorMA(-2, dir);
-		if ((Engine.pointContents(pos) & Engine.MASK_WATER) != 0)
-			tr.fEndPos = new Vec3(pos);
-		else
-			tr = Engine.trace(pos, waterStart, tr.fEntity, Engine.MASK_WATER);
-
-		pos = new Vec3(waterStart).add(tr.fEndPos).scale(0.5F);
-
-		Engine.writeByte(Engine.SVC_TEMP_ENTITY);
-		Engine.writeByte(Engine.TE_BUBBLETRAIL);
-		Engine.writePosition(waterStart);
-		Engine.writePosition(tr.fEndPos);
-		Engine.multicast(pos, Engine.MULTICAST_PVS);
-		}
-	}
-/**
- * Fire a railgun slug.
- * @param p q2jgame.Player
- * @param start q2java.Vec3
- * @param forward q2java.Vec3
- * @param damage int
- * @param kick int
- */
-public static void fireRail(GameEntity p, Vec3 start, Vec3 aimDir, int damage, int kick) 
-	{
-	Vec3			from;
-	Vec3			end;
-	TraceResults	tr = null;
-	GameEntity 	ignore;
-	int			mask;
-	boolean		water;
-
-	end = start.vectorMA(8192, aimDir);
-	from = new Vec3(start);
-	ignore = p;
-	water = false;
-	mask = Engine.MASK_SHOT | Engine.CONTENTS_SLIME | Engine.CONTENTS_LAVA;
-	while (ignore != null)
-		{
-		tr = Engine.trace(from, end, ignore, mask);
-
-		if ((tr.fContents & (Engine.CONTENTS_SLIME | Engine.CONTENTS_LAVA)) != 0)
-			{
-			mask &= ~(Engine.CONTENTS_SLIME | Engine.CONTENTS_LAVA);
-			water = true;
-			}
-		else
-			{
-/*			if ((tr.ent->svflags & SVF_MONSTER) || (tr.ent->client))
-				ignore = tr.ent;
-			else
-*/				ignore = null;
-
-			if (tr.fEntity != p)
-				((GameEntity)tr.fEntity).damage(p, p, aimDir, tr.fEndPos, tr.fPlaneNormal, damage, kick, 0, Engine.TE_NONE); 
-			}
-
-		from.set(tr.fEndPos);
-		}
-
-	// send gun puff / flash
-	Engine.writeByte(Engine.SVC_TEMP_ENTITY);
-	Engine.writeByte(Engine.TE_RAILTRAIL);
-	Engine.writePosition(start);
-	Engine.writePosition(tr.fEndPos);
-	Engine.multicast(tr.fEndPos, Engine.MULTICAST_PHS);
-//	Engine.multicast(start, Engine.MULTICAST_PHS);
-	if (water)
-		{
-		Engine.writeByte(Engine.SVC_TEMP_ENTITY);
-		Engine.writeByte(Engine.TE_RAILTRAIL);
-		Engine.writePosition(start);
-		Engine.writePosition(tr.fEndPos);
-		Engine.multicast(tr.fEndPos, Engine.MULTICAST_PHS);
-		}
-
-//	if (self->client)
-//		PlayerNoise(self, tr.endpos, PNOISE_IMPACT);
-	}
-/**
- * Fire a shotgun shell.
- * @param p q2jgame.Player
- * @param start q2java.Vec3
- * @param aimDir q2java.Vec3
- * @param damage int
- * @param kick int
- * @param teImpact int
- * @param hSpread int
- * @param vSpread int
- */
-public static void fireShotgun(GameEntity p, Vec3 start, Vec3 aimDir, int damage, int kick, int hSpread, int vSpread, int count) 
-	{
-	for (int i = 0; i < count; i++)
-		fireLead(p, start, aimDir, damage, kick, Engine.TE_SHOTGUN, hSpread, vSpread);
-	}
-/**
- * Lookup a group Vector, based on the name.
- * Only good while Game.spawnEntities() is running, 
- * once it's finished, this function will return null.
- * Also will return null if groupName is null.
- * @return Vector containing GameEntities belonging to the group.
- * @param groupName Name of the group.
- */
-public static Vector getGroup(String groupName) 
-	{
-	if ((gGroups == null) || (groupName == null))
-		return null;
+	if (gModList.contains(packageName))
+		return;
 		
-	Vector v = (Vector)gGroups.get(groupName);
-	if (v == null)
+	gModList.insertElementAt(packageName, 0);
+
+	// clear the cache so the new package will be 
+	// looked at when looking up classes
+	gClassHash.clear(); 
+	
+	try
 		{
-		v = new Vector();
-		gGroups.put(groupName, v);
+		Class modClass = Class.forName(packageName + ".GameModule");
+		gModHash.put(packageName, modClass);
+		
+		Method loadMethod = modClass.getMethod("load", null);
+		loadMethod.invoke(null, null);
 		}
-	return v;			
+	catch (ClassNotFoundException cnfe)
+		{		
+		}
+	catch (NoSuchMethodException nsme)
+		{
+		}
+	catch (InvocationTargetException ite)
+		{
+		ite.getTargetException().printStackTrace();
+		}		
+	catch (Exception e)
+		{
+		e.printStackTrace();
+		}
 	}
 /**
- * Select the spawnpoint farthest from other players.
- * @return q2jgame.GameEntity
+ * Add a print listener.
+ * @param pl q2jgame.PrintListener
  */
-public static GameEntity getSpawnpointFarthest() 
+public static void addPrintListener(PrintListener pl) 
 	{
-	GameEntity result = null;
-	float bestDistance = 0;
-	Enumeration enum;
+	if (!gPrintListeners.contains(pl))
+		gPrintListeners.addElement(pl);
+	}
+/**
+ * Handle broadcast print messages.
+ * @param flags int
+ * @param msg java.lang.String
+ */
+public static void bprint(int flags, String msg) 
+	{
+	Engine.bprint(flags, msg);
 	
-	enum = NativeEntity.enumerateEntities("q2jgame.spawn.info_player_deathmatch");
+	Enumeration enum = gPrintListeners.elements();
 	while (enum.hasMoreElements())
 		{
-		GameEntity spawnPoint = (GameEntity) enum.nextElement();
-		float range = nearestPlayerDistance(spawnPoint);
-
-		if (range > bestDistance)
+		try
 			{
-			bestDistance = range;
-			result = spawnPoint;
+			((PrintListener) enum.nextElement()).bprint(flags, msg);
+			}
+		catch (Exception e)
+			{
 			}
 		}
-
+	}
+/**
+ * Relay stuff sent to the console from outside the game.
+ * @param s java.lang.String
+ */
+public void consoleOutput(String s) 
+	{
+	Enumeration enum = gPrintListeners.elements();
+	while (enum.hasMoreElements())
+		{
+		try
+			{
+			((PrintListener) enum.nextElement()).consoleOutput(s);
+			}
+		catch (Exception e)
+			{
+			}
+		}
+	}
+/**
+ * Handle debugging print messages.
+ * @param msg java.lang.String
+ */
+public static void dprint(String msg) 
+	{
+	Engine.dprint(msg);
+	
+	Enumeration enum = gPrintListeners.elements();
+	while (enum.hasMoreElements())
+		{
+		try
+			{
+			((PrintListener) enum.nextElement()).dprint(msg);
+			}
+		catch (Exception e)
+			{
+			}
+		}	
+	}
+/**
+ * Fetch the current gametime, measured as seconds since 
+ * the server (not the level) started.
+ * @return float
+ */
+public static float getGameTime() 
+	{
+	return gGameTime;
+	}
+/**
+ * Fetch a list of objects that were registered under a given key.
+ * @return Vector containing registered objects
+ * @param key java.lang.Object
+ */
+public static Vector getLevelRegistryList(Object key) 
+	{
+	Vector result = (Vector) gLevelRegistry.get(key);
+	if (result == null)
+		{
+		result = new Vector();
+		gLevelRegistry.put(key, result);
+		}
+		
 	return result;
 	}
 /**
- * Select a random spawnpoint, but exclude the two points closest
- * to other players.
- * @return q2jgame.GameEntity
+ * Let the DLL know what class to use for new Players.
+ * @return java.lang.Class
  */
-public static GameEntity getSpawnpointRandom() 
+public Class getPlayerClass() throws ClassNotFoundException
 	{
-	GameEntity spawnPoint = null;
-	GameEntity spot1 = null;
-	GameEntity spot2 = null;
-	float range1 = Float.MAX_VALUE;
-	float range2 = Float.MAX_VALUE;
-	int count = 0;
-	Enumeration enum;
-	
-	// find the two deathmatch spawnpoints that are closest to any players
-	enum = NativeEntity.enumerateEntities("q2jgame.spawn.info_player_deathmatch");
-	while (enum.hasMoreElements())
-		{
-		count++;
-		spawnPoint = (GameEntity) enum.nextElement();
-		float range = nearestPlayerDistance(spawnPoint);
+	return q2java.NativeEntity.class;
+	}
+/**
+ * Lookup an float spawn argument.
+ * @return value found, or defaultValue.
+ * @param args String array holding the map's entity arguments, as created by the spawnEntities() method.
+ * @param name name of spawn argument.
+ * @param defaultValue value to return if "name" is not found.
+ */
+public static float getSpawnArg(String[] args, String keyword, float defaultValue) 
+	{
+	if (args == null)
+		return defaultValue;
 
-		if (range < range1)
-			{
-			range1 = range;
-			spot1 = spawnPoint;
-			}		
-		else
-			{
-			if (range < range2)
-				{
-				range2 = range;
-				spot2 = spawnPoint;
-				}
-			}			
+	keyword = keyword.intern();
+	for (int i = 0; i < args.length; i+=2)
+		if (keyword == args[i])
+			return Float.valueOf(args[i+1]).floatValue();
+
+	return defaultValue;
+	}
+/**
+ * Lookup an integer spawn argument.
+ * @return value found, or defaultValue.
+ * @param args String array holding the map's entity arguments, as created by the spawnEntities() method.
+ * @param name name of spawn argument.
+ * @param defaultValue value to return if "name" is not found.
+ */
+public static int getSpawnArg(String[] args, String keyword, int defaultValue) 
+	{
+	if (args == null)
+		return defaultValue;
+
+	keyword = keyword.intern();
+	for (int i = 0; i < args.length; i+=2)
+		if (keyword == args[i])
+			return Integer.parseInt(args[i+1]);
+
+	return defaultValue;
+	}
+/**
+ * Lookup a string spawn argument.
+ * @return value found, or defaultValue.
+ * @param args String array holding the map's entity arguments, as created by the spawnEntities() method.
+ * @param name name of spawn argument.
+ * @param defaultValue value to return if "name" is not found.
+ */
+public static String getSpawnArg(String[] args, String keyword, String defaultValue)
+	{
+	if (args == null)
+		return defaultValue;
+
+	keyword = keyword.intern();
+	for (int i = 0; i < args.length; i+=2)
+		{
+		if (keyword == args[i])
+			return args[i+1];
+		}
 			
-		}
-
-	if (count == 0)
-		return null;
-		
-	if (count <= 2)
-		spot1 = spot2 = null;
-	else
-		count -= 2;			
-
-	int selection = (randomInt() & 0x0fff) % count;
-	spawnPoint = null;
-
-	enum = NativeEntity.enumerateEntities("q2jgame.spawn.info_player_deathmatch");
-	while (enum.hasMoreElements())
-		{
-		spawnPoint = (GameEntity) enum.nextElement();
-		
-		// skip the undesirable spots
-		if ((spawnPoint == spot1) || (spawnPoint == spot2))
-			continue;
-			
-		if ((selection--) == 0)					
-			break;
-		}
-
-	return spawnPoint;
+	return defaultValue;
 	}
-/**
- * Find a single-player spawnpoint. Kind of simplistic.
- * @return q2jgame.GameEntity
- */
-public static GameEntity getSpawnpointSingle() 
-	{
-	Enumeration enum;
-	
-	enum = NativeEntity.enumerateEntities("q2jgame.spawn.info_player_start");
-	if (enum.hasMoreElements())
-		return (GameEntity) enum.nextElement();
-		
-	return null;
-	}
-/**
- * Lookup a target Vector, based on the name.
- * Only good while Game.spawnEntities() is running, 
- * once it's finished, this function will return null.
- * Also will return null if targetName is null.
- * @return Vector containing GameEntities belonging to the target set.
- * @param targetName Name of the target.
- */
-public static Vector getTarget(String targetName) 
-	{
-	if ((gTargets == null) || (targetName == null))
-		return null;
-		
-	Vector v = (Vector)gTargets.get(targetName);
-	if (v == null)
-		{
-		v = new Vector();
-		gTargets.put(targetName, v);
-		}
-	return v;			
-	}
-/**
- * Describe this Game.
- * @return java.lang.String
- */
-public static String getVersion() 
-	{
-	return "Quake2Java Test Game, v0.1";
-	}	
 /**
  * Called by the DLL when Quake II calls the DLL's init() function.
  */
@@ -447,145 +329,233 @@ public void init()
 	{	
 	// actually initialize the game
 	Engine.debugLog("Game.init()");
-	gRandom = new Random();
 	
-	// load cvars
-	gBobUp = new CVar("bob_up", "0.005", 0);	
-	gRollAngle = new CVar("sv_rollangle", "2", 0);
-	gRollSpeed = new CVar("sv_rollspeed", "200", 0);	
-	gGravity = new CVar("sv_gravity", "800", 0);	
-	
-	gFragLimit = new CVar("fraglimit", "0", CVar.CVAR_SERVERINFO);
-	gTimeLimit = new CVar("timelimit", "0", CVar.CVAR_SERVERINFO);
-	gDMFlags = new CVar("dmflags", "0", CVar.CVAR_SERVERINFO);
-
-	gIsDeathmatch = (new CVar("deathmatch", "0", CVar.CVAR_LATCH)).getFloat() == 1.0;
-	gSkillLevel = (int) ((new CVar("skill", "1", CVar.CVAR_LATCH)).getFloat());
-
-	// startup another thread to handle Telnet clients
-	int port = (int) ((new CVar("telnet_port", "0", CVar.CVAR_NOSET)).getFloat());
-	if (port > 0)
-		{
-		String password = (new CVar("telnet_password", "", CVar.CVAR_NOSET)).getString();
-		try
-			{
-			gTelnet = new TelnetServer(port, password);
-			gTelnet.start();
-			}
-		catch (IOException e)
-			{
-			e.printStackTrace();
-			}		
-		}
+	// setup to manage FrameListeners
+	gFrameBeginning = new FrameList(64, 16);
+	gFrameMiddle = new FrameList(512, 128);
+	gFrameEnd = new FrameList(64, 16);
 		
+	// setup to manage GameListeners
+	gGameListeners = new Vector();		
+	
+	// setup to manage LevelListeners
+	gLevelListeners = new Vector();
+	
+	// setup to manage PrintListeners
+	gPrintListeners = new Vector();	
+	
+	// setup hashtable to let objects find each other in a level
+	gLevelRegistry = new Hashtable();
+		
+	// setup to manage Game mods
+	gModList = new Vector();
+	gModHash = new Hashtable();
+	gClassHash = new Hashtable();		
+				
+	gFrameCount = 0;
+	gGameTime = 0;				
+	
+	CVar packages = new CVar("q2jgame_packages", "baseq2", 0);
+	StringTokenizer st = new StringTokenizer(packages.getString(), ";,/\\+");
+	Vector v = new Vector();
+	while (st.hasMoreTokens())
+		v.addElement(st.nextToken());
+
+	for (int i = v.size()-1; i >= 0; i--)
+		addPackage((String) v.elementAt(i));			
+
 	Engine.debugLog("Game.init() finished");
 	}
 /**
- * Check whether a given deathmatch flag is set.  Use the Game.DF_* constants.
- * @return true if the flag is set, false if not.
+ * Look through the game mod list, trying to find a class
+ * that matches the classSuffix
+ * 
+ * @return java.lang.Class
+ * @param classSuffix The end of a classname, for example ".spawn.weapon_shotgun";
  */
-public static boolean isDMFlagSet(int flag) 
+public static Class lookupClass(String classSuffix) throws ClassNotFoundException
 	{
-	return (((int)gDMFlags.getFloat()) & flag) != 0;
-	}
-/**
- * Calculate how far the nearest player away is from a given entity
- * @return float
- * @param ent q2jgame.GameEntity
- */
-public static float nearestPlayerDistance(GameEntity ent) 
-	{
-	float result = Float.MAX_VALUE;
-	Vec3 startPoint = ent.getOrigin();
-	Vec3 v = new Vec3();
-
-	Enumeration players = NativeEntity.enumeratePlayers();
-	while (players.hasMoreElements())
-		{
-		Player p = (Player) players.nextElement();
-		if (p.getHealth() < 0)
-			continue;
-		v.set(startPoint).subtract(p.getOrigin());						
-		float f = v.length();
-		if (f < result)
-			result = f;
-		}
-
-	return result;
-	}
-/**
- * Inflict damage on all Players within a certain radius of the inflictor.
- * This is different from the stock DLL which inflicts damage on all entities, not just players.
- * @param inflictor q2jgame.GameEntity
- * @param attacker q2jgame.GameEntity
- * @param damage float
- * @param ignore q2jgame.GameEntity
- * @param radius float
- */
-public static void radiusDamage(GameEntity inflictor, GameEntity attacker, float damage, GameEntity ignore, float radius) 
-	{
-	Enumeration enum = NativeEntity.enumeratePlayers();
-	Vec3 point = inflictor.getOrigin();
-	Vec3 v = new Vec3();
-	Vec3 dir;
-	Vec3 normal = new Vec3();
+	Class result = (Class) gClassHash.get(classSuffix);
+	if (result != null)
+		return result;
+		
+	Enumeration enum = gModList.elements();
 	while (enum.hasMoreElements())
-		{		
-		Player p = (Player) enum.nextElement();
-
-		if (p == ignore)
-			continue;
-			
-		v.set(point);
-		v.subtract(p.getOrigin());
-		if (v.length() > radius)
-			continue;
-
-		// I don't claim to understand these next 4 lines....
-		v = p.getMins().add(p.getMaxs());
-		dir = p.getOrigin();
-		v = dir.vectorMA(0.5F, v).subtract(point);							
-		int damagePoints = (int)(damage - 0.5 * v.length());
-
-		if (p == attacker)
-			damagePoints = damagePoints / 2;
-			
-		if (damagePoints > 0)			
+		{
+		String s = (String) enum.nextElement();
+		try
 			{
-			dir.subtract(point);
-			p.damage(inflictor, attacker, dir, point, normal, damagePoints, damagePoints, GameEntity.DAMAGE_RADIUS, Engine.TE_NONE);			
+			result = Class.forName(s + classSuffix);
+			gClassHash.put(classSuffix, result);
+			return result;
 			}
-		}	
-	}		
-/**
- * @return A random number between 0.0 and 1.0
- */
-public static float randomFloat() 
-	{
-	return gRandom.nextFloat();
+		catch (ClassNotFoundException e)
+			{
+			}
+		}
+		
+	throw new ClassNotFoundException("Couldn't find a match for [" + classSuffix + "]");
 	}
 /**
- * Get a random integer, values are distributed across 
- * the full range of the signed 32-bit integer type.
- * @return A random integer.
+ * Called by the DLL when a new player connects. Throw an exception to reject the connection.
+ * @param playerEntity instance of NativeEntity (or a subclass of NativeEntity) that represents the player.
+ * @param userinfo Player's basic info
+ * @param loadgame boolean
  */
-public static int randomInt() 
+public void playerConnect(NativeEntity playerEntity, boolean loadgame) throws Exception, Throwable
 	{
-	return gRandom.nextInt();
+	try
+		{
+		Class playerClass = Game.lookupClass(".Player");
+	
+		Class[] paramTypes = new Class[2];
+		paramTypes[0] = q2java.NativeEntity.class;
+		paramTypes[1] = java.lang.Boolean.TYPE;
+
+		Method initMethod = playerClass.getMethod("connect", paramTypes);
+
+		Object[] params = new Object[2];
+		params[0] = playerEntity;
+		params[1] = new Boolean(loadgame);
+
+		initMethod.invoke(null, params);		
+		}
+	catch (InvocationTargetException ite)
+		{
+		throw ite.getTargetException();
+		}
 	}
 /**
  * Called by the DLL when the DLL's ReadGame() function is called.
  */
 public void readGame(String filename)
 	{
-	Engine.debugLog("Game.readGame(\"" + filename + "\")");
+	Enumeration enum = gGameListeners.elements();
+	while (enum.hasMoreElements())
+		{
+		try
+			{
+			((GameStatusListener) enum.nextElement()).readGame(filename);
+			}
+		catch (Exception e)
+			{
+			}
+		}
 	}
 /**
  * Called by the DLL when the DLL's ReadLevel() function is called.
  */
 public void readLevel(String filename)
 	{
-	Engine.debugLog("Game.readLevel(\"" + filename + "\")");
+	Enumeration enum = gGameListeners.elements();
+	while (enum.hasMoreElements())
+		{
+		try
+			{
+			((GameStatusListener) enum.nextElement()).readLevel(filename);
+			}
+		catch (Exception e)
+			{
+			}
+		}
+	}
+/**
+ * Remove a normal FrameListener that's registered to listen
+ * for the middle phase of Server Frames. 
+ *
+ * @param f q2jgame.FrameListener
+ */
+public static void removeFrameListener(FrameListener f) 
+	{
+	gFrameMiddle.removeFrameListener(f);
+	}
+/**
+ * Remove a FrameListener that's registered to be notified
+ * for specific phases of the Server frame.
+ *
+ * @param f q2jgame.FrameListener
+ * @param phase A combination (or'ed or added together) of the FrameManager.FRAME_* constants.
+ */
+public static void removeFrameListener(FrameListener f, int phase) 
+	{
+	if ((phase & FRAME_BEGINNING) != 0)
+		gFrameBeginning.removeFrameListener(f);
+			
+	if ((phase & FRAME_MIDDLE) != 0)
+		gFrameMiddle.removeFrameListener(f);
+			
+	if ((phase & FRAME_END) != 0)
+		gFrameEnd.removeFrameListener(f);
+	}	
+/**
+ * Remove a game listener.
+ * @param pl q2jgame.GameListener
+ */
+public static void removeGameStatusListener(GameStatusListener gl) 
+	{
+	gGameListeners.removeElement(gl);
+	}
+/**
+ * Remove a game listener.
+ * @param pl q2jgame.GameListener
+ */
+public static void removeLevelListener(LevelListener x) 
+	{
+	gLevelListeners.removeElement(x);
+	}
+/**
+ * This method was created by a SmartGuide.
+ * @param key java.lang.Object
+ * @param value java.lang.Object
+ */
+public static void removeLevelRegistry(Object key, Object value)
+	{
+	Vector list = (Vector) gLevelRegistry.get(key);
+	if (list != null)
+		list.removeElement(value);
+	}
+/**
+ * Remove a module from the game's package list
+ * @param packageName java.lang.String
+ */
+public static void removePackage(String packageName) 
+	{
+	gModList.removeElement(packageName);
+
+	// clear the cache so the old package won't be 
+	// looked at when looking up classes
+	gClassHash.clear(); 
+	
+	Class modClass = (Class) gModHash.get(packageName);
+	if (modClass != null)
+		{
+		gModHash.remove(packageName);
+		try
+			{
+			Method unloadMethod = modClass.getMethod("unload", null);
+			unloadMethod.invoke(null, null);
+			}
+		catch (NoSuchMethodException nsme)
+			{
+			}
+		catch (InvocationTargetException ite)
+			{
+			ite.getTargetException().printStackTrace();
+			}
+		catch (Exception e)
+			{
+			e.printStackTrace();
+			}	
+		}
+	gModHash.remove(packageName);
+	}
+/**
+ * Remove a listener.
+ * @param pl q2jgame.PrintListener
+ */
+public static void removePrintListener(PrintListener pl) 
+	{
+	gPrintListeners.removeElement(pl);
 	}
 /**
  * Called by the DLL when the DLL's RunFrame() function is called.
@@ -593,152 +563,99 @@ public void readLevel(String filename)
 public void runFrame()
 	{
 	long startTime = System.currentTimeMillis();
-	
-	Enumeration enum;
-	Object obj;
-	
+		
 	// increment the clocks
 	// if we just added Engine.SECONDS_PER_FRAME to fGameTime,
 	// the clock drifts due to rounding errors, so we
 	// have to keep a frame count and multiply.
 	gFrameCount++;
 	gGameTime = gFrameCount * Engine.SECONDS_PER_FRAME;
-	
-	
-	// Telnet support
-	// (this stinks...having to insert code inside other existing code..the 
-	//  next version will definitely do this in a better way with events and such)	
-	if (gTelnet != null)
-		{
-		String s;
-		while ((s = gTelnet.getCommand()) != null)
-			{
-			if ((s.length() > 0) && (s.charAt(0) == '+'))
-				Engine.addCommandString(s.substring(1));
-			else
-				PrintManager.bprint(Engine.PRINT_CHAT, "<Telnet Console>: " + s + "\n");
-			}
-		}
-		
-	if (gInIntermission && (gGameTime > gIntermissionEndTime))
-		{
-		if (isDMFlagSet(DF_SAME_LEVEL))
-			Engine.addCommandString("gamemap \"" + gCurrentMap + "\"");
-		else
-			Engine.addCommandString("gamemap \"" + gNextMap + "\"");
-		return;
-		}
 
-	// notify all the players we're beginning a frame
-	enum = NativeEntity.enumeratePlayers();
-	while (enum.hasMoreElements())
-		{
-		try
-			{
-			((Player) enum.nextElement()).beginServerFrame();
-			}
-		catch (Exception e)
-			{
-			e.printStackTrace();
-			}
-		}						
-				
-	// give each non-player entity a chance to run				
-	enum = NativeEntity.enumerateEntities();
-	while (enum.hasMoreElements())
-		{
-		obj = enum.nextElement();
-		if (!(obj instanceof Player))
-			{
-			try
-				{
-				((GameEntity) obj).runFrame();
-				}
-			catch (Exception e)
-				{
-				e.printStackTrace();
-				}				
-			}				
-		}
-
-	if (!gInIntermission && timeToQuit())
-		startIntermission();
-
-	// notify all the players we're ending a frame
-	enum = NativeEntity.enumeratePlayers();
-	while (enum.hasMoreElements())
-		{
-		try
-			{
-			((Player) enum.nextElement()).endServerFrame();
-			}
-		catch (Exception e)
-			{
-			e.printStackTrace();
-			}			
-		}			
+	gFrameBeginning.runFrame(FRAME_BEGINNING, gGameTime);
+	gFrameMiddle.runFrame(FRAME_MIDDLE, gGameTime);
+	gFrameEnd.runFrame(FRAME_END, gGameTime);
 		
 	long endTime = System.currentTimeMillis();
 	gCPUTime += (endTime - startTime);		
 	}
 /**
  * Called by the DLL when the DLL's ServerCommand() function is called.
- * The admin can type "sv <a> <b> <c>" at the console, this method
- * will use reflection to look for a method named svcmd_<a> and execute
+ * The admin can type "sv xxx a b" at the console, this method
+ * will use reflection to look for a method named svcmd_xxx and execute
  * it if possible, otherwise just repeat the command back to the console. 
  */
 public void serverCommand() 
 	{
-	String[] sa = new String[Engine.argc()];
+	String[] sa = new String[Engine.getArgc()];
 	for (int i = 0; i < sa.length; i++)
-		sa[i] = Engine.argv(i);
+		sa[i] = Engine.getArgv(i);
 
 	Class[] paramTypes = new Class[1];
 	paramTypes[0] = sa.getClass();
-	
+
+
+	// look for a built-in command first
 	try
-		{
+		{		
 		java.lang.reflect.Method meth = getClass().getMethod("svcmd_" + sa[1].toLowerCase(), paramTypes);						
 		Object[] params = new Object[1];
 		params[0] = sa;
 		meth.invoke(this, params);
 		}
-	catch (NoSuchMethodException e1)
-		{
-		// Send unrecognized input back to the console
-		PrintManager.dprint("serverCommand()\n");
-		PrintManager.dprint("    args(): [" + Engine.args() + "]\n");
-		for (int i = 0; i < sa.length; i++)
-			PrintManager.dprint("    argv(" + i + "): [" + sa[i] + "]\n");
+	catch (NoSuchMethodException nsme)
+		{				
+		// look for a module command second
+		try
+			{
+			Class cls = lookupClass(".svcmd_" + sa[1].toLowerCase());
+			java.lang.reflect.Method meth = cls.getMethod("run", paramTypes);						
+			Object[] params = new Object[1];
+			params[0] = sa;
+			meth.invoke(this, params);
+			}
+		catch (ClassNotFoundException cnfe)
+			{
+			// Send unrecognized input back to the console
+			dprint("serverCommand()\n");
+			dprint("    args(): [" + Engine.getArgs() + "]\n");
+			for (int i = 0; i < sa.length; i++)
+				dprint("    argv(" + i + "): [" + sa[i] + "]\n");							
+			}
+		catch (java.lang.reflect.InvocationTargetException ite)		
+			{
+			ite.getTargetException().printStackTrace();
+			}
+		catch (Exception e)
+			{
+			e.printStackTrace();
+			}									
 		}
-	catch (java.lang.reflect.InvocationTargetException e2)		
+	catch (java.lang.reflect.InvocationTargetException ite2)		
 		{
-		e2.getTargetException().printStackTrace();
+		ite2.getTargetException().printStackTrace();
 		}
-	catch (Exception e3)
+	catch (Exception e2)
 		{
-		e3.printStackTrace();
-		}							
+		e2.printStackTrace();
+		}
 	}	
-/**
- * Set what the next map will be.
- * @param mapname java.lang.String
- */
-public static void setNextMap(String mapname) 
-	{
-	if (mapname != null)
-		gNextMap = mapname;
-	}
 /**
  * Called by the DLL when the DLL's Shutdown() function is called.
  */
 public void shutdown()
 	{
-	if (gTelnet != null)
+	Enumeration enum = gGameListeners.elements();
+	while (enum.hasMoreElements())
 		{
-		gTelnet.shutdown();
+		try
+			{
+			((GameStatusListener) enum.nextElement()).shutdown();
+			}
+		catch (Exception e)
+			{
+			}
 		}
-		
+
 	Engine.debugLog("Game.shutdown()");
 	}
 /**
@@ -794,9 +711,9 @@ private void spawnEntities(String entString)
 					params[0] = sa;
 					try
 						{
-						Class entClass = Class.forName("q2jgame.spawn." + className.toLowerCase());
+						Class entClass = lookupClass(".spawn." + className.toLowerCase());
 						Constructor ctor = entClass.getConstructor(paramTypes);							
-						GameEntity ent = (GameEntity) ctor.newInstance(params);
+						ctor.newInstance(params);
 						}
 					// this stinks..since we're using reflection to find the 
 					// constructor, the compiler can't tell what exceptions
@@ -831,50 +748,6 @@ private void spawnEntities(String entString)
 		}
 	}
 /**
- * Pick an intermission spot, and notify each player.
- */
-public void startIntermission() 
-	{
-	Enumeration enum;
-	Vector v = new Vector();
-	
-	// gather list of info_player_intermission entities
-	enum = NativeEntity.enumerateEntities("q2jgame.spawn.info_player_intermission");
-	while (enum.hasMoreElements())
-		v.addElement(enum.nextElement());
-
-	// if there weren't any intermission spots, try for info_player_start spots
-	if (v.size() < 1)
-		{
-		enum = NativeEntity.enumerateEntities("q2jgame.spawn.info_player_start");
-		while (enum.hasMoreElements())
-			v.addElement(enum.nextElement());		
-		}
-
-	// still no spots found? try for info_player_deathmatch
-	if (v.size() < 1)
-		{
-		enum = NativeEntity.enumerateEntities("q2jgame.spawn.info_player_deathmatch");
-		while (enum.hasMoreElements())
-			v.addElement(enum.nextElement());		
-		}
-
-	// randomly pick something from the list
-	int i = (randomInt() & 0x0fff) % v.size();
-	GameEntity spot = (GameEntity) v.elementAt(i);
-	
-	// notify each player
-	enum = NativeEntity.enumeratePlayers();
-	while (enum.hasMoreElements())
-		{
-		Player p = (Player) enum.nextElement();
-		p.startIntermission(spot);
-		}
-		
-	gInIntermission = true;	
-	gIntermissionEndTime = gGameTime + 5.0;	
-	}
-/**
  * Spawn entities into the Quake II environment.
  * This methods parses the entString passed to it, and looks
  * for Java classnames equivalent to the classnames specified 
@@ -883,192 +756,173 @@ public void startIntermission()
  */
 public void startLevel(String mapname, String entString, String spawnPoint)
 	{
-	Engine.debugLog("Game.spawnEntities(\"" + mapname + ", <entString>, \"" + spawnPoint + "\")");
+	Enumeration enum = gLevelListeners.elements();
+	while (enum.hasMoreElements())
+		{
+		try
+			{
+			((LevelListener) enum.nextElement()).startLevel(mapname, entString, spawnPoint);
+			}
+		catch (Exception e)
+			{
+			}
+		}
 
-	gFrameCount = 0;
-	gGameTime = 0;
-	gInIntermission = false;
-	gCurrentMap = mapname;
-	gNextMap = mapname; // in case there isn't a target_changelevel entity in the entString
-
-	gGroups = new Hashtable();
-	gTargets = new Hashtable();
-
+	// purge non-player NativeEntity objects from FrameListener lists
+	gFrameBeginning.purge();
+	gFrameMiddle.purge();
+	gFrameEnd.purge();
+	
+	// clear the object registry
+	gLevelRegistry.clear();
+	
 	// force a gc, to clean things up from the last level, before
 	// spawning all the new entities
 	System.gc();		
 
 	spawnEntities(entString);
-
-	// no more need for hashtables, free them so they can be gc'ed
-	gGroups = null;
-	gTargets = null;
-		
-		
-	//
-	// cache some sounds
-	//
-		
-	Engine.soundIndex("player/fry.wav");	// standing in lava / slime
-	Engine.soundIndex("player/lava1.wav");
-	Engine.soundIndex("player/lava2.wav");
-
-	Engine.soundIndex("misc/pc_up.wav");
-	Engine.soundIndex("misc/talk1.wav");
-
-	Engine.soundIndex("misc/udeath.wav");
-
-	// gibs
-	Engine.soundIndex("items/respawn1.wav");
-
-	// sexed sounds
-	Engine.soundIndex("*death1.wav");
-	Engine.soundIndex("*death2.wav");
-	Engine.soundIndex("*death3.wav");
-	Engine.soundIndex("*death4.wav");
-	Engine.soundIndex("*fall1.wav");
-	Engine.soundIndex("*fall2.wav");	
-	Engine.soundIndex("*gurp1.wav");		// drowning damage
-	Engine.soundIndex("*gurp2.wav");	
-	Engine.soundIndex("*jump1.wav");		// player jump
-	Engine.soundIndex("*pain25_1.wav");
-	Engine.soundIndex("*pain25_2.wav");
-	Engine.soundIndex("*pain50_1.wav");
-	Engine.soundIndex("*pain50_2.wav");
-	Engine.soundIndex("*pain75_1.wav");
-	Engine.soundIndex("*pain75_2.wav");
-	Engine.soundIndex("*pain100_1.wav");
-	Engine.soundIndex("*pain100_2.wav");
-
-	//-------------------
-
-	Engine.soundIndex("player/gasp1.wav");		// gasping for air
-	Engine.soundIndex("player/gasp2.wav");		// head breaking surface, not gasping
-
-	Engine.soundIndex("player/watr_in.wav");	// feet hitting water
-	Engine.soundIndex("player/watr_out.wav");	// feet leaving water
-
-	Engine.soundIndex("player/watr_un.wav");	// head going underwater
-	
-	Engine.soundIndex("player/u_breath1.wav");
-	Engine.soundIndex("player/u_breath2.wav");
-
-	Engine.soundIndex("items/pkup.wav");		// bonus item pickup
-	Engine.soundIndex("world/land.wav");		// landing thud
-	Engine.soundIndex("misc/h2ohit1.wav");		// landing splash
-
-	Engine.soundIndex("items/damage.wav");
-	Engine.soundIndex("items/protect.wav");
-	Engine.soundIndex("items/protect4.wav");
-	Engine.soundIndex("weapons/noammo.wav");
-
-	Engine.soundIndex("infantry/inflies1.wav");
-	
-	// setup player status bar
-	Engine.configString (Engine.CS_STATUSBAR, Player.DM_STATUSBAR);	
-	
-	//
-	// Setup light animation tables. 'a' is total darkness, 'z' is doublebright.
-	//
-
-	// 0 normal
-	Engine.configString(Engine.CS_LIGHTS+0, "m");
-	
-	// 1 FLICKER (first variety)
-	Engine.configString(Engine.CS_LIGHTS+1, "mmnmmommommnonmmonqnmmo");
-	
-	// 2 SLOW STRONG PULSE
-	Engine.configString(Engine.CS_LIGHTS+2, "abcdefghijklmnopqrstuvwxyzyxwvutsrqponmlkjihgfedcba");
-	
-	// 3 CANDLE (first variety)
-	Engine.configString(Engine.CS_LIGHTS+3, "mmmmmaaaaammmmmaaaaaabcdefgabcdefg");
-	
-	// 4 FAST STROBE
-	Engine.configString(Engine.CS_LIGHTS+4, "mamamamamama");
-	
-	// 5 GENTLE PULSE 1
-	Engine.configString(Engine.CS_LIGHTS+5,"jklmnopqrstuvwxyzyxwvutsrqponmlkj");
-	
-	// 6 FLICKER (second variety)
-	Engine.configString(Engine.CS_LIGHTS+6, "nmonqnmomnmomomno");
-	
-	// 7 CANDLE (second variety)
-	Engine.configString(Engine.CS_LIGHTS+7, "mmmaaaabcdefgmmmmaaaammmaamm");
-	
-	// 8 CANDLE (third variety)
-	Engine.configString(Engine.CS_LIGHTS+8, "mmmaaammmaaammmabcdefaaaammmmabcdefmmmaaaa");
-	
-	// 9 SLOW STROBE (fourth variety)
-	Engine.configString(Engine.CS_LIGHTS+9, "aaaaaaaazzzzzzzz");
-	
-	// 10 FLUORESCENT FLICKER
-	Engine.configString(Engine.CS_LIGHTS+10, "mmamammmmammamamaaamammma");
-
-	// 11 SLOW PULSE NOT FADE TO BLACK
-	Engine.configString(Engine.CS_LIGHTS+11, "abcdefghijklmnopqrrqponmlkjihgfedcba");
-	
-	// styles 32-62 are assigned by the light program for switchable lights
-
-	// 63 testing
-	Engine.configString(Engine.CS_LIGHTS+63, "a");		
-		
-		
-		
+					
 	// now, right before the game starts, is a good time to 
 	// force Java to do another garbage collection to tidy things up.
 	System.gc();		
 	}
 /**
- * Print timing info to the console.
+ * Let the user add a game module.
  */
-public void svcmd_time(String[] args) 
+public static void svcmd_addpackage(String[] args) 
 	{
-	PrintManager.dprint(gFrameCount + " frames, " + gCPUTime + " milliseconds, " + (((double)gCPUTime) / ((double)gFrameCount)) + " msec/frame avg\n");
+	if (args.length < 3)
+		dprint("Usage: sv addpackage <package-name>\n");
+	else
+		addPackage(args[2]);		
 	}
 /**
- * Check the timelimit and fraglimit values and decide
- * whether to end the level or not.
- * @return boolean true if it's time to end the level
+ * Print timing info to the console.
  */
-private static boolean timeToQuit() 
+public static void svcmd_help(String[] args) 
 	{
-	float quitTime = gTimeLimit.getFloat() * 60;
-
-	if ((quitTime > 0) && (gGameTime > quitTime))
+	if (args.length > 2)		
 		{
-		PrintManager.bprint(Engine.PRINT_HIGH, "Timelimit hit.\n");		
-		return true;
-		}
-		
-	int fragLimit = (int) gFragLimit.getFloat();
-	if (fragLimit < 1)
-		return false;
-		
-	Enumeration enum = NativeEntity.enumeratePlayers();
-	while (enum.hasMoreElements())
-		{
-		Player p = (Player) enum.nextElement();
-		if (p.getScore() > fragLimit)
+		Class modClass = (Class) gModHash.get(args[2]);
+		if (modClass == null)
 			{
-			PrintManager.bprint(Engine.PRINT_HIGH, "Timelimit hit.\n");		
-			return true;
+			dprint("Sorry, " + args[2] + " isn't a loaded mod\n");
+			return;
 			}
-		}		
+			
+		try
+			{
+			Method helpMethod = modClass.getMethod("help", null);
+			helpMethod.invoke(null, null);
+			}
+		catch (NoSuchMethodException nsme)
+			{
+			dprint("Sorry, no help available for " + args[2] + "\n");
+			}
+		catch (InvocationTargetException ite)
+			{
+			ite.getTargetException().printStackTrace();
+			}
+		catch (Exception e)
+			{
+			e.printStackTrace();
+			}
+			
+		return;		
+		}
+	
+	dprint("Q2Java Game Framework\n\n");
+	dprint("   commands:\n");
+	dprint("      sv addpackage <package-name>\n");
+	dprint("      sv removepackage <package-name>\n");
+	dprint("\n");
+	dprint("      sv javamem\n");
+	dprint("      sv javagc\n");
+	dprint("\n");
+	dprint("      sv time\n");
+	dprint("      sv help <package-name>\n");
+	dprint("\n");
+	dprint("   loaded packages:\n");
+
+	for (int i = 0; i < gModList.size(); i++)
+		dprint("      " + gModList.elementAt(i) + "\n");		
+	}
+/**
+ * Force the Java Garbage collector to run.
+ */
+public static void svcmd_javagc(String[] args) 
+	{
+	long oldFree, freeMem, totalMem;
+	Runtime rt = Runtime.getRuntime();
+
+	oldFree = rt.freeMemory();
+	System.gc();
+	freeMem = rt.freeMemory();
+	totalMem = rt.totalMemory();
 		
-	return false;		
+	dprint((freeMem - oldFree) + " bytes freed in GC\n");
+	dprint("Total Java memory: " + totalMem + " bytes    Used: " + (totalMem - freeMem) + " Free: " + freeMem + "\n");
+	}
+/**
+ * Print Java memory info to the console.
+ */
+public static void svcmd_javamem(String[] args) 
+	{
+	long totalMem, freeMem;
+	Runtime rt = Runtime.getRuntime();
+	totalMem = rt.totalMemory();
+	freeMem = rt.freeMemory();
+	dprint("Total Java memory: " + totalMem + " bytes    Used: " + (totalMem - freeMem) + " Free: " + freeMem + "\n");
+	}
+/**
+ * Let the user remove a game module.
+ */
+public static void svcmd_removepackage(String[] args) 
+	{
+	if (args.length < 3)
+		dprint("Usage: sv removepackage <package-name>\n");
+	else
+		removePackage(args[2]);		
+	}
+/**
+ * Print timing info to the console.
+ */
+public static void svcmd_time(String[] args) 
+	{
+	dprint(gFrameCount + " server frames, " + gCPUTime + " milliseconds, " + (((double)gCPUTime) / ((double)gFrameCount)) + " msec/server frame\n");
 	}
 /**
  * Called by the DLL when the DLL's WriteGame() function is called.
  */
 public void writeGame(String filename)
 	{
-	Engine.debugLog("Game.writeGame(\"" + filename + "\")");		
+	Enumeration enum = gGameListeners.elements();
+	while (enum.hasMoreElements())
+		{
+		try
+			{
+			((GameStatusListener) enum.nextElement()).writeGame(filename);
+			}
+		catch (Exception e)
+			{
+			}
+		}
 	}
 /**
  * Called by the DLL when the DLL's WriteLevel() function is called.
  */
 public void writeLevel(String filename)
 	{
-	Engine.debugLog("Game.writeLevel(\"" + filename + "\")");
+	Enumeration enum = gGameListeners.elements();
+	while (enum.hasMoreElements())
+		{
+		try
+			{
+			((GameStatusListener) enum.nextElement()).writeLevel(filename);
+			}
+		catch (Exception e)
+			{
+			}
+		}
 	}
 }

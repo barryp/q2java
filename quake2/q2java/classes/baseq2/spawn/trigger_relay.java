@@ -1,32 +1,38 @@
 
-package q2jgame.spawn;
+package baseq2.spawn;
+
+import java.util.Vector;
 
 import q2java.*;
 import q2jgame.*;
+import baseq2.*;
 
-public class trigger_relay extends GameEntity
+public class trigger_relay implements FrameListener, GameTarget
 	{
 	private String fMessage;
 	private float fDelay;
-	
-	private float fNextThink;
+	private Vector fTargets;
 	
 public trigger_relay(String[] spawnArgs) throws GameException
 	{
-	super(spawnArgs);
-	fDelay = getSpawnArg("delay", 0.0F);
-	fMessage = getSpawnArg("message", null);
+	GameModule.checkInhibited(spawnArgs);
+	
+	fDelay = Game.getSpawnArg(spawnArgs, "delay", 0.0F);
+	
+	String s = Game.getSpawnArg(spawnArgs, "target", null);
+	if (s != null)
+		fTargets = Game.getLevelRegistryList("target-" + s);
+		
+	s = Game.getSpawnArg(spawnArgs, "targetname", null);
+	if (s != null)
+		Game.addLevelRegistry("target-" + s, this);	
 	}
 /**
- * This method was created by a SmartGuide.
+ * Do whatever the relay is supposed to do.
  */
-public void runFrame() 
+public void runFrame(int phase) 
 	{
-	if ((fNextThink > 0) && (Game.gGameTime >= fNextThink))
-		{
-		fNextThink = 0;
-		useTargets();
-		}
+	useTargets();
 	}
 /**
  * This method was created by a SmartGuide.
@@ -37,6 +43,18 @@ public void use(Player touchedBy)
 	if (fDelay <= 0)
 		useTargets();
 	else
-		fNextThink = (float)(Game.gGameTime + fDelay);		
+		// ask to have runFrame() called one time in a little bit.
+		Game.addFrameListener(this, fDelay, -1);
+	}
+/**
+ * This method was created by a SmartGuide.
+ */
+public void useTargets() 
+	{
+	if (fTargets == null)
+		return;
+		
+	for (int i = 0; i < fTargets.size(); i++)
+		((GameTarget) fTargets.elementAt(i)).use(null);
 	}
 }

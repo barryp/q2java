@@ -1,9 +1,10 @@
 
-package q2jgame.spawn;
+package baseq2.spawn;
 
-
+import javax.vecmath.*;
 import q2java.*;
 import q2jgame.*;
+import baseq2.*;
 
 /**
 QUAKED func_wall (0 .5 .8) ? TRIGGER_SPAWN TOGGLE START_ON ANIMATED ANIMATED_FAST
@@ -21,7 +22,7 @@ START_ON		only valid for TRIGGER_SPAWN walls
  *  @author M. van Gangelen" &ltmenno@element.nl&gt				the wall will initially be present
  */
 
-public class func_wall extends GameEntity
+public class func_wall extends GameObject
 	{
 	private String  fModel;
 	private boolean fUsed = false;			
@@ -32,21 +33,21 @@ public func_wall( String[] spawnArgs ) throws GameException
 		
 	//self->movetype = MOVETYPE_PUSH;
 	fModel = getSpawnArg( "model", null );
-	setModel (fModel);
+	fEntity.setModel(fModel);
 
-	int effect = getEffects();
+	int effect = fEntity.getEffects();
 	if ( (fSpawnFlags & 8) != 0 )
-		effect |= EF_ANIM_ALL;
+		effect |= NativeEntity.EF_ANIM_ALL;
 	if ( (fSpawnFlags & 16) != 0 )
-		effect |= EF_ANIM_ALLFAST;
+		effect |= NativeEntity.EF_ANIM_ALLFAST;
 
-	setEffects(effect);
+	fEntity.setEffects(effect);
 
 	// just a wall
 	if ( (fSpawnFlags & 7) == 0 )
 		{
-		setSolid( SOLID_BSP );
-		linkEntity();
+		fEntity.setSolid(NativeEntity.SOLID_BSP);
+		fEntity.linkEntity();
 		return;
 		}
 
@@ -62,36 +63,36 @@ public func_wall( String[] spawnArgs ) throws GameException
 		{
 		if ( (fSpawnFlags & 2) == 0)
 			{
-			PrintManager.dprint("func_wall START_ON without TOGGLE\n");
+			Game.dprint("func_wall START_ON without TOGGLE\n");
 			fSpawnFlags |= 2;
 			}
 		}
 
 	if ( (fSpawnFlags & 4) != 0 )
 		{
-		setSolid( SOLID_BSP );
+		fEntity.setSolid(NativeEntity.SOLID_BSP);
 		}
 	else
 		{
-		setSolid( SOLID_NOT );
-		setSVFlags( getSVFlags() | SVF_NOCLIENT );
+		fEntity.setSolid(NativeEntity.SOLID_NOT);
+		fEntity.setSVFlags(fEntity.getSVFlags() | NativeEntity.SVF_NOCLIENT );
 		}
 		
-	linkEntity();
+	fEntity.linkEntity();
 	}
-public boolean killBox( GameEntity ent )
+public boolean killBox(GameObject ent)
 	{
 	java.util.Enumeration players;
 	
-	players = enumeratePlayers();
+	players = NativeEntity.enumeratePlayers();
 	while( players.hasMoreElements() )
 		{
 		Player player = (Player)players.nextElement();
 		// nail it
-		Vec3 origin = new Vec3(0, 0, 0);
-		player.damage ( ent, ent, origin, ent.getOrigin(), origin, 100000, 0, DAMAGE_NO_PROTECTION, 0 );//MOD_TELEFRAG);
+		Vector3f nullVec = new Vector3f(0,0,0);
+		player.damage(ent, ent, nullVec, ent.fEntity.getOrigin(), nullVec, 100000, 0, DAMAGE_NO_PROTECTION, 0 );//MOD_TELEFRAG);
 		// if we didn't kill it, fail
-		if ( player.getSolid() != SOLID_NOT )
+		if ( player.fEntity.getSolid() != NativeEntity.SOLID_NOT )
 			return false;
 		}
 		
@@ -107,18 +108,18 @@ public void use(Player touchedBy)
 		fUsed = true;
 		}
 
-	if ( getSolid() == SOLID_NOT )
+	if (fEntity.getSolid() == NativeEntity.SOLID_NOT)
 		{
-		setSolid( SOLID_BSP );
-		setSVFlags( getSVFlags() & ~SVF_NOCLIENT );
-		killBox( this );
+		fEntity.setSolid(NativeEntity.SOLID_BSP);
+		fEntity.setSVFlags(fEntity.getSVFlags() & ~NativeEntity.SVF_NOCLIENT );
+		killBox(this);
 		}
 	else
 		{
-		setSolid( SOLID_NOT );
-		setSVFlags( getSVFlags() | SVF_NOCLIENT );
+		fEntity.setSolid(NativeEntity.SOLID_NOT);
+		fEntity.setSVFlags(fEntity.getSVFlags() | NativeEntity.SVF_NOCLIENT);
 		}
 		
-	linkEntity();
+	fEntity.linkEntity();
 	}
 }

@@ -1,5 +1,5 @@
 
-package q2jgame;
+package baseq2;
 
 /**
  * Helper class to represent ammo a player is carrying.
@@ -21,6 +21,6 @@ public class AmmoPack
 public AmmoPack (int maxCount, String iconName) 
 	{
 	fMaxAmount = maxCount;
-	fIcon = (iconName == null ? 0 : Engine.imageIndex(iconName));
+	fIcon = (iconName == null ? 0 : Engine.getImageIndex(iconName));
 	}
 }

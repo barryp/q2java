@@ -1,13 +1,32 @@
 #include "globals.h"
 
+// Tuple types
+#define TYPE_TUPLE 	0
+#define TYPE_POINT 	1
+#define TYPE_VECTOR 2
+#define TYPE_ANGLE 	3
+
+
 // handles to java.lang.Throwable class
 static jclass class_Throwable;
 //static jmethodID method_Throwable_getMessage;
 static jmethodID method_Throwable_printStackTrace;
 
-// handles to the q2java.Vec3 class
-static jclass class_Vec3;
-static jmethodID method_Vec3_ctor;
+// handles to the javax.vecmath.Tuple3f class
+static jclass class_Tuple3f;
+static jmethodID method_Tuple3f_ctor;
+
+// handles to the javax.vecmath.Point3f class
+static jclass class_Point3f;
+static jmethodID method_Point3f_ctor;
+
+// handles to the javax.vecmath.Vector3f class
+static jclass class_Vector3f;
+static jmethodID method_Vector3f_ctor;
+
+// handles to the q2java.Angle3f class
+static jclass class_Angle3f;
+static jmethodID method_Angle3f_ctor;
 
 // handles to the q2java.PMoveResults class
 static jclass class_PMoveResults;
@@ -44,19 +63,59 @@ void Misc_javaInit()
 
 	// now that the java.lang.Class and java.lang.Throwable handles are obtained
 	// we can start checking for exceptions
-
-	class_Vec3 = (*java_env)->FindClass(java_env, "q2java/Vec3");
-//	class_Vec3 = (*java_env)->DefineClass(java_env, "Vec3", object_ClassLoader, Vec3Class, sizeof(Vec3Class));
-	if (CHECK_EXCEPTION() || !class_Vec3)
+	class_Tuple3f = (*java_env)->FindClass(java_env, "javax/vecmath/Tuple3f");
+	if (CHECK_EXCEPTION() || !class_Tuple3f)
 		{
-		java_error = "Couldn't find q2java.Vec3\n";
+		java_error = "Couldn't find javax.vecmath.Tuple3f\n";
 		return;
 		}
 
-	method_Vec3_ctor = (*java_env)->GetMethodID(java_env, class_Vec3, "<init>", "(FFF)V");		
-	if (CHECK_EXCEPTION() || !method_Vec3_ctor)
+	method_Tuple3f_ctor = (*java_env)->GetMethodID(java_env, class_Tuple3f, "<init>", "(FFF)V");		
+	if (CHECK_EXCEPTION() || !method_Tuple3f_ctor)
 		{
-		java_error = "Couldn't find q2java.Vec3 constructor method\n";
+		java_error = "Couldn't find javax.vecmath.Tuple3f constructor method\n";
+		return;
+		}
+
+	class_Point3f = (*java_env)->FindClass(java_env, "javax/vecmath/Point3f");
+	if (CHECK_EXCEPTION() || !class_Point3f)
+		{
+		java_error = "Couldn't find javax.vecmath.Point3f\n";
+		return;
+		}
+
+	method_Point3f_ctor = (*java_env)->GetMethodID(java_env, class_Point3f, "<init>", "(FFF)V");		
+	if (CHECK_EXCEPTION() || !method_Point3f_ctor)
+		{
+		java_error = "Couldn't find javax.vecmath.Point3f constructor method\n";
+		return;
+		}
+
+	class_Vector3f = (*java_env)->FindClass(java_env, "javax/vecmath/Vector3f");
+	if (CHECK_EXCEPTION() || !class_Vector3f)
+		{
+		java_error = "Couldn't find javax.vecmath.Vector3f\n";
+		return;
+		}
+
+	method_Vector3f_ctor = (*java_env)->GetMethodID(java_env, class_Vector3f, "<init>", "(FFF)V");		
+	if (CHECK_EXCEPTION() || !method_Vector3f_ctor)
+		{
+		java_error = "Couldn't find javax.vecmath.Vector3f constructor method\n";
+		return;
+		}
+
+	class_Angle3f = (*java_env)->FindClass(java_env, "q2java/Angle3f");
+	if (CHECK_EXCEPTION() || !class_Angle3f)
+		{
+		java_error = "Couldn't find q2java.Angle3f\n";
+		return;
+		}
+
+	method_Angle3f_ctor = (*java_env)->GetMethodID(java_env, class_Angle3f, "<init>", "(FFF)V");		
+	if (CHECK_EXCEPTION() || !method_Angle3f_ctor)
+		{
+		java_error = "Couldn't find q2java.Angle3 constructor method\n";
 		return;
 		}
 
@@ -81,7 +140,7 @@ void Misc_javaInit()
 		return;
 		}
 
-	method_TraceResults_ctor = (*java_env)->GetMethodID(java_env, class_TraceResults, "<init>", "(ZZFLq2java/Vec3;Lq2java/Vec3;FBBLjava/lang/String;IIILq2java/NativeEntity;)V");
+	method_TraceResults_ctor = (*java_env)->GetMethodID(java_env, class_TraceResults, "<init>", "(ZZFLjavax/vecmath/Point3f;Ljavax/vecmath/Vector3f;FBBLjava/lang/String;IIILq2java/NativeEntity;)V");
 	if (CHECK_EXCEPTION() || !method_TraceResults_ctor)
 		{
 		java_error = "Couldn't find q2java.TraceResults constructor\n";
@@ -118,6 +177,21 @@ void Misc_javaInit()
 	}
 
 
+// drop our local references
+void Misc_javaFinalize()
+	{
+	(*java_env)->DeleteLocalRef(java_env, class_Throwable);
+	(*java_env)->DeleteLocalRef(java_env, class_Tuple3f);
+	(*java_env)->DeleteLocalRef(java_env, class_Point3f);
+	(*java_env)->DeleteLocalRef(java_env, class_Vector3f);
+	(*java_env)->DeleteLocalRef(java_env, class_Angle3f);
+	(*java_env)->DeleteLocalRef(java_env, class_PMoveResults);
+	(*java_env)->DeleteLocalRef(java_env, class_TraceResults);
+	(*java_env)->DeleteLocalRef(java_env, class_PlayerCmd);
+	(*java_env)->DeleteLocalRef(java_env, playerCmd);
+	}
+
+
 int checkException(char *filename, int linenum)
 	{
 	jthrowable ex;
@@ -143,7 +217,6 @@ void enableSecurity(int level)
 
 	jstring jsGameDir;
 
-debugLog("In enableSecurity()\n");
 
 	class_Q2JavaSecurityManager = (*java_env)->FindClass(java_env, "q2java/Q2JavaSecurityManager");
 	if (CHECK_EXCEPTION() || !class_Q2JavaSecurityManager)
@@ -189,17 +262,35 @@ debugLog("In enableSecurity()\n");
 		return;
 		}
 
+	(*java_env)->DeleteLocalRef(java_env, class_System);
+	(*java_env)->DeleteLocalRef(java_env, class_Q2JavaSecurityManager);
+	(*java_env)->DeleteLocalRef(java_env, object_security_manager);
+	(*java_env)->DeleteLocalRef(java_env, jsGameDir);
+
 	debugLog("setSecurity() finished ok\n");
 	}
 
 
 
-jobject newJavaVec3(vec3_t *v)
+jobject newJavaVec3(vec3_t *v, int vecType)
 	{
 	if (!v)
 		return 0;
-	else
-		return (*java_env)->NewObject(java_env, class_Vec3, method_Vec3_ctor, (*v)[0], (*v)[1], (*v)[2]);
+
+	switch (vecType)
+		{
+		case TYPE_ANGLE:
+			return (*java_env)->NewObject(java_env, class_Angle3f, method_Angle3f_ctor, (*v)[0], (*v)[1], (*v)[2]);
+
+		case TYPE_POINT:
+			return (*java_env)->NewObject(java_env, class_Point3f, method_Point3f_ctor, (*v)[0], (*v)[1], (*v)[2]);
+
+		case TYPE_VECTOR:
+			return (*java_env)->NewObject(java_env, class_Vector3f, method_Vector3f_ctor, (*v)[0], (*v)[1], (*v)[2]);
+
+		default:
+			return (*java_env)->NewObject(java_env, class_Tuple3f, method_Tuple3f_ctor, (*v)[0], (*v)[1], (*v)[2]);
+		}
 	}
 
 
@@ -228,8 +319,8 @@ jobject newTraceResults(trace_t result)
 	int resSurfaceValue;
 	jobject resEnt;
 
-	resEndpos = newJavaVec3(&(result.endpos));
-	resPlaneNormal = newJavaVec3(&(result.plane.normal));
+	resEndpos = newJavaVec3(&(result.endpos), TYPE_POINT);
+	resPlaneNormal = newJavaVec3(&(result.plane.normal), TYPE_VECTOR);
 
 	if (!result.surface)
 		{

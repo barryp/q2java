@@ -156,9 +156,9 @@ void startJava()
 		if (strlen(q2java_gamepath->string) == 0)
 			{
 			strcat(classpath, java_gameDirName);
-			strcat(classpath, "\\q2jgame.jar;");
-			strcat(classpath, java_gameDirName);
 			strcat(classpath, "\\classes;");
+			strcat(classpath, java_gameDirName);
+			strcat(classpath, "\\q2jgame.zip;");
 			}
 		else
 			{
@@ -243,12 +243,13 @@ debugLog("in stopJava()\n");
 		return;
 		}
 
-	Engine_javaFinalize();
-	Game_javaFinalize();
 	Entity_javaFinalize();
 	Player_javaFinalize();
 	CVar_javaFinalize();
+	Game_javaFinalize();
+	Engine_javaFinalize();
 	ConsoleOutputStream_javaFinalize();
+	Misc_javaFinalize();
 
 	if ((*java_vm)->DestroyJavaVM(java_vm))
 		debugLog("Error destroying Java VM, stupid Sun JDK is probably still broke\n");

@@ -4,6 +4,7 @@ package q2java;
 import java.io.*;
 import java.util.Enumeration;
 import java.util.Vector;
+import javax.vecmath.*;
 
 /**
  * NativeEntity is equivalent to the C edict_t structure, and
@@ -157,6 +158,36 @@ public class NativeEntity
 
 
 	// --- Private constants for communicating with the DLL
+	private final static int BYTE_CLIENT_PS_PMOVE_PMFLAGS		= 100;
+	private final static int BYTE_CLIENT_PS_PMOVE_TELEPORTTIME	= 101;
+	
+	private final static int SHORT_CLIENT_PS_PMOVE_GRAVITY		= 100;
+		
+	private final static int INT_S_MODELINDEX	= 1;
+	private final static int INT_S_MODELINDEX2	= 2;
+	private final static int INT_S_MODELINDEX3	= 3;
+	private final static int INT_S_MODELINDEX4	= 4;
+	private final static int INT_SVFLAGS			= 5;
+	private final static int INT_SOLID			= 6;
+	private final static int INT_CLIPMASK		= 7;
+	private final static int INT_S_FRAME			= 8;
+	private final static int INT_S_SKINNUM		= 9;
+	private final static int INT_S_EFFECTS		= 10;
+	private final static int INT_S_RENDERFX		= 11;
+	private final static int INT_S_SOLID			= 12;
+	private final static int INT_S_SOUND			= 13;
+	private final static int INT_S_EVENT			= 14;
+	private final static int INT_LINKCOUNT		= 15;
+	private final static int INT_AREANUM			= 16;
+	
+	private final static int INT_CLIENT_PS_GUNINDEX	= 100;
+	private final static int INT_CLIENT_PS_GUNFRAME	= 101;
+	private final static int INT_CLIENT_PS_RDFLAGS	= 102;
+	private final static int INT_CLIENT_PS_PMOVE_PMTYPE = 103;
+	private final static int INT_CLIENT_PING			= 104;
+	
+	private final static int FLOAT_CLIENT_PS_FOV 		= 100;
+	private final static int FLOAT_CLIENT_PS_BLEND 	= 101;			
 
 	private final static int VEC3_S_ORIGIN 			= 0;
 	private final static int VEC3_S_ANGLES 			= 1;
@@ -173,42 +204,19 @@ public class NativeEntity
 	private final static int VEC3_CLIENT_PS_KICKANGLES	= 102;
 	private final static int VEC3_CLIENT_PS_GUNANGLES	= 103;
 	private final static int VEC3_CLIENT_PS_GUNOFFSET	= 104;
-	
-	private final static int INT_S_MODELINDEX	= 1;
-	private final static int INT_S_MODELINDEX2	= 2;
-	private final static int INT_S_MODELINDEX3	= 3;
-	private final static int INT_S_MODELINDEX4	= 4;
-	private final static int INT_SVFLAGS			= 5;
-	private final static int INT_SOLID			= 6;
-	private final static int INT_CLIPMASK		= 7;
-	private final static int INT_S_FRAME			= 8;
-	private final static int INT_S_SKINNUM		= 9;
-	private final static int INT_S_EFFECTS		= 10;
-	private final static int INT_S_RENDERFX		= 11;
-	private final static int INT_S_SOLID			= 12;
-	private final static int INT_S_SOUND			= 13;
-	private final static int INT_S_EVENT			= 14;
-	
+	private final static int VEC3_CLIENT_PS_PMOVE_DELTA_ANGLES = 105;
+
 	private final static int ENTITY_OWNER		= 1;
 	private final static int ENTITY_GROUND		= 2;
-	
-	private final static int INT_CLIENT_PS_GUNINDEX	= 100;
-	private final static int INT_CLIENT_PS_GUNFRAME	= 101;
-	private final static int INT_CLIENT_PS_RDFLAGS	= 102;
-	private final static int INT_CLIENT_PS_PMOVE_PMTYPE = 103;
-	private final static int INT_CLIENT_PING			= 104;
-	
-	private final static int BYTE_CLIENT_PS_PMOVE_PMFLAGS		= 100;
-	private final static int BYTE_CLIENT_PS_PMOVE_TELEPORTTIME	= 101;
-	
-	private final static int SHORT_CLIENT_PS_PMOVE_GRAVITY		= 100;
-	
-	// private flags for setFloat0()
-	private final static int FLOAT_CLIENT_PS_FOV 		= 100;
-	private final static int FLOAT_CLIENT_PS_BLEND 	= 101;			
-		
+			
 	private final static int CALL_SOUND = 1;
 	private final static int CALL_POSITIONED_SOUND = 2;
+	
+	// Tuple types
+	private final static int TYPE_TUPLE 		= 0;
+	private final static int TYPE_POINT 		= 1;
+	private final static int TYPE_VECTOR 	= 2;
+	private final static int TYPE_ANGLE 		= 3;
 	
 /**
  * Create a NativeEntity, which corresponds 
@@ -242,20 +250,6 @@ public NativeEntity(boolean isWorld) throws GameException
 	}
 
 private native static int allocateEntity(boolean isWorld);
-
-public NativeEntity[] boxEntity(int areaType) 
-	{
-	return boxEntity0(fEntityIndex, areaType);
-	}
-
-/**
- * This method was created by a SmartGuide.
- * @return q2java.NativeEntity[]
- * @param index int
- * @param maxCount int
- * @param areaType int
- */
-private static native NativeEntity[] boxEntity0(int index, int areaType);
 
 /** 
  * Print a message on the center of a player's screen.
@@ -373,18 +367,36 @@ public void freeEntity()
 
 private native static void freeEntity0(int index);
 
-public Vec3 getAbsMaxs()
+public Tuple3f getAbsMaxs()
 	{
-	return getVec3(fEntityIndex, VEC3_ABSMAX);
+	return (Tuple3f) getVec3(fEntityIndex, VEC3_ABSMAX, TYPE_TUPLE);
 	}
-public Vec3 getAbsMins()
+public Tuple3f getAbsMins()
 	{
-	return getVec3(fEntityIndex, VEC3_ABSMIN);
+	return (Tuple3f) getVec3(fEntityIndex, VEC3_ABSMIN, TYPE_TUPLE);
 	}
-public Vec3 getAngles()
+public Angle3f getAngles()
 	{
-	return getVec3(fEntityIndex, VEC3_S_ANGLES);
+	return (Angle3f) getVec3(fEntityIndex, VEC3_S_ANGLES, TYPE_ANGLE);
 	}
+public int getAreaNum()
+	{
+	return getInt(fEntityIndex, INT_AREANUM);
+	}
+public NativeEntity[] getBoxEntities(int areaType) 
+	{
+	return getBoxEntities0(fEntityIndex, areaType);
+	}
+
+/**
+ * This method was created by a SmartGuide.
+ * @return q2java.NativeEntity[]
+ * @param index int
+ * @param maxCount int
+ * @param areaType int
+ */
+private static native NativeEntity[] getBoxEntities0(int index, int areaType);
+
 
 private native static byte getByte(int index, int fieldNum);
 
@@ -434,26 +446,84 @@ public NativeEntity getGroundEntity()
 
 private native static int getInt(int index, int fieldNum);
 
-public Vec3 getMaxs()
+public int getLinkCount()
 	{
-	return getVec3(fEntityIndex, VEC3_MAXS);
+	return getInt(fEntityIndex, INT_LINKCOUNT);
 	}
-public Vec3 getMins()
+public Tuple3f getMaxs()
 	{
-	return getVec3(fEntityIndex, VEC3_MINS);
+	return (Tuple3f) getVec3(fEntityIndex, VEC3_MAXS, TYPE_TUPLE);
 	}
-public Vec3 getOrigin()
+public Tuple3f getMins()
 	{
-	return getVec3(fEntityIndex, VEC3_S_ORIGIN);
+	return (Tuple3f) getVec3(fEntityIndex, VEC3_MINS, TYPE_TUPLE);
+	}
+public int getModelIndex()
+	{
+	return getInt(fEntityIndex, INT_S_MODELINDEX);
+	}
+public int getModelIndex2()
+	{
+	return getInt(fEntityIndex, INT_S_MODELINDEX2);
+	}
+public int getModelIndex3()
+	{
+	return getInt(fEntityIndex, INT_S_MODELINDEX3);
+	}
+public int getModelIndex4()
+	{
+	return getInt(fEntityIndex, INT_S_MODELINDEX4);
+	}
+public Point3f getOrigin()
+	{
+	return (Point3f) getVec3(fEntityIndex, VEC3_S_ORIGIN, TYPE_POINT);
 	}
 public NativeEntity getOwner() 
 	{
 	return getEntity(fEntityIndex, ENTITY_OWNER);
 	}
-public Vec3 getPlayerKickAngles()
+public int getPlayerGunFrame()
 	{
-	return getVec3(fEntityIndex, VEC3_CLIENT_PS_KICKANGLES);
+	return getInt(fEntityIndex, INT_CLIENT_PS_GUNFRAME);
 	}
+public int getPlayerGunIndex()
+	{
+	return getInt(fEntityIndex, INT_CLIENT_PS_GUNINDEX);
+	}
+/**
+ * Find a player's info string.
+ * @return Player info.
+ */
+public String getPlayerInfo() 
+	{
+	return getPlayerInfo0(fEntityIndex);
+	}
+
+/**
+ * Find a player's info string.
+ * @return Player info.
+ */
+private static native String getPlayerInfo0(int index);
+
+public Angle3f getPlayerKickAngles()
+	{
+	return (Angle3f) getVec3(fEntityIndex, VEC3_CLIENT_PS_KICKANGLES, TYPE_ANGLE);
+	}
+/**
+ * Find the object that's receiving this Player's events.
+ * @return Object receiving this entity's Player events, null if not a player.
+ */
+public PlayerListener getPlayerListener() 
+	{
+	return getPlayerListener0(fEntityIndex);
+	}
+
+/**
+ * Set which object responds to this player's events.
+ * @param pl q2java.PlayerListener
+ */
+public native static PlayerListener getPlayerListener0(int index);
+
 /**
  * Get this player's number, needed for things like setting
  * skins with the Engine.configString() method.
@@ -475,9 +545,13 @@ public byte getPlayerPMFlags()
 	{
 	return getByte(fEntityIndex, BYTE_CLIENT_PS_PMOVE_PMFLAGS);
 	}
-public Vec3 getPlayerViewAngles()
+public int getPlayerRDFlags()
 	{
-	return getVec3(fEntityIndex, VEC3_CLIENT_PS_VIEWANGLES);
+	return getInt(fEntityIndex, INT_CLIENT_PS_RDFLAGS);
+	}
+public Angle3f getPlayerViewAngles()
+	{
+	return (Angle3f) getVec3(fEntityIndex, VEC3_CLIENT_PS_VIEWANGLES, TYPE_ANGLE);
 	}
 /**
  * Get an array of entities that might need to be pushed.
@@ -497,7 +571,7 @@ public Vec3 getPlayerViewAngles()
  * @return An array of entities that either might intersect 
  * this object, or have it as their ground entity.
  */
-public NativeEntity[] getPotentialPushed(Vec3 mins, Vec3 maxs)
+public NativeEntity[] getPotentialPushed(Tuple3f mins, Tuple3f maxs)
 	{
 	return getPotentialPushed0(fEntityIndex, mins.x, mins.y, mins.z, maxs.x, maxs.y, maxs.z);
 	}
@@ -510,6 +584,21 @@ public NativeEntity[] getPotentialPushed(Vec3 mins, Vec3 maxs)
 private static native NativeEntity[] getPotentialPushed0(int index, float minx, float miny, float minz, float maxx, float maxy, float maxz);
 
 /**
+ * Get a list of entities who have their origin within
+ * a certain radius of this entity's origin.
+ */
+public NativeEntity[] getRadiusEntities(float radius, boolean onlyPlayers, boolean sortResults) 
+	{
+	return getRadiusEntities0(fEntityIndex, radius, onlyPlayers, sortResults);
+	}
+
+/**
+ * Get a list of entities who have their origin within
+ * a certain radius of this entity's origin.
+ */
+private native static NativeEntity[] getRadiusEntities0(int index, float radius, boolean onlyPlayers, boolean sortResults);
+
+/**
  * Get the object that was set by setReference().
  * Not used by the DLL, but available for a game to
  * use however it wants.
@@ -520,12 +609,20 @@ public Object getReference()
 	{
 	return fReference;
 	}
+public int getRenderFX()
+	{
+	return getInt(fEntityIndex, INT_S_RENDERFX);
+	}
 
 private native static short getShort(int index, int fieldNum);
 
-public Vec3 getSize()
+public Tuple3f getSize()
 	{
-	return getVec3(fEntityIndex, VEC3_SIZE);
+	return getVec3(fEntityIndex, VEC3_SIZE, TYPE_TUPLE);
+	}
+public int getSkinNum()
+	{
+	return getInt(fEntityIndex, INT_S_SKINNUM);
 	}
 public int getSolid()
 	{
@@ -540,11 +637,11 @@ public int getSVFlags()
 	return getInt(fEntityIndex, INT_SVFLAGS);
 	}
 
-private native static Vec3 getVec3(int index, int fieldNum);
+private native static Tuple3f getVec3(int index, int fieldNum, int tupleType);
 
-public Vec3 getVelocity()
+public Vector3f getVelocity()
 	{
-	return getVec3(fEntityIndex, VEC3_VELOCITY);
+	return (Vector3f) getVec3(fEntityIndex, VEC3_VELOCITY, TYPE_VECTOR);
 	}
 public void linkEntity()
 	{
@@ -561,7 +658,7 @@ private native static void linkEntity0(int index);
 public PMoveResults pMove(PlayerCmd cmd) 
 	{
 	return pMove0(getEntityIndex(), cmd.fMsec, cmd.fButtons, 
-		cmd.fAngles0, cmd.fAngles1, cmd.fAngles2, 
+		cmd.fPitch, cmd.fYaw, cmd.fRoll, 
 		cmd.fForwardMove, cmd.fSideMove, cmd.fUpMove,
 		cmd.fImpulse, cmd.fLightLevel);
 	}
@@ -574,7 +671,7 @@ private static native PMoveResults pMove0(int index, byte msec, byte buttons,
 	short forward, short side, short up,
 	byte impulse, byte lightlevel);
 
-public void positionedSound(Vec3 origin, int channel, int soundindex, float volume, float attenuation, float timeofs)
+public void positionedSound(Point3f origin, int channel, int soundindex, float volume, float attenuation, float timeofs)
 	{   
 	sound0(origin.x, origin.y, origin.z, fEntityIndex, channel, soundindex, volume, attenuation, timeofs, CALL_POSITIONED_SOUND);
 	}
@@ -582,9 +679,9 @@ public void setAngles(float pitch, float yaw, float roll)
 	{
 	setVec3(fEntityIndex, VEC3_S_ANGLES, pitch, yaw, roll);
 	}
-public void setAngles(Vec3 v)
+public void setAngles(Angle3f a)
 	{
-	setVec3(fEntityIndex, VEC3_S_ANGLES, v.x, v.y, v.z);
+	setVec3(fEntityIndex, VEC3_S_ANGLES, a.x, a.y, a.z);
 	}
 
 //
@@ -646,7 +743,7 @@ public void setMaxs(float x, float y, float z)
 	{
 	setVec3(fEntityIndex, VEC3_MAXS, x, y, z);
 	}
-public void setMaxs(Vec3 v)
+public void setMaxs(Tuple3f v)
 	{
 	setVec3(fEntityIndex, VEC3_MAXS, v.x, v.y, v.z);
 	}
@@ -654,7 +751,7 @@ public void setMins(float x, float y, float z)
 	{
 	setVec3(fEntityIndex, VEC3_MINS, x, y, z);
 	}
-public void setMins(Vec3 v)
+public void setMins(Tuple3f v)
 	{
 	setVec3(fEntityIndex, VEC3_MINS, v.x, v.y, v.z);
 	}
@@ -681,9 +778,9 @@ public void setModelIndex4(int val)
 	{
 	setInt(fEntityIndex, INT_S_MODELINDEX4, val);
 	}
-public void setOrigin(Vec3 v)
+public void setOrigin(Point3f p)
 	{
-	setVec3(fEntityIndex, VEC3_S_ORIGIN, v.x, v.y, v.z);
+	setVec3(fEntityIndex, VEC3_S_ORIGIN, p.x, p.y, p.z);
 	}
 public void setOwner(NativeEntity ent) 
 	{
@@ -703,6 +800,14 @@ public void setPlayerBlend(float r, float g, float b, float a)
 	{
 	setFloat0(getEntityIndex(), FLOAT_CLIENT_PS_BLEND, r, g, b, a);
 	}
+public void setPlayerDeltaAngles(float pitch, float yaw, float roll)
+	{
+	setVec3(getEntityIndex(), VEC3_CLIENT_PS_PMOVE_DELTA_ANGLES, pitch, yaw, roll);
+	}
+public void setPlayerDeltaAngles(Angle3f a)
+	{
+	setVec3(getEntityIndex(), VEC3_CLIENT_PS_PMOVE_DELTA_ANGLES, a.x, a.y, a.z);
+	}
 /**
  * Set the Player's Field of View. 
  *
@@ -716,9 +821,9 @@ public void setPlayerGravity(short val)
 	{
 	setShort(fEntityIndex, SHORT_CLIENT_PS_PMOVE_GRAVITY, val);
 	}
-public void setPlayerGunAngles(Vec3 v)
+public void setPlayerGunAngles(Angle3f a)
 	{
-	setVec3(getEntityIndex(), VEC3_CLIENT_PS_GUNANGLES, v.x, v.y, v.z);
+	setVec3(getEntityIndex(), VEC3_CLIENT_PS_GUNANGLES, a.x, a.y, a.z);
 	}
 public void setPlayerGunFrame(int val)
 	{
@@ -728,14 +833,30 @@ public void setPlayerGunIndex(int val)
 	{
 	setInt(getEntityIndex(), INT_CLIENT_PS_GUNINDEX, val);
 	}
-public void setPlayerGunOffset(Vec3 v)
+public void setPlayerGunOffset(Vector3f v)
 	{
 	setVec3(getEntityIndex(), VEC3_CLIENT_PS_GUNOFFSET, v.x, v.y, v.z);
 	}
-public void setPlayerKickAngles(Vec3 v)
+public void setPlayerKickAngles(Angle3f a)
 	{
-	setVec3(getEntityIndex(), VEC3_CLIENT_PS_KICKANGLES, v.x, v.y, v.z);
+	setVec3(getEntityIndex(), VEC3_CLIENT_PS_KICKANGLES, a.x, a.y, a.z);
 	}
+/**
+ * Register an object to receive this entity's player events.
+ * Has no effect if not a player entity.
+ * @param pl q2java.PlayerListener
+ */
+public void setPlayerListener(PlayerListener pl) 
+	{
+	setPlayerListener0(fEntityIndex, pl);
+	}
+
+/**
+ * Set which object responds to this player's events.
+ * @param pl q2java.PlayerListener
+ */
+private native static void setPlayerListener0(int index, PlayerListener pl);
+
 public void setPlayerPMType(int val)
 	{
 	setInt(fEntityIndex, INT_CLIENT_PS_PMOVE_PMTYPE, val);
@@ -752,15 +873,15 @@ public void setPlayerTeleportTime(byte val)
 	{
 	setByte(fEntityIndex, BYTE_CLIENT_PS_PMOVE_TELEPORTTIME, val);
 	}
-public void setPlayerViewAngles(float nx, float ny, float nz)
+public void setPlayerViewAngles(float pitch, float yaw, float roll)
 	{
-	setVec3(getEntityIndex(), VEC3_CLIENT_PS_VIEWANGLES, nx, ny, nz);
+	setVec3(getEntityIndex(), VEC3_CLIENT_PS_VIEWANGLES, pitch, yaw, roll);
 	}
-public void setPlayerViewAngles(Vec3 v)
+public void setPlayerViewAngles(Angle3f a)
 	{
-	setVec3(getEntityIndex(), VEC3_CLIENT_PS_VIEWANGLES, v.x, v.y, v.z);
+	setVec3(getEntityIndex(), VEC3_CLIENT_PS_VIEWANGLES, a.x, a.y, a.z);
 	}
-public void setPlayerViewOffset(Vec3 v)
+public void setPlayerViewOffset(Vector3f v)
 	{
 	setVec3(getEntityIndex(), VEC3_CLIENT_PS_VIEWOFFSET, v.x, v.y, v.z);
 	}
@@ -814,7 +935,7 @@ public void setSVFlags(int val)
 
 private native static void setVec3(int index, int fieldNum, float x, float y, float z);
 
-public void setVelocity(Vec3 v)
+public void setVelocity(Vector3f v)
 	{
 	setVec3(fEntityIndex, VEC3_VELOCITY, v.x, v.y, v.z);
 	}

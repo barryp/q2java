@@ -1,9 +1,12 @@
 
-package q2jgame.spawn;
+package baseq2.spawn;
 
 import java.util.Enumeration;
+import javax.vecmath.*;
+
 import q2java.*;
 import q2jgame.*;
+import baseq2.*;
 
 public class func_train extends GenericPusher 
 	{
@@ -13,9 +16,8 @@ public class func_train extends GenericPusher
 		
 	// track the state of the train
 	private int fTrainState;
-	private float fNextTrainThink;	
-	private GameEntity fTrainTarget;
-	private Vec3 fTrainDestination;
+	private GameObject fTrainTarget;
+	private Point3f fTrainDestination;
 	
 	// train sounds
 	private int fSoundMiddle;
@@ -35,12 +37,12 @@ public func_train(String[] spawnArgs) throws GameException
 	{
 	super(spawnArgs);
 
-	setAngles(0, 0, 0);
-	setSolid(SOLID_BSP);
+	fEntity.setAngles(0, 0, 0);
+	fEntity.setSolid(NativeEntity.SOLID_BSP);
 	
 	String s = getSpawnArg("model", null);
 	if (s != null)
-		setModel(s);
+		fEntity.setModel(s);
 
 	fSpeed = getSpawnArg("speed", 100);
 	fAccel = getSpawnArg("accel", fSpeed);
@@ -51,20 +53,19 @@ public func_train(String[] spawnArgs) throws GameException
 
 	String noise = getSpawnArg("noise", null);		
 	if (noise != null)
-		fSoundMiddle = Engine.soundIndex(noise);
+		fSoundMiddle = Engine.getSoundIndex(noise);
 		
-	linkEntity();	
+	fEntity.linkEntity();	
 	
 	if (fTargets == null)
 		{
-		PrintManager.dprint("func_train without a target at " + getAbsMins() + "\n");
+		Game.dprint("func_train without a target at " + fEntity.getAbsMins() + "\n");
 		fTrainState = STATE_TRAIN_STOPPED;
-		fNextTrainThink = 0;
 		}
 	else
 		{
 		fTrainState = STATE_TRAIN_SPAWNED;
-		fNextTrainThink = (float)(Game.gGameTime + Engine.SECONDS_PER_FRAME);
+		Game.addFrameListener(this, 0, -1);
 		}		
 	}
 /**
@@ -82,9 +83,8 @@ public void go()
 		fTrainTarget = getRandomTarget();
 		if (fTargets == null)
 			{
-//			PrintManager.dprint("train_next: no next target\n");
+//			Game.dprint("train_next: no next target\n");
 			fTrainState = STATE_TRAIN_STOPPED;
-			fNextTrainThink = 0;
 			return;
 			}
 
@@ -97,26 +97,27 @@ public void go()
 			{
 			if (!first)
 				{
-				PrintManager.dprint("connected teleport path_corners, see " + fTrainTarget.getClass().getName() + " at " + fTrainTarget.getOrigin() + "\n");
+				Game.dprint("connected teleport path_corners, see " + fTrainTarget.getClass().getName() + " at " + fTrainTarget.fEntity.getOrigin() + "\n");
 				return;
 				}
 			first = false;
-			setOrigin(fTrainTarget.getOrigin().subtract(getMins()));
+			Point3f p = fTrainTarget.fEntity.getOrigin();
+			p.sub(fEntity.getMins());
+			fEntity.setOrigin(p);
 //			VectorCopy (self->s.origin, self->s.old_origin);
-			linkEntity();
+			fEntity.linkEntity();
 			}				
 		}
 		
 	fWait = fTrainTarget.getSpawnArg("wait", 0.0F);
-	fTrainDestination = fTrainTarget.getOrigin();
-	fTrainDestination.subtract(getMins());
+	fTrainDestination = fTrainTarget.fEntity.getOrigin();
+	fTrainDestination.sub(fEntity.getMins());
 		
 	moveTo(fTrainDestination);	
 	fTrainState = STATE_TRAIN_MOVING;
-	fNextTrainThink = 0;
 	
 	if (!isGroupSlave())
-		setSound(fSoundMiddle);
+		fEntity.setSound(fSoundMiddle);
 	}
 /**
  * This method was created by a SmartGuide.
@@ -130,9 +131,38 @@ protected void moveFinished()
 	else		
 		{
 		fTrainState = STATE_TRAIN_WAITING;
-		fNextTrainThink = (float)(Game.gGameTime + fWait);
-		setSound(0);
+		Game.addFrameListener(this, fWait, -1);
+		fEntity.setSound(0);
 		}	
+	}
+/**
+ * This method was created by a SmartGuide.
+ */
+public void runFrame(int phase) 
+	{
+	switch (fTrainState)
+		{
+		case STATE_TRAIN_SPAWNED:
+			fTrainTarget = getRandomTarget();
+			Point3f p = fTrainTarget.fEntity.getOrigin();
+			p.sub(fEntity.getMins());
+			fEntity.setOrigin(p);
+			fEntity.linkEntity();
+			fTargets = fTrainTarget.fTargets;
+				
+			if ((fTargetGroup == null) || ((fSpawnFlags & TRAIN_START_ON) != 0))
+				go();
+			else
+				fTrainState = STATE_TRAIN_STOPPED;
+			break;
+				
+		case STATE_TRAIN_WAITING:
+			go();
+			break;
+			
+		default:
+			super.runFrame(phase);
+		}
 	}
 /**
  * This method was created by a SmartGuide.
@@ -147,39 +177,6 @@ public void stop()
 		}
 
 	fTrainState = STATE_TRAIN_STOPPED;
-	fNextTrainThink = 0;
-	}
-/**
- * This method was created by a SmartGuide.
- */
-public void think() 
-	{
-	if ((fNextTrainThink > 0) && (Game.gGameTime >= fNextTrainThink))
-		{
-		switch (fTrainState)
-			{
-			case STATE_TRAIN_SPAWNED:
-				fTrainTarget = getRandomTarget();
-				setOrigin(fTrainTarget.getOrigin().subtract(getMins()));
-				linkEntity();
-				fTargets = fTrainTarget.fTargets;
-				
-				if ((fTargetGroup == null) || ((fSpawnFlags & TRAIN_START_ON) != 0))
-					go();
-				else
-					{
-					fTrainState = STATE_TRAIN_STOPPED;
-					fNextTrainThink = 0;
-					}					
-				break;
-				
-			case STATE_TRAIN_WAITING:
-				go();
-				break;
-			}
-		}
-
-	super.think();
 	}
 /**
  * This method was created by a SmartGuide.

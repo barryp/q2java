@@ -1,9 +1,12 @@
 
-package q2jgame.spawn;
+package baseq2.spawn;
 
 import java.util.Enumeration;
+import javax.vecmath.*;
+
 import q2java.*;
 import q2jgame.*;
+import baseq2.*;
 
 public class func_button extends GenericPusher
 	{	
@@ -12,8 +15,8 @@ public class func_button extends GenericPusher
 	private int fMaxHealth;
 
 	// private movement parameters
-	private Vec3 fOffOrigin;
-	private Vec3 fOnOrigin;
+	private Point3f fOffOrigin;
+	private Point3f fOnOrigin;
 
 	// track the state of the door
 	private int fButtonState;
@@ -34,10 +37,10 @@ public func_button(String[] spawnArgs) throws GameException
 	{
 	super(spawnArgs);
 	
-	setSolid(SOLID_BSP);
+	fEntity.setSolid(NativeEntity.SOLID_BSP);
 	String s = getSpawnArg("model", null);
 	if (s != null)
-		setModel(s);
+		fEntity.setModel(s);
 
 	fSpeed = getSpawnArg("speed", 40);
 	fAccel = getSpawnArg("accel", fSpeed);
@@ -48,23 +51,24 @@ public func_button(String[] spawnArgs) throws GameException
 	
 	// setup door sounds
 	if (getSpawnArg("sounds", 0) != 1)
-		fSoundStart = Engine.soundIndex("switches/butn2.wav");
+		fSoundStart = Engine.getSoundIndex("switches/butn2.wav");
 							
 	// setup for opening and closing
-	fOffOrigin = getOrigin();
-	Vec3 moveDir = getMoveDir();
+	fOffOrigin = fEntity.getOrigin();
+	Vector3f moveDir = getMoveDir();
 
-	Vec3 absMoveDir = (new Vec3(moveDir)).abs();
-	Vec3 size = getSize();
+	Vector3f absMoveDir = new Vector3f(moveDir);
+	absMoveDir.absolute();
+	Tuple3f size = fEntity.getSize();
 	
 	fMoveDistance = absMoveDir.x * size.x + absMoveDir.y * size.y + absMoveDir.z * size.z - lip;
-	fOnOrigin = fOffOrigin.vectorMA(fMoveDistance, moveDir);
-
+	fOnOrigin = new Point3f();
+	fOnOrigin.scaleAdd(fMoveDistance, moveDir, fOffOrigin);
 	fButtonState = STATE_BUTTON_OFF;
 		
-	setEffects(EF_ANIM01);
+	fEntity.setEffects(NativeEntity.EF_ANIM01);
 			
-	linkEntity();		
+	fEntity.linkEntity();		
 	}
 /**
  * This method was created by a SmartGuide.
@@ -78,11 +82,11 @@ public void activate()
 			fButtonState = STATE_BUTTON_ACTIVATING;
 			moveTo(fOnOrigin);
 			if ((fSoundStart != 0) && !isGroupSlave())
-				sound(CHAN_NO_PHS_ADD + CHAN_VOICE, fSoundStart, 1, ATTN_STATIC, 0);			
+				fEntity.sound(NativeEntity.CHAN_NO_PHS_ADD + NativeEntity.CHAN_VOICE, fSoundStart, 1, NativeEntity.ATTN_STATIC, 0);			
 			break;	
 			
 		case STATE_BUTTON_ONWAIT:
-			fNextButtonThink = (float)(Game.gGameTime + fWait);	
+			fNextButtonThink = (float)(Game.getGameTime() + fWait);	
 			break;				
 		}
 	}
@@ -97,8 +101,8 @@ public void activate()
  * @param knockback int
  * @param dflags int
  */
-public void damage(GameEntity inflictor, GameEntity attacker, 
-	Vec3 dir, Vec3 point, Vec3 normal, 
+public void damage(GameObject inflictor, GameObject attacker, 
+	Vector3f dir, Point3f point, Vector3f normal, 
 	int damage, int knockback, int dflags, int tempEvent) 
 	{
 	super.damage(inflictor, attacker, dir, point, normal, damage, knockback, dflags, tempEvent);
@@ -136,21 +140,21 @@ public void moveFinished()
 	switch (fButtonState)
 		{
 		case STATE_BUTTON_ACTIVATING:
-			setFrame(1);
-			setEffects(EF_ANIM23);			
+			fEntity.setFrame(1);
+			fEntity.setEffects(NativeEntity.EF_ANIM23);			
 			useTargets();
 			if (fWait == 0)
 				fButtonState = STATE_BUTTON_ON;
 			else				
 				{
-				fNextButtonThink = (float)(Game.gGameTime + fWait);
+				fNextButtonThink = (float)(Game.getGameTime() + fWait);
 				fButtonState = STATE_BUTTON_ONWAIT;
 				}
 			break;			
 
 		case STATE_BUTTON_DEACTIVATING:
 			fButtonState = STATE_BUTTON_OFF;
-			setEffects(EF_ANIM01);
+			fEntity.setEffects(NativeEntity.EF_ANIM01);
 			break;			
 		}		
 	}
@@ -159,13 +163,13 @@ public void moveFinished()
  */
 public void think() 
 	{
-	if ((fNextButtonThink > 0) && (Game.gGameTime >= fNextButtonThink))
+	if ((fNextButtonThink > 0) && (Game.getGameTime() >= fNextButtonThink))
 		{
 		switch (fButtonState)
 			{
 			case STATE_BUTTON_ONWAIT:
 				fNextButtonThink = 0;
-				setFrame(0);
+				fEntity.setFrame(0);
 				deactivate();
 				break;
 			}

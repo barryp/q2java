@@ -9,8 +9,8 @@ static jmethodID method_ConsoleOutputStream_setConsole;
 
 static JNINativeMethod ConsoleOutputStream_methods[] = 
 	{
-	{"write0",	"(I)V",		Java_q2java_ConsoleOutputStream_write0__I},
-	{"write0",	"([BII)V",	Java_q2java_ConsoleOutputStream_write0___3BII}
+	{"write",	"(I)V",		Java_q2java_ConsoleOutputStream_write__I},
+	{"write",	"([BII)V",	Java_q2java_ConsoleOutputStream_write___3BII}
 	};
 
 void ConsoleOutputStream_javaInit()
@@ -48,10 +48,15 @@ void ConsoleOutputStream_javaFinalize()
 	{
 	if (class_ConsoleOutputStream)
 		(*java_env)->UnregisterNatives(java_env, class_ConsoleOutputStream);
+
+	(*java_env)->DeleteLocalRef(java_env, class_ConsoleOutputStream);
 	}
 
-static void JNICALL Java_q2java_ConsoleOutputStream_write0__I(JNIEnv *env , jobject obj, jint i)
+
+static void JNICALL Java_q2java_ConsoleOutputStream_write__I(JNIEnv *env , jobject obj, jint i)
 	{
+	char ca[2];
+
 	switch (i)
 		{
 		case '\r': 
@@ -61,17 +66,21 @@ static void JNICALL Java_q2java_ConsoleOutputStream_write0__I(JNIEnv *env , jobj
 			// not the ideal way to handle tabs, but good enough 
 			// for printing java Exceptions
 			gi.dprintf("    "); 
+			Game_consoleOutput("    ");
 			debugLog("    "); 
 			break; 
 
 		default: 
+			ca[0] = (char) i;
+			ca[1] = 0;
 			gi.dprintf("%c", i); 
+			Game_consoleOutput(ca);
 			debugLog("%c", i); 
 			break;
 		}
 	}
 
-static void JNICALL Java_q2java_ConsoleOutputStream_write0___3BII(JNIEnv *env, jobject obj, jbyteArray jba, jint offset, jint len)
+static void JNICALL Java_q2java_ConsoleOutputStream_write___3BII(JNIEnv *env, jobject obj, jbyteArray jba, jint offset, jint len)
 	{
 	jboolean isCopy;
 	char *p;
@@ -114,10 +123,9 @@ static void JNICALL Java_q2java_ConsoleOutputStream_write0___3BII(JNIEnv *env, j
 	*r = 0;
 
 	gi.dprintf("%s", s);
+	Game_consoleOutput(s);
 	debugLog("%s", s);
 	gi.TagFree(s);
-
-//	Java_q2java_ConsoleOutputStream_write0__I(env, obj, *q);
 
 	(*env)->ReleaseByteArrayElements(env, jba, p, JNI_ABORT);
 	}

@@ -1,11 +1,14 @@
 
-package q2jgame.spawn;
+package baseq2.spawn;
 
 import java.util.Enumeration;
+import javax.vecmath.*;
+
 import q2java.*;
 import q2jgame.*;
+import baseq2.*;
 
-public class func_door extends GenericPusher implements AreaTriggerUser
+public class func_door extends GenericPusher 
 	{	
 	// spawn parameters
 	private float fWait;
@@ -14,13 +17,12 @@ public class func_door extends GenericPusher implements AreaTriggerUser
 	private String fMessage;
 
 	// private movement parameters
-	private Vec3 fClosedOrigin;
-	private Vec3 fOpenedOrigin;
+	private Point3f fClosedOrigin;
+	private Point3f fOpenedOrigin;
 
 	// track the state of the door
 	private int fDoorState;
 	private int fDoorStateInitial;
-	private float fNextDoorThink;
 	private int fHealth;
 	
 	// door sounds if any
@@ -49,10 +51,10 @@ public func_door(String[] spawnArgs) throws GameException
 	{
 	super(spawnArgs);
 	
-	setSolid(SOLID_BSP);
+	fEntity.setSolid(NativeEntity.SOLID_BSP);
 	String s = getSpawnArg("model", null);
 	if (s != null)
-		setModel(s);
+		fEntity.setModel(s);
 
 	fSpeed = getSpawnArg("speed", 100);
 	fAccel = getSpawnArg("accel", fSpeed);
@@ -66,25 +68,27 @@ public func_door(String[] spawnArgs) throws GameException
 	// setup door sounds
 	if (getSpawnArg("sounds", 0) != 1)
 		{
-		fSoundStart = Engine.soundIndex("doors/dr1_strt.wav");
-		fSoundMiddle = Engine.soundIndex("doors/dr1_mid.wav");
-		fSoundEnd = Engine.soundIndex("doors/dr1_end.wav");
+		fSoundStart = Engine.getSoundIndex("doors/dr1_strt.wav");
+		fSoundMiddle = Engine.getSoundIndex("doors/dr1_mid.wav");
+		fSoundEnd = Engine.getSoundIndex("doors/dr1_end.wav");
 		}
 							
 	// setup for opening and closing
-	fClosedOrigin = getOrigin();
-	Vec3 moveDir = getMoveDir();
+	fClosedOrigin = fEntity.getOrigin();
+	Vector3f moveDir = getMoveDir();
 
-	Vec3 absMoveDir = (new Vec3(moveDir)).abs();
-	Vec3 size = getSize();
+	Vector3f absMoveDir = new Vector3f(moveDir);
+	absMoveDir.absolute();
+	Tuple3f size = fEntity.getSize();
 	
 	fMoveDistance = absMoveDir.x * size.x + absMoveDir.y * size.y + absMoveDir.z * size.z - lip;
-	fOpenedOrigin = fClosedOrigin.vectorMA(fMoveDistance, moveDir);
-
+	fOpenedOrigin = new Point3f();
+	fOpenedOrigin.scaleAdd(fMoveDistance, moveDir, fClosedOrigin);
+	
 	if ((fSpawnFlags & DOOR_START_OPEN) != 0)
 		{
 		fDoorStateInitial = fDoorState = STATE_DOOR_OPENED;
-		setOrigin(fOpenedOrigin);
+		fEntity.setOrigin(fOpenedOrigin);
 		setPortals(true);
 		}
 	else		
@@ -95,26 +99,22 @@ public func_door(String[] spawnArgs) throws GameException
 		
 	int effect = 0;
 	if ((fSpawnFlags & 16) != 0)
-		effect |= EF_ANIM_ALL;
+		effect |= NativeEntity.EF_ANIM_ALL;
 	if ((fSpawnFlags & 64) != 0)
-		effect |= EF_ANIM_ALLFAST;
+		effect |= NativeEntity.EF_ANIM_ALLFAST;
 	if (effect != 0)
-		setEffects(effect);
-	linkEntity();		
+		fEntity.setEffects(effect);
+	fEntity.linkEntity();		
 
 	if ((fHealth == 0) && (fTargetGroup== null))
 		{		
 		fDoorState = STATE_DOOR_SPAWNTRIGGER;
-		fNextDoorThink = (float)(Game.gGameTime + Engine.SECONDS_PER_FRAME);
+		
+		// schedule a one-shot notification
+		// so we can create an area trigger
+		// after everything has been spawned
+		Game.addFrameListener(this, 0, -1);
 		}
-	}
-/**
- * This method was created by a SmartGuide.
- * @param touchedBy q2jgame.GameEntity
- */
-public void areaTrigger(Player touchedBy) 
-	{
-	use(null);
 	}
 /**
  * This method was created by a SmartGuide.
@@ -131,8 +131,8 @@ public void close()
 			if (!isGroupSlave())
 				{
 				if (fSoundStart != 0)
-					sound(CHAN_NO_PHS_ADD + CHAN_VOICE, fSoundStart, 1, ATTN_STATIC, 0);
-				setSound(fSoundMiddle);					
+					fEntity.sound(NativeEntity.CHAN_NO_PHS_ADD + NativeEntity.CHAN_VOICE, fSoundStart, 1, NativeEntity.ATTN_STATIC, 0);
+				fEntity.setSound(fSoundMiddle);					
 				}
 			break;			
 		}
@@ -148,8 +148,8 @@ public void close()
  * @param knockback int
  * @param dflags int
  */
-public void damage(GameEntity inflictor, GameEntity attacker, 
-	Vec3 dir, Vec3 point, Vec3 normal, 
+public void damage(GameObject inflictor, GameObject attacker, 
+	Vector3f dir, Point3f point, Vector3f normal, 
 	int damage, int knockback, int dflags, int tempEvent) 
 	{
 	super.damage(inflictor, attacker, dir, point, normal, damage, knockback, dflags, tempEvent);
@@ -176,8 +176,10 @@ public void moveFinished()
 				fDoorState = STATE_DOOR_OPENED;
 			else				
 				{
-				fNextDoorThink = (float)(Game.gGameTime + fWait);
 				fDoorState = STATE_DOOR_OPENWAIT;
+
+				// schedule a one-time notification fWait seconds from now
+				Game.addFrameListener(this, fWait, -1);
 				}
 			break;			
 
@@ -190,8 +192,8 @@ public void moveFinished()
 	if (!isGroupSlave())
 		{
 		if (fSoundEnd != 0)
-			sound(CHAN_NO_PHS_ADD + CHAN_VOICE, fSoundEnd, 1, ATTN_STATIC, 0);
-		setSound(0);			
+			fEntity.sound(NativeEntity.CHAN_NO_PHS_ADD + NativeEntity.CHAN_VOICE, fSoundEnd, 1, NativeEntity.ATTN_STATIC, 0);
+		fEntity.setSound(0);			
 		}		
 	}
 /**
@@ -210,15 +212,38 @@ public void open()
 			if (!isGroupSlave())
 				{
 				if (fSoundStart != 0)
-					sound(CHAN_NO_PHS_ADD + CHAN_VOICE, fSoundStart, 1, ATTN_STATIC, 0);
-				setSound(fSoundMiddle);
+					fEntity.sound(NativeEntity.CHAN_NO_PHS_ADD + NativeEntity.CHAN_VOICE, fSoundStart, 1, NativeEntity.ATTN_STATIC, 0);
+				fEntity.setSound(fSoundMiddle);
 				}
 			break;	
 			
 		case STATE_DOOR_OPENWAIT:
-			fNextDoorThink = (float)(Game.gGameTime + fWait);	
+			// reschedule the notification that's outstanding
+			Game.addFrameListener(this, fWait, -1);
 			break;				
 		}
+	}
+/**
+ * This method was created by a SmartGuide.
+ * @param phase int
+ */
+public void runFrame(int phase) 
+	{
+	switch (fDoorState)
+		{
+		case STATE_DOOR_SPAWNTRIGGER:
+			spawnDoorTrigger();
+			fDoorState = fDoorStateInitial;
+			super.runFrame(phase); // the generic pusher needs to initialize some stuff too.		
+			break;
+				
+		case STATE_DOOR_OPENWAIT:
+			close();
+			break;
+			
+		default:
+			super.runFrame(phase);	
+		}		
 	}
 /**
  * This method was created by a SmartGuide.
@@ -244,16 +269,16 @@ private void spawnDoorTrigger()
 	if (isGroupSlave())
 		return;		// only the team leader spawns a trigger
 
-	Vec3 mins = getAbsMins();
-	Vec3 maxs = getAbsMaxs();
+	Tuple3f mins = fEntity.getAbsMins();
+	Tuple3f maxs = fEntity.getAbsMaxs();
 
 	if (fGroup != null)	
 		{
 		for (int i = 1; i < fGroup.size(); i++)
 			{
-			GameEntity ge = (GameEntity) fGroup.elementAt(i);
-			Vec3.addPointToBounds(ge.getAbsMins(), mins, maxs);
-			Vec3.addPointToBounds(ge.getAbsMaxs(), mins, maxs);
+			NativeEntity ge = ((GameObject) fGroup.elementAt(i)).fEntity;
+			MiscUtil.addPointToBounds(ge.getAbsMins(), mins, maxs);
+			MiscUtil.addPointToBounds(ge.getAbsMaxs(), mins, maxs);
 			}
 		}	
 		
@@ -271,30 +296,6 @@ private void spawnDoorTrigger()
 		{
 		e.printStackTrace();
 		}			
-	}
-/**
- * This method was created by a SmartGuide.
- */
-public void think() 
-	{
-	if ((fNextDoorThink > 0) && (Game.gGameTime >= fNextDoorThink))
-		{
-		switch (fDoorState)
-			{
-			case STATE_DOOR_SPAWNTRIGGER:
-				spawnDoorTrigger();
-				fDoorState = fDoorStateInitial;
-				fNextDoorThink = 0;
-				break;
-				
-			case STATE_DOOR_OPENWAIT:
-				fNextDoorThink = 0;
-				close();
-				break;
-			}
-		}
-
-	super.think();
 	}
 /**
  * This method was created by a SmartGuide.

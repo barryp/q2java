@@ -36,6 +36,8 @@ void CVar_javaFinalize()
 	{
 	if (class_CVar)
 		(*java_env)->UnregisterNatives(java_env, class_CVar);
+
+	(*java_env)->DeleteLocalRef(java_env, class_CVar);
 	}
 
 static jint JNICALL Java_q2java_CVar_cvar0(JNIEnv *env , jclass cls, jstring jname, jstring jval, jint flags, jint calltype)

@@ -1,8 +1,10 @@
 
-package q2jgame;
+package baseq2;
 
-import q2java.*;
 import java.util.Enumeration;
+import javax.vecmath.*;
+import q2java.*;
+import q2jgame.*;
  
 /**
  * Superclass for entities like doors, plats, and trains
@@ -11,7 +13,7 @@ import java.util.Enumeration;
  * @author Barry Pederson
  */ 
  
-public abstract class GenericPusher extends GameEntity 
+public abstract class GenericPusher extends GameObject implements FrameListener
 	{
 	// possible spawn args
 	protected float fSpeed;
@@ -25,15 +27,15 @@ public abstract class GenericPusher extends GameEntity
 	private float fMoveSpeed;
 	private float fDecelDistance;
 	private float fRemainingDistance;	
-	private Vec3 fCurrentDest;
-	private Vec3 fMoveDir;
-	private Vec3 fLinearVelocity;
-	private Vec3 fAngularVelocity;
+	private Point3f fCurrentDest;
+	private Vector3f fMoveDir;
+	private Vector3f fLinearVelocity;
+	private Angle3f fAngularVelocity;
 	
 	private boolean fIsAccelerative;
 	private int fState;
 	private int fEndState;
-	private float fNextThink;
+	private float fLastFrameTime;
 	
 	private final static int STATE_SPAWNED = 0;
 	private final static int STATE_IDLE = 1;
@@ -50,10 +52,12 @@ public GenericPusher(java.lang.String[] spawnArgs) throws q2java.GameException
 	{
 	super(spawnArgs);
 		
-	fLinearVelocity = new Vec3();
-	fAngularVelocity = new Vec3();
+	fLinearVelocity = new Vector3f();
+	fAngularVelocity = new Angle3f();
 	fState = STATE_SPAWNED;
-	fNextThink = (float) Game.gGameTime;
+	
+	// schedule a one-shot call so we can sync speeds
+	Game.addFrameListener(this, 0, -1);			
 	}
 /**
  * This method was created by a SmartGuide.
@@ -130,22 +134,22 @@ private void accelerate()
  * will appear on the maps in all sorts of odd positions.
  * @return a Vec3 pointing in the direction the door opens.
  */
-protected Vec3 getMoveDir() 
+protected Vector3f getMoveDir() 
 	{
-	Vec3 angles = getAngles();
-	setAngles(0, 0, 0);
+	Angle3f angles = fEntity.getAngles();
+	fEntity.setAngles(0, 0, 0);
 		
 	// door goes up	
-	if (angles.equals(0, -1, 0))
-		return new Vec3(0, 0, 1);
+	if (MiscUtil.equals(angles, 0, -1, 0))
+		return new Vector3f(0, 0, 1);
 
 	// door goes down
-	if (angles.equals(0, -2, 0))
-		return new Vec3(0, 0, -1);
+	if (MiscUtil.equals(angles, 0, -2, 0))
+		return new Vector3f(0, 0, -1);
 
 	// some other direction?	
-	Vec3 result = new Vec3();	
-	angles.angleVectors(result, null, null);
+	Vector3f result = new Vector3f();	
+	angles.getVectors(result, null, null);
 	return result;
 	}
 
@@ -158,16 +162,20 @@ protected abstract void moveFinished();
  * @param dest q2java.Vec3
  * @param newState int
  */
-protected void moveTo(Vec3 dest) 
+protected void moveTo(Point3f dest) 
 	{
 	if (dest.equals(fCurrentDest))
 		return;
-		
+
+	// start getting continuous frame notifications
+	Game.addFrameListener(this, 0, 0);		
+			
 	fCurrentDest = dest;		
-	fLinearVelocity.clear();
-	fMoveDir = new Vec3(dest);
-	fMoveDir.subtract(getOrigin());
-	fRemainingDistance = fMoveDir.normalizeLength();
+	fLinearVelocity.set(0,0,0);
+	fMoveDir = new Vector3f(dest);
+	fMoveDir.sub(fEntity.getOrigin());
+	fRemainingDistance = fMoveDir.length();
+	fMoveDir.scale(1 / fRemainingDistance);
 	fCurrentSpeed = 0;		
 		
 	if ((fSpeed * Engine.SECONDS_PER_FRAME) > fRemainingDistance)
@@ -179,18 +187,17 @@ protected void moveTo(Vec3 dest)
 
 	if ((fSpeed == fAccel) && (fSpeed == fDecel))
 		{
-		fLinearVelocity = new Vec3(fMoveDir);
+		fLinearVelocity = new Vector3f(fMoveDir);
 		fLinearVelocity.scale(fSpeed);		
 		float frames = (float) Math.floor((fRemainingDistance / fSpeed) / Engine.SECONDS_PER_FRAME);
 		fRemainingDistance -= frames * fSpeed * Engine.SECONDS_PER_FRAME;
-		fNextThink = (float)(Game.gGameTime + (frames * Engine.SECONDS_PER_FRAME));
+		fLastFrameTime = (float)(Game.getGameTime() + (frames * Engine.SECONDS_PER_FRAME));
 		fState = STATE_MOVING_CONSTANT;
 		}
 	else
 		{
 		// accelerative
 		fCurrentSpeed = 0;
-		fNextThink = (float)(Game.gGameTime + Engine.SECONDS_PER_FRAME);
 		fState = STATE_MOVING_ACCELERATED;
 		}
 	}
@@ -200,20 +207,20 @@ protected void moveTo(Vec3 dest)
  */
 private boolean push() 
 	{
-	boolean isAngularMove = !fAngularVelocity.equals(0,0,0);
-	boolean isLinearMove = !fLinearVelocity.equals(0,0,0);
+	boolean isAngularMove = ! MiscUtil.equals(fAngularVelocity, 0, 0, 0);
+	boolean isLinearMove = ! MiscUtil.equals(fLinearVelocity, 0, 0, 0);
 	
 	if (!isAngularMove && !isLinearMove)
 		return true;
 		
-	Vec3 linearMove = null;
-	Vec3 angularMove = null; 
-	Vec3 forward = null;
-	Vec3 right = null;
-	Vec3 up = null;
-	Vec3 mins = getAbsMins();
-	Vec3 maxs = getAbsMaxs();			
-	Vec3 pusherOrigin = getOrigin();
+	Vector3f linearMove = null;
+	Angle3f angularMove = null; 
+	Vector3f forward = null;
+	Vector3f right = null;
+	Vector3f up = null;
+	Tuple3f mins = fEntity.getAbsMins();
+	Tuple3f maxs = fEntity.getAbsMaxs();			
+	Point3f pusherOrigin = fEntity.getOrigin();
 
 /*	
 // save the pusher's original position
@@ -228,8 +235,11 @@ private boolean push()
 	// setup if moving linearly				
 	if (isLinearMove)
 		{				
-		linearMove = new Vec3(fLinearVelocity).scale(Engine.SECONDS_PER_FRAME).clampEight();
-		setOrigin(pusherOrigin.add(linearMove));
+		linearMove = new Vector3f(fLinearVelocity);
+		linearMove.scale(Engine.SECONDS_PER_FRAME);
+		MiscUtil.clampEight(linearMove);
+		pusherOrigin.add(linearMove);
+		fEntity.setOrigin(pusherOrigin);
 
 		// find the bounding box			
 		mins.add(linearMove);
@@ -239,24 +249,27 @@ private boolean push()
 	// setup if moving angularly		
 	if (isAngularMove)
 		{		
-		angularMove = new Vec3(fAngularVelocity).scale(Engine.SECONDS_PER_FRAME);		
-		setAngles(getAngles().add(angularMove));
+		angularMove = new Angle3f(fAngularVelocity);
+		angularMove.scale(Engine.SECONDS_PER_FRAME);		
+		Angle3f currentAngle = fEntity.getAngles();
+		currentAngle.add(angularMove);
+		fEntity.setAngles(currentAngle);
 		
 		// we need this for pushing things later			
-		Vec3 org = new Vec3(-angularMove.x, -angularMove.y, -angularMove.z);
-		forward = new Vec3();
-		right = new Vec3();
-		up = new Vec3();
-		org.angleVectors(forward, right, up);			
+		Angle3f org = new Angle3f(-angularMove.x, -angularMove.y, -angularMove.z);
+		forward = new Vector3f();
+		right = new Vector3f();
+		up = new Vector3f();
+		org.getVectors(forward, right, up);			
 		}
 	
-	linkEntity();
+	fEntity.linkEntity();
 	
 	// see if any solid entities are inside the final position
-	NativeEntity[] hits = getPotentialPushed(mins, maxs);				
+	NativeEntity[] hits = fEntity.getPotentialPushed(mins, maxs);				
 	for (int i = 0; (hits != null) && (i < hits.length); i++)
 		{
-		GameEntity check = (GameEntity) hits[i];
+		GameObject check = (GameObject) hits[i].getReference();
 		
 		if (check instanceof GenericPusher)
 			continue;
@@ -272,7 +285,7 @@ private boolean push()
 //		VectorCopy (check->s.angles, pushed_p->angles);
 //		pushed_p++;
 
-		Vec3 checkOrigin = check.getOrigin();
+		Point3f checkOrigin = check.fEntity.getOrigin();
 		// try moving the contacted entity 
 		if (isLinearMove)
 			checkOrigin.add(linearMove);
@@ -284,17 +297,18 @@ private boolean push()
 		if (isAngularMove)
 			{
 			// figure movement due to the pusher's amove
-			Vec3 org = check.getOrigin().subtract(pusherOrigin);
-			Vec3 org2 = new Vec3();
-			org2.x = Vec3.dotProduct(org, forward);
-			org2.y = -Vec3.dotProduct(org, right);
-			org2.z = Vec3.dotProduct(org, up);
-			org2.subtract(org);
+			Vector3f org = new Vector3f(check.fEntity.getOrigin());
+			org.sub(pusherOrigin);
+			Tuple3f org2 = new Tuple3f();
+			org2.x = forward.dot(org);
+			org2.y = -right.dot(org);
+			org2.z = up.dot(org);
+			org2.sub(org);
 			checkOrigin.add(org2);
 			}
 			
-		check.setOrigin(checkOrigin);			
-		check.linkEntity();
+		check.fEntity.setOrigin(checkOrigin);			
+		check.fEntity.linkEntity();
 		}
 		
 /*
@@ -350,7 +364,7 @@ private boolean push()
 /**
  * This method was created by a SmartGuide.
  */
-public void runFrame() 
+public void runFrame(int phase) 
 	{
 	// if not a team captain, so movement will be handled elsewhere	
 	if (isGroupSlave())
@@ -472,17 +486,17 @@ private void setupAcceleratedMove()
  */
 private void setupFinalMove() 
 	{
-	fLinearVelocity.set(fMoveDir).scale(fRemainingDistance / Engine.SECONDS_PER_FRAME);
+	fLinearVelocity.set(fMoveDir);
+	fLinearVelocity.scale(fRemainingDistance / Engine.SECONDS_PER_FRAME);
 	}	
 /**
  * Halt the object.  Useful for when trains are turned off.
  */
 protected void stopMoving() 
 	{
-	fLinearVelocity.clear();
-	fAngularVelocity.clear();
+	fLinearVelocity.set(0, 0, 0);
+	fAngularVelocity.set(0, 0, 0);
 	fState = STATE_IDLE;
-	fNextThink = 0;
 	}
 /**
  * Adjust the speed of group members so they finish at the same time.
@@ -520,7 +534,7 @@ private void syncGroupSpeed()
 		else			
 			gp.fDecel *= ratio;
 	
-		gp.fSpeed = newspeed;		
+		gp.fSpeed = newspeed;				
 		}		
 	}
 /**
@@ -528,40 +542,31 @@ private void syncGroupSpeed()
  * @return q2java.NativeEntity
  * @param ent q2java.NativeEntity
  */
-private static NativeEntity testEntityPosition(NativeEntity ent) 
+private static GameObject testEntityPosition(NativeEntity ent) 
 	{
-	Vec3 origin = ent.getOrigin();
+	Point3f origin = ent.getOrigin();
 	TraceResults tr = Engine.trace(origin, ent.getMins(), ent.getMaxs(), origin, ent, Engine.MASK_SOLID);
 	if (tr.fStartSolid)
-		return Game.gWorld;
+		return GameModule.gWorld;
 		
 	return null;		
 	}
 /**
- * This method was created by a SmartGuide.
+ * The actual moving has been handled, now think 
+ * about what we're  going to do next frame.
  */
 protected void think() 
 	{
-	if ((fNextThink <= 0) || (Game.gGameTime < fNextThink))
-		return;
-
 	switch (fState)
 		{
 		case STATE_SPAWNED:
 			syncGroupSpeed();
 			fState = STATE_IDLE;
-		case STATE_IDLE:
-			fNextThink = 0;
 			break;
 			
-		case STATE_MOVING_CONSTANT:
-			if (fRemainingDistance > 0)
-				{
-				setupFinalMove();
-				fState = STATE_FINALMOVE;
-				break;
-				}
-				
+		case STATE_IDLE:
+			break;
+			
 		case STATE_MOVING_ACCELERATED:
 			fRemainingDistance -= fCurrentSpeed;
 			if (fCurrentSpeed == 0)
@@ -573,15 +578,31 @@ protected void think()
 				fState = STATE_FINALMOVE;
 				break;
 				}		
-			fLinearVelocity.set(fMoveDir).scale(fCurrentSpeed * 10);			
-			fNextThink += Engine.SECONDS_PER_FRAME;
+			fLinearVelocity.set(fMoveDir);
+			fLinearVelocity.scale(fCurrentSpeed * 10);			
 			break;				
 			
+
+		case STATE_MOVING_CONSTANT:
+			if (Game.getGameTime() < fLastFrameTime)
+				return;
+				
+			if (fRemainingDistance > 0)
+				{
+				setupFinalMove();
+				fState = STATE_FINALMOVE;
+				break;
+				}
+			// fall through to STATE_FINALMOVE
+							
 		case STATE_FINALMOVE:
-			fLinearVelocity.clear();
-			fAngularVelocity.clear();
-			fNextThink = 0;
-			fState = STATE_IDLE;			
+			fLinearVelocity.set(0, 0, 0);
+			fAngularVelocity.set(0, 0, 0);
+			fState = STATE_IDLE;	
+			
+			// turn off frame notifications
+			Game.removeFrameListener(this);		
+			
 			moveFinished();
 			break;						
 		}		

@@ -1,10 +1,10 @@
-Q2Java v0.2 -  DLL Sourcecode
+Q2Java v0.3 -  DLL Sourcecode
 
     Author:   Barry Pederson <bpederson@geocities.com>
     Homepage: http://www.openquake.org/jquake/q2java
-    Date:     March 25, 1998
+    Date:     April 12, 1998
 
-    Description: Sourcecode to the Q2Java v0.2 DLL
+    Description: Sourcecode to the Q2Java v0.3 DLL
 
     Requirements: To recompile, you'll need a C compiler and a
                   Java Development kit that includes

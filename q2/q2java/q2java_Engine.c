@@ -1,6 +1,6 @@
 #include "globals.h"  // to get at the game_import_t structure
 #include "q2java_Engine.h"
-
+#include <stdlib.h> // for qsort()
 
 #define CALL_MULTICAST 0
 #define CALL_WRITEPOSITION 1
@@ -23,27 +23,28 @@ static jclass class_Engine;
 
 static JNINativeMethod Engine_methods[] = 
 	{
-	{"dprint",		"(Ljava/lang/String;)V", 		Java_q2java_Engine_dprint},
+	{"addCommandString","(Ljava/lang/String;)V",	Java_q2java_Engine_addCommandString},
 	{"bprint",		"(ILjava/lang/String;)V",		Java_q2java_Engine_bprint},
-	{"configString","(ILjava/lang/String;)V",		Java_q2java_Engine_configString},
+	{"debugGraph",	"(FI)V",						Java_q2java_Engine_debugGraph},
+	{"debugLog",	"(Ljava/lang/String;)V",		Java_q2java_Engine_debugLog},
+	{"dprint",		"(Ljava/lang/String;)V", 		Java_q2java_Engine_dprint},
 	{"error",		"(Ljava/lang/String;)V",		Java_q2java_Engine_error},
-	{"modelIndex",	"(Ljava/lang/String;)I",		Java_q2java_Engine_modelIndex},
-	{"soundIndex",	"(Ljava/lang/String;)I",		Java_q2java_Engine_soundIndex},
-	{"imageIndex",	"(Ljava/lang/String;)I",		Java_q2java_Engine_imageIndex},
-	{"trace0",		"(FFFFFFFFFFFFLq2java/NativeEntity;II)Lq2java/TraceResults;",	Java_q2java_Engine_trace0},
-	{"pointContents0",		"(FFF)I",				Java_q2java_Engine_pointContents0},
+	{"getArgc",		"()I", 							Java_q2java_Engine_getArgc},
+	{"getArgv",		"(I)Ljava/lang/String;",		Java_q2java_Engine_getArgv},
+	{"getArgs",		"()Ljava/lang/String;",			Java_q2java_Engine_getArgs},
+	{"getBoxEntities0",	"(FFFFFFI)[Lq2java/NativeEntity;",	Java_q2java_Engine_getBoxEntities0},
+	{"getGamePath",		"()Ljava/lang/String;",		Java_q2java_Engine_getGamePath},
+	{"getImageIndex",	"(Ljava/lang/String;)I",	Java_q2java_Engine_getImageIndex},
+	{"getModelIndex",	"(Ljava/lang/String;)I",	Java_q2java_Engine_getModelIndex},
+	{"getPointContents0",	"(FFF)I",				Java_q2java_Engine_getPointContents0},
+	{"getRadiusEntities0",	"(FFFFIZZ)[Lq2java/NativeEntity;", Java_q2java_Engine_getRadiusEntities0},
+	{"getSoundIndex",		"(Ljava/lang/String;)I",Java_q2java_Engine_getSoundIndex},
 	{"inP0",				"(FFFFFFI)Z",			Java_q2java_Engine_inP0},
 	{"setAreaPortalState",	"(IZ)V",				Java_q2java_Engine_setAreaPortalState},
+	{"setConfigString",		"(ILjava/lang/String;)V",		Java_q2java_Engine_setConfigString},
 	{"areasConnected",		"(II)Z",				Java_q2java_Engine_areasConnected},
-	{"boxEntities0",		"(FFFFFFI)[Lq2java/NativeEntity;",	Java_q2java_Engine_boxEntities0},
-	{"write0",		"(Ljava/lang/Object;FFFII)V",	Java_q2java_Engine_write0},
-	{"argc",		"()I", 							Java_q2java_Engine_argc},
-	{"argv",		"(I)Ljava/lang/String;",		Java_q2java_Engine_argv},
-	{"args",		"()Ljava/lang/String;",			Java_q2java_Engine_args},
-	{"addCommandString","(Ljava/lang/String;)V",	Java_q2java_Engine_addCommandString},
-	{"debugGraph",		"(FI)V",					Java_q2java_Engine_debugGraph},
-	{"getGamePath",		"()Ljava/lang/String;",		Java_q2java_Engine_getGamePath},
-	{"debugLog",		"(Ljava/lang/String;)V",	Java_q2java_Engine_debugLog}
+	{"trace0",		"(FFFFFFFFFFFFLq2java/NativeEntity;II)Lq2java/TraceResults;",	Java_q2java_Engine_trace0},
+	{"write0",		"(Ljava/lang/Object;FFFII)V",	Java_q2java_Engine_write0}
 	};
 
 
@@ -68,6 +69,8 @@ void Engine_javaFinalize()
 	{
 	if (class_Engine)
 		(*java_env)->UnregisterNatives(java_env, class_Engine); 
+
+	(*java_env)->DeleteLocalRef(java_env, class_Engine);
 	}
 
 
@@ -93,7 +96,7 @@ static void JNICALL Java_q2java_Engine_bprint(JNIEnv *env, jclass cls, jint prin
 	(*env)->ReleaseStringUTFChars(env, s, str);
 	}
 
-static void JNICALL Java_q2java_Engine_configString(JNIEnv *env, jclass cls, jint num, jstring js)
+static void JNICALL Java_q2java_Engine_setConfigString(JNIEnv *env, jclass cls, jint num, jstring js)
 	{
 	char *s;
 
@@ -113,7 +116,7 @@ static void JNICALL Java_q2java_Engine_error(JNIEnv *env, jclass cls, jstring js
 	}
 
 
-static jint JNICALL Java_q2java_Engine_modelIndex(JNIEnv *env, jclass cls, jstring jname)
+static jint JNICALL Java_q2java_Engine_getModelIndex(JNIEnv *env, jclass cls, jstring jname)
 	{
 	char *name;
 	int result;
@@ -124,7 +127,7 @@ static jint JNICALL Java_q2java_Engine_modelIndex(JNIEnv *env, jclass cls, jstri
 	return result;
 	}
 
-static jint JNICALL Java_q2java_Engine_soundIndex(JNIEnv *env, jclass cls, jstring jname)
+static jint JNICALL Java_q2java_Engine_getSoundIndex(JNIEnv *env, jclass cls, jstring jname)
 	{
 	char *name;
 	int result;
@@ -135,7 +138,7 @@ static jint JNICALL Java_q2java_Engine_soundIndex(JNIEnv *env, jclass cls, jstri
 	return result;
 	}
 
-static jint JNICALL Java_q2java_Engine_imageIndex(JNIEnv *env, jclass cls, jstring jname)
+static jint JNICALL Java_q2java_Engine_getImageIndex(JNIEnv *env, jclass cls, jstring jname)
 	{
 	char *name;
 	int result;
@@ -189,7 +192,7 @@ static jobject JNICALL Java_q2java_Engine_trace0(JNIEnv *env, jclass cls,
 
 
 
-static jint JNICALL Java_q2java_Engine_pointContents0(JNIEnv *env, jclass cls, jfloat x, jfloat y, jfloat z)
+static jint JNICALL Java_q2java_Engine_getPointContents0(JNIEnv *env, jclass cls, jfloat x, jfloat y, jfloat z)
 	{
 	vec3_t v;
 	v[0] = x;
@@ -229,7 +232,7 @@ static jboolean JNICALL Java_q2java_Engine_areasConnected(JNIEnv *env, jclass cl
 	}
 
 
-static jobjectArray JNICALL Java_q2java_Engine_boxEntities0(JNIEnv *env, jclass cls, 
+static jobjectArray JNICALL Java_q2java_Engine_getBoxEntities0(JNIEnv *env, jclass cls, 
 	jfloat minsx, jfloat minsy, jfloat minsz, 
 	jfloat maxsx, jfloat maxsy, jfloat maxsz, jint areaType)
 	{
@@ -323,17 +326,17 @@ static void JNICALL Java_q2java_Engine_write0(JNIEnv *env, jclass cls, jobject o
 		}
 	}
 
-static jint JNICALL Java_q2java_Engine_argc(JNIEnv *env, jclass cls)
+static jint JNICALL Java_q2java_Engine_getArgc(JNIEnv *env, jclass cls)
 	{
 	return gi.argc();	
 	}
 
-static jstring JNICALL Java_q2java_Engine_argv(JNIEnv *env, jclass cls, jint n)
+static jstring JNICALL Java_q2java_Engine_getArgv(JNIEnv *env, jclass cls, jint n)
 	{
 	return (*env)->NewStringUTF(env, gi.argv(n));
 	}
 
-static jstring JNICALL Java_q2java_Engine_args(JNIEnv *env, jclass cls)
+static jstring JNICALL Java_q2java_Engine_getArgs(JNIEnv *env, jclass cls)
 	{
 	return (*env)->NewStringUTF(env, gi.args());
 	}
@@ -368,4 +371,81 @@ static void JNICALL Java_q2java_Engine_debugLog(JNIEnv *env, jclass cls, jstring
 	s = (char *)((*env)->GetStringUTFChars(env, js, 0));
 	debugLog("%s\n", s);
 	(*env)->ReleaseStringUTFChars(env, js, s);
+	}
+
+
+
+static int radiusSort(const void *e1, const void *e2)
+	{
+	edict_t *a;
+	edict_t *b;
+
+	a = *((edict_t **) e1);
+	b = *((edict_t **) e2);
+
+//	return (int) (a->freetime - b->freetime); // not sure if this could overflow when converting to int
+
+	if (a->freetime == b->freetime)
+		return 0;
+	if (a->freetime < b->freetime)
+		return 1;
+	else
+		return -1;
+	}
+
+jobjectArray JNICALL Java_q2java_Engine_getRadiusEntities0
+  (JNIEnv *env, jclass cls, jfloat x, jfloat y, jfloat z, jfloat radius, jint ignoreIndex, jboolean onlyPlayers, jboolean sortResults)
+	{
+	jobjectArray result;
+	float radiusSquared;
+	float dx, dy, dz, distSquared;
+	int count;
+	int max;
+	int i;
+	edict_t *check;
+
+	edict_t **list = gi.TagMalloc(MAXTOUCH * sizeof(edict_t *), TAG_GAME);
+
+	radiusSquared = radius * radius;
+
+	if (onlyPlayers)
+		max = global_maxClients + 1;
+	else
+		max = ge.num_edicts;
+
+	count = 0;
+	for (i = 1; i < max; i++)
+		{
+		check = ge.edicts + i;
+
+		if (!(check->inuse))
+			continue;
+
+		// no sense checking entities the clients can't see
+		if (check->svflags & SVF_NOCLIENT)
+			continue;
+
+		if (i == ignoreIndex)
+			continue;
+
+		dx = check->s.origin[0] - x;
+		dy = check->s.origin[1] - y;
+		dz = check->s.origin[2] - z;
+
+		distSquared = (dx * dx) + (dy * dy) + (dz * dz);
+
+		if (distSquared <= radiusSquared)
+			{
+			check->freetime = distSquared;  // a bit of a dirty trick, reusing the freetime field
+			list[count++] = check;
+			}
+		}
+
+	if (sortResults)
+		qsort(list, count, sizeof(edict_t *), &radiusSort);
+
+	result = Entity_createArray(list, count);
+	gi.TagFree(list);
+
+	return result;
 	}

@@ -1,21 +1,23 @@
 
-package q2jgame;
+package baseq2;
 
 import java.io.*;
 import java.util.Enumeration;
 import java.util.Vector;
+import javax.vecmath.*;
 import q2java.*;
+import q2jgame.*;
 
 /**
- * GameEntity extends NativeEntity, and adds fields and methods
- * that are necessary for the Java game, but the DLL and Quake II
- * itself don't need to be aware of.
+ * GameObject represents a "thing" in the Quake world, such
+ * as a weapon, a box of ammo, a door, and so on.
  *
  * @author Barry Pederson 
  */
 
-public class GameEntity extends NativeEntity
+public class GameObject implements GameTarget
 	{
+	public transient NativeEntity fEntity;
 	protected int fSpawnFlags;		
 	protected Vector fGroup;
 	protected Vector fTargets;	
@@ -29,99 +31,60 @@ public class GameEntity extends NativeEntity
 	public final static int DAMAGE_ENERGY		= 0x00000004;	// damage is from an energy based weapon
 	public final static int DAMAGE_NO_KNOCKBACK	= 0x00000008;	// do not affect velocity, just view angles
 	public final static int DAMAGE_BULLET		= 0x00000010; // damage is from a bullet (used for ricochets)
-	public final static int DAMAGE_NO_PROTECTION	= 0x00000020; // armor, shields, invulnerability, and godmode have no effect	
+	public final static int DAMAGE_NO_PROTECTION	= 0x00000020; // armor, shields, invulnerability, and godmode have no effect		
 	
-	// entity spawn flags.
-	public final static int SPAWNFLAG_NOT_EASY		= 0x00000100;
-	public final static int SPAWNFLAG_NOT_MEDIUM		= 0x00000200;
-	public final static int SPAWNFLAG_NOT_HARD		= 0x00000400;
-	public final static int SPAWNFLAG_NOT_DEATHMATCH	= 0x00000800;
-	public final static int SPAWNFLAG_NOT_COOP		= 0x00001000;	
-	
-public GameEntity() throws GameException
+public GameObject()
 	{
 	}
-public GameEntity(String[] spawnArgs) throws GameException
+public GameObject(String[] spawnArgs) throws GameException
 	{
 	this(spawnArgs, false);
 	}
-public GameEntity(String[] spawnArgs, boolean isWorld) throws GameException
-	{
-	super(isWorld);
+public GameObject(String[] spawnArgs, boolean isWorld) throws GameException
+	{	
 	fSpawnArgs = spawnArgs;
 
 	// look for common spawn arguments
-
 	fSpawnFlags = getSpawnArg("spawnflags", 0);
 
-	// inhibit entities based on the spawnflags
-	if (Game.gIsDeathmatch)
-		{
-		if ((fSpawnFlags & SPAWNFLAG_NOT_DEATHMATCH) != 0)
-			{
-			freeEntity();
-			throw new InhibitedException("Inhibited in deathmatch");
-			}
-		}
-	else
-		{
-		int mask = 0;
-		switch (Game.gSkillLevel)
-			{
-			case 0:
-				mask = SPAWNFLAG_NOT_EASY;
-				break;
-
-			case 1:
-				mask = SPAWNFLAG_NOT_MEDIUM;
-				break;
-
-			case 2:
-			case 3:
-				mask = SPAWNFLAG_NOT_HARD;
-				break;
-			}
+	GameModule.checkInhibited(fSpawnFlags);
+				
+	// at this point, looks like the object will be sticking around
+	// so create the entity that represents it in the Quake world
+	// and set some basic properties.
 			
-		if ((fSpawnFlags & mask) != 0)
-			{
-			freeEntity();
-			throw new InhibitedException("Inhibited because of skill");						
-			}
-		}
-		
+	fEntity = new NativeEntity(isWorld);
+	fEntity.setReference(this);	
 		
 	String s = getSpawnArg("origin", null);
 	if (s != null)
-		setOrigin(new Vec3(s));
+		fEntity.setOrigin(MiscUtil.parsePoint3f(s));
 
 	s = getSpawnArg("angles", null);
 	if (s != null)
-		setAngles(new Vec3(s));
+		fEntity.setAngles(MiscUtil.parseAngle3f(s));
 
 	s = getSpawnArg("angle", null);
 	if (s != null)
 		{
 		Float f = new Float(s);
-		setAngles(0, f.floatValue(), 0);
+		fEntity.setAngles(0, f.floatValue(), 0);
 		}
-				
+
+
+	// hook this object up with other game objects
+
 	s = getSpawnArg("target", null);
 	if (s != null)
-		fTargets = Game.getTarget(s);		
+		fTargets = Game.getLevelRegistryList("target-" + s);		
 
 	s = getSpawnArg("targetname", null);
 	if (s != null)
-		{
-		fTargetGroup = Game.getTarget(s);
-		fTargetGroup.addElement(this);
-		}
+		fTargetGroup = Game.addLevelRegistry("target-" + s, this);
 		
 	s = getSpawnArg("team", null);
 	if (s != null)
-		{
-		fGroup = Game.getGroup(s);
-		fGroup.addElement(this);			
-		}
+		fGroup = Game.addLevelRegistry("team-" + s, this);
 	}
 /**
  * This method was created by a SmartGuide.
@@ -134,17 +97,16 @@ public GameEntity(String[] spawnArgs, boolean isWorld) throws GameException
  * @param knockback int
  * @param dflags int
  */
-public void damage(GameEntity inflictor, GameEntity attacker, 
-	Vec3 dir, Vec3 point, Vec3 normal, 
+public void damage(GameObject inflictor, GameObject attacker, 
+	Vector3f dir, Point3f point, Vector3f normal, 
 	int damage, int knockback, int dflags, int tempEvent) 
 	{
 	spawnDamage(tempEvent, point, normal, damage);
-//	Engine.dprint("Damaged: " + this + "\n");
 	}
 /**
  * Clean a few things up before calling NativeEntity.freeEntity().
  */
-public void freeEntity() 
+public void dispose() 
 	{
 	// disassociate this entity from any groups
 	if (fGroup != null)
@@ -165,20 +127,20 @@ public void freeEntity()
 	fSpawnArgs = null;
 	fTargets = null;
 				
-	super.freeEntity();
+	fEntity.freeEntity();
 	}
 /**
  * Randomly pick one of this entity's targets.
  * @return one of the entries in the fTargets Vector, 
  *     or null if there are no targets.
  */
-public GameEntity getRandomTarget() 
+public GameObject getRandomTarget() 
 	{
 	if ((fTargets == null) || (fTargets.size() < 1))
 		return null;
 		
-	int choice = (Game.randomInt() & 0x0fff) % fTargets.size();
-	return (GameEntity) fTargets.elementAt(choice);
+	int choice = (MiscUtil.randomInt() & 0x0fff) % fTargets.size();
+	return (GameObject) fTargets.elementAt(choice);
 	}
 /**
  * Lookup an float spawn argument.
@@ -188,15 +150,7 @@ public GameEntity getRandomTarget()
  */
 public float getSpawnArg(String keyword, float defaultValue) 
 	{
-	if (fSpawnArgs == null)
-		return defaultValue;
-
-	keyword = keyword.intern();
-	for (int i = 0; i < fSpawnArgs.length; i+=2)
-		if (keyword == fSpawnArgs[i])
-			return Float.valueOf(fSpawnArgs[i+1]).floatValue();
-
-	return defaultValue;
+	return Game.getSpawnArg(fSpawnArgs, keyword, defaultValue);
 	}
 /**
  * Lookup an integer spawn argument.
@@ -206,15 +160,7 @@ public float getSpawnArg(String keyword, float defaultValue)
  */
 public int getSpawnArg(String keyword, int defaultValue) 
 	{
-	if (fSpawnArgs == null)
-		return defaultValue;
-
-	keyword = keyword.intern();
-	for (int i = 0; i < fSpawnArgs.length; i+=2)
-		if (keyword == fSpawnArgs[i])
-			return Integer.parseInt(fSpawnArgs[i+1]);
-
-	return defaultValue;
+	return Game.getSpawnArg(fSpawnArgs, keyword, defaultValue);
 	}
 /**
  * Lookup a string spawn argument.
@@ -224,15 +170,7 @@ public int getSpawnArg(String keyword, int defaultValue)
  */
 public String getSpawnArg(String keyword, String defaultValue)
 	{
-	if (fSpawnArgs == null)
-		return defaultValue;
-
-	keyword = keyword.intern();
-	for (int i = 0; i < fSpawnArgs.length; i+=2)
-		if (keyword == fSpawnArgs[i])
-			return fSpawnArgs[i+1];
-
-	return defaultValue;
+	return Game.getSpawnArg(fSpawnArgs, keyword, defaultValue);
 	}
 /**
  * Check whether this Entitiy is a group slave. 
@@ -244,18 +182,12 @@ public boolean isGroupSlave()
 	}
 /**
  * This method was created by a SmartGuide.
- */
-public void runFrame() 
-	{
-	}
-/**
- * This method was created by a SmartGuide.
  * @param damageType int
  * @param origin q2java.Vec3
  * @param normal q2java.Vec3
  * @param damage int
  */
-public static void spawnDamage(int damageType, Vec3 origin, Vec3 normal, int damage ) 
+public static void spawnDamage(int damageType, Point3f origin, Vector3f normal, int damage ) 
 	{
 	if (damageType != Engine.TE_NONE)
 		{
@@ -317,6 +249,6 @@ public void useTargets()
 		return;
 		
 	for (int i = 0; i < fTargets.size(); i++)
-		((GameEntity) fTargets.elementAt(i)).use(null);
+		((GameTarget) fTargets.elementAt(i)).use(null);
 	}
 }

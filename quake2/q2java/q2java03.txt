@@ -1,0 +1,273 @@
+Q2Java v0.3 -  Quake II Game programming in Java
+
+    Author:   Barry Pederson <bpederson@geocities.com>
+    Homepage: http://www.openquake.org/jquake/q2java
+    Date:     April 8, 1998
+
+    Description: A DLL and Java classes that allow a QuakeII game
+                 to be written in Java.
+
+    Requirements: Win95 or WinNT 4.0
+                  Quake II v 3.14 for Win32/Intel
+                  Sun Java JDK or JRE 1.1.5 (seems to work with 1.1.4 also)
+
+-------------------------------------
+
+WHAT'S NEW
+
+    IN THE Q2JAVA PACKAGE:
+    ----------------------
+    The Vec3 class was removed, and a new package named "javax.vecmath"
+    containing the classes Tuple3f, Point3f, Vector3f, and the q2java
+    class Angle3f now take its place.
+
+    Many methods in NativeEntity and Engine were renamed to be more
+    Java-ish with "get" and "set" prefixes.  For example, the 
+    equivalents to the C API's soundindex(), imageindex(), and 
+    configstring() functions are now Engine.getSoundIndex(), 
+    Engine.getImageIndex(), and Engine.setConfigString().  Check
+    the JavaDocs for a complete list of methods.
+
+    The "NativePlayer" interface is now called "PlayerListener"
+
+    The ConsoleOutputStream class was made private again, any
+    output from the Java System.out and System.err objects is now
+    routed through the Game object (see next section).
+
+
+    IN THE QJGAME PACKAGE (the sample game)
+    ----------------------------------------
+
+    All the code that implemented Quake-like game behaviors has been
+    moved into new packages named "baseq2" and "baseq2.spawn".  The 
+    "q2jgame" package now consists of a single public class named
+    "Game" that acts as the hub for all game activities, and several
+    interfaces defining methods to be implemented by classes that 
+    want to register with the "Game" class to receive calls when various 
+    game events occur.
+
+    The functionality of the v0.2 "PrintManager" class was moved into
+    the new "Game" class.
+
+    The "Game" class lets you load and unload packages of code from 
+    the game, acting as a basic plug-in system.  The plugin packages 
+    included with the v0.3 distribution are:
+
+    baseq2 - Implements much of a stock Quake II Deathmatch game
+
+    barryp.telnet -  Lets Telnet or MUD clients be used as 
+                 remote consoles
+
+        barryp.rocketmania - Sample to show how game objects such as
+                 weapons can be replaced. 
+
+    Packages can be loaded either at startup (see below), or after the 
+    game is already running.  Type "sv help" on the console to see
+    some basic help.
+
+
+    OVERALL
+    -------
+    Because of its new event-driven scheme (where objects register
+    to be notified of various events when they desire, rather than
+    constantly being polled to see if they have something to do), 
+    the sample game is -much- faster in v0.3 that in was in v0.2.  
+
+    The v0.2 and v0.3 Java games have a command you can type in the 
+    console: "sv time" that attempts to measure how long it takes to 
+    execute a server frame.  I put similar code in the stock C DLL 
+    code and came up with these approximate values on my machine 
+    (a PentiumPro 233) for the "base1" map, in deathmatch mode 
+    with a single player connected:
+
+          Java v0.2   - 3.5 milliseconds / frame
+          id's C game - 0.6 milliseconds / frame
+          Java v0.3   - 0.5 milliseconds / frame
+    
+    Admittedly, the Java game is incomplete, so it's not a totally
+    fair comparison between the C game and the Java game, but it's
+    very encouraging.  The comparison between the v0.2 and v0.3 
+    games shows that switching to an event-driven scheme paid off with
+    roughly a 7x improvement in speed.
+
+    Other improvements include a splitting of game objects, so that
+    rather than extending the q2java.NativeEntity class, they now are
+    pure Java classes that manipulate separate NativeEntity objects
+    when they want something to happen on the screen.  
+
+    The two separate groups of classes that represented weapons in 
+    the v0.1 and v0.2 games are now combined, so a class such as 
+    "weapon_shotgun" now represents both shotguns lying around on 
+    the ground, and shotguns being carried by players.
+
+
+
+INSTALLING
+
+    First, you need a working, registered copy of Quake II v3.14
+
+    Secondly, Sun's Java JDK or JRE 1.1.5.  If you downloaded the JDK, you can
+    test to see if it's installed properly by typing "java -version" at a
+    command prompt.  If it's installed correctly, you'll see a usage message.
+    If you installed the JRE, test it by typing "jre -version"
+
+    Make sure the contents of this zip file are extracted into a subdirectory
+    of your Quake II directory (usually c:\quake2).
+    I'd recommend c:\quake2\q2java
+
+    Assuming you unzipped this file into a game subdirectory named "q2java",
+    you can start the sample Q2Java game with this command.
+
+        quake2 +set game q2java
+
+OPTIONS
+
+    Here are some options you can specify to the Q2Java DLL
+
+        +set q2java_security 0
+            Turn security features off
+
+        +set q2java_security 1
+            Allow read/write access to a subdirectory of the
+            game directory named "sandbox" (usually c:\quake2\q2java\sandbox),
+            and access to IP ports numbered >1023
+
+        +set q2java_security 2
+            (DEFAULT) Turn on full security..no file or IP access is
+            allowed at all. Hopefully all the game can do is execute
+            game functions.
+
+        (Use security levels 1 and 2 at your own risk)
+
+        +set q2java_gamepath <extra path info>
+            The default value of this option is:
+
+                "<gamedir>\classes;<gamedir>\q2jgame.zip;"
+
+        (this is swapped from what it was in v0.1 and v0.2)
+
+            If you packaged up a new Java game into a ZIP or JAR file,
+            (say, "foobar.zip") you could tell the DLL to use your
+            JAR file with the parameter
+
+                +set q2java_gamepath foobar.zip
+
+    +set q2jgame_packages <package-list>
+            The default value of this option is "baseq2", you can
+            specify a list of packages to be loaded at startup
+            by separating the package names with one of these
+            characters: + , ; / \
+
+            So if you want to run the barryp.rocketmania plugin, you
+            can say something like:
+
+                 +set q2jgame_packages barryp.rocketmania+baseq2
+
+
+    The Telnet Server
+
+        To enable the telnet server you'll have to set the game
+        to run at either security level 0 or 1, the default level
+        of 2 will prevent the Telnet server from running.
+
+        You can load the Telnet server package at the command line
+    with a statement such as:
+
+        +set q2jgame_packages barryp.telnet+baseq2
+
+    To actually start a server session, set the port you want to 
+    run the server on (for example: 1200) at the command line with 
+    the option:
+
+            +set telnet_port 1200
+
+        where <n> is a port number (greater than 1023 if in security level 1)
+
+        You can password-protect (for example, the password: foobar) the 
+    Telnet server with the option:
+
+            +set telnet_password foobar
+
+        You can also load the Telnet server package and start a session
+        after the game has started, by typing on the console:
+
+            sv addpackage barryp.telnet
+            sv telnet_start 1200 -pass foobar
+       
+        The Telnet server will relay all Game output to any number of
+        connected telnet clients, and allow the client to send chat
+        messages or issue commands to the game.
+
+        Unfortunately, the Telnet server has no way to intercept
+        output from the Quake2.exe itself, so it's not -quite-
+        a perfect remote console..but it's still useful, especially
+        for debugging.  MUD clients work well with the server, since
+        they usually have large scrollback buffers, and separate
+        input and output windows.
+
+        If you're using a stock Telnet client, turn the "local-echo"
+        feature on to see what you're typing. MUD clients usually operate
+        this way by default.
+
+
+MODIFYING THE JAVA CODE
+
+    If you want to modify and recompile the sample game code, here's what I'd
+    recommend:
+
+        Create a subdirectory of the game directory named "classes"
+        (normally c:\quake2\q2java\classes).
+
+        Unzip the two sourcecode zip files into that, so you end up
+        with the java files in directories named:
+
+            c:\quake2\q2java\classes\q2java
+            c:\quake2\q2java\classes\q2jgame
+            c:\quake2\q2java\classes\baseq2\spawn
+              (and so on)
+
+        (be sure to retain the directory structure when unzipping)
+
+        You can also unzip the q2java.jar and q2jgame.zip  files in the 
+        same manner, so the classes\* directories have both 
+        .class and .java files.
+
+        update your classpath environment variable to include the classes
+        subdirectory, for example:
+
+            set classpath=c:\jdk\lib\classes.zip;c:\quake2\q2java\classes;
+
+    At this point, you should be able to run the development tools in the
+    JDK to compile any changes to the classes.  As a first test, try
+    modifying the class "baseq2.WelcomeMessage" and recompiling: to do this
+    use a text editor to modify
+
+        c:\quake2\q2java\classes\baseq2\WelcomeMessage.java
+
+    Once you've saved your changes, recompile with the command:
+
+        javac WelcomeMessage.java
+
+    Run the game and see if your modification worked.
+
+    The default q2java_gamepath parameter will look for class files in
+    the "classes" subdirectory, so you won't have to do anything special
+    to have the DLL find the unzipped classes.
+
+    Don't make changes to the classes in the q2java package, since the DLL
+    expects things laid out in a certain way.  You should leave the q2java.jar
+    file in the game directory, that way if you accidentally do change any
+    of the unzipped files, the DLL won't be affected.
+
+    I have noticed that for some reason the JDK javac compiler complains
+    when compiling the baseq2.spawn.func_train class about accessing
+    a protected field that as far as I can tell it should be able to access.
+    If anyone can tell me why this is, I'd appreciate it (it compiles fine
+    with IBM's VisualAge for Java compiler)
+
+
+---------------------------
+
+Knock yourselves out
+
+    Barry <bpederson@geocities.com>

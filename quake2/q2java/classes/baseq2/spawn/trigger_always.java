@@ -1,31 +1,29 @@
 
-package q2jgame.spawn;
+package baseq2.spawn;
 
 import q2java.*;
 import q2jgame.*;
+import baseq2.*;
 
-public class trigger_always extends GameEntity
+public class trigger_always extends GameObject implements FrameListener
 	{
 	private String fMessage;
 	private float fDelay;
 	
-	private float fNextThink;
-	
 public trigger_always(String[] spawnArgs) throws GameException
 	{
 	super(spawnArgs);
-	fNextThink = (float)(Game.gGameTime + getSpawnArg("delay", 0.2F));
 	fMessage = getSpawnArg("message", null);
+	
+	// schedule a one-shot runFrame() call
+	Game.addFrameListener(this, getSpawnArg("delay", 0.2F), -1);
 	}
 /**
- * This method was created by a SmartGuide.
+ * Do whatever the trigger is supposed to do, and go away.
  */
-public void runFrame() 
+public void runFrame(int phase) 
 	{
-	if ((fNextThink > 0) && (Game.gGameTime >= fNextThink))
-		{
-		useTargets();
-		freeEntity();
-		}
+	useTargets();
+	dispose();
 	}
 }

@@ -1,5 +1,5 @@
 
-package q2jgame.telnet;
+package barryp.telnet;
 
 import java.io.*;
 import java.net.*;
@@ -18,7 +18,13 @@ class TelnetHandler extends Thread
 	private Socket fSocket;
 	private OutputStream fOS;
 	private InputStream fIS;
+	
 	private String fPassword;
+	private boolean fNoCmd;
+	private boolean fNoChat;
+	
+	private String fNickname;
+	
 	private boolean fSeenCR;
 //	private ByteArrayOutputStream fLineBuffer;
 	
@@ -30,12 +36,14 @@ class TelnetHandler extends Thread
  * @param group java.lang.ThreadGroup
  * @param name java.lang.String
  */
-TelnetHandler(ThreadGroup grp, TelnetServer srv, Socket s, String password) 
+TelnetHandler(ThreadGroup grp, TelnetServer srv, Socket s, String password, boolean noCmd, boolean noChat) 
 	{
 	super(grp, "TelnetHandler to: " + s.getInetAddress() + " on port: " + s.getLocalPort());
 	fServer = srv;
 	fSocket = s;
 	fPassword = password;
+	fNoCmd = noCmd;
+	fNoChat = noChat;
 	fLineBuffer = new byte[LINEBUFFER_SIZE];
 	fLineBufferPtr = 0;
 	}
@@ -66,9 +74,22 @@ private void logon() throws IOException
 			}
 		}
 
-	String welcome = "Welcome to the Q2Java sample game\r\n\r\n   prefix commands with a plus sign (+)\r\n    anything else will be a chat.\r\n";
+	if (!fNoChat)
+		{
+		String prompt = "Nickname for chats: ";
+		os.write(prompt.getBytes());
+		fNickname = readLine(0);		
+		}
+		
+	String welcome = "Welcome to the Q2Java sample game\r\n\r\n";
 	os.write(welcome.getBytes());		
-	
+
+	if (!fNoCmd)
+		{
+		welcome = "   prefix commands with a plus sign (+)\r\n";	
+		os.write(welcome.getBytes());		
+		}
+
 	// ok, now the game can send messages to the client
 	fOS = os;		
 	}
@@ -174,7 +195,22 @@ public void run()
 			String s = readLine(0);
 			if (s == null)
 				break; // client disconnected
-			fServer.pushCommand(s);
+
+			if (s.length() < 1)
+				continue;
+				
+			if (s.charAt(0) == '+')
+				{
+				if (fNoCmd)
+					continue;
+				fServer.pushCommand(s);
+				}
+			else
+				{
+				if (fNoChat)
+					continue;
+				fServer.pushCommand("<Telnet-" + fNickname + ">: " + s);
+				}
 			}
 			
 		fOS.close();

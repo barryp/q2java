@@ -92,7 +92,7 @@ private native static String getString0(int ptr);
  * Set a cvar to a given value. Equivalent to gi.cvar_set(char *name, char *value).
  * @param value new value for the cvar.
  */
-public void set(String value)
+public void setValue(String value)
 	{
 	cvar0(fName, value, 0, CALL_CVAR_SET);
 	}

@@ -8,9 +8,13 @@
 #ifndef _Included_Quake2
 #define _Included_Quake2
 
+#include <jni.h> // for jobject and jstring in gclient_t
+
 #define GAME_API_VERSION    3
 
 #define SECONDS_PER_FRAME 0.1
+
+#define	SVF_NOCLIENT			0x00000001	// don't send entity to clients, even if it has effects
 
 // memory tags to allow dynamic memory to be cleaned up
 #define	TAG_GAME	765		// clear when unloading the dll
@@ -179,7 +183,7 @@ typedef struct edict_s
 
     // the game dll can add anything it wants after
     // this point in the structure
-	int 		freetime;			// frame when the object was freed
+	float 		freetime;			// frame when the object was freed, also used to sort entities by getRadiusEntities()
 	vec3_t		velocity;
 	edict_t		*groundentity;
     } edict_t;
@@ -331,6 +335,9 @@ typedef struct gclient_s
     // this point in the structure
 
 	pmove_state_t		old_pmove;	// for detecting out-of-pmove changes
+
+	jobject listener;
+	jstring playerInfo;
     } gclient_t;
 
 

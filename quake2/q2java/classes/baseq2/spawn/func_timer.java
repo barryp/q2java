@@ -1,58 +1,59 @@
 
-package q2jgame.spawn;
+package baseq2.spawn;
 
+import java.util.Vector;
 import q2java.*;
 import q2jgame.*;
+import baseq2.*;
 
 /**  
  *  func_timer objects wait a bit after being triggered, and
  *  then turn around and trigger other entities.
- *
- *  @author M. van Gangelen &ltmenno@element.nl&gt
  */
 
-public class func_timer extends GameEntity
+public class func_timer implements FrameListener
 	{
 	private float fWait;
 	private float fRandom;
 	private float fDelay;
-	private float fPauseTime;
+	private float fPauseTime;	
 	
-	private float fNextThink;	
+	private boolean fIsOn;
 	
-public func_timer( String[] spawnArgs ) throws GameException
+	private Vector fTargets;	
+	
+public func_timer(String[] spawnArgs) throws GameException
 	{
-	super(spawnArgs);
-
-	fWait      = getSpawnArg( "wait",      1f );
-	fRandom    = getSpawnArg( "random",    0f );
-	fDelay     = getSpawnArg( "delay",     0f );
-	fPauseTime = getSpawnArg( "pausetime", 0f );
-
-	//self->use = func_timer_use;
-	//self->think = func_timer_think;
+	GameModule.checkInhibited(spawnArgs);
+		
+	fWait      = Game.getSpawnArg(spawnArgs, "wait",      1f );
+	fRandom    = Game.getSpawnArg(spawnArgs, "random",    0f );
+	fDelay     = Game.getSpawnArg(spawnArgs, "delay",     0f );
+	fPauseTime = Game.getSpawnArg(spawnArgs, "pausetime", 0f );
 
 	if (fRandom >= fWait)
-		{
 		fRandom = fWait - Engine.SECONDS_PER_FRAME;
-//		PrintManager.dprint( "func_timer at " + getOrigin() + " has random >= wait\n" );
-		}
 
-	if ( (fSpawnFlags & 1) != 0 )
+	if ((Game.getSpawnArg(spawnArgs, "spawnflags", 0) & 1) != 0)
 		{
-		fNextThink = Game.gGameTime + 1 + fPauseTime + fDelay + fWait + (float)(Game.cRandom() * fRandom);
-		//self->activator = self;
+		Game.addFrameListener(this, 1 + fPauseTime + fDelay + fWait + (float)MiscUtil.cRandom() * fRandom, -1);
+		fIsOn = true;
 		}
 
-	//self->svflags = SVF_NOCLIENT;
+	String s = Game.getSpawnArg(spawnArgs, "target", null);
+	if (s != null)
+		fTargets = Game.getLevelRegistryList("target-" + s);
+		
+	s = Game.getSpawnArg(spawnArgs, "targetname", null);
+	if (s != null)
+		Game.addLevelRegistry("target-" + s, this);
 	}
-public void runFrame() 
+public void runFrame(int phase) 
 	{
-	if ((fNextThink > 0) && (Game.gGameTime >= fNextThink))
-		{
-		fNextThink = Game.gGameTime + fWait + (float)(Game.cRandom() * fRandom);
-		useTargets();
-		}
+	useTargets();
+	
+	// schedule another call
+	Game.addFrameListener(this, fWait + (float)MiscUtil.cRandom() * fRandom, -1);
 	}
 /**
  * Trigger the timer.
@@ -60,17 +61,30 @@ public void runFrame()
  */
 public void use(Player touchedBy) 
 	{
-	// if on, turn it off
-	if ( fNextThink > 0 )
-		{
-		fNextThink = 0;
-		return;
-		}
-
-	// turn it on
-	if (fDelay > 0 )
-		fNextThink = Game.gGameTime + fDelay;
+	if (fIsOn)
+		// turn it off
+		Game.removeFrameListener(this);
 	else
-		runFrame();
+		{
+		// turn it on
+		if (fDelay > 0 )
+			Game.addFrameListener(this, fDelay, -1);
+		else
+			runFrame(0);
+		}
+		
+	// flip the state			
+	fIsOn = !fIsOn;
+	}
+/**
+ * This method was created by a SmartGuide.
+ */
+public void useTargets() 
+	{
+	if (fTargets == null)
+		return;
+		
+	for (int i = 0; i < fTargets.size(); i++)
+		((GameTarget) fTargets.elementAt(i)).use(null);
 	}
 }

@@ -1,18 +1,26 @@
 
-package q2jgame;
+package baseq2;
 
 import q2java.*;
+import q2jgame.*;
+
 /**
  * Superclass for all entities lying around 
  * in the world waiting to be picked up.
  *
  * @author Barry Pederson
  */
-public abstract class GenericItem extends GameEntity
+public abstract class GenericItem extends GameObject implements FrameListener
 	{
 	private int fPickupSoundIndex;
 	private float fRespawnTime;
 	
+/**
+ * This method was created by a SmartGuide.
+ */
+public GenericItem() 
+	{
+	}
 /**
  * A Generic Item lying around in the Quake world.
  *
@@ -33,31 +41,28 @@ public GenericItem (String[] spawnArgs) throws GameException
 public GenericItem(String[] spawnArgs, String pickupSound) throws GameException
 	{
 	super(spawnArgs);
-	setRenderFX(RF_GLOW); // all items glow
-	setSolid(SOLID_TRIGGER);
-	fPickupSoundIndex = Engine.soundIndex(pickupSound);
+	fEntity.setRenderFX(NativeEntity.RF_GLOW); // all items glow
+	fEntity.setSolid(NativeEntity.SOLID_TRIGGER);
+	fPickupSoundIndex = Engine.getSoundIndex(pickupSound);
 	}
 /**
- * This method was created by a SmartGuide.
+ * Make the item visible again.
  */
-public void runFrame() 
+public void runFrame(int phase) 
 	{
-	if ((fRespawnTime > 0) && (Game.gGameTime > fRespawnTime))
-		{
-		setSVFlags(getSVFlags() & ~SVF_NOCLIENT);
-		setSolid(SOLID_TRIGGER);
-		setEvent(EV_ITEM_RESPAWN);
-		linkEntity();
-		fRespawnTime = 0;
-		}
+	fEntity.setSVFlags(fEntity.getSVFlags() & ~NativeEntity.SVF_NOCLIENT);
+	fEntity.setSolid(NativeEntity.SOLID_TRIGGER);
+	fEntity.setEvent(NativeEntity.EV_ITEM_RESPAWN);
+	fEntity.linkEntity();
 	}
 /**
- * This method was created by a SmartGuide.
+ * Schedule the item to be respawned.
  * @param delay float
  */
 public void setRespawn(float delay) 
 	{
-	fRespawnTime = (float)(Game.gGameTime + delay);
+	// schedule a one-shot notification
+	Game.addFrameListener(this, delay, -1);
 	}
 /**
  * This method was created by a SmartGuide.
@@ -66,11 +71,11 @@ public void setRespawn(float delay)
 public void touch(Player p) 
 	{
 	// play the pickup sound
-	sound(CHAN_ITEM, fPickupSoundIndex, 1, ATTN_NORM, 0);
+	fEntity.sound(NativeEntity.CHAN_ITEM, fPickupSoundIndex, 1, NativeEntity.ATTN_NORM, 0);
 
 	// make the item disappear
-	setSolid(SOLID_NOT);
-	setSVFlags(SVF_NOCLIENT);
-	linkEntity();
+	fEntity.setSolid(NativeEntity.SOLID_NOT);
+	fEntity.setSVFlags(NativeEntity.SVF_NOCLIENT);
+	fEntity.linkEntity();
 	}
 }

@@ -1,8 +1,9 @@
 
-package q2jgame.spawn;
+package baseq2.spawn;
 
 import q2java.*;
 import q2jgame.*;
+import baseq2.*;
 
 public class ammo_slugs extends GenericAmmo
 	{

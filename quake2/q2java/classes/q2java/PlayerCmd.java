@@ -14,13 +14,22 @@ public class PlayerCmd
 			
 	public byte    fMsec;
 	public byte    fButtons;
-	public short   fAngles0;
-	public short   fAngles1;
-	public short   fAngles2;
+	public short   fPitch;
+	public short   fYaw;
+	public short   fRoll;
 	public short   fForwardMove, fSideMove, fUpMove;
 	public byte    fImpulse;        // remove?
 	public byte    fLightLevel;     // light level the player is standing on	
 	
+/**
+ * Convert a float angle to the SHORT format used by PlayerCmd.
+ * @return short
+ * @param f float
+ */
+public static short float2Short(float f) 
+	{
+	return (short) (((int)((f)*65536/360)) & 65535);
+	}
 /**
  * Used by the DLL to create set the fields 
  * in a static PlayerCmd object.
@@ -42,17 +51,26 @@ public class PlayerCmd
  * @param impulse byte
  * @param lightlevel byte
  */
-private void set(byte msec, byte buttons, short angle0, short angle1, short angle2, short forward, short side, short up, byte impulse, byte lightlevel) 
+private void set(byte msec, byte buttons, short pitch, short yaw, short roll, short forward, short side, short up, byte impulse, byte lightlevel) 
 	{
 	fMsec = msec;
 	fButtons = buttons;
-	fAngles0 = angle0;
-	fAngles1 = angle1;
-	fAngles2 = angle2;
+	fPitch = pitch;
+	fYaw = yaw;
+	fRoll = roll;
 	fForwardMove = forward;
 	fSideMove = side;
 	fUpMove = up;
 	fImpulse = impulse;
 	fLightLevel = lightlevel;
+	}
+/**
+ * Convert a short angle to a float.
+ * @return float
+ * @param s short
+ */
+public static float short2float(short s) 
+	{
+	return (s * (360.0f/65536));
 	}
 }

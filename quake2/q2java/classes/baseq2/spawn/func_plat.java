@@ -1,23 +1,25 @@
 
-package q2jgame.spawn;
+package baseq2.spawn;
 
 import java.util.Enumeration;
+import javax.vecmath.*;
+
 import q2java.*;
 import q2jgame.*;
+import baseq2.*;
 
-public class func_plat extends GenericPusher implements AreaTriggerUser
+public class func_plat extends GenericPusher 
 	{
 	// spawn parameters
 	private int fWait;
 	private int fDmg;
 	private int fLip;
 	
-	private Vec3 fRaisedOrigin;
-	private Vec3 fLoweredOrigin;
+	private Point3f fRaisedOrigin;
+	private Point3f fLoweredOrigin;
 	
 	// track the state of the plat
 	private int fPlatState;
-	private float fNextPlatThink;	
 	
 	// plat sounds
 	private int fSoundStart;
@@ -37,12 +39,12 @@ public func_plat(String[] spawnArgs) throws GameException
 	{
 	super(spawnArgs);
 	
-	setAngles(0, 0, 0);
-	setSolid(SOLID_BSP);
+	fEntity.setAngles(0, 0, 0);
+	fEntity.setSolid(NativeEntity.SOLID_BSP);
 	
 	String s = getSpawnArg("model", null);
 	if (s != null)
-		setModel(s);
+		fEntity.setModel(s);
 
 	fSpeed = getSpawnArg("speed", 200) * 0.1F;
 	fAccel = getSpawnArg("accel", 50) * 0.1F;
@@ -52,10 +54,10 @@ public func_plat(String[] spawnArgs) throws GameException
 	fLip = getSpawnArg("lip", 8);
 	int height = getSpawnArg("height", 0);
 
-	fRaisedOrigin = getOrigin();
-	fLoweredOrigin = new Vec3(fRaisedOrigin);
-	Vec3 mins = getMins();
-	Vec3 maxs = getMaxs();
+	fRaisedOrigin = fEntity.getOrigin();
+	fLoweredOrigin = new Point3f(fRaisedOrigin);
+	Tuple3f mins = fEntity.getMins();
+	Tuple3f maxs = fEntity.getMaxs();
 
 	if (height != 0)
 		fLoweredOrigin.z -= height;
@@ -67,23 +69,15 @@ public func_plat(String[] spawnArgs) throws GameException
 	else
 		{								
 		fPlatState = STATE_PLAT_LOWERED;						
-		setOrigin(fLoweredOrigin);
+		fEntity.setOrigin(fLoweredOrigin);
 		}
 	
 	spawnInsideTrigger();	
-	linkEntity();	
+	fEntity.linkEntity();	
 	
-	fSoundStart = Engine.soundIndex("plats/pt1_strt.wav");
-	fSoundMiddle = Engine.soundIndex("plats/pt1_mid.wav");
-	fSoundEnd = Engine.soundIndex("plats/pt1_end.wav");	
-	}
-/**
- * This method was created by a SmartGuide.
- * @param touchedBy q2jgame.GameEntity
- */
-public void areaTrigger(Player touchedBy) 
-	{
-	raise();
+	fSoundStart = Engine.getSoundIndex("plats/pt1_strt.wav");
+	fSoundMiddle = Engine.getSoundIndex("plats/pt1_mid.wav");
+	fSoundEnd = Engine.getSoundIndex("plats/pt1_end.wav");	
 	}
 /**
  * This method was created by a SmartGuide.
@@ -100,8 +94,8 @@ public void lower()
 			if (!isGroupSlave())
 				{
 				if (fSoundStart != 0)
-					sound(CHAN_NO_PHS_ADD + CHAN_VOICE, fSoundStart, 1, ATTN_STATIC, 0);
-				setSound(fSoundMiddle);
+					fEntity.sound(NativeEntity.CHAN_NO_PHS_ADD + NativeEntity.CHAN_VOICE, fSoundStart, 1, NativeEntity.ATTN_STATIC, 0);
+				fEntity.setSound(fSoundMiddle);
 				}			
 			break;			
 		}
@@ -118,8 +112,8 @@ protected void moveFinished()
 				fPlatState = STATE_PLAT_RAISED;
 			else				
 				{
-				fNextPlatThink = (float)(Game.gGameTime + fWait);
 				fPlatState = STATE_PLAT_RAISEDWAIT;
+				Game.addFrameListener(this, fWait, -1);
 				}
 			break;			
 
@@ -131,8 +125,8 @@ protected void moveFinished()
 	if (!isGroupSlave())
 		{
 		if (fSoundEnd != 0)
-			sound(CHAN_NO_PHS_ADD + CHAN_VOICE, fSoundEnd, 1, ATTN_STATIC, 0);
-		setSound(0);			
+			fEntity.sound(NativeEntity.CHAN_NO_PHS_ADD + NativeEntity.CHAN_VOICE, fSoundEnd, 1, NativeEntity.ATTN_STATIC, 0);
+		fEntity.setSound(0);			
 		}			
 	}
 /**
@@ -149,8 +143,8 @@ public void raise()
 			if (!isGroupSlave())
 				{
 				if (fSoundStart != 0)
-					sound(CHAN_NO_PHS_ADD + CHAN_VOICE, fSoundStart, 1, ATTN_STATIC, 0);
-				setSound(fSoundMiddle);
+					fEntity.sound(NativeEntity.CHAN_NO_PHS_ADD + NativeEntity.CHAN_VOICE, fSoundStart, 1, NativeEntity.ATTN_STATIC, 0);
+				fEntity.setSound(fSoundMiddle);
 				}			
 			break;			
 		}
@@ -158,16 +152,31 @@ public void raise()
 /**
  * This method was created by a SmartGuide.
  */
+public void runFrame(int phase) 
+	{
+	switch (fPlatState)
+		{
+		case STATE_PLAT_RAISEDWAIT:
+			lower();
+			break;
+			
+		default:
+			super.runFrame(phase);
+		}
+	}
+/**
+ * This method was created by a SmartGuide.
+ */
 private void spawnInsideTrigger() 
 	{
-	Vec3 mins = getMins();
-	Vec3 maxs = getMaxs();
+	Tuple3f mins = fEntity.getMins();
+	Tuple3f maxs = fEntity.getMaxs();
 
-	Vec3 tmin = new Vec3(mins);
-	Vec3 tmax = new Vec3(maxs);
+	Tuple3f tmin = new Tuple3f(mins);
+	Tuple3f tmax = new Tuple3f(maxs);
 		
-	tmin.add(25, 25, 0);
-	tmax.add(-25, -25, 8);
+	tmin.add(new Tuple3f(25, 25, 0));
+	tmax.add(new Tuple3f(-25, -25, 8));
 	tmin.z = tmax.z - (fRaisedOrigin.z - fLoweredOrigin.z + fLip);	
 //	tmin[2] = tmax[2] - (ent->pos1[2] - ent->pos2[2] + st.lip);
 
@@ -188,7 +197,7 @@ private void spawnInsideTrigger()
 	
 	try
 		{
-		new AreaTrigger(this, tmin, tmax);
+		new PlatformTrigger(this, tmin, tmax);
 		}
 	catch (GameException e)
 		{
@@ -197,28 +206,14 @@ private void spawnInsideTrigger()
 	}
 /**
  * This method was created by a SmartGuide.
- */
-public void think() 
-	{
-	if ((fNextPlatThink > 0) && (Game.gGameTime >= fNextPlatThink))
-		{
-		switch (fPlatState)
-			{
-			case STATE_PLAT_RAISEDWAIT:
-				fNextPlatThink = 0;
-				lower();
-				break;
-			}
-		}
-
-	super.think();
-	}
-/**
- * This method was created by a SmartGuide.
  * @param touchedBy q2jgame.GameEntity
  */
 public void use(Player touchedBy) 
 	{
+	switch (fPlatState)
+		{
+		}
+		
 	lower();
 	}
 }

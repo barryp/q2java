@@ -2,12 +2,11 @@
 package q2java;
 
 /**
- * Methods that -must- be implemented by a 
- * Quake II Java game's Player class.
+ * Interface for objects that listen to a player's events.
  *
  * @author Barry Pederson 
  */
-public interface NativePlayer 
+public interface PlayerListener 
 	{
 	
 /**

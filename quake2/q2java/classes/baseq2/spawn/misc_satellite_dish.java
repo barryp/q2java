@@ -1,14 +1,14 @@
 
-package q2jgame.spawn;
-
+package baseq2.spawn;
 
 import q2java.*;
 import q2jgame.*;
+import baseq2.*;
 
 /*QUAKED misc_satellite_dish (1 .5 0) (-64 -64 0) (64 64 128)
 */
 
-public class misc_satellite_dish extends GameEntity
+public class misc_satellite_dish extends GameObject implements FrameListener
 	{
 	private int fFrame;
 	private boolean fIsMoving;
@@ -18,28 +18,28 @@ public misc_satellite_dish(String[] spawnArgs) throws GameException
 	super(spawnArgs);
 	
 	//ent->movetype = MOVETYPE_NONE;
-	setSolid( SOLID_BBOX );
-	setMins( -64, -64, 0 );
-	setMaxs(  64, 64, 128);
-	setModel( "models/objects/satellite/tris.md2" );
+	fEntity.setSolid(NativeEntity.SOLID_BBOX);
+	fEntity.setMins( -64, -64, 0 );
+	fEntity.setMaxs(  64, 64, 128);
+	fEntity.setModel( "models/objects/satellite/tris.md2" );
 	fIsMoving = false;
 	
-	linkEntity();
+	fEntity.linkEntity();
 	}
-public void runFrame()
+public void runFrame(int phase)
 	{
-	if (fIsMoving)
-		{
-		if (fFrame < 38)
-			setFrame(++fFrame);
-		else
-			fIsMoving = false;
-		}			
+	if (fFrame < 38)
+		fEntity.setFrame(++fFrame);
+	else
+		// no more runFrame() calls
+		Game.removeFrameListener(this);
 	}
 public void use(Player touchedBy) 
 	{
 	fFrame = 0;
-	setFrame(0);
-	fIsMoving = true;
+	fEntity.setFrame(0);
+
+	// ask to start receiving runFrame() calls
+	Game.addFrameListener(this, 0, 0);
 	}
 }

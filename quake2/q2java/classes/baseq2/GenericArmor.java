@@ -1,7 +1,9 @@
 
-package q2jgame;
+package baseq2;
 
 import q2java.*;
+import q2jgame.*;
+
 /**
  * Superclass for all armor entities lying around in the world.
  *
@@ -19,21 +21,21 @@ public GenericArmor(String[] spawnArgs, String modelName, String pickupSound, St
 	{
 	super(spawnArgs, pickupSound);
 	
-	if (Game.isDMFlagSet(Game.DF_NO_ARMOR))
+	if (GameModule.isDMFlagSet(GameModule.DF_NO_ARMOR))
 		{
-		freeEntity();
+		dispose();
 		throw new InhibitedException("armor items inhibited");
 		}	
 	
-	setEffects(EF_ROTATE); // all armor rotates
-	setModel(modelName);
-	linkEntity();
+	fEntity.setEffects(NativeEntity.EF_ROTATE); // all armor rotates
+	fEntity.setModel(modelName);
+	fEntity.linkEntity();
 	
 	fCount = count;
 	fMaxCount = maxCount;
 	fProtection = protection;
 	fEnergyProtection = energyProtection;
-	fIcon = Engine.imageIndex(icon);
+	fIcon = Engine.getImageIndex(icon);
 	}
 /**
  * This method was created by a SmartGuide.

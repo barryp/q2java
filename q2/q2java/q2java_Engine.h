@@ -9,14 +9,6 @@ extern "C" {
 #endif
 /*
  * Class:     q2java_Engine
- * Method:    args
- * Signature: ()Ljava/lang/String;
- */
-jstring JNICALL Java_q2java_Engine_args
-  (JNIEnv *, jclass);
-
-/*
- * Class:     q2java_Engine
  * Method:    bprint
  * Signature: (ILjava/lang/String;)V
  */
@@ -30,6 +22,14 @@ void JNICALL Java_q2java_Engine_bprint
  */
 void JNICALL Java_q2java_Engine_write0
   (JNIEnv *, jclass, jobject, jfloat, jfloat, jfloat, jint, jint);
+
+/*
+ * Class:     q2java_Engine
+ * Method:    getArgs
+ * Signature: ()Ljava/lang/String;
+ */
+jstring JNICALL Java_q2java_Engine_getArgs
+  (JNIEnv *, jclass);
 
 /*
  * Class:     q2java_Engine
@@ -49,6 +49,22 @@ void JNICALL Java_q2java_Engine_debugLog
 
 /*
  * Class:     q2java_Engine
+ * Method:    setConfigString
+ * Signature: (ILjava/lang/String;)V
+ */
+void JNICALL Java_q2java_Engine_setConfigString
+  (JNIEnv *, jclass, jint, jstring);
+
+/*
+ * Class:     q2java_Engine
+ * Method:    getBoxEntities0
+ * Signature: (FFFFFFI)[Lq2java/NativeEntity;
+ */
+jobjectArray JNICALL Java_q2java_Engine_getBoxEntities0
+  (JNIEnv *, jclass, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jint);
+
+/*
+ * Class:     q2java_Engine
  * Method:    addCommandString
  * Signature: (Ljava/lang/String;)V
  */
@@ -57,19 +73,19 @@ void JNICALL Java_q2java_Engine_addCommandString
 
 /*
  * Class:     q2java_Engine
- * Method:    pointContents0
- * Signature: (FFF)I
+ * Method:    getSoundIndex
+ * Signature: (Ljava/lang/String;)I
  */
-jint JNICALL Java_q2java_Engine_pointContents0
-  (JNIEnv *, jclass, jfloat, jfloat, jfloat);
+jint JNICALL Java_q2java_Engine_getSoundIndex
+  (JNIEnv *, jclass, jstring);
 
 /*
  * Class:     q2java_Engine
- * Method:    boxEntities0
- * Signature: (FFFFFFI)[Lq2java/NativeEntity;
+ * Method:    getPointContents0
+ * Signature: (FFF)I
  */
-jobjectArray JNICALL Java_q2java_Engine_boxEntities0
-  (JNIEnv *, jclass, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jint);
+jint JNICALL Java_q2java_Engine_getPointContents0
+  (JNIEnv *, jclass, jfloat, jfloat, jfloat);
 
 /*
  * Class:     q2java_Engine
@@ -97,51 +113,43 @@ void JNICALL Java_q2java_Engine_debugGraph
 
 /*
  * Class:     q2java_Engine
- * Method:    soundIndex
+ * Method:    trace0
+ * Signature: (FFFFFFFFFFFFLq2java/NativeEntity;II)Lq2java/TraceResults;
+ */
+jobject JNICALL Java_q2java_Engine_trace0
+  (JNIEnv *, jclass, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jobject, jint, jint);
+
+/*
+ * Class:     q2java_Engine
+ * Method:    getImageIndex
  * Signature: (Ljava/lang/String;)I
  */
-jint JNICALL Java_q2java_Engine_soundIndex
+jint JNICALL Java_q2java_Engine_getImageIndex
   (JNIEnv *, jclass, jstring);
 
 /*
  * Class:     q2java_Engine
- * Method:    argc
- * Signature: ()I
+ * Method:    getRadiusEntities0
+ * Signature: (FFFFIZZ)[Lq2java/NativeEntity;
  */
-jint JNICALL Java_q2java_Engine_argc
-  (JNIEnv *, jclass);
+jobjectArray JNICALL Java_q2java_Engine_getRadiusEntities0
+  (JNIEnv *, jclass, jfloat, jfloat, jfloat, jfloat, jint, jboolean, jboolean);
 
 /*
  * Class:     q2java_Engine
- * Method:    modelIndex
- * Signature: (Ljava/lang/String;)I
- */
-jint JNICALL Java_q2java_Engine_modelIndex
-  (JNIEnv *, jclass, jstring);
-
-/*
- * Class:     q2java_Engine
- * Method:    argv
+ * Method:    getArgv
  * Signature: (I)Ljava/lang/String;
  */
-jstring JNICALL Java_q2java_Engine_argv
+jstring JNICALL Java_q2java_Engine_getArgv
   (JNIEnv *, jclass, jint);
 
 /*
  * Class:     q2java_Engine
- * Method:    configString
- * Signature: (ILjava/lang/String;)V
+ * Method:    getArgc
+ * Signature: ()I
  */
-void JNICALL Java_q2java_Engine_configString
-  (JNIEnv *, jclass, jint, jstring);
-
-/*
- * Class:     q2java_Engine
- * Method:    imageIndex
- * Signature: (Ljava/lang/String;)I
- */
-jint JNICALL Java_q2java_Engine_imageIndex
-  (JNIEnv *, jclass, jstring);
+jint JNICALL Java_q2java_Engine_getArgc
+  (JNIEnv *, jclass);
 
 /*
  * Class:     q2java_Engine
@@ -169,11 +177,11 @@ jboolean JNICALL Java_q2java_Engine_inP0
 
 /*
  * Class:     q2java_Engine
- * Method:    trace0
- * Signature: (FFFFFFFFFFFFLq2java/NativeEntity;II)Lq2java/TraceResults;
+ * Method:    getModelIndex
+ * Signature: (Ljava/lang/String;)I
  */
-jobject JNICALL Java_q2java_Engine_trace0
-  (JNIEnv *, jclass, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jobject, jint, jint);
+jint JNICALL Java_q2java_Engine_getModelIndex
+  (JNIEnv *, jclass, jstring);
 
 #ifdef __cplusplus
 }

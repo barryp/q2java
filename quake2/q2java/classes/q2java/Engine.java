@@ -1,6 +1,8 @@
 
 package q2java;
 
+import javax.vecmath.*;
+
 /**
  * The Engine class provides access to several functions
  * of the Quake II game engine, and holds quite a few
@@ -213,39 +215,6 @@ public native static void addCommandString(String s);
 public native static boolean areasConnected(int area1, int area2);
 
 
-public native static int argc();
-
-
-public native static String args();
-
-
-public native static String argv(int n);
-
-/**
- * This method was created by a SmartGuide.
- * @return NativeEntity[]
- * @param mins Vec3
- * @param maxs Vec3
- * @param maxCount int
- * @param areaType int
- */
-public static NativeEntity[] boxEntities(Vec3 mins, Vec3 maxs, int areaType) 
-	{
-	return boxEntities0(mins.x, mins.y, mins.z, maxs.x, maxs.y, maxs.z, areaType);
-	}
-
-/**
- * This method was created by a SmartGuide.
- * @return NativeEntity[]
- * @param mins Vec3
- * @param maxs Vec3
- * @param maxCount int
- * @param areaType int
- */
-private native static NativeEntity[] boxEntities0(float minsx, float minsy, float minsz,
-	float maxsx, float maxsy, float maxsz, int areaType);
-
-
 /**
  * Broadcast a message to all players
  *
@@ -253,9 +222,6 @@ private native static NativeEntity[] boxEntities0(float minsx, float minsy, floa
  * @param s The message to send
  */
 public native static void bprint(int printLevel, String s);
-
-
-public native static void configString(int num, String s);
 
 
 public native static void debugGraph(float value, int color);
@@ -277,6 +243,39 @@ public native static void dprint(String s);
 public native static void error(String s);
 
 
+public native static int getArgc();
+
+
+public native static String getArgs();
+
+
+public native static String getArgv(int n);
+
+/**
+ * This method was created by a SmartGuide.
+ * @return NativeEntity[]
+ * @param mins Vec3
+ * @param maxs Vec3
+ * @param maxCount int
+ * @param areaType int
+ */
+public static NativeEntity[] getBoxEntities(Tuple3f mins, Tuple3f maxs, int areaType) 
+	{
+	return getBoxEntities0(mins.x, mins.y, mins.z, maxs.x, maxs.y, maxs.z, areaType);
+	}
+
+/**
+ * This method was created by a SmartGuide.
+ * @return NativeEntity[]
+ * @param mins Vec3
+ * @param maxs Vec3
+ * @param maxCount int
+ * @param areaType int
+ */
+private native static NativeEntity[] getBoxEntities0(float minsx, float minsy, float minsz,
+	float maxsx, float maxsy, float maxsz, int areaType);
+
+
 /**
  * Fetch the path of the current Quake2 game.
  *
@@ -285,38 +284,65 @@ public native static void error(String s);
 public native static String getGamePath();
 
 
-public native static int imageIndex(String name);
+public native static int getImageIndex(String name);
+
+
+public native static int getModelIndex(String name);
+
+public static int getPointContents(Point3f point)
+	{
+	return getPointContents0(point.x, point.y, point.z);
+	}
+
+private native static int getPointContents0(float x, float y, float z);
+
+/**
+ * Get a list of entities who have their origin within a certain radius of the given point.
+ * @return NativeEntity[]
+ * @param point 
+ * @param radius
+ * @param onlyPlayers Only return player entities.
+ * @param sortResults Sort results with the nearest entities first.
+ */
+public static NativeEntity[] getRadiusEntities(Point3f point, float radius, boolean onlyPlayers, boolean sortResults) 
+	{
+	return getRadiusEntities0(point.x, point.y, point.z, radius, 0, onlyPlayers, sortResults);
+	}
+
+/**
+ * This method was created by a SmartGuide.
+ * @return NativeEntity[]
+ * @param mins Vec3
+ * @param maxs Vec3
+ * @param maxCount int
+ * @param areaType int
+ */
+private native static NativeEntity[] getRadiusEntities0(float x, float y, float z,
+	float radius, int ignoreIndex, boolean onlyPlayers, boolean sortResults);
+
+
+public native static int getSoundIndex(String name);
 
 
 private native static boolean inP0(float x1, float y1, float z1, float x2, float y2, float z2, int calltype);
 
-public static boolean inPHS(Vec3 p1, Vec3 p2)
+public static boolean inPHS(Point3f p1, Point3f p2)
 	{
 	return inP0(p1.x, p1.y, p1.z, p2.z, p2.y, p2.z, CALL_INPHS);
 	}
-public static boolean inPVS(Vec3 p1, Vec3 p2)
+public static boolean inPVS(Point3f p1, Point3f p2)
 	{
 	return inP0(p1.x, p1.y, p1.z, p2.z, p2.y, p2.z, CALL_INPVS);
 	}
-
-public native static int modelIndex(String name);
-
-public static void multicast(Vec3 origin, int to)
+public static void multicast(Point3f origin, int to)
 	{
 	write0(null, origin.x, origin.y, origin.z, to, CALL_MULTICAST);
 	}
-public static int pointContents(Vec3 point)
-	{
-	return pointContents0(point.x, point.y, point.z);
-	}
-
-private native static int pointContents0(float x, float y, float z);
-
 
 public native static void setAreaPortalState(int portalnum, boolean open);
 
 
-public native static int soundIndex(String name);
+public native static void setConfigString(int num, String s);
 
 /**
  * Trace a line through the world.
@@ -326,7 +352,7 @@ public native static int soundIndex(String name);
  * @param passEnt NativeEntity
  * @param contentMask int
  */
-public static TraceResults trace(Vec3 start, Vec3 end, NativeEntity passEnt, int contentMask) 
+public static TraceResults trace(Point3f start, Point3f end, NativeEntity passEnt, int contentMask) 
 	{
 	return trace0(start.x, start.y, start.z, 0, 0, 0, 0, 0, 0, end.x, end.y, end.z, passEnt, contentMask, 0);
 	}
@@ -340,7 +366,7 @@ public static TraceResults trace(Vec3 start, Vec3 end, NativeEntity passEnt, int
  * @param passEnt NativeEntity
  * @param contentMask int
  */
-public static TraceResults trace(Vec3 start, Vec3 mins, Vec3 maxs, Vec3 end, NativeEntity passEnt, int contentMask) 
+public static TraceResults trace(Point3f start, Tuple3f mins, Tuple3f maxs, Point3f end, NativeEntity passEnt, int contentMask) 
 	{
 	return trace0(start.x, start.y, start.z, mins.x, mins.y, mins.z, maxs.x, maxs.y, maxs.z, end.x, end.y, end.z, passEnt, contentMask, 1);
 	}
@@ -382,9 +408,9 @@ public static void writeChar(int c)
 	{
 	write0(null, 0, 0, 0, c, CALL_WRITECHAR);
 	}
-public static void writeDir(Vec3 pos)
+public static void writeDir(Vector3f dir)
 	{
-	write0(null, pos.x, pos.y, pos.z, 0, CALL_WRITEDIR);
+	write0(null, dir.x, dir.y, dir.z, 0, CALL_WRITEDIR);
 	}
 public static void writeFloat(float f)
 	{
@@ -394,7 +420,7 @@ public static void writeLong(int c)
 	{
 	write0(null, 0, 0, 0, c, CALL_WRITELONG);
 	}
-public static void writePosition(Vec3 pos)
+public static void writePosition(Point3f pos)
 	{
 	write0(null, pos.x, pos.y, pos.z, 0, CALL_WRITEPOSITION);
 	}

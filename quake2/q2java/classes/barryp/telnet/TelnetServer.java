@@ -1,5 +1,5 @@
 
-package q2jgame.telnet;
+package barryp.telnet;
 
 import java.io.*;
 import java.net.*;
@@ -15,29 +15,31 @@ import q2jgame.*;
  * 
  * @author Barry Pederson
  */
-public class TelnetServer extends Thread  implements ConsoleListener, PrintListener
+class TelnetServer extends Thread  implements PrintListener, FrameListener, GameStatusListener, CrossLevel
 	{
 	private final static int SOCKET_TIMEOUT = 500; // milliseconds
 	private final static String GROUP_NAME = "Telnet Handlers";
 	
+	private int fPort;
 	private ServerSocket fServerSocket;
 	private ThreadGroup fHandlers;
 	private Vector fCommandQueue;	
 	private boolean fIsRunning;
 	private String fPassword;
+	private boolean fNoCmd;
+	private boolean fNoChat;
 	
 /**
  * TelnetServer constructor comment.
  */
-public TelnetServer(int port, String password) throws IOException 
+public TelnetServer(int port, String password, boolean noCmd, boolean noChat) throws IOException 
 	{
 	super("Telnet Server");
-
-	PrintManager.addPrintListener(this);
 	
 	try
 		{
 		// setup the socket stuff
+		fPort = port;
 		fServerSocket = new ServerSocket(port);
 		fServerSocket.setSoTimeout(SOCKET_TIMEOUT);  
 		
@@ -46,12 +48,14 @@ public TelnetServer(int port, String password) throws IOException
 		// setup other stuff
 		SecurityManager mgr = System.getSecurityManager();
 		if (mgr == null)
-			fHandlers = new ThreadGroup(GROUP_NAME);
+			fHandlers = new ThreadGroup(GROUP_NAME + " on " + fPort);
 		else
-			fHandlers = new ThreadGroup(mgr.getThreadGroup(), GROUP_NAME);
+			fHandlers = new ThreadGroup(mgr.getThreadGroup(), GROUP_NAME + " on " + fPort);
 			
 		fCommandQueue = new Vector();
 		fPassword = password;
+		fNoCmd = noCmd;
+		fNoChat = noChat;
 		}
 	catch (IOException e)
 		{
@@ -97,6 +101,15 @@ public void consoleOutput(byte[] b, int offset, int len)
 		}	
 	}
 /**
+ * Output text sent to the console from outside the game.
+ * @param flags int
+ * @param msg java.lang.String
+ */
+public void consoleOutput(String msg) 
+	{
+	output(msg);
+	}
+/**
  * This method was created by a SmartGuide.
  * @param msg java.lang.String
  */
@@ -118,6 +131,22 @@ public String getCommand()
 		fCommandQueue.removeElementAt(0);
 		return result;
 		}
+	}
+/**
+ * This method was created by a SmartGuide.
+ * @return int
+ */
+public int getConnectionCount() 
+	{
+	return fHandlers.activeCount();
+	}
+/**
+ * Fetch the port this TelnetServer is listening to.
+ * @return int
+ */
+public int getPort() 
+	{
+	return fPort;
 	}
 /**
  * Report whether the Telnet Server is still running.
@@ -168,6 +197,20 @@ void pushCommand(String s)
 		fCommandQueue.addElement(s);
 	}
 /**
+ * N/A to this mod.
+ * @param filename java.lang.String
+ */
+public void readGame(String filename) 
+	{
+	}
+/**
+ * N/A to this mod.
+ * @param filename java.lang.String
+ */
+public void readLevel(String filename) 
+	{
+	}
+/**
  * This method was created by a SmartGuide.
  */
 public void run()
@@ -175,8 +218,13 @@ public void run()
 	if (fServerSocket == null)
 		return;
 
-	ConsoleOutputStream.addConsoleListener(this);
-			
+	// call us when stuff is being printed
+	Game.addPrintListener(this);	
+	// call us so we can pass chats and commands back to the game
+	Game.addFrameListener(this, Game.FRAME_BEGINNING, 0, 0);	
+	// call us so we know when the game is shutting down
+	Game.addGameStatusListener(this);
+	
 	try
 		{
 		fIsRunning = true;	
@@ -187,7 +235,7 @@ public void run()
 				Socket s = fServerSocket.accept();			
 				if (s != null)
 					{
-					TelnetHandler t = new TelnetHandler(fHandlers, this, s, fPassword);
+					TelnetHandler t = new TelnetHandler(fHandlers, this, s, fPassword, fNoCmd, fNoChat);
 					t.start();
 					}
 				}	
@@ -202,17 +250,46 @@ public void run()
 		{
 		e.printStackTrace();
 		}	
-
 		
-	ConsoleOutputStream.removeConsoleListener(this);					
+
+	Game.removePrintListener(this);
+	Game.removeFrameListener(this, Game.FRAME_BEGINNING);	
+	Game.removeGameStatusListener(this);
 	}
 /**
- * This method was created by a SmartGuide.
+ * Relay input from the telnet clients.
+ */
+public void runFrame(int phase) 
+	{
+	String s;
+	while ((s = getCommand()) != null)
+		{
+		if ((s.length() > 0) && (s.charAt(0) == '+'))
+			Engine.addCommandString(s.substring(1));
+		else
+			Game.bprint(Engine.PRINT_CHAT, s + "\n");
+		}
+	}
+/**
+ * Called when it's time to shut the server down.
  */
 public void shutdown() 
+	{	
+	fIsRunning = false;		
+	GameModule.removeServer(this);
+	}
+/**
+ * N/A to this mod.
+ * @param filename java.lang.String
+ */
+public void writeGame(String filename) 
 	{
-	PrintManager.removePrintListener(this);
-
-	fIsRunning = false;	
+	}
+/**
+ * N/A to this mod.
+ * @param filename java.lang.String
+ */
+public void writeLevel(String filename) 
+	{
 	}
 }

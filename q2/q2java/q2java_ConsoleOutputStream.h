@@ -9,18 +9,18 @@ extern "C" {
 #endif
 /*
  * Class:     q2java_ConsoleOutputStream
- * Method:    write0
+ * Method:    write
  * Signature: (I)V
  */
-void JNICALL Java_q2java_ConsoleOutputStream_write0__I
+void JNICALL Java_q2java_ConsoleOutputStream_write__I
   (JNIEnv *, jobject, jint);
 
 /*
  * Class:     q2java_ConsoleOutputStream
- * Method:    write0
+ * Method:    write
  * Signature: ([BII)V
  */
-void JNICALL Java_q2java_ConsoleOutputStream_write0___3BII
+void JNICALL Java_q2java_ConsoleOutputStream_write___3BII
   (JNIEnv *, jobject, jbyteArray, jint, jint);
 
 #ifdef __cplusplus

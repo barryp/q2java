@@ -1,5 +1,5 @@
 
-package q2jgame;
+package baseq2;
 
 /**
  * Simple class to hold a welcome message to show 
@@ -12,11 +12,14 @@ package q2jgame;
 public class WelcomeMessage 
 	{
 	private final static String gMsg = 
-		  "Welcome to the Q2Java Sample Game v0.2\n\n"
-		+ "A couple new entities classes were\n"
-		+ "added, but there's still a lot that\n"
-		+ "doesn't work.  The big new feature\n"
-		+ "is the built-in Telnet server";
+		  "Welcome to the Q2Java Sample Game v0.3\n\n"
+		+ "The main change in this version has\n"
+		+ "been a switch the the javax.vecmath\n"
+		+ "library, and a more event-driven\n"
+		+ "gameflow where objects have to register\n"
+		+ "to be notified of server frames rather\n"
+		+ "than having the game just blindly call\n"
+		+ "every entity like the C game does.";
 	
 /**
  * Return the message to display to new players.

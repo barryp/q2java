@@ -1,7 +1,9 @@
 
-package q2jgame;
+package baseq2;
 
 import q2java.*;
+import q2jgame.*;
+
 /**
  * Superclass for all health entities lying around in the world.
  *
@@ -16,16 +18,16 @@ public GenericHealth(String[] spawnArgs, String modelName, String pickupSound, i
 	{
 	super(spawnArgs, pickupSound);
 	
-	if (Game.isDMFlagSet(Game.DF_NO_HEALTH))
+	if (GameModule.isDMFlagSet(GameModule.DF_NO_HEALTH))
 		{
-		freeEntity();
+		dispose();
 		throw new InhibitedException("health items inhibited");
 		}
 	
 	fHealthValue = healthValue;
 	fOverrideMax = overrideMax;
-	setModel(modelName);
-	linkEntity();		
+	fEntity.setModel(modelName);
+	fEntity.linkEntity();		
 	}
 /**
  * This method was created by a SmartGuide.

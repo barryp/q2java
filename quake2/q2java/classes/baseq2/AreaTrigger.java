@@ -1,20 +1,26 @@
 
-package q2jgame;
+package baseq2;
+
+import javax.vecmath.*;
 
 import q2java.*;
 import q2jgame.*;
 
-public class AreaTrigger extends GameEntity
+public class AreaTrigger extends GameObject
 	{
+	protected GameTarget fOwner;
 	
-public AreaTrigger(GenericPusher target, Vec3 mins, Vec3 maxs) throws GameException
+public AreaTrigger(GameTarget target, Tuple3f mins, Tuple3f maxs) throws GameException
 	{
-	setMins(mins);
-	setMaxs(maxs);
+	fEntity = new NativeEntity();
+	fEntity.setReference(this);
 	
-	setOwner(target);
-	setSolid(SOLID_TRIGGER);
-	linkEntity();	
+	fEntity.setMins(mins);
+	fEntity.setMaxs(maxs);
+	
+	fOwner = target;
+	fEntity.setSolid(NativeEntity.SOLID_TRIGGER);
+	fEntity.linkEntity();	
 	}
 /**
  * This method was created by a SmartGuide.
@@ -22,6 +28,6 @@ public AreaTrigger(GenericPusher target, Vec3 mins, Vec3 maxs) throws GameExcept
  */
 public void touch(Player touchedBy) 
 	{
-	((AreaTriggerUser)getOwner()).areaTrigger(touchedBy);
+	fOwner.use(touchedBy);
 	}
 }

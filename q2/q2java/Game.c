@@ -3,30 +3,33 @@
 
 // handles to the Game class
 static jclass class_Game;
-static jmethodID method_Game_init;
-static jmethodID method_Game_shutdown;
-static jmethodID method_Game_startLevel;
-static jmethodID method_Game_writeGame;
-static jmethodID method_Game_readGame;
-static jmethodID method_Game_writeLevel;
-static jmethodID method_Game_readLevel;
-static jmethodID method_Game_runFrame;
-static jmethodID method_Game_serverCommand;
 static jobject object_Game;
+static jmethodID method_GameListener_init;
+static jmethodID method_GameListener_shutdown;
+static jmethodID method_GameListener_startLevel;
+static jmethodID method_GameListener_writeGame;
+static jmethodID method_GameListener_readGame;
+static jmethodID method_GameListener_writeLevel;
+static jmethodID method_GameListener_readLevel;
+static jmethodID method_GameListener_runFrame;
+static jmethodID method_GameListener_serverCommand;
+static jmethodID method_GameListener_getPlayerClass;
+static jmethodID method_GameListener_consoleOutput;
+static jmethodID method_GameListener_playerConnect;
 
 
 void Game_javaInit()
 	{
 	cvar_t *gameclass_cvar;
-	jclass interface_nativeGame;
-	jmethodID method_Game_ctor;
+	jclass interface_GameListener;
+	jmethodID method_GameListener_ctor;
 	char *p;
 	char buffer[128];
 
-	interface_nativeGame = (*java_env)->FindClass(java_env, "q2java/NativeGame");
-	if (CHECK_EXCEPTION() || !interface_nativeGame)
+	interface_GameListener = (*java_env)->FindClass(java_env, "q2java/GameListener");
+	if (CHECK_EXCEPTION() || !interface_GameListener)
 		{
-		java_error = "Can't find q2java.NativeGame interface\n";
+		java_error = "Can't find q2java.GameListener interface\n";
 		return;
 		}
 
@@ -47,29 +50,37 @@ void Game_javaInit()
 		return;
 		}
 
-	if (!((*java_env)->IsAssignableFrom(java_env, class_Game, interface_nativeGame)))
+	if (!((*java_env)->IsAssignableFrom(java_env, class_Game, interface_GameListener)))
 		{
-		java_error = "The specified game class doesn't implement q2java.NativeGame\n";
+		java_error = "The specified game class doesn't implement q2java.GameListener\n";
 		return;
 		}
 
-	method_Game_init = (*java_env)->GetMethodID(java_env, class_Game, "init", "()V");
-	method_Game_shutdown = (*java_env)->GetMethodID(java_env, class_Game, "shutdown", "()V");
-	method_Game_startLevel = (*java_env)->GetMethodID(java_env, class_Game, "startLevel", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V");
-	method_Game_writeGame = (*java_env)->GetMethodID(java_env, class_Game, "writeGame", "(Ljava/lang/String;)V");
-	method_Game_readGame = (*java_env)->GetMethodID(java_env, class_Game, "readGame", "(Ljava/lang/String;)V");
-	method_Game_writeLevel = (*java_env)->GetMethodID(java_env, class_Game, "writeLevel", "(Ljava/lang/String;)V");
-	method_Game_readLevel = (*java_env)->GetMethodID(java_env, class_Game, "readLevel", "(Ljava/lang/String;)V");
-	method_Game_runFrame = (*java_env)->GetMethodID(java_env, class_Game, "runFrame", "()V");
-	method_Game_serverCommand = (*java_env)->GetMethodID(java_env, class_Game, "serverCommand", "()V");
-	method_Game_ctor = (*java_env)->GetMethodID(java_env, class_Game, "<init>", "()V");
+	// drop the local reference to the GameListener interface
+	(*java_env)->DeleteLocalRef(java_env, interface_GameListener);
+
+	// perhaps we should be GameListener interface to get the method ids instead of 
+	// the game class....not sure about this
+	method_GameListener_init = (*java_env)->GetMethodID(java_env, class_Game, "init", "()V");
+	method_GameListener_shutdown = (*java_env)->GetMethodID(java_env, class_Game, "shutdown", "()V");
+	method_GameListener_startLevel = (*java_env)->GetMethodID(java_env, class_Game, "startLevel", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V");
+	method_GameListener_writeGame = (*java_env)->GetMethodID(java_env, class_Game, "writeGame", "(Ljava/lang/String;)V");
+	method_GameListener_readGame = (*java_env)->GetMethodID(java_env, class_Game, "readGame", "(Ljava/lang/String;)V");
+	method_GameListener_writeLevel = (*java_env)->GetMethodID(java_env, class_Game, "writeLevel", "(Ljava/lang/String;)V");
+	method_GameListener_readLevel = (*java_env)->GetMethodID(java_env, class_Game, "readLevel", "(Ljava/lang/String;)V");
+	method_GameListener_runFrame = (*java_env)->GetMethodID(java_env, class_Game, "runFrame", "()V");
+	method_GameListener_serverCommand = (*java_env)->GetMethodID(java_env, class_Game, "serverCommand", "()V");
+	method_GameListener_getPlayerClass = (*java_env)->GetMethodID(java_env, class_Game, "getPlayerClass", "()Ljava/lang/Class;");
+	method_GameListener_consoleOutput = (*java_env)->GetMethodID(java_env, class_Game, "consoleOutput", "(Ljava/lang/String;)V");
+	method_GameListener_playerConnect = (*java_env)->GetMethodID(java_env, class_Game, "playerConnect", "(Lq2java/NativeEntity;Z)V");
+	method_GameListener_ctor = (*java_env)->GetMethodID(java_env, class_Game, "<init>", "()V");
 	if (CHECK_EXCEPTION())
 		{
 		java_error = "Problem getting handle for one or more of the game methods\n";
 		return;
 		}
 
-	object_Game = (*java_env)->NewObject(java_env, class_Game, method_Game_ctor);
+	object_Game = (*java_env)->NewObject(java_env, class_Game, method_GameListener_ctor);
 	if(CHECK_EXCEPTION())
 		{
 		java_error = "Couldn't create instance of game object\n";
@@ -77,32 +88,81 @@ void Game_javaInit()
 		}
 	}
 
+
 void Game_javaFinalize()
 	{
+	(*java_env)->DeleteLocalRef(java_env, class_Game);
+	(*java_env)->DeleteLocalRef(java_env, object_Game);
 	}
+
+
+jclass Game_getPlayerClass()
+	{
+	jclass result = (*java_env)->CallObjectMethod(java_env, object_Game, method_GameListener_getPlayerClass);
+	if (CHECK_EXCEPTION())
+		return NULL;
+	else
+		return result;
+	}
+
+void Game_consoleOutput(const char *msg)
+	{
+	jstring jmsg;
+
+	jmsg = (*java_env)->NewStringUTF(java_env, msg);
+	(*java_env)->CallVoidMethod(java_env, object_Game, method_GameListener_consoleOutput, jmsg);
+	CHECK_EXCEPTION();
+
+	(*java_env)->DeleteLocalRef(java_env, jmsg);
+	}
+
+int Game_playerConnect(jobject ent, qboolean loadgame)
+	{
+	(*java_env)->CallVoidMethod(java_env, object_Game, method_GameListener_playerConnect, ent, loadgame);
+	return CHECK_EXCEPTION();
+	}
+
 
 //-------  Functions exported back to Quake2 ---------------
 
 
 static void java_init(void)
 	{
-//	debugLog("java_init() started\n");
 	Entity_arrayInit();
-	(*java_env)->CallVoidMethod(java_env, object_Game, method_Game_init);
+	(*java_env)->CallVoidMethod(java_env, object_Game, method_GameListener_init);
 	CHECK_EXCEPTION();
-//	debugLog("java_init() finished\n");
 	}
 
 
 static void java_shutdown(void)
 	{
-//	debugLog("java_shutdown() started\n");
-	(*java_env)->CallVoidMethod(java_env, object_Game, method_Game_shutdown);
+	int i;
+	gclient_t *client;
+
+	(*java_env)->CallVoidMethod(java_env, object_Game, method_GameListener_shutdown);
 	CHECK_EXCEPTION();
+
+	// clear up Player java objects
+	for (i = 1; i < global_maxClients + 1; i++)
+		if (ge.edicts[i].inuse)
+			{
+			client = ge.edicts[i].client;
+			if (client->listener)
+				{
+				(*java_env)->DeleteGlobalRef(java_env, client->listener);
+				client->listener = NULL;
+				}
+
+			if (client->playerInfo)
+				{
+				(*java_env)->DeleteLocalRef(java_env, client->playerInfo);
+				client->playerInfo = NULL;
+				}
+			}
+
 
 	stopJava();
 	gi.FreeTags (TAG_GAME);
-//	debugLog("java_shutdown() finished\n");
 	}
 
 
@@ -112,20 +172,20 @@ static void java_startLevel(char *mapname, char *entString, char *spawnpoint)
 	jstring jentString;
 	jstring jspawnpoint;
 
-//	debugLog("java_spawnEntities() started\n");
-
 	Entity_arrayReset();
 
 	jmapname = (*java_env)->NewStringUTF(java_env, mapname);
 	jentString = (*java_env)->NewStringUTF(java_env, entString);
 	jspawnpoint = (*java_env)->NewStringUTF(java_env, spawnpoint);
 
-	(*java_env)->CallVoidMethod(java_env, object_Game, method_Game_startLevel, jmapname, jentString, jspawnpoint);
+	(*java_env)->CallVoidMethod(java_env, object_Game, method_GameListener_startLevel, jmapname, jentString, jspawnpoint);
 	CHECK_EXCEPTION();
 
-	global_frameCount = 0;
+	(*java_env)->DeleteLocalRef(java_env, jmapname);
+	(*java_env)->DeleteLocalRef(java_env, jentString);
+	(*java_env)->DeleteLocalRef(java_env, jspawnpoint);
 
-//	debugLog("java_spawnEntities() finished\n");
+	global_frameCount = 0;
 	}
 
 
@@ -133,13 +193,11 @@ static void java_writeGame(char *filename)
 	{
 	jstring jfilename;
 
-//	debugLog("java_writeGame() started\n");
-
 	jfilename = (*java_env)->NewStringUTF(java_env, filename);
-	(*java_env)->CallVoidMethod(java_env, object_Game, method_Game_writeGame, jfilename);
+	(*java_env)->CallVoidMethod(java_env, object_Game, method_GameListener_writeGame, jfilename);
 	CHECK_EXCEPTION();
 
-//	debugLog("java_writeGame() finished\n");
+	(*java_env)->DeleteLocalRef(java_env, jfilename);
 	}
 
 
@@ -147,22 +205,23 @@ static void java_readGame(char *filename)
 	{
 	jstring jfilename;
 
-//	debugLog("java_readGame() started\n");
 	jfilename = (*java_env)->NewStringUTF(java_env, filename);
-	(*java_env)->CallVoidMethod(java_env, object_Game, method_Game_readGame, jfilename);
+	(*java_env)->CallVoidMethod(java_env, object_Game, method_GameListener_readGame, jfilename);
 	CHECK_EXCEPTION();
-//	debugLog("java_readGame() finished\n");
+
+	(*java_env)->DeleteLocalRef(java_env, jfilename);
 	}
 
 
 static void java_writeLevel(char *filename)
 	{
 	jstring jfilename;
-//	debugLog("java_writeLevel() started\n");
+
 	jfilename = (*java_env)->NewStringUTF(java_env, filename);
-	(*java_env)->CallVoidMethod(java_env, object_Game, method_Game_writeLevel, jfilename);
+	(*java_env)->CallVoidMethod(java_env, object_Game, method_GameListener_writeLevel, jfilename);
 	CHECK_EXCEPTION();
-//	debugLog("java_writeLevel() finished\n");
+
+	(*java_env)->DeleteLocalRef(java_env, jfilename);	
 	}
 
 
@@ -170,27 +229,25 @@ static void java_readLevel(char *filename)
 	{
 	jstring jfilename;
 
-//	debugLog("java_readLevel() started\n");
 	jfilename = (*java_env)->NewStringUTF(java_env, filename);
-	(*java_env)->CallVoidMethod(java_env, object_Game, method_Game_readLevel, jfilename);
+	(*java_env)->CallVoidMethod(java_env, object_Game, method_GameListener_readLevel, jfilename);
 	CHECK_EXCEPTION();
-//	debugLog("java_readLevel() finished\n");
+
+	(*java_env)->DeleteLocalRef(java_env, jfilename);
 	}
 
 static void java_runFrame(void)
 	{
-//	debugLog("java_runFrame() started\n");
 	// track the running time to help with entity management
 	global_frameCount++;
 
-	(*java_env)->CallVoidMethod(java_env, object_Game, method_Game_runFrame);
+	(*java_env)->CallVoidMethod(java_env, object_Game, method_GameListener_runFrame);
 	CHECK_EXCEPTION();
-//	debugLog("java_runFrame() finished\n");
 	}
 
 static void java_serverCommand(void)
 	{
-	(*java_env)->CallVoidMethod(java_env, object_Game, method_Game_serverCommand);
+	(*java_env)->CallVoidMethod(java_env, object_Game, method_GameListener_serverCommand);
 	CHECK_EXCEPTION();
 	}
 
