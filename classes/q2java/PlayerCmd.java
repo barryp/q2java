@@ -31,6 +31,14 @@ public static short float2Short(float f)
 	return (short) (((int)((f)*65536/360)) & 65535);
 	}
 /**
+ * Get the angles this Player command is describing.
+ * @return q2java.Angle3f
+ */
+public Angle3f getCmdAngles() 
+	{
+	return new Angle3f(short2float(fPitch), short2float(fYaw), short2float(fRoll));
+	}
+/**
  * Used by the DLL to create set the fields 
  * in a static PlayerCmd object.
  *

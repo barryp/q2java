@@ -56,7 +56,8 @@ public class Player extends GameObject implements FrameListener, PlayerListener,
 	protected int fHand;
 	protected float fBobTime;
 	public int fButtons;
-	public int fLatchedButtons;
+	protected Angle3f fCmdAngles;
+	public int fLatchedButtons;	
 	protected int fOldButtons;
 	public float fViewHeight;
 	protected int fWaterType;
@@ -279,6 +280,7 @@ public class Player extends GameObject implements FrameListener, PlayerListener,
 
 
 
+
 /**
  * Create a new Player Game object, and associate it with a Player
  * native entity.
@@ -298,6 +300,7 @@ public Player(NativeEntity ent, boolean loadgame) throws GameException
 	fUp = new Vector3f();
 	
 	// Set default values
+	fCmdAngles  = new Angle3f();
 	fKickAngles = new Angle3f();
 	fKickOrigin = new Point3f();
 	fDamageFrom = new Point3f();
@@ -305,6 +308,23 @@ public Player(NativeEntity ent, boolean loadgame) throws GameException
 	fDamageBlend = new Color4f(0.0f, 0.0f, 0.0f, 0.0f);
 	setFrameAlpha(0.0f);
 	setMass(200);
+	
+	// Create weapon ordering vectors
+	fWeaponOrder = new Vector();
+	fWeaponsExcluded = new Vector();
+	
+	// Setup default weapon ordering
+	fWeaponOrder.addElement("blaster");
+	fWeaponOrder.addElement("shotgun");
+	fWeaponOrder.addElement("super shotgun");
+	fWeaponOrder.addElement("machinegun");
+	fWeaponOrder.addElement("chaingun");
+	fWeaponOrder.addElement("grenades");
+	fWeaponOrder.addElement("grenade launcher");
+	fWeaponOrder.addElement("rocket launcher");
+	fWeaponOrder.addElement("hyperblaster");
+	fWeaponOrder.addElement("railgun");
+	fWeaponOrder.addElement("bfg10k");
 	
 	// Do we need to init values of zero? (TSW)
 	fPainDebounceTime = 0.0f;
@@ -455,7 +475,7 @@ public boolean addWeapon(Class weaponClass)
 		{		
 		putInventory(w.getWeaponName(), w);
 		fWeaponList.addElement(w);
-		if (!fWeaponOrder.contains(w.getWeaponName()) && !fWeaponsExcluded.contains(w.getWeaponName()))
+		if (!fWeaponOrder.contains(w.getWeaponName()))
 			fWeaponOrder.addElement(w.getWeaponName());
 		w.setOwner(this);
 		fEntity.cprint(Engine.PRINT_HIGH, "You picked up a " + w.getWeaponName() + "\n");
@@ -520,22 +540,7 @@ protected void applyPlayerInfo()
 	s = getUserInfo("fov");
 	if (s != null)
 		fEntity.setPlayerFOV((new Float(s)).floatValue());	
-		
-	fWeaponOrder = new Vector();
-	fWeaponsExcluded = new Vector();
-	
-	fWeaponOrder.addElement("blaster");
-	fWeaponOrder.addElement("shotgun");
-	fWeaponOrder.addElement("super shotgun");
-	fWeaponOrder.addElement("machinegun");
-	fWeaponOrder.addElement("chaingun");
-	fWeaponOrder.addElement("grenades");
-	fWeaponOrder.addElement("grenade launcher");
-	fWeaponOrder.addElement("rocket launcher");
-	fWeaponOrder.addElement("hyperblaster");
-	fWeaponOrder.addElement("railgun");
-	fWeaponOrder.addElement("bfg10k");
-		
+
 	showVWep();
 	}
 /**
@@ -879,6 +884,8 @@ protected void clearSettings( )
 		fWeapon = (GenericWeapon) Game.lookupClass(".spawn.weapon_blaster").newInstance();
 		putInventory("blaster", fWeapon);
 		fWeaponList.addElement(fWeapon);
+		if (!fWeaponOrder.contains(fWeapon.getWeaponName()))
+			fWeaponOrder.addElement(fWeapon.getWeaponName());
 		fWeapon.setOwner(this);
 		fWeapon.activate();
 		}
@@ -920,24 +927,24 @@ protected void clearSettings( )
  */
  
 public void cmd_debug_setblend(String[] args)
-{
+	{
 	if (args.length != 5)
-	{
-		Game.bprint(Engine.PRINT_HIGH, "Usage: debug_setblend <red> <green> <blue> <alpha>\n");
+		{
+		fEntity.cprint(Engine.PRINT_HIGH, "Usage: debug_setblend <red> <green> <blue> <alpha>\n");
 		return;
-	}
+		}
 	try
-	{
+		{
 		fEntity.setPlayerBlend(Float.valueOf(args[1]).floatValue(), 
 							   Float.valueOf(args[2]).floatValue(), 
 							   Float.valueOf(args[3]).floatValue(), 
 							   Float.valueOf(args[4]).floatValue());
-	}
+		}
 	catch (NumberFormatException nfe)
-	{
-		Game.bprint(Engine.PRINT_HIGH, nfe.toString());
+		{
+		fEntity.cprint(Engine.PRINT_HIGH, nfe.toString());
+		}
 	}
-}
 /**
  * Change field-of-view.
  * @param args java.lang.String[]
@@ -946,7 +953,7 @@ public void cmd_fov(String[] args)
 	{
 	if (args.length < 1)
 		{
-		Game.dprint("cmd_fov() called with no arguments\n");
+		fEntity.cprint(Engine.PRINT_HIGH, "cmd_fov() called with no arguments\n");
 		return;
 		}
 		
@@ -1053,8 +1060,8 @@ public void cmd_say(String[] args)
 	String msg = Engine.getArgs();
 	
 	// remove any quote marks
-	if (msg.charAt(0) == '"')
-		msg = msg.substring(1, msg.length()-1);
+	if (msg.charAt(msg.length()-1) == '"')
+		msg = msg.substring(msg.indexOf('"')+1, msg.length()-1);
 		
 	msg = getName() + ": " + msg;		
 	
@@ -1148,10 +1155,22 @@ public void cmd_wave(String[] args)
 		}			
 	}
 /**
- * Switch to the last weapon used
- * @param args java.lang.String[] - not used
+ * Add a list of weapon to be excluded from the switching order. 
+ * @author Brian Haskin
+ * @param args java.lang.String[] - list of weapons
  */
-public void cmd_weaplast(String args[])
+public void cmd_weapaddexcluded(String[] args)
+	{
+	for (int i=1; i < args.length; i++)
+		fWeaponsExcluded.addElement(args[i]);
+	
+	return;
+	}
+/**
+ * Switch to the last weapon used
+ * @param args java.lang.String[] - not used.
+ */
+public void cmd_weaplast(String[] args)
 	{
 	if ((fLastWeapon != null) && (fLastWeapon.isEnoughAmmo()))
 		{
@@ -1161,48 +1180,129 @@ public void cmd_weaplast(String args[])
 	 }
 /**
  * Switch to the next available weapon.
- * @param args java.lang.String[]
+ * @param args java.lang.String[] - not used.
  */
 public void cmd_weapnext(String[] args) 
 	{
-	GenericWeapon tempWeapon = fWeapon;
 	int i = (fWeaponOrder.indexOf(fWeapon.getWeaponName()) + 1) % fWeaponOrder.size();
+	int crashguard = i; // used to keep infinite loops from occuring
 	
 	do
 		{
-		tempWeapon = (GenericWeapon) getInventory((String) fWeaponOrder.elementAt(i));
+		fNextWeapon = (GenericWeapon) getInventory((String) fWeaponOrder.elementAt(i));
 		i = (i+1) % fWeaponOrder.size();
-		} while (((tempWeapon == null) || !tempWeapon.isEnoughAmmo()) && (tempWeapon != fWeapon));
-			
-		
-	if (tempWeapon != fWeapon)
-		{
-		fNextWeapon = tempWeapon;
-		fWeapon.deactivate();						
-		}
-	}
-/**
- * Switch to the previous available weapon.
- * @param args java.lang.String[]
- */
-public void cmd_weapprev(String[] args) 
-	{
-	int i = fWeaponList.indexOf(fWeapon);
-	while (true)
-		{
-		i--;		
-		if (i < 0)
-			i = fWeaponList.size() - 1;
-			
-		fNextWeapon = (GenericWeapon) fWeaponList.elementAt(i);
-		if (fNextWeapon.isEnoughAmmo() || (fNextWeapon == fWeapon))
-			break;
-		}
+		} while (((fNextWeapon == null) || !fNextWeapon.isEnoughAmmo() || fWeaponsExcluded.contains(fNextWeapon.getWeaponName())) && (crashguard != i));
 		
 	if (fNextWeapon == fWeapon)
 		fNextWeapon = null;
-	else					
-		fWeapon.deactivate();						
+	else
+		fWeapon.deactivate();
+	}
+/**
+ * Switch to the previous available weapon.
+ * @param args java.lang.String[] - not used.
+ */
+public void cmd_weapprev(String[] args) 
+	{
+	int i = fWeaponOrder.indexOf(fWeapon.getWeaponName()) - 1;
+	if (i < 0)
+		i = fWeaponOrder.size() - 1;
+		
+	int crashguard = i; // used to keep infinite loops from occuring
+		
+	do {
+		fNextWeapon = (GenericWeapon) getInventory((String) fWeaponOrder.elementAt(i));
+		if (--i < 0)
+			i = fWeaponOrder.size() - 1;
+	} while (((fNextWeapon == null) || !fNextWeapon.isEnoughAmmo() || fWeaponsExcluded.contains(fNextWeapon.getWeaponName())) && (i != crashguard));
+
+	if (fNextWeapon == fWeapon)
+		fNextWeapon = null;
+	else
+		fWeapon.deactivate();				
+	}
+/**
+ * Print the excluded weapons list.
+ * @param args java.lang.String[] - not used.
+ */
+public void cmd_weapprintexcluded(String[] args)
+	{
+	fEntity.cprint(Engine.PRINT_HIGH, "Weapons Excluded: ");
+	
+	for (int i=0; i < fWeaponsExcluded.size(); i++)
+		{
+		fEntity.cprint(Engine.PRINT_HIGH, fWeaponsExcluded.elementAt(i) + ", ");
+		}
+	
+	fEntity.cprint(Engine.PRINT_HIGH, ".\n");
+	
+	return;
+	}
+/**
+ * Print the weapon order list.
+ * @param args java.lang.String[] - not used.
+ */
+public void cmd_weapprintorder(String[] args)
+	{
+	fEntity.cprint(Engine.PRINT_HIGH, "Weapon Order: ");
+	
+	for (int i=0; i < fWeaponOrder.size(); i++)
+		{
+		fEntity.cprint(Engine.PRINT_HIGH, fWeaponOrder.elementAt(i) + ", ");
+		}
+		
+	fEntity.cprint(Engine.PRINT_HIGH, ".\n");
+	
+	return;
+	}
+/**
+ * remove a list of weapons from the excluded list.
+ * @author Brian Haskin
+ * @param args java.lang.String[] - list of weapons
+ */
+public void cmd_weapremoveexcluded(String[] args)
+	{
+	for (int i=1; i < args.length; i++)
+		{
+		if (fWeaponsExcluded.contains(args[i]))
+			fWeaponsExcluded.removeElementAt(fWeaponsExcluded.indexOf(args[i]));
+		}
+		
+	return;
+	}
+/**
+ * set the weapon switching order. If called without
+ * arguments it will reset the order to the default id order.
+ * Also, any weapons that have already been picked up but are not
+ * explicitly listed will not be added to the list till the next respawn.
+ * @author Brian Haskin
+ * @param args java.lang.String[] - list of weapons
+ */
+public void cmd_weapsetorder(String[] args)
+	{
+	fWeaponOrder.removeAllElements();
+	
+	if (args.length > 1)
+		{
+		for (int i=1; i < args.length; i++)
+			fWeaponOrder.addElement(args[i]);
+		}
+	else
+		{
+		fWeaponOrder.addElement("blaster");
+		fWeaponOrder.addElement("shotgun");
+		fWeaponOrder.addElement("super shotgun");
+		fWeaponOrder.addElement("machinegun");
+		fWeaponOrder.addElement("chaingun");
+		fWeaponOrder.addElement("grenades");
+		fWeaponOrder.addElement("grenade launcher");
+		fWeaponOrder.addElement("rocket launcher");
+		fWeaponOrder.addElement("hyperblaster");
+		fWeaponOrder.addElement("railgun");
+		fWeaponOrder.addElement("bfg10k");
+		}
+	
+	return;
 	}
 /**
  * Handle a new connection by just creating a new Player object 
@@ -1984,6 +2084,8 @@ public void playerThink(PlayerCmd cmd)
 //  else
 //      return gi.trace (start, mins, maxs, end, pm_passent, MASK_DEADSOLID);
  	
+ 	fCmdAngles = cmd.getCmdAngles();
+ 	
 	if ((fEntity.getGroundEntity() != null) && (pm.fGroundEntity == null) && (cmd.fUpMove >= 10) && (pm.fWaterLevel == 0))
 		fEntity.sound(NativeEntity.CHAN_VOICE, getSexedSoundIndex("jump1"), 1, NativeEntity.ATTN_NORM, 0);
 			
@@ -2069,7 +2171,7 @@ protected void respawn()
 	fEntity.setEvent(NativeEntity.EV_PLAYER_TELEPORT);
 	
 	// hold in place briefly
-	fEntity.setPlayerTeleportTime((byte)50);
+	fEntity.setPlayerPMTime((byte)50);
 	}
 /**
  * This method was created by a SmartGuide.
@@ -2283,8 +2385,11 @@ protected void spawn()
 		Angle3f ang = spawnPoint.getAngles();
 		origin.z += 9;
 		fEntity.setOrigin(origin);
-		fEntity.setAngles(ang);
-		fEntity.setPlayerViewAngles(ang);
+		fEntity.setAngles(0, ang.y, 0);
+		fEntity.setPlayerViewAngles(0, ang.y, 0);
+		
+		ang.sub(fCmdAngles);
+		fEntity.setPlayerDeltaAngles(ang);
 		}
 	
 	fEntity.setSolid(NativeEntity.SOLID_BBOX);
@@ -2332,6 +2437,36 @@ public void startIntermission(GenericSpawnpoint intermissionSpot)
 	fEntity.setPlayerStat(NativeEntity.STAT_LAYOUTS, (short)1);	
 	fShowScore = true;
 	fInIntermission = true;
+	}
+/**
+ * Teleport the player to another point in the map.
+ * @param origin javax.vecmath.Point3f
+ * @param angles q2java.Angle3f
+ */
+public void teleport(Point3f origin, Angle3f angles) 
+	{
+	// unlink to make sure it can't possibly interfere with KillBox
+	fEntity.unlinkEntity();	
+
+	fEntity.setOrigin(origin);
+
+	// clear the velocity and hold them in place briefly
+	fEntity.setVelocity(0, 0, 0);
+	fEntity.setPlayerPMTime((byte)20);	// hold time 160ms (20 * 8)
+	fEntity.setPlayerPMFlags((byte)(fEntity.getPlayerPMFlags() | NativeEntity.PMF_TIME_TELEPORT));
+
+	// draw the teleport splash at source and on the player
+	fEntity.setEvent(NativeEntity.EV_PLAYER_TELEPORT);
+
+	// set angles
+	angles.sub(fCmdAngles);
+	fEntity.setPlayerDeltaAngles(angles);
+
+	fEntity.setAngles(0, 0, 0);
+	fEntity.setPlayerViewAngles(0, 0, 0);
+
+	killBox();	
+	fEntity.linkEntity();
 	}
 /**
  * This method was created by a SmartGuide.

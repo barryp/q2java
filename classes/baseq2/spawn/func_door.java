@@ -11,41 +11,44 @@ import baseq2.*;
 public class func_door extends GenericPusher 
 	{	
 	// spawn parameters
-	private float fWait;
-	private float fDmg;
-	private int fMaxHealth;
-	private String fMessage;
+	protected float fWait;
+	protected float fDmg;
+	protected int fMaxHealth;
+	protected String fMessage;
 
-	// private movement parameters
-	private Point3f fClosedOrigin;
-	private Point3f fOpenedOrigin;
+	//optional trigger field
+	protected NativeEntity fTriggerEntity;
+
+	// protected movement parameters
+	protected Point3f fClosedOrigin;
+	protected Point3f fOpenedOrigin;
 
 	// track the state of the door
-	private int fDoorState;
-	private int fDoorStateInitial;
-	private int fHealth;
+	protected int fDoorState;
+	protected int fDoorStateInitial;
+	protected int fHealth;
 	
 	// door sounds if any
-	private int fSoundStart;
-	private int fSoundMiddle;
-	private int fSoundEnd;
+	protected int fSoundStart;
+	protected int fSoundMiddle;
+	protected int fSoundEnd;
 		
 	// door state constants		
-	private final static int STATE_DOOR_SPAWNTRIGGER = 0;
-	private final static int STATE_DOOR_CLOSING = 1;
-	private final static int STATE_DOOR_CLOSED = 2;
-	private final static int STATE_DOOR_OPENING = 3;
-	private final static int STATE_DOOR_OPENED = 4;	
-	private final static int STATE_DOOR_OPENWAIT = 5;	
+	protected final static int STATE_DOOR_SPAWNTRIGGER		= 0;
+	protected final static int STATE_DOOR_CLOSING 		= 1;
+	protected final static int STATE_DOOR_CLOSED 			= 2;
+	protected final static int STATE_DOOR_OPENING 		= 3;
+	protected final static int STATE_DOOR_OPENED 			= 4;	
+	protected final static int STATE_DOOR_OPENWAIT 		= 5;	
 	
 	// spawn flags		
-	private final static int DOOR_START_OPEN		= 1;
-	private final static int DOOR_REVERSE		= 2;
-	private final static int DOOR_CRUSHER		= 4;
-	private final static int DOOR_NOMONSTER		= 8;
-	private final static int DOOR_TOGGLE			= 32;
-	private final static int DOOR_X_AXIS			= 64;
-	private final static int DOOR_Y_AXIS			= 128;
+	protected final static int DOOR_START_OPEN	= 1;
+	protected final static int DOOR_REVERSE		= 2;
+	protected final static int DOOR_CRUSHER		= 4;
+	protected final static int DOOR_NOMONSTER	= 8;
+	protected final static int DOOR_TOGGLE		= 32;
+	protected final static int DOOR_X_AXIS		= 64;
+	protected final static int DOOR_Y_AXIS		= 128;
 	
 public func_door(String[] spawnArgs) throws GameException
 	{
@@ -290,12 +293,28 @@ protected void spawnDoorTrigger()
 
 	try
 		{
-		new AreaTrigger(this, mins, maxs);
+		fTriggerEntity = new NativeEntity();
+		fTriggerEntity.setReference(this);
+	
+		fTriggerEntity.setMins(mins);
+		fTriggerEntity.setMaxs(maxs);
+	
+		fTriggerEntity.setSolid(NativeEntity.SOLID_TRIGGER);
+		fTriggerEntity.linkEntity();
 		}
 	catch (GameException e)
 		{
 		e.printStackTrace();
 		}			
+	}
+/**
+ * React to a touch if we have an area trigger.
+ * @param touchedBy q2jgame.GameEntity
+ */
+public void touch(Player touchedBy) 
+	{
+	if (fTriggerEntity != null)
+		use(touchedBy);
 	}
 /**
  * This method was created by a SmartGuide.

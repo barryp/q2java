@@ -9,8 +9,6 @@ public class info_player_deathmatch extends GenericSpawnpoint
 	{
 	public final static String REGISTRY_KEY = "spawn-deathmatch";
 	
-	private NativeEntity fPad;
-	
 public info_player_deathmatch(String[] spawnArgs) throws GameException
 	{
 	super(spawnArgs);
@@ -19,13 +17,15 @@ public info_player_deathmatch(String[] spawnArgs) throws GameException
 		throw new InhibitedException("Inhibited in non-deathmatch");
 		
 	Game.addLevelRegistry(REGISTRY_KEY, this);
-	
-	fPad = new NativeEntity();	
-	fPad.setOrigin(getOrigin());		
-	fPad.setModel("models/objects/dmspot/tris.md2");
-	fPad.setSolid(NativeEntity.SOLID_BBOX);
-	fPad.setMins(-32, -32, -24);
-	fPad.setMaxs(32, 32, -16);
-	fPad.linkEntity();	
+
+	fEntity = new NativeEntity();
+	fEntity.setReference(this);	
+		
+	fEntity.setOrigin(getOrigin());		
+	fEntity.setModel("models/objects/dmspot/tris.md2");
+	fEntity.setSolid(NativeEntity.SOLID_BBOX);
+	fEntity.setMins(-32, -32, -24);
+	fEntity.setMaxs(32, 32, -16);
+	fEntity.linkEntity();	
 	}
 }

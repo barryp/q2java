@@ -392,9 +392,13 @@ private native static TraceResults trace0(float startx, float starty, float star
 	float endx, float endy, float endz,
 	NativeEntity passEnt, int contentMask, int useMinMax);
 
+/**
+ * Send a packet to a particular client?
+ */
 public static void unicast(NativeEntity ent, boolean reliable)
 	{
-	write0(ent, 0, 0, 0, (reliable ? 1 : 0), CALL_UNICAST);
+	if (!ent.isBot())
+		write0(ent, 0, 0, 0, (reliable ? 1 : 0), CALL_UNICAST);
 	}
 
 private native static void write0(Object obj, float x, float y, float z, int c, int calltype);

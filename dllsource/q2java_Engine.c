@@ -163,7 +163,10 @@ static jobject JNICALL Java_q2java_Engine_trace0(JNIEnv *env, jclass cls,
     vec3_t end;
     edict_t *passEnt;
 
-    passEnt = ge.edicts + Entity_get_fEntityIndex(jpassEnt);
+    if (jpassEnt == NULL)
+        passEnt = NULL;
+    else
+        passEnt = ge.edicts + Entity_get_fEntityIndex(jpassEnt);
 
     start[0] = startx;
     start[1] = starty;

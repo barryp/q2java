@@ -14,13 +14,15 @@ import q2jgame.*;
  * @author Barry Pederson 
  */
 
-public abstract class GenericSpawnpoint
+public abstract class GenericSpawnpoint extends GameObject
 	{
 	protected Point3f fOrigin;
 	protected Angle3f fAngles;	
 	
 public GenericSpawnpoint(String[] spawnArgs) throws GameException
 	{
+	super();
+	
 	String s = Game.getSpawnArg(spawnArgs, "origin", null);
 	if (s != null)
 		fOrigin = MiscUtil.parsePoint3f(s);
@@ -40,20 +42,20 @@ public GenericSpawnpoint(String[] spawnArgs) throws GameException
 		fAngles = new Angle3f();
 	}
 /**
- * Fetch the spawnpoint's orientation.
+ * Fetch a copy of the spawnpoint's orientation.
  * @return javax.vecmath.Angle3f
  */
 public Angle3f getAngles() 
 	{
-	return fAngles;
+	return new Angle3f(fAngles);
 	}
 /**
- * Fetch the spawnpoint's origin
+ * Fetch a copy of the spawnpoint's origin
  * @return javax.vecmath.Point3f
  */
 public Point3f getOrigin() 
 	{
-	return fOrigin;
+	return new Point3f(fOrigin);
 	}
 /**
  * This method was created by a SmartGuide.

@@ -1,0 +1,116 @@
+CHANGES from v0.5 to v0.5.1
+
+---------------------------------------------------------------------------
+This file will just list changes in the core packages 
+(q2java, q2jgame, baseq2). Add-ons will have to list their own changes.
+---------------------------------------------------------------------------
+
+DLL CHANGES ===============================================================
+
+quake2.h
+    Changed: the "teleport_time" field in pmove_state_t was renamed to 
+             "pm_time" to match the 3.14 DLL sourcecode.
+    
+q2java_Engine.c
+
+    Changed: the trace function would crash the game when called 
+             with a null passEnt    
+    
+q2java_NativeEntity.c
+
+    Changed: Updated to use field name "pm_time" instead of "teleport_time".  
+             None of these changes should break backwards compatibility.
+    
+    
+
+JAVA CHANGES ==============================================================
+
+q2java.Engine
+
+    Changed: unicast does nothing if the entity being unicast to is a bot
+             (prevents game crashes)
+
+q2java.NativeEntity
+
+    Added:   isBot() method - to check and see if a NativeEntity is a player
+             entity without an actual Quake2 client connected to it.
+             
+             setPlayerPMFlags()             
+             
+             setVelocity(float, float, float) - before it was just 
+                     setVelocity(Vector3f)
+             
+             public final static int EF_TELEPORTER		= 0x00020000;		
+             public final static int EF_FLAG1			= 0x00040000;
+             public final static int EF_FLAG2			= 0x00080000;
+          	 public final static int EF_BOOMER			= 0x00100000;
+         	 public final static int EF_GREENGIB		= 0x00200000;
+             
+        	 public final static int PMF_ON_GROUND		= 4;
+        	 public final static int PMF_TIME_WATERJUMP	= 8;	// pm_time is waterjump
+        	 public final static int PMF_TIME_LAND		= 16;	// pm_time is time before rejump
+        	 public final static int PMF_TIME_TELEPORT	= 32;	// pm_time is non-moving time
+        	 public final static int PMF_NO_PREDICTION	= 64;	// temporarily disables prediction (used for grappling hook)
+
+    Changed: cprint and centerprint do nothing if the entity is a bot
+             (prevents game crashes)
+    
+             setPlayerTeleportTime() renamed to setPlayerPMTime() to 
+             correspond more closely with the 3.14 sourcecode
+             
+q2java.playerCmd
+
+    Added:   getCmdAngles() - to fetch the angles specified in the player cmd
+                 
+
+baseq2.AreaTrigger
+
+    Removed this class..it was simpler to just move the tiny amount it did
+    right into the baseq2.spawn.func_door class.
+    
+baseq2.GenericPusher
+
+    Changed: Altered the way the final move is handled, so it snaps into
+             place rather than relying on accumulated individual moves. 
+             Seems to have fixed some weird positioning problems like
+             with the spiral staircase on the "ware2" map
+             
+baseq2.GenericSpawnpoint
+    
+    Changed: Now is a subclass of GameObject - so firing a blaster at a 
+             deathmatch spawnpad now throws off sparks like it should.
+             
+             getAngles() and getOrigin() now return -copies- of the spawnpoint's
+             origin and angles - so the originals don't get altered.                 
+             
+baseq2.PlatformTrigger
+
+    Changed: Was a subclass of AreaTrigger (which was removed) 
+                          
+baseq2.Player
+
+    Added:   Brian Haskin supplied cmd_weapaddexcluded(), 
+             cmd_weapprintexcluded(),  cmd_weapprintorder(), 
+             cmd_weapremoveexcluded(), and cmd_weapsetorder() to round out 
+             the weapon-cycling code. Now players can individually control 
+             the order and types of weapons cycled through with the weapnext 
+             and weapprev commands.
+             
+             teleport() - method used by teleporters to jump the player
+             to another spot on the map.                          
+             
+    Changed: When a player spawns - they're more likely to start off with a
+             good viewangle than before (the whole angle thing - especially with
+             players - is pretty whacked in Q2)
+
+baseq2.spawn.func_door
+
+    Changed: A func_door object now handles its trigger field directly, rather
+             than relying on another class (used to use AreaTrigger)
+             
+             private fields changed to protected.                                       
+             
+baseq2.spawn.misc_teleporter
+baseq2.spawn.misc_teleporter_dest
+
+    New classes to implement teleport pads in the game.             

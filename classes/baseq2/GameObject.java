@@ -234,6 +234,38 @@ public boolean isGroupSlave()
 	return ((fGroup != null) && (fGroup.elementAt(0) != this));
 	}
 /**
+ * Kills all entities that would touch the proposed new positioning
+ * of ent.  Ent should be unlinked before calling this!.
+ * @return boolean
+ */
+public boolean killBox() 
+	{
+	TraceResults tr;
+	
+	Point3f origin = fEntity.getOrigin();
+	Tuple3f mins = fEntity.getMins();
+	Tuple3f maxs = fEntity.getMaxs();
+	Vector3f zerovec = new Vector3f();
+
+	while (true)
+		{
+		tr = Engine.trace(origin, mins, maxs, origin, null, Engine.MASK_PLAYERSOLID);
+		if (tr.fEntity == null)
+			break;
+
+		// nail it
+		Object obj = tr.fEntity.getReference();
+		if (obj instanceof GameObject)
+			((GameObject) obj).damage(this, this, zerovec, origin, zerovec, 100000, 0, DAMAGE_NO_PROTECTION, Engine.TE_NONE /*, MOD_TELEFRAG*/);
+
+		// if we didn't kill it, fail
+		if (tr.fEntity.getSolid() != 0)
+			return false;
+		}
+
+	return true;		// all clear
+	}
+/**
  * This method was created by a SmartGuide.
  * @param damageType int
  * @param origin q2java.Vec3

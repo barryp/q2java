@@ -234,13 +234,26 @@ protected boolean push()
 
 	// setup if moving linearly				
 	if (isLinearMove)
-		{				
-		linearMove = new Vector3f(fLinearVelocity);
-		linearMove.scale(Engine.SECONDS_PER_FRAME);
-		MiscUtil.clampEight(linearMove);
-		pusherOrigin.add(linearMove);
-		fEntity.setOrigin(pusherOrigin);
+		{		
+		if (fState == STATE_FINALMOVE)
+			{
+			// snap to final position rather
+			// than rely on accumulated individual
+			// moves.		
+			linearMove = new Vector3f();
+			linearMove.sub(fCurrentDest, pusherOrigin);
+			pusherOrigin.set(fCurrentDest);
+			}
+		else
+			{	
+			linearMove = new Vector3f(fLinearVelocity);
+			linearMove.scale(Engine.SECONDS_PER_FRAME);
+			MiscUtil.clampEight(linearMove);
+			pusherOrigin.add(linearMove);			
+			}
 
+		fEntity.setOrigin(pusherOrigin);			
+			
 		// find the bounding box			
 		mins.add(linearMove);
 		maxs.add(linearMove);			
@@ -274,7 +287,7 @@ protected boolean push()
 		if (check instanceof GenericPusher)
 			continue;
 						
-		if (check instanceof AreaTrigger)
+		if (check instanceof PlatformTrigger)
 			continue;			
 
 		boolean isPlayer = check instanceof Player;

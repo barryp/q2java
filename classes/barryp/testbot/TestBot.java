@@ -13,10 +13,9 @@ import baseq2.*;
  */
 public class TestBot extends baseq2.Player 
 	{
-	protected float fRespawnTime;
 	protected Player fLastAttacker;
 		
-	protected final static int RESPAWN_INTERVAL = 10;
+	protected final static int RESPAWN_INTERVAL = 15;
 	
 /**
  * TestBot constructor comment.
@@ -83,43 +82,6 @@ public void damage(GameObject inflictor, GameObject attacker,
 		}		
 	}
 /**
- * Simplified Player death...normal player death used with bots
- * causes the game to crash.
- */
-protected void die(GameObject inflictor, GameObject attacker, int damage, Point3f point)
-	{
-	if (fIsDead)
-		return;	// already dead
-
-	fIsDead = true;
-	fEntity.setModelIndex2(0); // remove linked weapon model
-	fEntity.setPlayerGunIndex(0);
-	fWeapon = null;
-	fEntity.setSolid(NativeEntity.SOLID_NOT);
-					
-	obituary(inflictor, attacker);
-			
-	if (getHealth() < -40)
-		{	// gib
-		fEntity.sound(NativeEntity.CHAN_BODY, Engine.getSoundIndex("misc/udeath.wav"), 1, NativeEntity.ATTN_NORM, 0);
-//		for (n= 0; n < 4; n++)
-//			ThrowGib (self, "models/objects/gibs/sm_meat/tris.md2", damage, GIB_ORGANIC);
-//		ThrowClientHead (self, damage);
-
-//		self->takedamage = DAMAGE_NO;
-
-		// workaround until full gib code is implemented
-		setAnimation(ANIMATE_DEATH);
-		}
-	else
-		{	// normal death
-		setAnimation(ANIMATE_DEATH);
-		fEntity.sound(NativeEntity.CHAN_VOICE, getSexedSoundIndex("death"+((MiscUtil.randomInt() & 0x03) + 1)), 1, NativeEntity.ATTN_NORM, 0);
-		}
-		
-	fRespawnTime = Game.getGameTime() + RESPAWN_INTERVAL;
-	}
-/**
  * Work around a protected method.
  */
 public void doRespawn() 
@@ -142,7 +104,7 @@ public void playerDisconnect()
 public void runFrame(int phase) 
 	{
 	super.runFrame(phase);
-	if ((fRespawnTime > 0) && (Game.getGameTime() > fRespawnTime))
+	if ((fRespawnTime > 0) && (Game.getGameTime() > (fRespawnTime + RESPAWN_INTERVAL)))
 		{
 		fRespawnTime = 0;
 		respawn();
@@ -165,5 +127,12 @@ public void setSkin(String name)
 	{
 	setUserInfo("skin", name);
 	applyPlayerInfo();
+	}
+/**
+ * Do nothing - sending a scoreboard to a bot would crash the game.
+ * @param killer q2jgame.Player
+ */
+protected void writeDeathmatchScoreboardMessage(GameObject killer) 
+	{	
 	}
 }

@@ -6,19 +6,30 @@ import javax.vecmath.*;
 import q2java.*;
 import q2jgame.*;
 
-public class PlatformTrigger extends AreaTrigger
+import baseq2.spawn.func_plat;
+
+public class PlatformTrigger extends GameObject
 	{
+	protected func_plat fOwner;	
 	
 public PlatformTrigger(baseq2.spawn.func_plat target, Tuple3f mins, Tuple3f maxs) throws GameException
 	{
-	super(target, mins, maxs);
+	fEntity = new NativeEntity();
+	fEntity.setReference(this);
+	
+	fEntity.setMins(mins);
+	fEntity.setMaxs(maxs);
+	
+	fOwner = target;
+	fEntity.setSolid(NativeEntity.SOLID_TRIGGER);
+	fEntity.linkEntity();	
 	}
 /**
- * This method was created by a SmartGuide.
+ * Trigger the platform to raise.
  * @param touchedBy q2jgame.GameEntity
  */
 public void touch(Player touchedBy) 
 	{
-	((baseq2.spawn.func_plat)fOwner).raise();
+	fOwner.raise();
 	}
 }

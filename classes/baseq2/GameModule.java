@@ -155,7 +155,7 @@ public static void checkInhibited(int spawnFlags) throws InhibitedException
  */
 public static String getVersion() 
 	{
-	return "Q2Java Base Game, v0.5";
+	return "Q2Java Base Game, v0.5.1";
 	}	
 /**
  * Check whether or not the Cheating option is on.
