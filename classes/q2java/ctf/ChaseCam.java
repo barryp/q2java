@@ -20,11 +20,6 @@ import javax.vecmath.*;
 import q2java.*;
 import q2java.core.*;
 
-/**
- * A misc_ctf_banner is a giant flag that
- * just sits and flutters in the wind.
- */
-
 
 public class ChaseCam
 {
@@ -39,7 +34,6 @@ public class ChaseCam
 
 	// We'll keep a reference to all chasecams, so we can serch for them easily
 	static Vector gChaseCams = new Vector();
-
 	//===================================================
 	// Constructor
 	//===================================================
