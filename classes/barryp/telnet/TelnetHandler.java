@@ -3,7 +3,9 @@ package barryp.telnet;
 
 import java.io.*;
 import java.net.*;
+import java.text.*;
 import java.util.Date;
+import q2jgame.*;
 
 /**
  * Handle communication with an individual Telnet client.
@@ -56,15 +58,16 @@ private void logon() throws IOException
 	{
 	// keep the output stream hidden til after the client is logged on.
 	OutputStream os = fSocket.getOutputStream();
-	
+
+	ResourceGroup rg = fServer.getResourceGroup();	
 	if ((fPassword != null) && (fPassword.length() > 0))
 		{
-		String prompt = "Password: ";
+		String prompt = rg.getRandomString("barryp.telnet.Messages", "passprompt") + " ";
 		os.write(prompt.getBytes());
 		String pass = readLine(PASSWORD_TIMEOUT);
 		if (!fPassword.equals(pass))
 			{
-			String response = "Nope, that's not it.\r\n";
+			String response = rg.getRandomString("barryp.telnet.Messages", "badpass") + "\r\n";
 			os.write(response.getBytes());
 
 			fIS.close();
@@ -78,30 +81,31 @@ private void logon() throws IOException
 
 	if (!fNoChat)
 		{
-		String prompt = "\r\nNickname for chats: ";
+		String prompt = "\r\n" + rg.getRandomString("barryp.telnet.Messages", "nickprompt") + " ";
 		os.write(prompt.getBytes());
 		fNickname = readLine(0);		
 		}
 		
-	String welcome = "Welcome to the Q2Java Telnet Server\r\n";
+	String welcome = rg.getRandomString("barryp.telnet.Messages", "welcome") + "\r\n";
 	os.write(welcome.getBytes());		
 
 	try
 		{
 		Date d = new Date();
-		welcome = "    Current Server Time: " + d + "\r\n\r\n";
+		// we -should- be able to put the date formatting right in the MessageFormat template, but
+		// that feature seems to be botched.
+		DateFormat df = DateFormat.getDateTimeInstance(DateFormat.FULL, DateFormat.LONG, rg.getLocale());
+		welcome = rg.getRandomString("barryp.telnet.Messages", "clockprefix") + " " + df.format(d) + "\r\n\r\n";
+		os.write(welcome.getBytes());		
 		}
 	catch (ExceptionInInitializerError eiie)
 		{
 		eiie.getException().printStackTrace();
 		}
-		
-	os.write(welcome.getBytes());		
-		
-	
+					
 	if (!fNoCmd)
 		{
-		welcome = "    prefix commands with a plus sign (+)\r\n";	
+		welcome = "    " + rg.getRandomString("barryp.telnet.Messages", "cmdhint") + "\r\n";	
 		os.write(welcome.getBytes());		
 		}
 
