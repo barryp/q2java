@@ -14,6 +14,14 @@ public class GameEntity extends NativeEntity
 	protected String fTargetName;
 	protected String fTarget;
 	
+	// damage flags
+	public final static int DAMAGE_RADIUS		= 0x00000001;	// damage was indirect
+	public final static int DAMAGE_NO_ARMOR		= 0x00000002;	// armour does not protect from this damage
+	public final static int DAMAGE_ENERGY		= 0x00000004;	// damage is from an energy based weapon
+	public final static int DAMAGE_NO_KNOCKBACK	= 0x00000008;	// do not affect velocity, just view angles
+	public final static int DAMAGE_BULLET		= 0x00000010; // damage is from a bullet (used for ricochets)
+	public final static int DAMAGE_NO_PROTECTION	= 0x00000020; // armor, shields, invulnerability, and godmode have no effect	
+	
 public GameEntity() throws GameException
 	{
 	}
@@ -57,6 +65,23 @@ public GameEntity(String[] spawnArgs, boolean isWorld) throws GameException
 	}
 /**
  * This method was created by a SmartGuide.
+ * @param inflictor q2jgame.GameEntity
+ * @param attacker q2jgame.GameEntity
+ * @param dir q2java.Vec3
+ * @param point q2java.Vec3
+ * @param normal q2java.Vec3
+ * @param damage int
+ * @param knockback int
+ * @param dflags int
+ */
+public void damage(GameEntity inflictor, GameEntity attacker, 
+	Vec3 dir, Vec3 point, Vec3 normal, 
+	int damage, int knockback, int dflags, int tempEvent) 
+	{
+	spawnDamage(tempEvent, point, normal, damage);
+	}
+/**
+ * This method was created by a SmartGuide.
  * @return java.util.Enumeration
  */
 public Enumeration enumerateTargets() 
@@ -80,6 +105,23 @@ public String getSpawnArg(String keyword)
  */
 public void runFrame() 
 	{
+	}
+/**
+ * This method was created by a SmartGuide.
+ * @param damageType int
+ * @param origin q2java.Vec3
+ * @param normal q2java.Vec3
+ * @param damage int
+ */
+public static void spawnDamage(int damageType, Vec3 origin, Vec3 normal, int damage ) 
+	{
+	if (damage > 255)
+		damage = 255;
+	Engine.writeByte(Engine.SVC_TEMP_ENTITY);
+	Engine.writeByte(damageType);
+	Engine.writePosition(origin);
+	Engine.writeDir(normal);
+	Engine.multicast(origin, Engine.MULTICAST_PVS);
 	}
 public String toString()
 	{
@@ -109,13 +151,12 @@ public String toString()
  */
 public void touch(GenericCharacter touchedBy) 
 	{
-	return;
 	}
 /**
  * This method was created by a SmartGuide.
  * @param p q2jgame.Player
  */
-public void use(Player p) {
-	return;
-}
+public void use(Player p) 
+	{
+	}
 }

@@ -7,7 +7,7 @@ import q2jgame.*;
 public abstract class PlayerWeapon
 	{
 	protected Player fOwner;
-		
+						
 	protected final static int DEFAULT_BULLET_HSPREAD		= 300;
 	protected final static int DEFAULT_BULLET_VSPREAD		= 500;
 	protected final static int DEFAULT_SHOTGUN_HSPREAD		= 1000;
@@ -178,31 +178,10 @@ protected final static void fireLead(GameEntity p, Vec3 start, Vec3 aimDir, int 
 		}
 
 	// send gun puff / flash
-	if (!((tr.fSurfaceName != null) && ((tr.fSurfaceFlags & Engine.SURF_SKY) != 0)))
+	if ((tr.fSurfaceName == null) || ((tr.fSurfaceFlags & Engine.SURF_SKY) == 0))
 		{
-		if (tr.fFraction < 1.0)
-			{
-/*			
-			if (tr.ent->takedamage)
-				{
-				T_Damage (tr.ent, self, self, aimdir, tr.endpos, tr.plane.normal, damage, kick, DAMAGE_BULLET);
-				}
-			else
-*/			
-				{
-				if (!tr.fSurfaceName.startsWith("sky"))
-					{
-					Engine.writeByte(Engine.SVC_TEMP_ENTITY);
-					Engine.writeByte(teImpact);
-					Engine.writePosition(tr.fEndPos);
-					Engine.writeDir(tr.fPlaneNormal);
-					Engine.multicast(tr.fEndPos, Engine.MULTICAST_PVS);
-
-//					if (self->client)
-//						PlayerNoise(self, tr.endpos, PNOISE_IMPACT);
-					}
-				}
-			}
+		if ((tr.fFraction < 1.0) && (!tr.fSurfaceName.startsWith("sky")))
+			((GameEntity)tr.fEntity).damage(p, p, aimDir, tr.fEndPos, tr.fPlaneNormal, damage, kick, GameEntity.DAMAGE_BULLET, teImpact); 
 		}
 
 	// if went through water, determine where the end and make a bubble trail
@@ -403,12 +382,14 @@ public void weaponThink()
 
 	if (fWeaponState == WEAPON_READY)
 		{
-		if (fOwner.isAttacking())
+		if (((fOwner.fButtons | fOwner.fLatchedButtons) & Player.BUTTON_ATTACK) != 0)
 			{
+			fOwner.fLatchedButtons &= ~Player.BUTTON_ATTACK;
 			if (isEnoughAmmo())
 				{
 				fWeaponState = WEAPON_FIRING;
 				setWeaponFrame(fFrameActivateLast + 1); // FRAME_FIRE_FIRST = FRAME_ACTIVATE_LAST + 1
+				fOwner.setAnimation(Player.ANIMATE_ATTACK, false);
 				}
 			else
 				{

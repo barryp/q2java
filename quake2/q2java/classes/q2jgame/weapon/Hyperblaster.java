@@ -2,6 +2,7 @@
 package q2jgame.weapon;
 
 import q2java.*;
+import q2jgame.*;
 
 public class Hyperblaster extends GenericBlaster
 	{
@@ -23,7 +24,7 @@ public void fire()
 	float rotation;
 	int weaponSound = Engine.soundIndex("weapons/hyprbl1a.wav");
 
-	if (!fOwner.isAttacking())
+	if ((fOwner.fButtons & Player.BUTTON_ATTACK) == 0)
 		incWeaponFrame();
 	else
 	

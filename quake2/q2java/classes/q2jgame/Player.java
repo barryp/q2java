@@ -16,6 +16,7 @@ public class Player extends GenericCharacter implements NativePlayer
 	private Hashtable fInventory;
 	private Hashtable fAmmoBelt;
 
+	private boolean fWeaponThunk; // have we given the current weapon a chance to think yet this frame?
 	private PlayerWeapon fWeapon;
 	private PlayerWeapon fNextWeapon;	
 	private AmmoPack fAmmo;
@@ -23,7 +24,9 @@ public class Player extends GenericCharacter implements NativePlayer
 	private int fHand;
 	private boolean fIsGrounded;
 	private float fBobTime;
-	private int fButtons;
+	public int fButtons;
+	public int fLatchedButtons;
+	private int fOldButtons;
 	public float fViewHeight;
 	private int fWaterType;
 	private int fWaterLevel;
@@ -162,7 +165,7 @@ public class Player extends GenericCharacter implements NativePlayer
 		};
 
 		
-	public final static int ANIMATE_FLIP		= 0;
+	public final static int ANIMATE_FLIPOFF	= 0;
 	public final static int ANIMATE_SALUTE	= 1;
 	public final static int ANIMATE_TAUNT	= 2;
 	public final static int ANIMATE_WAVE		= 3;
@@ -311,7 +314,8 @@ public void begin(boolean loadgame)
 	setMins(-16, -16, 24);
 	setMaxs(16, 16, 32);
 	setStat(STAT_HEALTH_ICON, (short)worldspawn.fHealthPic);
-	setAnimation(ANIMATE_BASIC);
+	setHealth(100);
+	setAnimation(ANIMATE_BASIC, true);
 	linkEntity();	
 	}
 /**
@@ -319,8 +323,15 @@ public void begin(boolean loadgame)
  */
 public void beginFrame() 
 	{
-	if (fWeapon != null)
-		fWeapon.weaponThink();
+	if (fWeaponThunk)
+		fWeaponThunk = false;
+	else		
+		{
+		if (fWeapon != null)
+			fWeapon.weaponThink();
+		}			
+		
+	fLatchedButtons = 0;		
 	}
 /**
  * This method was created by a SmartGuide.
@@ -339,8 +350,8 @@ private void calcClientFrame()
 	// this is a nasty "if" statement, but basically: if we're not making
 	// a transition, then run the animations normally
 	if (!(	((fIsDucking != isDucking)	&& (fAnimationPriority < ANIM_DEATH))
-	||		((fIsRunning != isRunning)  	&& (fAnimationPriority == ANIM_BASIC))
-	||		((!fIsGrounded)             	&& (fAnimationPriority <= ANIM_WAVE))
+	||		((fIsRunning != isRunning)	&& (fAnimationPriority == ANIM_BASIC))
+	||		((!fIsGrounded)			&& (fAnimationPriority <= ANIM_WAVE))
 	))
 		{		
 		if (fAnimationFrame < fAnimationEnd)
@@ -355,7 +366,7 @@ private void calcClientFrame()
 		if (fAnimationPriority == ANIM_JUMP)
 			{
 			if (fIsGrounded)
-				setAnimation(ANIMATE_LAND);	
+				setAnimation(ANIMATE_LAND, true);	
 			return;
 			}
 		}
@@ -367,12 +378,12 @@ private void calcClientFrame()
 	fIsDucking = isDucking;
 	fIsRunning = isRunning;
 
-	if (fIsGrounded)
-		setAnimation(ANIMATE_FLAIL);
+	if (!fIsGrounded)
+		setAnimation(ANIMATE_FLAIL, true);
 //		if (ent->s.frame != FRAME_jump2)
 //			ent->s.frame = FRAME_jump1;
 	else
-		setAnimation(ANIMATE_BASIC);	
+		setAnimation(ANIMATE_BASIC, true);	
 	}
 /**
  * This method was created by a SmartGuide.
@@ -498,7 +509,44 @@ public void command()
 				item = item + " " + Engine.argv(i);
 			use(item);
 			}
+			
+		if (Engine.argv(0).equals("wave"))
+			{
+			// ignore wave commands when crouched
+			if (fIsDucking)
+				return;
+				
+			switch(Integer.parseInt(Engine.argv(1)))
+				{
+				case 0: setAnimation(ANIMATE_FLIPOFF, false); break;
+				case 1: setAnimation(ANIMATE_SALUTE, false); break;
+				case 2: setAnimation(ANIMATE_TAUNT, false); break;
+				case 3: setAnimation(ANIMATE_WAVE, false); break;
+				case 4: setAnimation(ANIMATE_POINT, false); break;
+				default: ;
+				}			
+			}			
 		}		
+	}
+/**
+ * This method was created by a SmartGuide.
+ */
+public void die(GameEntity inflictor, GameEntity attacker, int damage, Vec3 point)
+	{
+	if (fHealth < -40)
+		{	// gib
+		sound(CHAN_BODY, Engine.soundIndex("misc/udeath.wav"), 1, ATTN_NORM, 0);
+//		for (n= 0; n < 4; n++)
+//			ThrowGib (self, "models/objects/gibs/sm_meat/tris.md2", damage, GIB_ORGANIC);
+//		ThrowClientHead (self, damage);
+
+//		self->takedamage = DAMAGE_NO;
+		}
+	else
+		{	// normal death
+		setAnimation(ANIMATE_DEATH, false);
+		sound(CHAN_VOICE, sexedSoundIndex("death"+((Game.randomInt() % 4)+1)), 1, ATTN_NORM, 0);
+		}
 	}
 /**
  * The player is disconnecting, clean things up and say goodbye.
@@ -671,14 +719,6 @@ private void incFrame()
 /**
  * This method was created by a SmartGuide.
  * @return boolean
- */
-public boolean isAttacking() 
-	{
-	return (fButtons & Player.BUTTON_ATTACK) != 0;
-	}
-/**
- * This method was created by a SmartGuide.
- * @return boolean
  * @param itemName java.lang.String
  */
 public boolean isCarrying(String itemName) 
@@ -765,8 +805,12 @@ public void setAmmoType(String ammoType)
  * This method was created by a SmartGuide.
  * @param animation int
  */
-public void setAnimation(int animation) 
+public void setAnimation(int animation, boolean ignorePriority) 
 	{
+	// if we're moving, then use a slightly different animation
+	if ((animation == ANIMATE_BASIC) && fIsRunning)
+		animation += 1;
+		
 	// pain and death can have 3 variations...pick one randomly
 	if ((animation == ANIMATE_PAIN) || (animation == ANIMATE_DEATH))
 		animation += Game.randomFloat() * 3;
@@ -776,7 +820,7 @@ public void setAnimation(int animation)
 		animation += 9;
 		
 	int newPriority = fAnims[animation * 3];
-	if (newPriority >= fAnimationPriority)
+	if (ignorePriority || (newPriority >= fAnimationPriority))
 		{
 		fAnimationPriority = newPriority;
 		setFrame(fAnims[(animation*3) + 1]);
@@ -824,7 +868,7 @@ public void think()
 	if (fIsGrounded && (pm.fGroundEntity == null) && (pm.fCmdUpMove >= 10) && (pm.fWaterLevel == 0))
 		sound(CHAN_VOICE, sexedSoundIndex("jump1"), 1, ATTN_NORM, 0);
 		
-	fButtons = pm.fCmdButtons;		
+	
 	fViewHeight = pm.fViewHeight;	
 	fWaterType = pm.fWaterType;
 	fWaterLevel = pm.fWaterLevel;	
@@ -846,7 +890,17 @@ public void think()
 		for (int i = 0; i < pm.fTouched.length; i++)
 			((GameEntity)pm.fTouched[i]).touch(this);
 		}
-		
+
+	fOldButtons = fButtons;	
+	fButtons = pm.fCmdButtons;		
+	fLatchedButtons |= fButtons & ~fOldButtons;	
+	
+	// fire weapon from final position if needed
+	if (((fLatchedButtons & BUTTON_ATTACK) != 0) && (!fWeaponThunk))
+		{
+		fWeaponThunk = true;
+		fWeapon.weaponThink();
+		}
 	}
 /**
  * This method was created by a SmartGuide.

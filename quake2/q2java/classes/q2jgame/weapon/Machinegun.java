@@ -30,7 +30,7 @@ public void fire()
 	int kick = 2;
 	int damage = 8;
 	
-	if (!fOwner.isAttacking())
+	if ((fOwner.fButtons & Player.BUTTON_ATTACK) == 0)
 		{
 		fShotCount = 0;
 		incWeaponFrame();
