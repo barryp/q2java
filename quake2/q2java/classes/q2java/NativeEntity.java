@@ -76,6 +76,18 @@ public abstract class NativeEntity
 	public final static int EV_FEMALE_FALLFAR	= 7;
 	public final static int EV_PLAYER_TELEPORT	= 8;
 
+
+	// setPMType() constants
+	// information necessary for client side movement prediction
+	//
+	// can accelerate and turn
+	public final static int PM_NORMAL	= 0;
+	public final static int PM_SPECTATOR	= 1;
+	// no acceleration or turning
+	public final static int PM_DEAD		= 2;
+	public final static int PM_GIB		= 3;	// different bounding box
+	public final static int PM_FREEZE	= 4;
+
 	// getPMFlags() constants
 	public final static int PMF_DUCKED			= 1;
 	public final static int PMF_JUMP_HELD		= 2;
@@ -170,6 +182,8 @@ public abstract class NativeEntity
 	private final static int INT_CLIENT_PS_GUNINDEX	= 100;
 	private final static int INT_CLIENT_PS_GUNFRAME	= 101;
 	private final static int INT_CLIENT_PS_RDFLAGS	= 102;
+	private final static int INT_CLIENT_PS_PMOVE_PMTYPE = 103;
+	private final static int INT_CLIENT_PING			= 104;
 	
 	private final static int BYTE_CLIENT_PS_PMOVE_PMFLAGS		= 100;
 	private final static int BYTE_CLIENT_PS_PMOVE_TELEPORTTIME	= 101;
@@ -354,6 +368,10 @@ public NativeEntity getOwner()
 	// call to get it, rather than keep and return our own
 	// reference
 	return fOwner;
+	}
+public int getPing()
+	{
+	return getInt(fEntityIndex, INT_CLIENT_PING);
 	}
 /**
  * Player Only
@@ -568,6 +586,10 @@ public void setOwner(NativeEntity ent)
 	// call to set it, rather than keep and return our own
 	// reference
 	}
+public void setPMType(int val)
+	{
+	setInt(fEntityIndex, INT_CLIENT_PS_PMOVE_PMTYPE, val);
+	}
 /**
  * Player Only
  */
@@ -616,12 +638,23 @@ public void setSVFlags(int val)
 	{
 	setInt(fEntityIndex, INT_SVFLAGS, val);
 	}
+public void setTeleportTime(byte val)
+	{
+	setByte(fEntityIndex, BYTE_CLIENT_PS_PMOVE_TELEPORTTIME, val);
+	}
 
 private native static void setVec3(int index, int fieldNum, float x, float y, float z);
 
 public void setVelocity(Vec3 v)
 	{
 	setVec3(fEntityIndex, VEC3_VELOCITY, v.x, v.y, v.z);
+	}
+/**
+ * Player Only
+ */
+public void setViewAngles(float nx, float ny, float nz)
+	{
+	setVec3(getEntityIndex(), VEC3_CLIENT_PS_VIEWANGLES, nx, ny, nz);
 	}
 /**
  * Player Only

@@ -9,7 +9,7 @@ public class Blaster extends GenericBlaster
 	private static int[] PAUSE_FRAMES = new int[] {19, 32, 0};
 	private static int[] FIRE_FRAMES = new int[] {5, 0};	
 	
-public Blaster() throws GameException
+public Blaster()
 	{
 	super(null, "models/weapons/v_blast/tris.md2",
 		4, 8, 52, 55, PAUSE_FRAMES, FIRE_FRAMES, 

@@ -11,6 +11,7 @@ import q2java.*;
 public class BlasterBolt extends GameEntity 
 	{
 	private float fExpires;	
+	private int fDamage;
 	
 /**
  * BlasterBolt constructor comment.
@@ -31,7 +32,7 @@ public BlasterBolt(GameEntity owner, Vec3 start, Vec3 dir, int damage, int speed
 	setOwner(owner);
 	fExpires = (float)Game.fGameTime + 2; // go away after 2 seconds
 //	bolt->think = G_FreeEdict;
-//	bolt->dmg = damage;
+	fDamage = damage;
 	linkEntity();
 /*
 	if (self->client)
@@ -55,10 +56,7 @@ public void runFrame()
 		freeEntity();
 		return;
 		}
-/*			
-	Vec3 end = getOrigin().add(getVelocity().scale(Engine.SECONDS_PER_FRAME));
-	TraceResults tr = 	Engine.trace(getOrigin(), getMins(), getMaxs(), end, this, MASK_SHOT);
-*/
+
 	TraceResults tr = traceMove(Engine.MASK_SHOT, 1.0F);
 	
 	if (tr.fFraction == 1)
@@ -71,13 +69,8 @@ public void runFrame()
 		return;
 		}
 
-	// we hit something, so make a spark and free the blaster bolt
-	Engine.writeByte(Engine.SVC_TEMP_ENTITY);
-	Engine.writeByte(Engine.TE_BLASTER);
-	Engine.writePosition(tr.fEndPos);
-	Engine.writeDir(tr.fPlaneNormal);
-	Engine.multicast(tr.fEndPos, Engine.MULTICAST_PVS);
-
+	// we hit something other than the sky.  Damage it and remove the bolt.
+	((GameEntity)tr.fEntity).damage(this, (GameEntity)getOwner(), getVelocity(), getOrigin(), tr.fPlaneNormal, fDamage, 1, DAMAGE_ENERGY, Engine.TE_BLASTER);
 	freeEntity();
 	}
 }	

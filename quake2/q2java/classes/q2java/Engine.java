@@ -86,6 +86,7 @@ public class Engine
 	// at a location seperate from any existing entity.
 	// Temporary entity messages are explicitly constructed
 	// and broadcast.
+	public final static int TE_NONE					= -1; // used when damage shouldn't generate a TempEvent
 	public final static int TE_GUNSHOT				= 0;
 	public final static int TE_BLOOD				= 1;
 	public final static int TE_BLASTER				= 2;

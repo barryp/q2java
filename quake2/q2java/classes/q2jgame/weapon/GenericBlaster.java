@@ -14,7 +14,7 @@ public class GenericBlaster extends PlayerWeapon
 /**
  * This method was created by a SmartGuide.
  */
-public GenericBlaster(String ammoType, String weaponModelName, int lastActivate, int lastFire, int lastIdle, int lastDeactivate, int[] pauseFrames, int[] fireFrames, int blasterEffect, int blasterDamage, int blasterMuzzleFlash) throws GameException
+public GenericBlaster(String ammoType, String weaponModelName, int lastActivate, int lastFire, int lastIdle, int lastDeactivate, int[] pauseFrames, int[] fireFrames, int blasterEffect, int blasterDamage, int blasterMuzzleFlash)
 	{
 	super(ammoType, weaponModelName, lastActivate, lastFire, lastIdle, lastDeactivate, pauseFrames, fireFrames);
 
@@ -38,10 +38,10 @@ public void fire()
 	fOwner.getViewAngles().angleVectors(forward, right, null);
 	offset.add(fBlasterOffset);
 	Vec3 start = fOwner.projectSource(offset, forward, right);
-/*
-	VectorScale (forward, -2, ent->client->kick_origin);
-	ent->client->kick_angles[0] = -1;
-*/
+	
+	fOwner.fKickOrigin.copyFrom(forward).scale(-2);	
+	fOwner.fKickAngles.x = -1;
+
 	try
 		{
 		new BlasterBolt(fOwner, start, forward, fDamage, 1000, fEffect);

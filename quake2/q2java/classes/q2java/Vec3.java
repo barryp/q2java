@@ -205,6 +205,14 @@ public boolean equals(Vec3 v)
 	return (x == v.x) && (y == v.y) && (z == v.z);
 	}
 /**
+ * This method was created by a SmartGuide.
+ * @return float
+ */
+public float length() 
+	{
+	return  (float) Math.sqrt((x*x) + (y*y) + (z*z));
+	}
+/**
  * Scale into a unit vector, and return the updated object
  * @return q2java.Vec3
  */

@@ -12,14 +12,6 @@ Project's tools are:
 			"<Component 0xa>" with flags ""
 
 Creating temp file "c:\temp\RSPE.tmp" with contents </nologo /G5 /ML /W3 /GX /Zd /O2 /I "c:\jdk\include" /I "c:\jdk\include\win32" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /FR".\Release/" /Fp".\Release/q2java.pch" /YX /Fo".\Release/" /Fd".\Release/" /FD /c 
-"D:\q2\q2java\Game.c"
-"D:\q2\q2java\globals.c"
-"D:\q2\q2java\javalink.c"
-"D:\q2\q2java\misc.c"
-"D:\q2\q2java\player.c"
-"D:\q2\q2java\q2java_ConsoleOutputStream.c"
-"D:\q2\q2java\q2java_CVar.c"
-"D:\q2\q2java\q2java_Engine.c"
 "D:\q2\q2java\q2java_NativeEntity.c"
 >
 Creating command line "cl.exe @c:\temp\RSPE.tmp" 
@@ -35,20 +27,10 @@ Creating temp file "c:\temp\RSPF.tmp" with contents <kernel32.lib user32.lib gdi
 .\Release\q2java_NativeEntity.obj>
 Creating command line "link.exe @c:\temp\RSPF.tmp" 
 Compiling...
-Game.c
-globals.c
-javalink.c
-D:\q2\q2java\javalink.c(132) : warning C4113: 'int (__stdcall *)(void)' differs in parameter lists from 'long (__stdcall *)(void *)'
-D:\q2\q2java\javalink.c(133) : warning C4113: 'int (__stdcall *)(void)' differs in parameter lists from 'long (__stdcall *)(const struct JNIInvokeInterface_ ***  ,const struct JNINativeInterface_ ***  ,void *)'
-misc.c
-player.c
-q2java_ConsoleOutputStream.c
-q2java_CVar.c
-q2java_Engine.c
 q2java_NativeEntity.c
 Linking...
    Creating library ..\Release/gamex86.lib and object ..\Release/gamex86.exp
 
 
 
-gamex86.dll - 0 error(s), 2 warning(s)
+gamex86.dll - 0 error(s), 0 warning(s)

@@ -35,6 +35,8 @@
 #define INT_CLIENT_PS_GUNINDEX 100
 #define INT_CLIENT_PS_GUNFRAME 101
 #define INT_CLIENT_PS_RDFLAGS 102
+#define INT_CLIENT_PS_PMOVE_PMTYPE 103
+#define INT_CLIENT_PING 104
 
 #define	BYTE_CLIENT_PS_PMOVE_PMFLAGS 100
 #define BYTE_CLIENT_PS_PMOVE_TELEPORTTIME 101
@@ -253,6 +255,8 @@ static int *lookupInt(int index, int fieldNum)
 		case INT_CLIENT_PS_GUNINDEX: return &(ent->client->ps.gunindex);
 		case INT_CLIENT_PS_GUNFRAME: return &(ent->client->ps.gunframe);
 		case INT_CLIENT_PS_RDFLAGS: return &(ent->client->ps.rdflags);
+		case INT_CLIENT_PS_PMOVE_PMTYPE: return &(ent->client->ps.pmove.pm_type);
+		case INT_CLIENT_PING: return &(ent->client->ping);
 		default: return NULL; // ---FIX--- should record an error somewhere
 		}
 	}

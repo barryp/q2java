@@ -2,6 +2,7 @@
 package q2jgame.weapon;
 
 import q2java.*;
+import q2jgame.*;
 
 public class Railgun extends PlayerWeapon
 	{
@@ -9,7 +10,7 @@ public class Railgun extends PlayerWeapon
 	private static int[] PAUSE_FRAMES = new int[] {56, 0};
 	private static int[] FIRE_FRAMES = new int[] {4, 0};			
 	
-public Railgun() throws GameException
+public Railgun()
 	{
 	super("slugs", "models/weapons/v_rail/tris.md2",
 		3, 18, 56, 61, PAUSE_FRAMES, FIRE_FRAMES);
@@ -26,24 +27,24 @@ public void fire()
 	int		damage;
 	int		kick;
 
-/*
-	if (deathmatch->value)
-	{	// normal damage is too extreme in dm
+
+//	if (deathmatch->value)
+//		{	// normal damage is too extreme in dm
 		damage = 100;
 		kick = 200;
-	}
-	else
-*/	{
-		damage = 150;
-		kick = 250;
-	}
+//		}
+//	else
+//		{
+//		damage = 150;
+//		kick = 250;
+//		}
 
 /*
 	if (is_quad)
-	{
+		{
 		damage *= 4;
 		kick *= 4;
-	}
+		}
 */
 
 	fOwner.getViewAngles().angleVectors(forward, right, null);
@@ -52,7 +53,7 @@ public void fire()
 
 	offset = new Vec3(0, 7,  fOwner.fViewHeight - 8);
 	start = fOwner.projectSource(offset, forward, right);
-	fireRail(fOwner, start, forward, damage, kick);
+	Game.fireRail(fOwner, start, forward, damage, kick);
 
 	// send muzzle flash
 	Engine.writeByte(Engine.SVC_MUZZLEFLASH);

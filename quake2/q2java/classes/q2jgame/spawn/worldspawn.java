@@ -14,7 +14,7 @@ public worldspawn(String[] spawnArgs) throws GameException
 
 	setSolid(SOLID_BSP);
 	setModelIndex(1); 			// world model is always index 1
-
+	Game.fWorld = this;
 
 	//
 	// deal with spawn args

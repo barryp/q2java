@@ -2,6 +2,7 @@
 package q2jgame.weapon;
 
 import q2java.*;
+import q2jgame.*;
 
 public class SuperShotgun extends PlayerWeapon
 	{
@@ -9,7 +10,7 @@ public class SuperShotgun extends PlayerWeapon
 	private static int[] PAUSE_FRAMES = new int[] {29, 42, 57, 0};
 	private static int[] FIRE_FRAMES = new int[] {7, 0};		
 	
-public SuperShotgun() throws GameException
+public SuperShotgun()
 	{
 	super("shells", "models/weapons/v_shotg2/tris.md2",
 		6, 17, 57, 61, PAUSE_FRAMES, FIRE_FRAMES);
@@ -46,10 +47,10 @@ public void fire()
 
 	v.y -= 5;
 	v.angleVectors(forward, null, null);
-	fireShotgun(fOwner, start, forward, damage, kick, DEFAULT_SHOTGUN_HSPREAD, DEFAULT_SHOTGUN_VSPREAD, DEFAULT_SSHOTGUN_COUNT/2);
+	Game.fireShotgun(fOwner, start, forward, damage, kick, DEFAULT_SHOTGUN_HSPREAD, DEFAULT_SHOTGUN_VSPREAD, DEFAULT_SSHOTGUN_COUNT/2);
 	v.y += 10;
 	v.angleVectors(forward, null, null);
-	fireShotgun(fOwner, start, forward, damage, kick, DEFAULT_SHOTGUN_HSPREAD, DEFAULT_SHOTGUN_VSPREAD, DEFAULT_SSHOTGUN_COUNT/2);
+	Game.fireShotgun(fOwner, start, forward, damage, kick, DEFAULT_SHOTGUN_HSPREAD, DEFAULT_SHOTGUN_VSPREAD, DEFAULT_SSHOTGUN_COUNT/2);
 
 	// send muzzle flash
 	Engine.writeByte(Engine.SVC_MUZZLEFLASH);
