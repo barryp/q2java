@@ -50,6 +50,7 @@
 #else // assume Unix
     #ifdef KAFFE
         char *javalink_version = "Unix (Kaffe) Version";
+        #define JDK1_1InitArgs JavaVMInitArgs
     #else
         char *javalink_version = "Unix Version";
     #endif
@@ -70,7 +71,8 @@
 JNIEnv *java_env;    // Pointer to Java environment - used by other modules.
 char *java_error;    // used by other modules to indicate initialization errors
 char *javalink_gameDirName;      // name of Q2 game directory, something
-                                                   // like "c:\quake2\q2java"
+                                 // like "c:\quake2\q2java"
+int q2java_jinsight;  // flag to indicate we're running on Jinsight
 
 // Variables private to this module
 static char *VMDLLName;         // name of the Java DLL we're going to invoke
@@ -78,7 +80,6 @@ static char *initialSecurity;   // place to save initial security settings
 static char *debugFileName;     // name of file debugLog is written to (if any)
 
 static int vmIsOurs; // was the VM created by this DLL - or something else?
-
 
 //
 // Write a message to the debugLog, if it's enabled
@@ -293,7 +294,7 @@ static void loadVMDLL()
 #ifdef _WIN32
     cvar_t *q2java_DLLHandle;
 
-    javalink_debug("loadVMDLL() started\n");
+    javalink_debug("[C   ] loadVMDLL() started\n");
 
     // Get a hold of the Java VM DLL, checking first for a handle
     // stashed away as a CVAR.
@@ -318,7 +319,7 @@ static void loadVMDLL()
         p_JNI_GetCreatedJavaVMs = GetProcAddress(hJavaDLL, "JNI_GetCreatedJavaVMs");
         p_JNI_GetDefaultJavaVMInitArgs = GetProcAddress(hJavaDLL, "JNI_GetDefaultJavaVMInitArgs");
         p_JNI_CreateJavaVM = GetProcAddress(hJavaDLL, "JNI_CreateJavaVM");
-        javalink_debug("loadVMDLL() finished, DLL found\n");
+        javalink_debug("[C   ] loadVMDLL() finished, DLL found\n");
         }
     else
         {
@@ -326,7 +327,7 @@ static void loadVMDLL()
         p_JNI_GetCreatedJavaVMs = 0;
         p_JNI_GetDefaultJavaVMInitArgs = 0;
         p_JNI_CreateJavaVM = 0;
-        javalink_debug("loadVMDLL() finished, DLL not found\n");
+        javalink_debug("[C   ] loadVMDLL() finished, DLL not found\n");
         }
 #endif
     }
@@ -415,11 +416,6 @@ static jint CreateJavaVM(JavaVM **java_vm, void **java_env, void *vm_args)
     }
 
 
-#ifdef KAFFE
-    JavaVMInitArgs vm_args;
-#else
-    JDK1_1InitArgs vm_args;
-#endif
 
 /**
  * Try to initialize VM using JNI 1.1
@@ -428,27 +424,35 @@ static jint CreateJavaVM(JavaVM **java_vm, void **java_env, void *vm_args)
  */
 static jint createVM_JNI_11(char **properties, JavaVM **java_vm)
     {
-
-
+    JDK1_1InitArgs *pVM11Args;
     char **prop;
     char *p;
     char *classpath;
     jint rc;
+    int argLength;
 
-    javalink_debug("createVM_JNI_11() starting\n");
+    javalink_debug("[C   ] createVM_JNI_11() starting\n");
 
     // initialize the vm_args structure
-    memset(&vm_args, 0, sizeof(vm_args));
-    vm_args.version = JNI_VERSION_1_1;
+    argLength = sizeof(JDK1_1InitArgs);
 
-    if ((GetDefaultJavaVMInitArgs(&vm_args) < 0) || (vm_args.version != JNI_VERSION_1_1))
+    // Jinsight extended the arg structure, so we need some extra padding
+    if (q2java_jinsight) 
+        argLength += 256;
+    
+    pVM11Args = q2java_gi.TagMalloc(argLength, TAG_GAME);
+    memset(pVM11Args, 0, argLength);
+    pVM11Args->version = JNI_VERSION_1_1;
+
+    if ((GetDefaultJavaVMInitArgs(pVM11Args) < 0) || (pVM11Args->version != JNI_VERSION_1_1))
         {
-        javalink_debug("createVM_JNI_11 init args returned %x\n", vm_args.version);
+        javalink_debug("[C   ] createVM_JNI_11 init args returned %x\n", pVM11Args->version);
+        q2java_gi.TagFree(pVM11Args);
         return -1;           
         }
 
-    javalink_debug("createVM_JNI_11() got default init args\n");
-    javalink_debug("default classpath=%s\n", vm_args.classpath);
+    javalink_debug("[C   ] createVM_JNI_11() got default init args\n");
+    javalink_debug("[C   ] default classpath=%s\n", pVM11Args->classpath);
 
     // start off with no classpath
     classpath = 0;
@@ -459,7 +463,7 @@ static jint createVM_JNI_11(char **properties, JavaVM **java_vm)
     if (p)
         {
         classpath = q2strcpy(p);
-        javalink_debug("Found Q2JAVA_CLASSPATH environment variable\n");
+        javalink_debug("[C   ] Found Q2JAVA_CLASSPATH environment variable\n");
         }
 
 
@@ -473,7 +477,7 @@ static jint createVM_JNI_11(char **properties, JavaVM **java_vm)
                 {
                 // found it
                 classpath = q2strcpy((*prop)+16);
-                javalink_debug("Found java.class.path System property\n");
+                javalink_debug("[C   ] Found java.class.path System property\n");
                 }
             }
         }
@@ -481,42 +485,43 @@ static jint createVM_JNI_11(char **properties, JavaVM **java_vm)
     // STILL no classpath? build up one that includes "<gamedir>\classes;"
     if (!classpath)
         {
-        classpath = q2strcpy5(vm_args.classpath, path_separator, javalink_gameDirName, file_separator, "classes");
+        classpath = q2strcpy5(pVM11Args->classpath, path_separator, javalink_gameDirName, file_separator, "classes");
 //      classpath = q2strcat(classpath, path_separator);
         }
 
     // set the new classpath
-    vm_args.classpath = classpath;
-    javalink_debug("final classpath=%s\n", vm_args.classpath);
+    pVM11Args->classpath = classpath;
+    javalink_debug("[C   ] final classpath=%s\n", pVM11Args->classpath);
 
     // link to the properties we found in readProperties() (if any)
-    vm_args.properties = properties;
+    pVM11Args->properties = properties;
 
     // dump VM properties to debuglog
     for (prop = properties; *prop; prop++)
-        javalink_debug("System Property [%s]\n", *prop);
+        javalink_debug("[C   ] System Property [%s]\n", *prop);
 
     // hook up the output function (this could be omitted with no problem)
-    vm_args.vfprintf = &jvfprintf;
+    pVM11Args->vfprintf = &jvfprintf;
 
 
 #ifdef KAFFE
-    vm_args.libraryhome = getenv("LD_LIBRARY_PATH");
+    pVM11Args->libraryhome = getenv("LD_LIBRARY_PATH");
 #endif
 
     //
     // Let's kick the tires and light the fires!  
     // Come on big daddy..bring that bad boy on!
     //
-    javalink_debug("createVM_JNI_11() about to create vm\n");
+    javalink_debug("[C   ] createVM_JNI_11() about to create vm\n");
 
-    rc = CreateJavaVM(java_vm, (void **)&java_env, &vm_args);
+    rc = CreateJavaVM(java_vm, (void **)&java_env, pVM11Args);
 
     if (rc)
-        javalink_debug("createVM_JNI_11 failed\n");
+        javalink_debug("[C   ] createVM_JNI_11 failed\n");
 
     // clean up
     q2strfree(classpath);
+    q2java_gi.TagFree(pVM11Args);
 
     return rc;
     }
@@ -541,12 +546,6 @@ static void rshift(char *s, int n)
 
 
 
-// This is weird..I'd like to put these variables inside the next function,
-// but it causes an Access Violation if JDK 1.1.x is used
-#ifdef JDK1_2
-JavaVMOption *options;
-JavaVMInitArgs vm12_args;
-#endif
 
 /**
  * Try to initialize VM using JNI 1.2
@@ -563,26 +562,37 @@ static jint createVM_JNI_12(char **properties, JavaVM **java_vm)
     int optionCount;
     int i;
     jint rc;
+    int argLength;
+    JavaVMOption *options;
+    JavaVMInitArgs *pVM12Args;
 
-    javalink_debug("createVM_JNI_12() starting\n");
+    javalink_debug("[C   ] createVM_JNI_12() starting\n");
 
-    // initialize the vm12_args structure
-    memset(&vm12_args, 0, sizeof(vm12_args));
-    vm12_args.version = JNI_VERSION_1_2;
+    // allocate and initialize a VM args structure, but make sure 
+    // it's big enough to satisfy a JDK 1.1 VM
+    argLength = sizeof(JDK1_1InitArgs);
+    if (sizeof(JavaVMInitArgs) > argLength)
+        argLength = sizeof(JavaVMInitArgs);
+    argLength += 256; // ugly hack - pad for VM's that extend the structure like JInsight's JVM
+    pVM12Args = q2java_gi.TagMalloc(argLength, TAG_GAME);
+    memset(pVM12Args, 0, argLength);
+    pVM12Args->version = JNI_VERSION_1_2;
 
-    if ((GetDefaultJavaVMInitArgs(&vm12_args) < 0) || (vm12_args.version != JNI_VERSION_1_2))
+    if ((GetDefaultJavaVMInitArgs(pVM12Args) < 0) || (pVM12Args->version != JNI_VERSION_1_2))
         {
-        javalink_debug("createVM_JNI_12 init args returned %x\n", vm12_args.version);
+        javalink_debug("[C   ] createVM_JNI_12 init args returned %x\n", pVM12Args->version);
+        q2java_gi.TagFree(pVM12Args);
         return -1;           
         }
 
-    javalink_debug("createVM_JNI_12() got default init args\n");
+    javalink_debug("[C   ] createVM_JNI_12() got default init args\n");
 
     // allocate enough JavaVMOptions to hold the properties, plus a few extras
     options = q2java_gi.TagMalloc((getPropertyCount(properties) + 5) * sizeof(JavaVMOption), TAG_GAME);
     if (!options)
         {
-        javalink_debug("Couldn't allocate memory to hold JDK 1.2 options\n");
+        javalink_debug("[C   ] Couldn't allocate memory to hold JDK 1.2 options\n");
+        q2java_gi.TagFree(pVM12Args);
         return -1;
         }
 
@@ -617,7 +627,7 @@ static jint createVM_JNI_12(char **properties, JavaVM **java_vm)
             foundPath = 1;
         }
 
-    javalink_debug("createVM_JNI_12() copied properties\n");
+    javalink_debug("[C   ] createVM_JNI_12() copied properties\n");
 
     // if the properties file didn't have a classpath, make one
     if (!foundPath)
@@ -664,25 +674,26 @@ static jint createVM_JNI_12(char **properties, JavaVM **java_vm)
     options[optionCount].optionString = "vprintf";
     options[optionCount++].extraInfo = &jvfprintf;
     
-    vm12_args.options = options;
-    vm12_args.nOptions = optionCount;
-    vm12_args.ignoreUnrecognized = JNI_TRUE;
+    pVM12Args->options = options;
+    pVM12Args->nOptions = optionCount;
+    pVM12Args->ignoreUnrecognized = JNI_TRUE;
    
     // dump VM options to debuglog
     for (i = 0; i < optionCount; i++)
-        javalink_debug("VM Option [%s]\n", options[i]);
+        javalink_debug("[C   ] VM Option [%s]\n", options[i]);
 
     //
     // Let's kick the tires and light the fires!  
     // Come on big daddy..bring that bad boy on!
     //
-    rc = CreateJavaVM(java_vm, (void **)&java_env, &vm12_args);
+    rc = CreateJavaVM(java_vm, (void **)&java_env, pVM12Args);
 
     if (rc)
-        javalink_debug("createVM_JNI_12 failed\n");
+        javalink_debug("[C   ] createVM_JNI_12 failed\n");
 
     // cleanup
     q2java_gi.TagFree(options);
+    q2java_gi.TagFree(pVM12Args);
     q2strfree(classpath);
     q2strfree(securityPolicy);
 
@@ -718,6 +729,14 @@ void javalink_property(const char *name, const char *value)
         {
         q2strfree(initialSecurity);
         initialSecurity = q2strcpy(value);
+        return;
+        }
+
+    // see if we need to act a little different for Jinsight
+    if (!(strcasecmp(name, "q2java_jinsight")))
+        {
+        q2strfree(initialSecurity);
+        q2java_jinsight = value[0] - '0';
         return;
         }
     }
@@ -768,7 +787,7 @@ void javalink_start()
 
     q2strfree(debugFileName);
     setupDebug(q2java_debugLog->string);
-    javalink_debug("javalink_start() started\n");
+    javalink_debug("[C   ] javalink_start() started\n");
 
     // see if security was overridden on the command line
     q2java_security = q2java_gi.cvar("q2java_security", initialSecurity, CVAR_NOSET);
@@ -783,7 +802,7 @@ void javalink_start()
     // look for an existing VM
     if (GetCreatedJavaVMs(&java_vm, 1, &nVMs))
         {
-        javalink_debug("javalink_start() unable to GetCreatedJavaVMs()\n");
+        javalink_debug("[C   ] javalink_start() unable to GetCreatedJavaVMs()\n");
         java_error = "Search for existing VM's failed\n";
         return;
         }
@@ -794,13 +813,13 @@ void javalink_start()
         // There is already a VM started...
         if ((*java_vm)->AttachCurrentThread(java_vm, (void **)&java_env, NULL))
             {
-            javalink_debug("javalink_start() couldn't attach to existing VM\n");
+            javalink_debug("[C   ] javalink_start() couldn't attach to existing VM\n");
             java_error = "Couldn't attach to existing VM\n";
             return;
             }
 
         vmIsOurs = 0;  // VM was created elsewhere or elsewhen.
-        javalink_debug("javalink_start() attached to existing VM\n");
+        javalink_debug("[C   ] javalink_start() attached to existing VM\n");
         }
     else
         {        
@@ -818,13 +837,13 @@ void javalink_start()
         if (jdk_version)
             {
             vmIsOurs = 1;  // I made this! (10:13)             
-            javalink_debug("javalink_start() created VM, JNI version = %d\n", jdk_version);
+            javalink_debug("[C   ] javalink_start() created VM, JNI version = %d\n", jdk_version);
             }
         else
             {
             // oh no..you did -not- shoot that green shit at me...
             java_error = "Couldn't create a Java Virtual Machine for some reason\n";
-            javalink_debug("javalink_start() unable to create new VM\n");
+            javalink_debug("[C   ] javalink_start() unable to create new VM\n");
             return;
             }
         }
@@ -872,7 +891,7 @@ void javalink_start()
 //
 void javalink_stop()
     {
-    javalink_debug("javalink_stop()\n");
+    javalink_debug("[C   ] javalink_stop()\n");
 
     // restore the initial security setting, in case
     // the java game modified the cvar.
@@ -881,7 +900,7 @@ void javalink_stop()
     // make sure there's actually a VM out there
     if (!java_env)
         {
-        javalink_debug("Can't stop Java VM, java_env pointer was null\n");
+        javalink_debug("[C   ] Can't stop Java VM, java_env pointer was null\n");
         return;
         }
 
@@ -913,12 +932,12 @@ void javalink_stop()
         (*java_env)->GetJavaVM(java_env, &java_vm);
         if ((*java_vm)->DestroyJavaVM(java_vm))
             {
-            javalink_debug("Error destroying Java VM, stupid Sun JDK is probably still broke\n");
+            javalink_debug("[C   ] Error destroying Java VM, stupid Sun JDK is probably still broke\n");
             stashVMDLL();
             }
         else
             {
-            javalink_debug("It's a miracle, the JDK is fixed! VM Destroyed\n");
+            javalink_debug("[C   ] It's a miracle, the JDK is fixed! VM Destroyed\n");
             unloadVMDLL();
             }
         }

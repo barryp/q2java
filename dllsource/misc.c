@@ -52,7 +52,7 @@ void Misc_javaInit()
     {
     jmethodID method_PlayerCmd_ctor;
 
-    javalink_debug("Misc_javaInit() starting\n");
+    javalink_debug("[C   ] Misc_javaInit() starting\n");
 
     class_Throwable = (*java_env)->FindClass(java_env, "java/lang/Throwable");
     if (!class_Throwable)
@@ -177,14 +177,18 @@ void Misc_javaInit()
         return;
         }
 
-    playerCmd = (*java_env)->NewObject(java_env, class_PlayerCmd, method_PlayerCmd_ctor);
+    playerCmd = (*java_env)->NewObject(java_env, class_PlayerCmd,method_PlayerCmd_ctor);
+#ifdef KAFFE
+    // Kaffe is a little goofy here, dies if playerCmd is a local ref
+    playerCmd = (*java_env)->NewGlobalRef(java_env, playerCmd);
+#endif 
     if (CHECK_EXCEPTION() || !playerCmd)
         {
         java_error = "Couldn't create instance of q2java.PlayerCmd\n";
         return;
         }
 
-    javalink_debug("Misc_javaInit() finished\n");
+    javalink_debug("[C   ] Misc_javaInit() finished\n");
     }
 
 
@@ -198,7 +202,11 @@ void Misc_javaDetach()
     (*java_env)->DeleteLocalRef(java_env, class_Angle3f);
     (*java_env)->DeleteLocalRef(java_env, class_PMoveResults);
     (*java_env)->DeleteLocalRef(java_env, class_TraceResults);
+#ifdef KAFFE
+    (*java_env)->DeleteGlobalRef(java_env, class_PlayerCmd);
+#else
     (*java_env)->DeleteLocalRef(java_env, class_PlayerCmd);
+#endif
     (*java_env)->DeleteLocalRef(java_env, playerCmd);
     }
 
@@ -212,6 +220,8 @@ int checkException(char *filename, int linenum)
         return 0;
 
     (*java_env)->ExceptionClear(java_env);
+
+    q2java_gi.dprintf("%s line: %d\n-----------------\n", filename, linenum);
     (*java_env)->CallVoidMethod(java_env, ex, method_Throwable_printStackTrace);
     return 1;
     }
@@ -278,7 +288,7 @@ void enableSecurity(int level)
     (*java_env)->DeleteLocalRef(java_env, object_security_manager);
     (*java_env)->DeleteLocalRef(java_env, jsGameDir);
 
-    javalink_debug("setSecurity() finished ok\n");
+    javalink_debug("[C   ] setSecurity() finished ok\n");
     }
 
 
@@ -362,6 +372,7 @@ void setPlayerCmd(jbyte msec, jbyte buttons,
     {
     (*java_env)->CallVoidMethod(java_env, playerCmd, method_PlayerCmd_set,
         msec, buttons, angle0, angle1, angle2, forward, side, up, impulse, lightlevel);
+    CHECK_EXCEPTION();
     }
 
 
@@ -385,7 +396,7 @@ char *convertJavaString(jstring jstr)
     char *result;
     int i;
     char *p;
-    
+
     jStrLen = (*java_env)->GetStringLength(java_env, jstr);
     p = result = q2java_gi.TagMalloc(jStrLen + 1, TAG_GAME);
     unicodeChars = (*java_env)->GetStringChars(java_env, jstr, NULL);

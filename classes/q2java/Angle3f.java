@@ -90,7 +90,7 @@ private void convert(float dx, float dy, float dz)
  * calculate 3 unit vectors that point forward, right, 
  * and up (?)
  */
-public void getVectors(Vector3f forward, Vector3f right, Vector3f up) 
+public final void getVectors(Vector3f forward, Vector3f right, Vector3f up) 
 	{
 	double		angle;
 	double		sr, sp, sy, cr, cp, cy;
@@ -105,10 +105,6 @@ public void getVectors(Vector3f forward, Vector3f right, Vector3f up)
 	sy = Math.sin(angle);
 	cy = Math.cos(angle);
 	
-	// Roll
-	angle = z * (Math.PI / 180.0);
-	sr = Math.sin(angle);
-	cr = Math.cos(angle);
 
 	if (forward != null)
 		{
@@ -117,18 +113,26 @@ public void getVectors(Vector3f forward, Vector3f right, Vector3f up)
 		forward.z = (float) -sp;
 		}
 		
-	if (right != null)
+	if ((right != null) || (up != null))
 		{
-		right.x = (float) (-1*sr*sp*cy+-1*cr*-sy);
-		right.y = (float) (-1*sr*sp*sy+-1*cr*cy);
-		right.z = (float) (-1*sr*cp);
-		}
+		// Roll - only needed for right and up
+		angle = z * (Math.PI / 180.0);
+		sr = Math.sin(angle);
+		cr = Math.cos(angle);
 		
-	if (up != null)
-		{
-		up.x = (float) (cr*sp*cy+-sr*-sy);
-		up.y = (float) (cr*sp*sy+-sr*cy);
-		up.z = (float) (cr*cp);
+		if (right != null)
+			{
+			right.x = (float) (cr*sy - sr*sp*cy);
+			right.y = (float) -(sr*sp*sy + cr*cy);
+			right.z = (float) -(sr*cp);
+			}
+		
+		if (up != null)
+			{
+			up.x = (float) (cr*sp*cy + sr*sy);
+			up.y = (float) (cr*sp*sy - sr*cy);
+			up.z = (float) (cr*cp);
+			}
 		}
 	}
 /**

@@ -36,7 +36,7 @@ void checkVelocity()
 	// bound velocity
 	//
 	v    = fEntity.getVelocity();
-	maxv = BaseQ2.gMaxVelocity.getFloat();
+	maxv = BaseQ2.gMaxVelocity;
 
 	if (v.x >  maxv)
 		v.x =  maxv;

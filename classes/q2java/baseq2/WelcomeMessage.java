@@ -30,16 +30,22 @@ public static String getMessage()
 	
 	sb.append(gPrefix);
 
+	// Kaffe might freak out when formatting a date, comment this
+	// try/catch block out if necessary (BP 3/27/99)
 	try
 		{
 		java.util.Date d = new java.util.Date();
-		String ds = d.toString();
+		String ds = d.toString();  
 		sb.append("\n\n");
 		sb.append(ds);
 		}
 	catch (ExceptionInInitializerError eiie)
 		{
 		eiie.getException().printStackTrace();
+		}
+	catch (Exception e)
+		{
+		e.printStackTrace();
 		}
 
 	return sb.toString();		

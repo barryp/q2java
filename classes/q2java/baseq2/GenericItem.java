@@ -75,7 +75,7 @@ public GenericItem(String[] spawnArgs) throws GameException
 protected void checkVelocity()
 	{
 	Vector3f v = fEntity.getVelocity();
-	float maxv = BaseQ2.gMaxVelocity.getFloat();
+	float maxv = BaseQ2.gMaxVelocity;
 	
 	if (v.x >  maxv)
 		v.x =  maxv;

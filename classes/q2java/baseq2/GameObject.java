@@ -41,7 +41,7 @@ public GameObject(String[] spawnArgs) throws GameException
 	this(spawnArgs, NativeEntity.ENTITY_NORMAL);
 	}
 public GameObject(String[] spawnArgs, int entityType) throws GameException
-	{	
+	{
 	fSpawnArgs = spawnArgs;
 
 	// look for common spawn arguments
@@ -61,11 +61,11 @@ public GameObject(String[] spawnArgs, int entityType) throws GameException
 		
 	String s = getSpawnArg("origin", null);
 	if (s != null)
-		fEntity.setOrigin(MiscUtil.parsePoint3f(s));
+		fEntity.setOrigin(GameUtil.parsePoint3f(s));
 
 	s = getSpawnArg("angles", null);
 	if (s != null)
-		fEntity.setAngles(MiscUtil.parseAngle3f(s));
+		fEntity.setAngles(GameUtil.parseAngle3f(s));
 
 	s = getSpawnArg("angle", null);
 	if (s != null)
@@ -95,7 +95,7 @@ public GameObject(String[] spawnArgs, int entityType) throws GameException
 public void applyGravity()
 	{
 	Vector3f v = fEntity.getVelocity();
-	float f = BaseQ2.gGravity.getFloat() * Engine.SECONDS_PER_FRAME;
+	float f = BaseQ2.gGravity * Engine.SECONDS_PER_FRAME;
 
 	// we could have used the Tuple3f scaleAdd() here too.
 	v.x += fGravity.x * f;

@@ -5,6 +5,7 @@
 #include "quake2.h"
 
 extern char *q2java_version;
+extern int q2java_jinsight;
 
 // game import and export structures
 extern game_import_t	q2java_gi;

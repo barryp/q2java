@@ -104,7 +104,7 @@ public void playerBegin()
 
 	fStartTime = (float) Game.getGameTime();	
 	fEntity.setPlayerStat(NativeEntity.STAT_HEALTH_ICON, (short) Engine.getImageIndex("i_health"));	
-	fEntity.setPlayerGravity((short)q2java.baseq2.BaseQ2.gGravity.getFloat());
+	fEntity.setPlayerGravity((short)q2java.baseq2.BaseQ2.gGravity);
 	
 	if (!fWasSaved)
 		clearSettings();

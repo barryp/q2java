@@ -61,7 +61,7 @@ static JNINativeMethod Engine_methods[] =
 
 void Engine_javaInit()
     {
-    javalink_debug("Engine_javaInit() starting\n");
+    javalink_debug("[C   ] Engine_javaInit() starting\n");
 
     class_Engine = (*java_env)->FindClass(java_env, "q2java/Engine");
     if(CHECK_EXCEPTION() || !class_Engine)
@@ -91,7 +91,7 @@ void Engine_javaInit()
         return;
         }
 
-    javalink_debug("Engine_javaInit() finished\n");
+    javalink_debug("[C   ] Engine_javaInit() finished\n");
     }
 
 
@@ -113,7 +113,7 @@ static void JNICALL Java_q2java_Engine_dprint0(JNIEnv *env, jclass cls, jstring 
 
     str = convertJavaString(js);
     q2java_gi.dprintf("%s", str); 
-    javalink_debug(str);
+    javalink_debug("%s", str);
     q2java_gi.TagFree(str);
     }
 
@@ -425,7 +425,7 @@ static void JNICALL Java_q2java_Engine_debugLog0(JNIEnv *env, jclass cls, jstrin
         return;
 
     s = (char *)((*env)->GetStringUTFChars(env, js, 0));
-    javalink_debug("%s\n", s);
+    javalink_debug("[Java] %s\n", s);
     (*env)->ReleaseStringUTFChars(env, js, s);
     }
 

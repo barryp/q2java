@@ -1,5 +1,5 @@
 #
-# Sample Properties for Q2Java 0.9 or later
+# Sample Properties for Q2Java 0.9.1 or later
 #
 # (comments begin with a '#')
 #
@@ -8,11 +8,20 @@
 # Force the DLL to use a specific VM (Win32 only)
 #
 #q2java_vmdll=c:\jdk1.1.7b\bin\javai.dll
+
+
 #
 # The newest MS Java with JNI support will load as long as you 
 # copy the q2java\classes directory to <windows>\java\classes
 # but it crashes pretty quickly
+#
 #q2java_vmdll=c:\winnt\system32\msjava.dll
+
+#
+# Example for using Jinsight
+#
+#q2java_vmdll=d:\jinsight1.1\jdk1.1.7-1.1\bin\javai_g.dll
+#q2java_jinsight=1
 
 
 # Force a specific security setting

@@ -2,12 +2,9 @@
 
 #include <string.h> // for memset()
 
+#define ENTITY_PLAYER 2
+
 static jclass interface_PlayerListener;
-static jmethodID method_player_begin;
-static jmethodID method_player_userinfoChanged;
-static jmethodID method_player_command;
-static jmethodID method_player_disconnect;
-static jmethodID method_player_think;
 
 
 void Player_javaInit()
@@ -16,17 +13,6 @@ void Player_javaInit()
     if (CHECK_EXCEPTION() || !interface_PlayerListener)
         {
         java_error = "Can't find q2java.PlayerListener interface\n";
-        return;
-        }
-
-    method_player_begin = (*java_env)->GetMethodID(java_env, interface_PlayerListener, "playerBegin", "()V");
-    method_player_userinfoChanged = (*java_env)->GetMethodID(java_env, interface_PlayerListener, "playerInfoChanged", "(Ljava/lang/String;)V");
-    method_player_command = (*java_env)->GetMethodID(java_env, interface_PlayerListener, "playerCommand", "()V");
-    method_player_disconnect = (*java_env)->GetMethodID(java_env, interface_PlayerListener, "playerDisconnect", "()V");
-    method_player_think = (*java_env)->GetMethodID(java_env, interface_PlayerListener, "playerThink", "(Lq2java/PlayerCmd;)V");
-    if (CHECK_EXCEPTION())
-        {
-        java_error = "Problem finding one or more of the player methods\n";
         return;
         }
     }
@@ -51,7 +37,7 @@ static void java_clientDisconnect(edict_t *ent)
 
     if (javaPlayer != NULL)
         {
-        (*java_env)->CallVoidMethod(java_env, javaPlayer, method_player_disconnect);    
+        (*java_env)->CallVoidMethod(java_env, javaPlayer, ent->client->method_player_disconnect);    
         CHECK_EXCEPTION();
         }
 
@@ -86,13 +72,16 @@ static int java_clientConnect(edict_t *ent, char *userinfo)
     jmethodID method_player_ctor;
     jclass class_player;
     jobject newPlayer;
+    int rc;
     int index = ent - q2java_ge.edicts;
+
+    javalink_debug("[C   ] clientConnect() starting ent = %d\n", (int)ent);
 
     // noticed in Q2 3.17 that you can connect multiple times
     // without disconnect automatically being called, try to catch that.
     if (ent->inuse)
         {
-        javalink_debug("player.c::java_clientConnect() caught connection to entity already in use\n");
+        javalink_debug("[C   ] java_clientConnect() caught connection to entity already in use\n");
         java_clientDisconnect(ent);
         }
 
@@ -109,29 +98,31 @@ static int java_clientConnect(edict_t *ent, char *userinfo)
         return 0;
         }
 
-    method_player_ctor = (*java_env)->GetMethodID(java_env, class_player, "<init>", "()V");
+    method_player_ctor = (*java_env)->GetMethodID(java_env, class_player, "<init>", "(II)V");
     if (CHECK_EXCEPTION())
         {
-        java_error = "Couldn't get a no-arg constructor for the specified Player class\n";
+        java_error = "Couldn't get an (int, int) constructor  for the specified Player class\n";
         return 0;
         }
 
-    // create a new Java player object
-    newPlayer = (*java_env)->AllocObject(java_env, class_player);
-
-    // set the fEntityIndex field
-    Entity_set_fEntityIndex(newPlayer, index);
 
     // store a copy of the userinfo in the gclient_t structure
     if (userinfo)
         ent->client->playerInfo = (*java_env)->NewStringUTF(java_env, userinfo);
+    if (CHECK_EXCEPTION())
+        {
+        java_error = "Couldn't create playerInfo string\n";
+        return 0;
+        }
 
-    // call the constructor to finish initialization
-    (*java_env)->CallVoidMethod(java_env, newPlayer, method_player_ctor);
+    // create a new Java player object
+    newPlayer = (*java_env)->NewObject(java_env, class_player, method_player_ctor, ENTITY_PLAYER, index);
+    rc = CHECK_EXCEPTION();
 
     // if an exception was thrown, reject the connection
-    if (CHECK_EXCEPTION() || Game_playerConnect(newPlayer))
+    if (rc || Game_playerConnect(newPlayer))
         {
+        javalink_debug("[C   ] clientConnect() rejecting connection\n");
         // make the Java Entity forget about itself
         Entity_set_fEntityIndex(newPlayer, -1);
 
@@ -160,10 +151,14 @@ static int java_clientConnect(edict_t *ent, char *userinfo)
     ent->inuse = 1;
     ent->s.number = index;
 
-    // drop local references
-    (*java_env)->DeleteLocalRef(java_env, newPlayer);
-    (*java_env)->DeleteLocalRef(java_env, class_player);
+    // drop local references..this tends to crash with Jinsight
+    if (!q2java_jinsight)
+        {
+        (*java_env)->DeleteLocalRef(java_env, newPlayer);
+        (*java_env)->DeleteLocalRef(java_env, class_player);
+        }
 
+    javalink_debug("[C   ] clientConnect() finished ent = %d\n", (int)ent);
     return 1;
     }
 
@@ -171,11 +166,16 @@ static int java_clientConnect(edict_t *ent, char *userinfo)
 static void java_clientBegin(edict_t *ent)
     {
     jobject javaPlayer = ent->client->listener;
+
+    javalink_debug("[C   ] java_clientBegin() starting, javaPlayer = %d\n", (int)javaPlayer);
+   
     if (javaPlayer != NULL)
         {
-        (*java_env)->CallVoidMethod(java_env, javaPlayer, method_player_begin);   
+        (*java_env)->CallVoidMethod(java_env, javaPlayer, ent->client->method_player_begin);
         CHECK_EXCEPTION();
         }
+
+    javalink_debug("[C   ] java_clientBegin() finished\n");
     }
 
 static void java_clientUserinfoChanged(edict_t *ent, char *userinfo)
@@ -195,7 +195,7 @@ static void java_clientUserinfoChanged(edict_t *ent, char *userinfo)
     // notify the listener that the userinfo changed
     if (client->listener != NULL)
         {
-        (*java_env)->CallVoidMethod(java_env, client->listener, method_player_userinfoChanged, client->playerInfo); 
+        (*java_env)->CallVoidMethod(java_env, client->listener, client->method_player_userinfoChanged, client->playerInfo); 
         CHECK_EXCEPTION();
         }
     }
@@ -206,7 +206,7 @@ static void java_clientCommand(edict_t *ent)
 
     if (javaPlayer != NULL)
         {
-        (*java_env)->CallVoidMethod(java_env, javaPlayer, method_player_command);   
+        (*java_env)->CallVoidMethod(java_env, javaPlayer, ent->client->method_player_command);   
         CHECK_EXCEPTION();
         }
     }
@@ -224,8 +224,7 @@ static void java_clientThink(edict_t *ent, usercmd_t *cmd)
             cmd->forwardmove, cmd->sidemove, cmd->upmove, 
             cmd->impulse, cmd->lightlevel); 
 
-        (*java_env)->CallVoidMethod(java_env, javaPlayer, method_player_think, playerCmd);
-
+        (*java_env)->CallVoidMethod(java_env, javaPlayer, ent->client->method_player_think, playerCmd);
         CHECK_EXCEPTION();
         }
     }       

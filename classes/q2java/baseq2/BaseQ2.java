@@ -29,28 +29,45 @@ public class BaseQ2 extends q2java.core.Gamelet
 	protected static CorpseQueue gCorpseQueue;
 
 	// various CVars
-	public static CVar gRunRoll;
-	public static CVar gRunPitch;	
-	public static CVar gBobUp;
-	public static CVar gBobRoll;	
-	public static CVar gBobPitch;	
-	public static CVar gRollAngle;
-	public static CVar gRollSpeed;
-	public static CVar gGravity;
-	public static CVar gMaxVelocity;
+	private static CVar gRunRollCVar;
+	private static CVar gRunPitchCVar;	
+	private static CVar gBobUpCVar;
+	private static CVar gBobRollCVar;	
+	private static CVar gBobPitchCVar;	
+	private static CVar gRollAngleCVar;
+	private static CVar gRollSpeedCVar;
+	private static CVar gGravityCVar;
+	private static CVar gMaxVelocityCVar;
+
+	// CVars only this Gamelet itself needs to worry about
+	private static CVar gFragLimitCVar;
+	private static CVar gTimeLimitCVar;
+	private static CVar gDMFlagsCVar;
+	private static CVar gCheatsCVar;
 	
+	// Mirrored CVars
+	public static float gRunRoll;
+	public static float gRunPitch;	
+	public static float gBobUp;
+	public static float gBobRoll;	
+	public static float gBobPitch;	
+	public static float gRollAngle;
+	public static float gRollSpeed;
+	public static float gGravity;
+	public static float gMaxVelocity;	
+
+	// Mirrored CVars only the BaseQ2 gamelet looks at
+	private static int   gFragLimit;
+	private static float gTimeLimit;
+	private static int   gDMFlags;
+	private static float gCheats;
+	
+
 	// Game options
 	public static boolean gIsDeathmatch;
 	private static boolean gIsCheating;
 	public static int gSkillLevel; // this probably isn't necessary since this is a DM-only mod, but wtf.
 	
-	// CVars only the Game object itself needs to worry about
-	private static CVar gFragLimit;
-	private static CVar gTimeLimit;
-	private static CVar gDMFlags;
-	private static CVar gCheats;
-	
-
 	// track level changes	
 	private static float gLevelStartTime;
 	private static boolean gInIntermission;
@@ -179,7 +196,7 @@ public void gameStatusChanged(GameStatusEvent e)
 	else
 		gSpawnpoint = spawnPoint;
 	
-	gIsCheating = (gCheats.getFloat() == 1.0);
+	gIsCheating = (gCheats == 1.0);
 
 	gCorpseQueue = new CorpseQueue();
 	
@@ -314,31 +331,32 @@ public static String getSpawnpoint()
  */
 public static String getVersion() 
 	{
-	return "Q2Java Base Game, v0.9.0";
+	return "Q2Java Base Game, v0.9.1";
 	}
 /**
  * Initialize this gamelet.
  */
 public void init() 
 	{
-	Game.addFrameListener(this, 0, 0);
+	Game.addFrameListener(this, Game.FRAME_BEGINNING, 0, 10.0F);
+	Game.addFrameListener(this, Game.FRAME_MIDDLE, 0, 0);
 	Game.addGameStatusListener(this);
 	
 	// load cvars
-	gRunRoll = new CVar("run_roll", "0.005", 0);	
-	gRunPitch = new CVar("run_pitch", "0.002", 0);	
-	gBobUp = new CVar("bob_up", "0.005", 0);	
-	gBobRoll = new CVar("bob_roll", "0.002", 0);	
-	gBobPitch = new CVar("bob_pitch", "0.002", 0);	
-	gRollAngle = new CVar("sv_rollangle", "2", 0);
-	gRollSpeed = new CVar("sv_rollspeed", "200", 0);	
-	gGravity = new CVar("sv_gravity", "800", 0);	
-	gMaxVelocity = new CVar("sv_maxvelocity", "2000", 0);
+	gRunRollCVar = new CVar("run_roll", "0.005", 0);	
+	gRunPitchCVar = new CVar("run_pitch", "0.002", 0);	
+	gBobUpCVar = new CVar("bob_up", "0.005", 0);	
+	gBobRollCVar = new CVar("bob_roll", "0.002", 0);	
+	gBobPitchCVar = new CVar("bob_pitch", "0.002", 0);	
+	gRollAngleCVar = new CVar("sv_rollangle", "2", 0);
+	gRollSpeedCVar = new CVar("sv_rollspeed", "200", 0);	
+	gGravityCVar = new CVar("sv_gravity", "800", 0);	
+	gMaxVelocityCVar = new CVar("sv_maxvelocity", "2000", 0);
 	
-	gFragLimit = new CVar("fraglimit", "0", CVar.CVAR_SERVERINFO);
-	gTimeLimit = new CVar("timelimit", "0", CVar.CVAR_SERVERINFO);
-	gDMFlags = new CVar("dmflags", "0", CVar.CVAR_SERVERINFO);
-	gCheats = new CVar("cheats", "0", CVar.CVAR_LATCH);
+	gFragLimitCVar = new CVar("fraglimit", "0", CVar.CVAR_SERVERINFO);
+	gTimeLimitCVar = new CVar("timelimit", "0", CVar.CVAR_SERVERINFO);
+	gDMFlagsCVar = new CVar("dmflags", "0", CVar.CVAR_SERVERINFO);
+	gCheatsCVar = new CVar("cheats", "0", CVar.CVAR_LATCH);
 	
 	gIsDeathmatch = (new CVar("deathmatch", "0", CVar.CVAR_LATCH)).getFloat() == 1.0;
 	gSkillLevel = (int) ((new CVar("skill", "1", CVar.CVAR_LATCH)).getFloat());		
@@ -361,24 +379,47 @@ public static boolean isCheating()
  */
 public static boolean isDMFlagSet(int flag) 
 	{
-	return (((int)gDMFlags.getFloat()) & flag) != 0;
+	return (gDMFlags & flag) != 0;
 	}
 /**
  * Called by the DLL when the DLL's RunFrame() function is called.
  */
 public void runFrame(int phase)
-	{		
-	if (gInIntermission && (Game.getGameTime() > gIntermissionEndTime))
+	{
+	switch (phase)
 		{
-		  if (gChangeMapNow || (!isDMFlagSet(DF_SAME_LEVEL)))
-			Engine.addCommandString("gamemap \"" + gNextMap + "\"\n");
-		else
-			Engine.addCommandString("gamemap \"" + gCurrentMap + "\"\n");
-		return;
-		}
+		case Game.FRAME_BEGINNING:
+			// mirror various CVars
+			gRunRoll	= gRunRollCVar.getFloat();
+			gRunPitch	= gRunPitchCVar.getFloat();	
+			gBobUp		= gBobUpCVar.getFloat();
+			gBobRoll	= gBobRollCVar.getFloat();	
+			gBobPitch	= gBobPitchCVar.getFloat();	
+			gRollAngle	= gRollAngleCVar.getFloat();
+			gRollSpeed	= gRollSpeedCVar.getFloat();
+			gGravity	= gGravityCVar.getFloat();
+			gMaxVelocity= gMaxVelocityCVar.getFloat();
 
-	if (!gInIntermission && timeToQuit())
-		startIntermission();
+			gFragLimit	= (int) gFragLimitCVar.getFloat();
+			gTimeLimit	= gTimeLimitCVar.getFloat();
+			gDMFlags	= (int) gDMFlagsCVar.getFloat();
+			gCheats		= gCheatsCVar.getFloat();			
+			break;
+			
+		case Game.FRAME_MIDDLE:
+			if (gInIntermission && (Game.getGameTime() > gIntermissionEndTime))
+				{
+				if (gChangeMapNow || (!isDMFlagSet(DF_SAME_LEVEL)))
+					Engine.addCommandString("gamemap \"" + gNextMap + "\"\n");
+				else
+					Engine.addCommandString("gamemap \"" + gCurrentMap + "\"\n");
+				return;
+				}
+
+			if (!gInIntermission && timeToQuit())
+				startIntermission();
+			break;
+		}
 	}
 /**
  * Set what the next map will be.
@@ -608,23 +649,21 @@ protected static boolean timeToQuit()
 	if (gChangeMapNow)
 		return true;
 		
-	float timeLimit = gTimeLimit.getFloat();
 
-	if ((timeLimit > 0) && (Game.getGameTime() > (gLevelStartTime + (timeLimit * 60))))
+	if ((gTimeLimit > 0) && (Game.getGameTime() > (gLevelStartTime + (gTimeLimit * 60))))
 		{
 		Game.localecast("q2java.baseq2.Messages", "timelimit",  Engine.PRINT_HIGH);
 		return true;
 		}
 		
-	int fragLimit = (int) gFragLimit.getFloat();
-	if (fragLimit < 1)
+	if (gFragLimit < 1)
 		return false;
 		
 	Enumeration enum = Player.enumeratePlayers();
 	while (enum.hasMoreElements())
 		{
 		Player p = (Player) enum.nextElement();
-		if (p.getScore() > fragLimit)
+		if (p.getScore() > gFragLimit)
 			{
 			Game.localecast("q2java.baseq2.Messages", "fraglimit", Engine.PRINT_HIGH);
 			return true;
@@ -638,7 +677,7 @@ protected static boolean timeToQuit()
  */
 public void unload() 
 	{
-	Game.removeFrameListener(this);
+	Game.removeFrameListener(this, Game.FRAME_BEGINNING + Game.FRAME_MIDDLE);
 	Game.removeGameStatusListener(this);
 	}
 }

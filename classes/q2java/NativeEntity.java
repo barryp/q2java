@@ -270,7 +270,7 @@ public class NativeEntity
  */
 public NativeEntity () throws GameException
 	{
-	this(ENTITY_NORMAL);
+	this(ENTITY_NORMAL, 0);
 	}
 /**
  * Create a NativeEntity, which corresponds 
@@ -282,7 +282,21 @@ public NativeEntity () throws GameException
  */
 public NativeEntity(int entType) throws GameException
 	{
-	if (fEntityIndex == 0) // players will already have this set to something > 0
+	this(entType, 0);
+	}
+/**
+ * Create a NativeEntity, which corresponds 
+ * to a single Quake2 edict_t structure.
+ *
+ * @param entType One of the ENTITY_* constants
+ *
+ * @exception q2java.GameException when there are no more entities available.
+ */
+private NativeEntity(int entType, int entIndex) throws GameException
+	{
+	if (entIndex != 0)
+		fEntityIndex = entIndex;
+	else
 		{
 		fEntityIndex = allocateEntity(entType);
 		if (fEntityIndex < 0)

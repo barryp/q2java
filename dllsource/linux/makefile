@@ -8,7 +8,7 @@
 # Probably requires GNU make
 #
 
-JDK_HOME=/usr/local/java/jdk117_v1a/
+JDK_HOME=/usr/local/java/jdk117_v1a
 
 ARCH=i386
 CC=gcc

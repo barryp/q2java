@@ -161,7 +161,7 @@ void Entity_arrayInit()
     cvar_t *cvar_maxentities;
     int i;
 
-    javalink_debug("Entity_arrayInit() start\n");
+    javalink_debug("[C   ] Entity_arrayInit() start\n");
 
     cvar_maxentities = q2java_gi.cvar("maxentities", "1024", CVAR_LATCH);
     q2java_ge.max_edicts = (int)(cvar_maxentities->value);
@@ -176,7 +176,7 @@ void Entity_arrayInit()
     (*java_env)->DeleteLocalRef(java_env, ja);
 
     // make a C array for client info 
-    javalink_debug("Creating client array\n");
+    javalink_debug("[C   ] Creating client array\n");
     cvar_maxclients = q2java_gi.cvar ("maxclients", "4", CVAR_SERVERINFO | CVAR_LATCH);
     global_maxClients = (int) (cvar_maxclients->value);
     global_clients = q2java_gi.TagMalloc(global_maxClients * sizeof(gclient_t), TAG_GAME);
@@ -186,17 +186,17 @@ void Entity_arrayInit()
     CHECK_EXCEPTION();
 
     // link the two C arrays together
-    javalink_debug("Linking C arrays\n");
+    javalink_debug("[C   ] Linking C arrays\n");
     for (i = 0; i < global_maxClients; i++)
         q2java_ge.edicts[i+1].client = global_clients + i;
 
     // note in C and Java how many entities are used so far
-    javalink_debug("setting counters\n");
+    javalink_debug("[C   ] setting counters\n");
     q2java_ge.num_edicts = global_maxClients + 1; 
     (*java_env)->SetStaticIntField(java_env, class_NativeEntity, field_NativeEntity_gNumEntities, q2java_ge.num_edicts);
     CHECK_EXCEPTION();
 
-    javalink_debug("Entity_arrayInit() finished\n");
+    javalink_debug("[C   ] Entity_arrayInit() finished\n");
     }
 
 
@@ -207,11 +207,16 @@ void Entity_arrayReset()
     jobjectArray ja;
     jobject jobj;
     jstring jstr;
+    jmethodID method_begin;
+    jmethodID method_userinfoChanged;
+    jmethodID method_command;
+    jmethodID method_disconnect;
+    jmethodID method_think;    
     int inuse;
     int i;
     float fov;
 
-    javalink_debug("Clearing existing arrays\n");
+    javalink_debug("[C   ] Clearing existing arrays\n");
 
     // get a local reference to the Java array
     ja = (*java_env)->GetStaticObjectField(java_env, class_NativeEntity, field_NativeEntity_gEntityArray);
@@ -224,19 +229,38 @@ void Entity_arrayReset()
     // (leave java objects alone)
     for (i = 0; i < global_maxClients; i++)
         {
-        inuse = q2java_ge.edicts[i+1].inuse;
+        // save handles to player-related Java objects
         jobj = q2java_ge.edicts[i+1].client->listener;
         jstr = q2java_ge.edicts[i+1].client->playerInfo;
+        method_begin = q2java_ge.edicts[i+1].client->method_player_begin;
+        method_userinfoChanged = q2java_ge.edicts[i+1].client->method_player_userinfoChanged;
+        method_command = q2java_ge.edicts[i+1].client->method_player_command;
+        method_disconnect = q2java_ge.edicts[i+1].client->method_player_disconnect;
+        method_think = q2java_ge.edicts[i+1].client->method_player_think;
+
+        // save some key info
+        inuse = q2java_ge.edicts[i+1].inuse;
         fov = q2java_ge.edicts[i+1].client->ps.fov;
 
+        // clear the structures
         memset(q2java_ge.edicts + i + 1, 0, sizeof(q2java_ge.edicts[0]));
         memset(global_clients + i, 0, sizeof(global_clients[0]));
 
+        // hook the entity back up to the client structure
         q2java_ge.edicts[i+1].client = global_clients + i;
+
+        // restore key info
         q2java_ge.edicts[i+1].inuse = inuse;
+        q2java_ge.edicts[i+1].client->ps.fov = fov;
+
+        // restore Java-related stuff
+        q2java_ge.edicts[i+1].client->method_player_begin = method_begin;
+        q2java_ge.edicts[i+1].client->method_player_userinfoChanged = method_userinfoChanged;
+        q2java_ge.edicts[i+1].client->method_player_command = method_command;
+        q2java_ge.edicts[i+1].client->method_player_disconnect = method_disconnect;
+        q2java_ge.edicts[i+1].client->method_player_think = method_think;
         q2java_ge.edicts[i+1].client->listener = jobj;
         q2java_ge.edicts[i+1].client->playerInfo = jstr;
-        q2java_ge.edicts[i+1].client->ps.fov = fov;
         }
 
     // clear all other non-player entities
@@ -1046,7 +1070,10 @@ static void JNICALL Java_q2java_NativeEntity_centerprint0(JNIEnv *env, jclass cl
         return;
 
     if (js == NULL)
+        {
+        javalink_debug("[C   ] centerprint0() called with null string\n");
         return;
+        }
 
     ent = q2java_ge.edicts + index;
     
@@ -1057,10 +1084,8 @@ static void JNICALL Java_q2java_NativeEntity_centerprint0(JNIEnv *env, jclass cl
     if (!ent->inuse)
         return;
 
-//    str = (*env)->GetStringUTFChars(env, js, 0);
     str = convertJavaString(js);
     q2java_gi.centerprintf(ent, "%s", str);
-//    (*env)->ReleaseStringUTFChars(env, js, str);
     q2java_gi.TagFree(str);
     }
 
@@ -1162,9 +1187,24 @@ static void JNICALL Java_q2java_NativeEntity_setPlayerListener0(JNIEnv *env, jcl
         (*env)->DeleteGlobalRef(env, client->listener);
 
     if (obj == NULL)
+        {
         client->listener = NULL;
+        client->method_player_begin = NULL;
+        client->method_player_userinfoChanged = NULL;
+        client->method_player_command = NULL;
+        client->method_player_disconnect = NULL;
+        client->method_player_think = NULL;
+        }
     else
+        {
+        jclass cls = (*env)->GetObjectClass(env, obj);
         client->listener  = (*env)->NewGlobalRef(env, obj);
+        client->method_player_begin = (*env)->GetMethodID(env, cls, "playerBegin", "()V");
+        client->method_player_userinfoChanged = (*env)->GetMethodID(env, cls, "playerInfoChanged", "(Ljava/lang/String;)V");
+        client->method_player_command = (*env)->GetMethodID(env, cls, "playerCommand", "()V");
+        client->method_player_disconnect = (*env)->GetMethodID(env, cls, "playerDisconnect", "()V");
+        client->method_player_think = (*env)->GetMethodID(env, cls, "playerThink", "(Lq2java/PlayerCmd;)V");
+        }
     }
 
 

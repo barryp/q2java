@@ -486,40 +486,6 @@ public static float nearestPlayerDistance(GenericSpawnpoint ent)
 	return (float) Math.sqrt(result);
 	}
 /**
- * This method was created by a SmartGuide.
- * @return javax.vecmath.Tuple3f
- * @param s java.lang.String
- */
-public static Angle3f parseAngle3f(String s) 
-	{
-	StringTokenizer st = new StringTokenizer(s, "(, )");
-	if (st.countTokens() != 3)
-		throw new NumberFormatException("Not a valid format for Angle3f");
-
-	float x = Float.valueOf(st.nextToken()).floatValue();
-	float y = Float.valueOf(st.nextToken()).floatValue();
-	float z = Float.valueOf(st.nextToken()).floatValue();
-	
-	return new Angle3f(x, y, z);
-	}
-/**
- * This method was created by a SmartGuide.
- * @return javax.vecmath.Tuple3f
- * @param s java.lang.String
- */
-public static Point3f parsePoint3f(String s) 
-	{
-	StringTokenizer st = new StringTokenizer(s, "(, )");
-	if (st.countTokens() != 3)
-		throw new NumberFormatException("Not a valid format for Point3f");
-
-	float x = Float.valueOf(st.nextToken()).floatValue();
-	float y = Float.valueOf(st.nextToken()).floatValue();
-	float z = Float.valueOf(st.nextToken()).floatValue();
-	
-	return new Point3f(x, y, z);
-	}
-/**
  * Inflict damage on all Players within a certain radius of the inflictor.
  * This is different from the stock DLL which inflicts damage on all entities, not just players.
  * @param inflictor q2jgame.GameEntity
@@ -571,18 +537,5 @@ public static void radiusDamage(GameObject inflictor, GameObject attacker, float
 	Q2Recycler.put(zeroVec);
 	Q2Recycler.put(v);
 	Q2Recycler.put(d);
-	}
-/**
- * Sends a command to the clients console
- * @author Peter Donald 24/1/99  
- */
-public static void stuffCommand(NativeEntity ent, String command)
-	{
-	if( ent.isPlayer() && !ent.isBot() )
-	    {
-	    Engine.writeByte( Engine.SVC_STUFFTEXT );
-	    Engine.writeString(command);
-	    Engine.unicast(ent, true);	  
-	    }	
 	}
 }

@@ -25,11 +25,11 @@ public GenericSpawnpoint(String[] spawnArgs) throws GameException
 	
 	String s = GameUtil.getSpawnArg(spawnArgs, "origin", null);
 	if (s != null)
-		fOrigin = MiscUtil.parsePoint3f(s);
+		fOrigin = GameUtil.parsePoint3f(s);
 
 	s = GameUtil.getSpawnArg(spawnArgs, "angles", null);
 	if (s != null)
-		fAngles = MiscUtil.parseAngle3f(s);
+		fAngles = GameUtil.parseAngle3f(s);
 
 	s = GameUtil.getSpawnArg(spawnArgs, "angle", null);
 	if (s != null)

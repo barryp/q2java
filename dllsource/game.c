@@ -41,7 +41,7 @@ void Game_javaInit()
     levelFrameCounter = 0;
     levelTickCounter = 0;
 #endif
-    javalink_debug("Game_javaInit() started\n");
+    javalink_debug("[C   ] Game_javaInit() started\n");
 
     interface_GameListener = (*java_env)->FindClass(java_env, "q2java/GameListener");
     if (CHECK_EXCEPTION() || !interface_GameListener)
@@ -103,7 +103,7 @@ void Game_javaInit()
         return;
         }
 
-    javalink_debug("Game_javaInit() finished\n");
+    javalink_debug("[C   ] Game_javaInit() finished\n");
     }
 
 
@@ -135,9 +135,13 @@ int Game_playerConnect(jobject ent)
 
 static void java_init(void)
     {
+    javalink_debug("[C   ] Game_java_init() started\n");
+
     Entity_arrayInit();
     (*java_env)->CallVoidMethod(java_env, object_Game, method_GameListener_init);
     CHECK_EXCEPTION();
+
+    javalink_debug("[C   ] Game_java_init() finished\n");
     }
 
 
@@ -145,6 +149,8 @@ static void java_shutdown(void)
     {
     int i;
     gclient_t *client;
+
+    javalink_debug("[C   ] Game_java_shutdown() started\n");
 
     (*java_env)->CallVoidMethod(java_env, object_Game, method_GameListener_shutdown);
     CHECK_EXCEPTION();
@@ -170,6 +176,8 @@ static void java_shutdown(void)
 
     javalink_stop();
     q2java_gi.FreeTags (TAG_GAME);
+
+    javalink_debug("[C   ] Game_java_shutdown() finished\n");
     }
 
 
@@ -178,6 +186,8 @@ static void java_startLevel(char *mapname, char *entString, char *spawnpoint)
     jstring jmapname;
     jstring jentString;
     jstring jspawnpoint;
+
+    javalink_debug("[C   ] Game_java_startLevel() started\n");
 
     Entity_arrayReset();
 
@@ -190,9 +200,11 @@ static void java_startLevel(char *mapname, char *entString, char *spawnpoint)
     (*java_env)->CallVoidMethod(java_env, object_Game, method_GameListener_startLevel, jmapname, jentString, jspawnpoint);
     CHECK_EXCEPTION();
 
+    // IBM's JInsight 1.1a JVM crashes here if all three DeleteLocalRef 
+    // calls are made.  Comment out any one of the three and JInsight won't crash.
     (*java_env)->DeleteLocalRef(java_env, jmapname);
     (*java_env)->DeleteLocalRef(java_env, jentString);
-    (*java_env)->DeleteLocalRef(java_env, jspawnpoint);
+    //(*java_env)->DeleteLocalRef(java_env, jspawnpoint);
 
     global_frameCount = 0;
 
@@ -200,6 +212,8 @@ static void java_startLevel(char *mapname, char *entString, char *spawnpoint)
     levelTickCounter = 0;
     levelFrameCounter = 0;
 #endif
+
+    javalink_debug("[C   ] Game_java_startLevel() finished\n");
     }
 
 
@@ -207,11 +221,15 @@ static void java_writeGame(char *filename, int autosave)
     {
     jstring jfilename;
 
+    javalink_debug("[C   ] Game_java_writeGame() started\n");
+
     jfilename = (*java_env)->NewStringUTF(java_env, filename);
     (*java_env)->CallVoidMethod(java_env, object_Game, method_GameListener_writeGame, jfilename, autosave);
     CHECK_EXCEPTION();
 
     (*java_env)->DeleteLocalRef(java_env, jfilename);
+
+    javalink_debug("[C   ] Game_java_writeGame() finished\n");
     }
 
 
@@ -219,11 +237,15 @@ static void java_readGame(char *filename)
     {
     jstring jfilename;
 
+    javalink_debug("[C   ] Game_java_readGame() started\n");
+
     jfilename = (*java_env)->NewStringUTF(java_env, filename);
     (*java_env)->CallVoidMethod(java_env, object_Game, method_GameListener_readGame, jfilename);
     CHECK_EXCEPTION();
 
     (*java_env)->DeleteLocalRef(java_env, jfilename);
+
+    javalink_debug("Game_java_readGame() finished\n");
     }
 
 
@@ -231,11 +253,15 @@ static void java_writeLevel(char *filename)
     {
     jstring jfilename;
 
+    javalink_debug("[C   ] Game_java_writeLevel() started\n");
+
     jfilename = (*java_env)->NewStringUTF(java_env, filename);
     (*java_env)->CallVoidMethod(java_env, object_Game, method_GameListener_writeLevel, jfilename);
     CHECK_EXCEPTION();
 
     (*java_env)->DeleteLocalRef(java_env, jfilename);   
+
+    javalink_debug("[C   ] Game_java_writeLevel() finished\n");
     }
 
 
@@ -243,17 +269,23 @@ static void java_readLevel(char *filename)
     {
     jstring jfilename;
 
+    javalink_debug("[C   ] Game_java_readLevel() started\n");
+
     jfilename = (*java_env)->NewStringUTF(java_env, filename);
     (*java_env)->CallVoidMethod(java_env, object_Game, method_GameListener_readLevel, jfilename);
     CHECK_EXCEPTION();
 
     (*java_env)->DeleteLocalRef(java_env, jfilename);
+
+    javalink_debug("[C   ] Game_java_readLevel() finished\n");
     }
+
 
 static void java_runFrame(void)
     {
 #ifdef _WIN32
     LARGE_INTEGER tick, tock;
+
     if (!QueryPerformanceCounter(&tick))
         tick.QuadPart = clock();
 #endif

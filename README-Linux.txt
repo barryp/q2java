@@ -35,13 +35,33 @@ that Linux users should be interested in include:
 
         A shell script for invoking the Kaffe version of gamei386.so.
 
-        Unfortunately, as of this writing, the Kaffe version only works in
-        dedicated mode, must be started with security level 0, seems to 
-        redirect the Q2 console output into never-never land, and quits
-        when players try to connect.  Aside from those minor glitches, it
-        seems to work somewhat :)  Who knows though, Transvirtual is still
-        working on Kaffe, and someday it might start working better.
+        As of version 0.9.1, Q2Java and Kaffe are getting along somewhat - 
+        be sure to get the latest Kaffe through CVS.
 
+        The good news is that you can run around, fire weapons, ride plats,
+        etc.  The telnet server even works!
+        
+        However, there are still problems.  For one thing, some of the 
+        event-delegation code causes bogus CloneNotSupportExceptions to
+        be thrown.  In order to get Kaffe started you'll need to at least
+        modify q2java.baseq2.BaseQ2 so that it's declared to implement 
+        "Cloneable" and recompile.  Other classes will have problems too,
+        but the BaseQ2 is critical to get the game at least started.  This
+        must be some sort of problem with reflection in Kaffe, and hopefully
+        it will be fixed eventually.
+        
+        Another problem is that Kaffe lists a known bug in formatting dates,
+        you'll have to modify q2java.baseq2.WelcomeMessage to not try
+        and print the current date in the welcome message.
+
+        Also, security must be turned off - Kaffe doesn't like the Q2Java
+        Security Manager.
+        
+        Other problems include: no HUD, several "malformed property: `" 
+        errors, and general weirdness when accessing ResourceBundles.  When
+        running under Kaffe, the game tends to crash when changing maps - 
+        no idea why.  Overall it runs but is just not stable yet - stick
+        with the Blackdown JDK when running a server to really play on.                       
    
 If you run a Q2Java server and try to connect to it from a Q2 client on
 the same box, you might need to start the client with the same invocation

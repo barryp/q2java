@@ -245,8 +245,15 @@ typedef struct gclient_s
 
     pmove_state_t       old_pmove;  // for detecting out-of-pmove changes
 
+    jstring playerInfo; 
     jobject listener;
-    jstring playerInfo;
+
+    // cache of handles to listener methods 
+    jmethodID method_player_begin;
+    jmethodID method_player_userinfoChanged;
+    jmethodID method_player_command;
+    jmethodID method_player_disconnect;
+    jmethodID method_player_think;
     } gclient_t;
 
 
@@ -258,7 +265,7 @@ typedef struct cvar_s
     char        *string;
     char        *latched_string;    // for CVAR_LATCH vars
     int         flags;
-    int    modified;   // set each time the cvar is changed
+    int         modified;   // set each time the cvar is changed
     float       value;
     struct cvar_s *next;
 } cvar_t;
@@ -297,10 +304,10 @@ typedef struct
     // collision detection
     trace_t (*trace) (vec3_t start, vec3_t mins, vec3_t maxs, vec3_t end, edict_t *passent, int contentmask);
     int     (*pointcontents) (vec3_t point);
-    int    (*inPVS) (vec3_t p1, vec3_t p2);
-    int    (*inPHS) (vec3_t p1, vec3_t p2);
-    void        (*SetAreaPortalState) (int portalnum, int open);
-    int    (*AreasConnected) (int area1, int area2);
+    int     (*inPVS) (vec3_t p1, vec3_t p2);
+    int     (*inPHS) (vec3_t p1, vec3_t p2);
+    void    (*SetAreaPortalState) (int portalnum, int open);
+    int     (*AreasConnected) (int area1, int area2);
 
     // an entity will never be sent to a client or used for collision
     // if it is not passed to linkentity.  If the size, position, or

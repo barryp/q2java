@@ -1,6 +1,9 @@
 package q2java.core;
 
 import java.util.*;
+import javax.vecmath.Point3f;
+
+import q2java.*;
 
 /**
  * Handy Static methods.
@@ -125,6 +128,40 @@ public static String getSpawnArg(String[] args, String keyword, String defaultVa
 	return defaultValue;
 	}
 /**
+ * Parse an Angle3f from the standard map format of "<pitch> <yaw> <roll>".
+ * @return javax.vecmath.Tuple3f
+ * @param s java.lang.String
+ */
+public static Angle3f parseAngle3f(String s) 
+	{
+	StringTokenizer st = new StringTokenizer(s, "(, )");
+	if (st.countTokens() != 3)
+		throw new NumberFormatException("Not a valid format for Angle3f");
+
+	float x = Float.valueOf(st.nextToken()).floatValue();
+	float y = Float.valueOf(st.nextToken()).floatValue();
+	float z = Float.valueOf(st.nextToken()).floatValue();
+	
+	return new Angle3f(x, y, z);
+	}
+/**
+ * This method was created by a SmartGuide.
+ * @return javax.vecmath.Tuple3f
+ * @param s java.lang.String
+ */
+public static Point3f parsePoint3f(String s) 
+	{
+	StringTokenizer st = new StringTokenizer(s, "(, )");
+	if (st.countTokens() != 3)
+		throw new NumberFormatException("Not a valid format for Point3f");
+
+	float x = Float.valueOf(st.nextToken()).floatValue();
+	float y = Float.valueOf(st.nextToken()).floatValue();
+	float z = Float.valueOf(st.nextToken()).floatValue();
+	
+	return new Point3f(x, y, z);
+	}
+/**
  * Return A random float between 0.0 and 1.0.
  */
 
@@ -140,5 +177,18 @@ public static float randomFloat()
 public static int randomInt() 
 	{
 	return gRandom.nextInt();
+	}
+/**
+ * Sends a command to the clients console
+ * @author Peter Donald 24/1/99  
+ */
+public static void stuffCommand(NativeEntity ent, String command)
+	{
+	if( ent.isPlayer() && !ent.isBot() )
+	    {
+	    Engine.writeByte( Engine.SVC_STUFFTEXT );
+	    Engine.writeString(command);
+	    Engine.unicast(ent, true);	  
+	    }	
 	}
 }

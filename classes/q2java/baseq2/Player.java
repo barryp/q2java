@@ -919,10 +919,10 @@ protected float calcRoll(Vector3f velocity)
 	sign = side < 0 ? -1 : 1;
 	side = Math.abs(side);
 	
-	value = BaseQ2.gRollAngle.getFloat();
+	value = BaseQ2.gRollAngle;
 
-	if (side < BaseQ2.gRollSpeed.getFloat())
-		side = side * value / BaseQ2.gRollSpeed.getFloat();
+	if (side < BaseQ2.gRollSpeed)
+		side = side * value / BaseQ2.gRollSpeed;
 	else
 		side = value;
 	
@@ -970,21 +970,28 @@ protected void calcViewOffset()
 
 	// add angles based on velocity
 	Angle3f  angle   = fEntity.getAngles();
-	Vector3f forward = new Vector3f();
-	Vector3f right = new Vector3f();
-	angle.getVectors( forward, right, null );
-	delta = (fEntity.getVelocity()).dot(forward);
-	angles.x += delta * BaseQ2.gRunPitch.getFloat();
 
-	delta = (fEntity.getVelocity()).dot(right);
-	angles.z += delta * BaseQ2.gRunRoll.getFloat();
+	// this little section limits the scope of 3 Vector3fs
+	// for clarity
+		{
+		Vector3f forward = Q2Recycler.getVector3f();
+		Vector3f right = Q2Recycler.getVector3f();
+		Vector3f velocity = fEntity.getVelocity();
+		
+		angle.getVectors( forward, right, null );
+		angles.x += velocity.dot(forward) * BaseQ2.gRunPitch;
+		angles.z += velocity.dot(right) * BaseQ2.gRunRoll;
+
+		Q2Recycler.put(right);
+		Q2Recycler.put(forward);
+		}
 
 	// add angles based on bob
-	delta = fBobFracSin * BaseQ2.gBobPitch.getFloat() * fXYSpeed;
+	delta = fBobFracSin * BaseQ2.gBobPitch * fXYSpeed;
 	if (fIsDucking)
 			delta *= 6;             // crouching
 	angles.x += delta;
-	delta = fBobFracSin * BaseQ2.gBobRoll.getFloat() * fXYSpeed;
+	delta = fBobFracSin * BaseQ2.gBobRoll * fXYSpeed;
 	if (fIsDucking)
 			delta *= 6;             // crouching
 	if ((fBobCycle & 1) > 0)
@@ -994,7 +1001,7 @@ protected void calcViewOffset()
 	
 
 	// add bob height
-	float bob = fBobFracSin * fXYSpeed * BaseQ2.gBobUp.getFloat(); // *3 added to magnify effect
+	float bob = fBobFracSin * fXYSpeed * BaseQ2.gBobUp; // *3 added to magnify effect
 	if (bob > 6)
 		bob = 6.0F;
 	fViewOffset.z += bob;	
@@ -1755,6 +1762,8 @@ public void cmd_weapsetorder(String[] argv, String args)
 public static void connect(NativeEntity ent) throws GameException
 	{
 	Engine.debugLog("q2java.baseq2.Player.connect(" + ent + ")");
+//	Runtime.getRuntime().traceMethodCalls(true);
+
 	new Player(ent);
 	}
 /**
@@ -2390,7 +2399,23 @@ public int getScore()
  */
 protected int getSexedSoundIndex(String base) 
 	{
-	return Engine.getSoundIndex((fIsFemale ? "player/female/" : "player/male/") + base + ".wav");
+//	return Engine.getSoundIndex((fIsFemale ? "player/female/" : "player/male/") + base + ".wav");
+
+	StringBuffer sb = Q2Recycler.getStringBuffer();
+	
+	if (fIsFemale)
+		sb.append("player/female/");
+	else
+		sb.append("player/male/");
+
+	sb.append(base);
+	sb.append(".wav");
+
+	int result = Engine.getSoundIndex(sb.toString());
+	
+	Q2Recycler.put(sb);
+
+	return result;	
 	}
 /**
  * Get a suitable Spawnpoint to jump to.  Mods like CTF might
@@ -2750,7 +2775,7 @@ public void playerDisconnect()
  */
 public void playerInfoChanged(String playerInfo) 
 	{
-	Engine.debugLog("q2java.baseq2.Player.playerInfoChanged(" + playerInfo + ")");
+//	Engine.debugLog("q2java.baseq2.Player.playerInfoChanged(" + playerInfo + ")");
 
 	if (playerInfo == null)
 		return;
@@ -2812,8 +2837,9 @@ public void playerThink(PlayerCmd cmd)
 		{
 		for (int i = 0; i < pm.fTouched.length; i++)	
 			{
-			if (pm.fTouched[i].getReference() instanceof GameObject)
-				((GameObject)pm.fTouched[i].getReference()).touch(this);
+			Object obj = pm.fTouched[i].getReference();
+			if (obj instanceof GameObject)
+				((GameObject)obj).touch(this);
 			}
 		}
 
@@ -2836,7 +2862,7 @@ public void playerThink(PlayerCmd cmd)
  */
 protected void playerVariableChanged(String key, String oldValue, String newValue) 
 	{
-	Engine.debugLog("q2java.baseq2.Player.playerVariableChanged(" + key + ", " + oldValue + ", " + newValue + ")");
+//	Engine.debugLog("q2java.baseq2.Player.playerVariableChanged(" + key + ", " + oldValue + ", " + newValue + ")");
 
 	try
 	    {
@@ -2856,7 +2882,7 @@ protected void playerVariableChanged(String key, String oldValue, String newValu
 		// won't trigger -another- call to this method thinking
 		// that the old value is a new value (if that makes any sense)
 		fPlayerInfo.put(key, oldValue);
-	    MiscUtil.stuffCommand(fEntity, "set " + key + " " + oldValue);
+	    GameUtil.stuffCommand(fEntity, "set " + key + " " + oldValue);
 	    return;
 		}
 
@@ -3256,7 +3282,7 @@ public void setGravity(float x, float y, float z)
 	// Q2 only deals with player gravity along the Z axis
 	super.setGravity(0, 0, z);
 	
-	fEntity.setPlayerGravity((short)(BaseQ2.gGravity.getFloat() * -fGravity.z));
+	fEntity.setPlayerGravity((short)(BaseQ2.gGravity * -fGravity.z));
 	}
 /**
  * This method was created by a SmartGuide.
@@ -3512,9 +3538,17 @@ public void welcome()
 	Engine.writeByte(Engine.MZ_LOGIN);
 	Engine.multicast(fEntity.getOrigin(), Engine.MULTICAST_PVS);
 
-	Object[] args = {getName()};
-	Game.localecast("q2java.baseq2.Messages", "entered", args, Engine.PRINT_HIGH);
-	fEntity.centerprint(WelcomeMessage.getMessage());
+	// don't let problems with resource bundles blow the connection
+	try
+		{
+		Object[] args = {getName()};
+		Game.localecast("q2java.baseq2.Messages", "entered", args, Engine.PRINT_HIGH);
+		fEntity.centerprint(WelcomeMessage.getMessage());
+		}
+	catch (Exception e)
+		{
+		e.printStackTrace();
+		}
 	}
 /**
  * This method was created by a SmartGuide.

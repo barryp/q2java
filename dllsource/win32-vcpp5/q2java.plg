@@ -11,11 +11,20 @@ Project's tools are:
 			"Custom Build" with flags ""
 			"<Component 0xa>" with flags ""
 
-Creating temp file "c:\temp\RSP16.tmp" with contents </nologo /G5 /ML /W3 /GX /Zd /O2 /I "d:\jdk1.2\include" /I "d:\jdk1.2\include\win32" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /FR".\Release/" /Fp".\Release/q2java.pch" /YX /Fo".\Release/" /Fd".\Release/" /FD /c 
+Creating temp file "c:\temp\RSP2.tmp" with contents </nologo /G5 /ML /W3 /GX /Zd /O2 /I "d:\jdk1.2\include" /I "d:\jdk1.2\include\win32" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /FR".\Release/" /Fp".\Release/q2java.pch" /YX /Fo".\Release/" /Fd".\Release/" /FD /c 
+"C:\Quake2\Q2JAVA\dllsource\game.c"
+"C:\Quake2\Q2JAVA\dllsource\globals.c"
 "C:\Quake2\Q2JAVA\dllsource\javalink_generic.c"
+"C:\Quake2\Q2JAVA\dllsource\misc.c"
+"C:\Quake2\Q2JAVA\dllsource\player.c"
+"C:\Quake2\Q2JAVA\dllsource\properties.c"
+"C:\Quake2\Q2JAVA\dllsource\q2java_CVar.c"
+"C:\Quake2\Q2JAVA\dllsource\q2java_Engine.c"
+"C:\Quake2\Q2JAVA\dllsource\q2java_NativeEntity.c"
+"C:\Quake2\Q2JAVA\dllsource\q2string.c"
 >
-Creating command line "cl.exe @c:\temp\RSP16.tmp" 
-Creating temp file "c:\temp\RSP17.tmp" with contents <advapi32.lib kernel32.lib user32.lib gdi32.lib winmm.lib /nologo /base:"0x20000000" /subsystem:windows /dll /incremental:no /pdb:".\Release/gamex86.pdb" /machine:I386 /def:"..\win32dll.def" /out:"..\..\gamex86.dll" /implib:".\Release/gamex86.lib" 
+Creating command line "cl.exe @c:\temp\RSP2.tmp" 
+Creating temp file "c:\temp\RSP3.tmp" with contents <advapi32.lib kernel32.lib user32.lib gdi32.lib winmm.lib /nologo /base:"0x20000000" /subsystem:windows /dll /incremental:no /pdb:".\Release/gamex86.pdb" /machine:I386 /def:"..\win32dll.def" /out:"..\..\gamex86.dll" /implib:".\Release/gamex86.lib" 
 ".\Release\game.obj"
 ".\Release\globals.obj"
 ".\Release\javalink_generic.obj"
@@ -26,15 +35,24 @@ Creating temp file "c:\temp\RSP17.tmp" with contents <advapi32.lib kernel32.lib 
 ".\Release\q2java_Engine.obj"
 ".\Release\q2java_NativeEntity.obj"
 ".\Release\q2string.obj">
-Creating command line "link.exe @c:\temp\RSP17.tmp" 
+Creating command line "link.exe @c:\temp\RSP3.tmp" 
 Compiling...
+game.c
+globals.c
 javalink_generic.c
-C:\Quake2\Q2JAVA\dllsource\javalink_generic.c(318) : warning C4113: 'int (__stdcall *)(void)' differs in parameter lists from 'long (__stdcall *)(const struct JNIInvokeInterface_ ***  ,long ,long *)'
-C:\Quake2\Q2JAVA\dllsource\javalink_generic.c(319) : warning C4113: 'int (__stdcall *)(void)' differs in parameter lists from 'long (__stdcall *)(void *)'
-C:\Quake2\Q2JAVA\dllsource\javalink_generic.c(320) : warning C4113: 'int (__stdcall *)(void)' differs in parameter lists from 'long (__stdcall *)(const struct JNIInvokeInterface_ ***  ,void ** ,void *)'
+C:\Quake2\Q2JAVA\dllsource\javalink_generic.c(319) : warning C4113: 'int (__stdcall *)(void)' differs in parameter lists from 'long (__stdcall *)(const struct JNIInvokeInterface_ ***  ,long ,long *)'
+C:\Quake2\Q2JAVA\dllsource\javalink_generic.c(320) : warning C4113: 'int (__stdcall *)(void)' differs in parameter lists from 'long (__stdcall *)(void *)'
+C:\Quake2\Q2JAVA\dllsource\javalink_generic.c(321) : warning C4113: 'int (__stdcall *)(void)' differs in parameter lists from 'long (__stdcall *)(const struct JNIInvokeInterface_ ***  ,void ** ,void *)'
+misc.c
+player.c
+properties.c
+q2java_CVar.c
+q2java_Engine.c
+q2java_NativeEntity.c
+q2string.c
 Linking...
    Creating library .\Release/gamex86.lib and object .\Release/gamex86.exp
-Creating temp file "c:\temp\RSP18.tmp" with contents </nologo /o".\Release/q2java.bsc" 
+Creating temp file "c:\temp\RSP4.tmp" with contents </nologo /o".\Release/q2java.bsc" 
 ".\Release\game.sbr"
 ".\Release\globals.sbr"
 ".\Release\javalink_generic.sbr"
@@ -45,7 +63,7 @@ Creating temp file "c:\temp\RSP18.tmp" with contents </nologo /o".\Release/q2jav
 ".\Release\q2java_Engine.sbr"
 ".\Release\q2java_NativeEntity.sbr"
 ".\Release\q2string.sbr">
-Creating command line "bscmake.exe @c:\temp\RSP18.tmp" 
+Creating command line "bscmake.exe @c:\temp\RSP4.tmp" 
 Creating browse info file...
 
 

@@ -1,0 +1,64 @@
+CHANGES from v0.9.0 to v0.9.1
+
+---------------------------------------------------------------------------
+This file will just list changes in the core packages 
+Add-ons will have to list their own changes.
+---------------------------------------------------------------------------
+
+DLL CHANGES ===============================================================
+
+    Minor tweaks to support Jinsight on Windows and Kaffe on Linux.
+    
+    Code that constructs player NativeEntity objects changed to do
+    it in a less-strange way, to make Kaffe happy.
+        
+    Debuglog output more clearly indicates which messages came from
+    the C code, and which came from Java.    
+    
+JAVA CHANGES ==============================================================
+
+q2java.Angle3f
+
+    Changed: getVectors() reworked to run a bit faster
+    
+q2java.NativeEntity
+
+    Changed: Constructors reworked so there is now a private one that
+             the C code can call to create player NativeEntity objects,
+             rather than having to dink around first allocating an object, 
+             setting a field, and -then- calling a constructor (Kaffe 
+             didn't like that at all, and it -was- a bit strange)    
+
+q2java.baseq2.Baseq2
+    
+    Changed: Analysis with Jinsight showed that an awful lot of time was
+             being spent reading the same CVars over and over again.
+             Added code to BaseQ2 to mirror the CVars every 10 seconds
+             in some static floats, which can be quickly be accessed by
+             interested Java code.
+             
+             Several other classes were changed to read these floats 
+             instead of reading the CVars.
+             
+q2java.baseq2.MiscUtil
+
+    Removed: parseAngle3f(), parsePoint3f(), and stuffCommand() moved to
+             q2java.core.GameUtil, since the were useful to more than 
+             just the baseq2 gamelet.
+                          
+                          
+q2java.baseq2.Player
+
+    Changed: calcRoll() and calcViewOffset() optimized a bit thanks to Jinsight  
+    
+    
+q2java.baseq2.event.PlayerMoveSupport
+
+    Changed: fireEvent() now returns early if no listeners are registered.    
+    
+    
+q2java.core.event.EventPack
+
+    Changed: fireEvent() sped up, thanks to Jinsight.      
+                  
+----------- End of List -------------------------------------------------------             

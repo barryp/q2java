@@ -14,48 +14,39 @@ import q2java.baseq2.Player;
  * @author Peter Donald 25/1/99
  */
 final public class DeathScoreSupport
-{
-  private static Method gInvokeMethod = null;
-  private Vector fListeners = new Vector();
+	{
+	private static Method gInvokeMethod = null;
+	private Vector fListeners = new Vector();
 
-  static
+	static	
+		{
+		try
+			{
+	  		gInvokeMethod = DeathScoreListener.class.
+	    	getMethod("deathOccured", new Class[] { DeathScoreEvent.class } );	
+			}
+		catch(NoSuchMethodException nsme) 
+			{
+	  		}
+		}
+	
+public void addDeathScoreListener(DeathScoreListener l)
 	{
-	  try
-	{
-	  gInvokeMethod = DeathScoreListener.class.
-	    getMethod("deathOccured", new Class[] { DeathScoreEvent.class } );	
+	if(!fListeners.contains(l)) 
+		fListeners.addElement(l);
 	}
-	  catch(NoSuchMethodException nsme) {}
-	}
-
-  public void addDeathScoreListener(DeathScoreListener l)
+public void fireEvent(DeathScoreEvent e)
 	{
-	  if( !fListeners.contains(l) ) fListeners.addElement(l);
+	try 
+		{ 
+		EventPack.fireEvent( e, gInvokeMethod, fListeners ); 
+		}
+	catch(PropertyVetoException pve) 
+		{
+		}
 	}
-  public void fireEvent( DeathScoreEvent e )
+public void removeDeathScoreListener(DeathScoreListener l)
 	{
-	  try { EventPack.fireEvent( e, gInvokeMethod, fListeners ); }
-	  catch(PropertyVetoException pve) {}
-	}
-  public static void fireEvent(DeathScoreEvent e, Vector listeners)
-	{
-	  Vector v = null;
-
-	  synchronized(listeners) { v = (Vector)listeners.clone(); }
-	  
-	  Enumeration enum = v.elements();
-	  v = null;
-	  
-	  DeathScoreListener l = null;
-
-	  while( enum.hasMoreElements() )
-	{
-	  l = (DeathScoreListener)enum.nextElement();
-	  l.deathOccured(e);
-	}
-	}
-  public void removeDeathScoreListener(DeathScoreListener l)
-	{
-	  fListeners.removeElement(l);
+	fListeners.removeElement(l);
 	}
 }

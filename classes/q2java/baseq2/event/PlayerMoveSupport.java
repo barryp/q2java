@@ -14,41 +14,51 @@ import q2java.baseq2.Player;
  * @author Peter Donald
  */
 final public class PlayerMoveSupport
-{
-  private static Method gInvokeMethod = null;
-  private Vector fListeners = new Vector();
-  private Player fPlayer = null;
+	{
+	private static Method gInvokeMethod = null;
+	private Vector fListeners = new Vector();
+	private Player fPlayer = null;
 
-  static
-	{
-	  try
-	{
-	  gInvokeMethod = PlayerMoveListener.class.
-	    getMethod("playerMoved", new Class[] { PlayerMoveEvent.class } );	
-	}
-	  catch(NoSuchMethodException nsme) {}
-	}
+	static
+		{
+		try
+			{
+			gInvokeMethod = PlayerMoveListener.class.getMethod("playerMoved", new Class[] { PlayerMoveEvent.class } );	
+			}
+		catch(NoSuchMethodException nsme) 
+			{
+			}
+		}
 
-  public PlayerMoveSupport(Player player)
+	
+public PlayerMoveSupport(Player player)
 	{
-	  fPlayer = player;
+	fPlayer = player;
 	}
-  public void addPlayerMoveListener(PlayerMoveListener l)
+public void addPlayerMoveListener(PlayerMoveListener l)
 	{
-	  if( !fListeners.contains(l) ) fListeners.addElement(l);
+	if( !fListeners.contains(l) ) 
+		fListeners.addElement(l);
 	}
-  public void fireEvent( PlayerCmd move )
+public void fireEvent( PlayerCmd move )
 	{
-	  PlayerMoveEvent e =
-	PlayerMoveEvent.getEvent( fPlayer, move );
+	if (fListeners.size() == 0)
+		return;
+		
+	PlayerMoveEvent e = PlayerMoveEvent.getEvent( fPlayer, move );
 
-	  try { EventPack.fireEvent( e, gInvokeMethod, fListeners ); }
-	  catch(PropertyVetoException pve) {}
+	try 
+		{ 
+		EventPack.fireEvent( e, gInvokeMethod, fListeners ); 
+		}
+	catch(PropertyVetoException pve) 
+		{
+		}
 
-	  PlayerMoveEvent.releaseEvent(e); 
+	PlayerMoveEvent.releaseEvent(e); 
 	}
-  public void removePlayerMoveListener(PlayerMoveListener l)
+public void removePlayerMoveListener(PlayerMoveListener l)
 	{
-	  fListeners.removeElement(l);
+	fListeners.removeElement(l);
 	}
 }

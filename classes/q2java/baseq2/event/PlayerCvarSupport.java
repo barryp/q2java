@@ -5,6 +5,7 @@ import java.lang.reflect.*;
 import java.util.Enumeration;
 import java.util.Vector;
 import q2java.Engine;
+import q2java.core.GameUtil;
 import q2java.baseq2.*;
 import q2java.baseq2.event.*;
 
@@ -48,7 +49,7 @@ final public class PlayerCvarSupport implements PlayerCommandListener
 	    }
 	}
 
-	  MiscUtil.stuffCommand(fPlayer.fEntity, "PLAYERCLIENTCVAR  $" + cvar);
+	  GameUtil.stuffCommand(fPlayer.fEntity, "PLAYERCLIENTCVAR  $" + cvar);
 	}
   public void commandIssued(PlayerCommandEvent e)
 	{
