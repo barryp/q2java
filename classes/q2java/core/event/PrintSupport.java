@@ -67,6 +67,10 @@ public void addPrintListener(PrintListener pl, int channels, boolean highPriorit
  * Fire a PrintEvent off to whatever listeners have registered to receive
  * messages on its particular channel.
  *
+ * Be ***VERY*** careful putting debugging print statmements in this
+ * method since they can throw the game into a loop.  Use the
+ * Engine.dprint, NOT the System.out.print (unless you're very careful).
+ *
  * @param printChannel one of the PrintEvent.PRINT_* constants.
  * @param printFlags probably one of the Engine.PRINT_* constants.
  * @param source object causing the print event.  For players use the player's NativeEntity, which is fairly constant and makes
@@ -78,7 +82,7 @@ public void addPrintListener(PrintListener pl, int channels, boolean highPriorit
 public void fireEvent(int printChannel, int printFlags, Object source, String sourceName, Object dest, String msg) 
 	{
 	PrintSupportNode[] psna = null;
-	
+
 	synchronized(this)
 		{
 		int n = fListeners.size();
@@ -102,7 +106,11 @@ public void fireEvent(int printChannel, int printFlags, Object source, String so
 				}
 			catch (Throwable t)
 				{
-				t.printStackTrace();
+				if (printChannel != PrintEvent.PRINT_JAVA)
+					t.printStackTrace();
+				// it's a very bad idea to print errors related
+				// to Java printing, since there is a danger of 
+				// the code getting into a loop here.
 				}
 			}		
 		}

@@ -160,13 +160,20 @@ public void becomeExplosion(int tempEntity)
 	 */
 	public void stateChanged(PlayerStateEvent pse)
 	{
-		Player p = pse.getPlayer();
+		switch (pse.getStateChanged())	
+		{
+		case PlayerStateEvent.STATE_DEAD:
+		case PlayerStateEvent.STATE_INVALID:
+		case PlayerStateEvent.STATE_SUSPENDEDSTART:
+			Player p = pse.getPlayer();
 		
-		drop(p, CTF_TECH_TIMEOUT); // will handle removing listener
+			drop(p, CTF_TECH_TIMEOUT); // will handle removing listener
 			
-		p.removeInventory("tech");
-		if (fOwner != null)
-			setOwner(null);
+			p.removeInventory("tech");
+			if (fOwner != null)
+				setOwner(null);
+			break;
+		}	
 	}
 	/**
 	 * Called if item was actually taken.

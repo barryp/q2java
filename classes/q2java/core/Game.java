@@ -56,11 +56,9 @@ public class Game implements GameListener, JavaConsoleListener
 	// Allow objects to find each other
 	private static Hashtable gLevelRegistry;
 
-	// Handle spawning entities
-	private static LevelDocumentFactory gLevelDocumentFactory;
-
 	// DOM Document describing initial info for the current level
 	private static Document gLevelDocument;
+	private static String gCurrentMapName;
 	
 	// game clocks
 	private static int gFrameCount;
@@ -69,8 +67,8 @@ public class Game implements GameListener, JavaConsoleListener
 	
 	// performance clocks
 	private static int  gPerformanceFrames;
-	private static long gCPUTime;	
-	
+	private static long gCPUTime;
+
 	private static Vector gResourceGroups;	
 
 	// leighd 04/10/99 
@@ -228,9 +226,6 @@ public static void addServerFrameListener(ServerFrameListener f, int phase, floa
  */
 public static void bprint(int flags, String msg) 
 	{
-	// send message down to the server console
-	Engine.bprint(flags, msg);
-	
 	// send out to interested listeners
 	gPrintSupport.fireEvent(PrintEvent.PRINT_ANNOUNCE, flags, null, null, null, msg);
 	}
@@ -240,7 +235,7 @@ public static void bprint(int flags, String msg)
  */
 public static void dprint(String msg) 
 	{
-	// send down to server console
+	// send down to console
 	Engine.dprint(msg);
 	
 	// send out to interested listeners
@@ -293,6 +288,15 @@ private boolean externalServerCommand(Gamelet g, String cmd, Class[] paramTypes,
 	return false;
 	}
 /**
+ * Get the name of the current map - may be null if the game is 
+ * just initializing.
+ * @return java.lang.String
+ */
+public static String getCurrentMapName() 
+	{
+	return gCurrentMapName;
+	}
+/**
  * Retrieves a reference to the current GameletManager object
  * leighd 04/07/99
  */
@@ -318,18 +322,6 @@ public static Document getLevelDocument()
 	return gLevelDocument;
 	}
 /**
- * Get which object the Game is using to generate level DOM Documents
- * when a new map starts.
- * @return q2java.core.LevelDocumentFactory - will never be null.
- */
-public static LevelDocumentFactory getLevelDocumentFactory() 
-	{
-	if (gLevelDocumentFactory == null)
-		gLevelDocumentFactory = new DefaultLevelDocumentFactory();
-		
-	return gLevelDocumentFactory;
-	}
-/**
  * Fetch a list of objects that were registered under a given key.
  * @return Vector containing registered objects
  * @param key java.lang.Object
@@ -344,6 +336,14 @@ public static Vector getLevelRegistryList(Object key)
 		}
 		
 	return result;
+	}
+/**
+ * Get a reference to the OccupancySupport object.
+ * @return q2java.core.event.OccupancySupport
+ */
+public static OccupancySupport getOccupancySupport()
+	{
+	return gOccupancySupport;
 	}
 /**
  * Get the current list of packages to search for classes in.
@@ -913,15 +913,6 @@ public static void setGameletManager(GameletManager gm)
 	gGameletManager = gm;
 	}
 /**
- * Set which object will handle spawning entities when a new map is started.
- * @param sm q2java.core.SpawnManager may be null, which will cause the Game
- *  to create and set itself to use a DefaultSpawnManager.
- */
-public static void setLevelDocumentFactory(LevelDocumentFactory ldf) 
-	{
-	gLevelDocumentFactory = ldf;
-	}
-/**
  * Called by the DLL when the DLL's Shutdown() function is called.
  */
 public void shutdown()
@@ -995,6 +986,13 @@ private static void spawnEntities()
 		}	
 	}
 /**
+ * Put the game into the GAME_INTERMISSION state.
+ */
+public static void startIntermission() 
+	{
+	gGameStatusSupport.fireEvent(GameStatusEvent.GAME_INTERMISSION);	
+	}
+/**
  * Spawn entities into the Quake II environment.
  * This methods parses the entString passed to it, and looks
  * for Java classnames equivalent to the classnames specified 
@@ -1019,10 +1017,27 @@ public void startLevel(String mapname, String entString, String spawnPoint)
 	// clear the object registry
 	gLevelRegistry.clear();
 
-	// Build up a DOM document representing the contents of the new map
-	gLevelDocument = getLevelDocumentFactory().createLevelDocument(mapname, entString, spawnPoint);
+	// make a note of what map we're going to play
+	gCurrentMapName = mapname;
 
-	// let interested objects know we're starting a new map
+	// create the inital, mostly empty level document (don't pass the entString)
+	gLevelDocument = GameUtil.buildLevelDocument(mapname, null, spawnPoint);
+		
+	// let interested objects know we're building a new level
+	// document, and they may add on to it.
+	gGameStatusSupport.fireEvent(GameStatusEvent.GAME_BUILD_DOCUMENT, entString, spawnPoint);	
+
+	// parse the entString and place its contents in the document
+	// if no spawn entities have been placed in the document yet, 
+	// or if the <include-default-entities/> tag appears
+	Element root = (Element) gLevelDocument.getDocumentElement(); 
+	NodeList nl = root.getElementsByTagName("entity");
+	NodeList nl2 = root.getElementsByTagName("include-default-entities");
+	if ((nl.getLength() == 0) || (nl2.getLength() > 0))
+		GameUtil.parseEntString(root, entString);
+	
+	// let interested objects know we're starting a new map, but nothing's
+	// been spawned yet - so that can inspect or tweak the level document.
 	gGameStatusSupport.fireEvent(GameStatusEvent.GAME_PRESPAWN);	
 
 	// ponder whether or not we need to change player classes

@@ -185,9 +185,6 @@ public class CTFPlayer extends q2java.baseq2.Player implements CameraListener
 	{
 		super( ent );
 		
-		// make sure the grapple VWep skin is cached before we set the player's skin
-		q2java.baseq2.GenericWeapon.precacheVWep(".spawn.weapon_grapple");
-		
 		fTeam     = null;
 		fViewer   = null;
 		fChaser   = new ChaseCam( this );
@@ -319,7 +316,7 @@ public class CTFPlayer extends q2java.baseq2.Player implements CameraListener
 		super.clearSettings();
 
 		// put the grapple in inventory
-		addWeapon( ".spawn.weapon_grapple", false );
+//		addWeapon( ".spawn.weapon_grapple", false );
 
 		// set field VERY low...
 		fLastCarrierHurt = Float.MIN_VALUE;
@@ -621,7 +618,7 @@ public void playerBegin()
 		}
 
 		super.playerThink( cmd );
-
+/*
 		if ( fWeapon instanceof weapon_grapple )
 		{
 			GrappleHook hook = ((weapon_grapple)fWeapon).getHook();
@@ -632,7 +629,7 @@ public void playerBegin()
 					 hook.pull();
 			}
 		}
-
+*/
 		// update our chasecam in case we are being watched
 		fChaser.update();
 	}
@@ -799,18 +796,6 @@ public void setTeam(Object o)
 			// show the menu
 			cmd_inven(null, null );
 		}
-	}
-	/**
-	 * Teleport the player to another point in the map.
-	 * @param origin javax.vecmath.Point3f
-	 * @param angles q2java.Angle3f
-	 */
-	public void teleport(Point3f origin, Angle3f angles) 
-	{
-		if ( fWeapon instanceof weapon_grapple )
-			( (weapon_grapple)fWeapon ).reset();
-		
-		super.teleport( origin, angles );
 	}
 	/**
 	 * Welcome the player to the game.

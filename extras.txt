@@ -20,6 +20,29 @@ or in some cases while the game is running with a console command like:
 The <class>'s are:
 
 
+--------------
+Grappling Hook
+--------------
+
+    q2java.ctf.GrapplingHook
+    
+        Load this and everybody gets a grappling hook. Doesn't matter
+        if you're playing CTF, DM, Paranoia, etc.  Players don't even
+        have to respawn to start using them (but if the gamelet
+        is unloaded, players won't lose the hook until they respawn).
+
+
+--------------
+LevelChanger
+--------------
+
+    q2java.baseq2.LevelChanger
+    
+        Watches the timelimit and fraglimit, decides when to start
+        intermission, and what the next map will be based on the
+        sv_maplist CVar or the info embedded in the maps themselves.
+        
+        
 -------------
 New XML/DOM Stuff
 -------------
@@ -35,13 +58,42 @@ New XML/DOM Stuff
         appear in the same spots.  For example: where you'd expect a 
         RocketLauncher to appear, you may now find a BFG instead.        
         
+    barryp.map.ShuffleWeapons
+    
+        Similar to RandomWeapons, but smarter in that it keeps the same weapon 
+        weapon balance - just shifts the positions around.  Also updates nearby
+        ammo to match the shifted weapon classes.
+        
     barryp.map.XMLMaps
     
-        When a new level starts, tries to read a file named maps/<mapname>.xml
-        for a description of the entities that will appear on the map.  If
-        one is not found, it uses the information normally contained in map
-        and creates a new file named sandbox/<mapname>.xml, which an admin
-        can then move to the "maps" directory and alter as they see fit.
+        When a new level starts, tries to read a file named maps/<mapname><suffix>
+        for a description of the entities that will appear on the map.  
+                
+        The value of <suffix> is initially just ".xml" but that can be changed
+        with the SVCMD
+          
+          sv <alias>.suffix <newsuffix>
+          
+        Where <alias> is the alias of a XMLMaps gamelet (you can load multiple
+        instances now). So for example, you might do something like this:
+        
+          sv addgamelet barryp.map.XMLMaps xml
+          sv addgamelet barryp.map.XMLMaps xml2
+          sv xml2.suffix -ctf.xml
+          
+        To have the server read in <mapname>.xml and <mapname>-ctf.xml
+        files.
+        
+        The gamelet can also generate XML files based on the information
+        embedded in the .bsp files, by calling
+        
+          sv <alias>.makexml yes
+          
+        a new file named sandbox/<mapname><suffix> will be created, which an 
+        admin can then move to the "maps" directory and alter as they see fit.
+        
+        Executing that same SVCMD with "no" will turn off XML generation.
+        
         
     barryp.map.MapCVars (only useful if XMLMaps or similar Gamelet is also loaded)
     

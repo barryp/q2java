@@ -22,11 +22,14 @@ public class PlayerStateEvent extends PlayerEvent
 
   // when a level is changing/in intermission with source = world entity
   public final static int STATE_SUSPENDEDSTART = 2;
-  public final static int STATE_SUSPENDEDSTOP = 3;
 
   // when a player is changing class/disconnecting .. source = player
   public final static int STATE_INVALID = 3;
 
+  // when a player makes a DRASTIC change in position .. source = player
+  // (handy for items like grapple hook that need to reset in this case)
+  public final static int STATE_TELEPORTED = 4;
+  
   protected int fStateChanged;
 
   // prolly not more than 2 events floating round at any one time 

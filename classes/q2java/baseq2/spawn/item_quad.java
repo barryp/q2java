@@ -141,9 +141,16 @@ public void runFrame(int Phase)
  * called by the carrying player when they die to give us a chance to reset 
  * there damage multiplier and effects if we were in use when they died.
  */
-public void stateChanged(PlayerStateEvent e)
+public void stateChanged(PlayerStateEvent pse)
 	{
-	reset();
+	switch (pse.getStateChanged())	
+		{
+		case PlayerStateEvent.STATE_DEAD:
+		case PlayerStateEvent.STATE_INVALID:
+		case PlayerStateEvent.STATE_SUSPENDEDSTART:
+			reset();
+			break;
+		}
 	}
 /**
  * Increase the Players damage multiplier for 30 seconds when used.

@@ -25,6 +25,7 @@ public class PrintEvent extends GenericEvent implements Consumable
 	public final static int PRINT_ANNOUNCE			= 4; // gamewide announcements 
 	public final static int PRINT_TALK				= 8; // players yapping
 	public final static int PRINT_TALK_TEAM			= 16;// chats within a team
+	public final static int PRINT_TALK_PRIVATE		= 32;// chats directed to a particular destination
 	public final static int PRINT_ALL				= 0xffffffff;
 	
 /**
@@ -59,7 +60,7 @@ public Object getDestination()
  * @param dest java.lang.Object
  * @param msg java.lang.String
  */
-final static PrintEvent getEvent(int printChannel, int printFlags, Object source, String sourceName, Object dest, String msg) 
+public final static PrintEvent getEvent(int printChannel, int printFlags, Object source, String sourceName, Object dest, String msg) 
 	{
 	PrintEvent result = (PrintEvent) gRecycler.getObject();
 
@@ -129,7 +130,7 @@ public String getSourceName()
  * Clean up a PrintEvent and make it available for reuse.
  * @param pe q2java.core.event.PrintEvent
  */
-final static void releaseEvent(PrintEvent pe) 
+public final static void releaseEvent(PrintEvent pe) 
 	{
 	// clear references
 	pe.source = null;

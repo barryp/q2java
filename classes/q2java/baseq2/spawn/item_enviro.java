@@ -142,9 +142,16 @@ public void runFrame(int Phase)
  * Called by the carrying player when they die. This gives us the chance to reset 
  * their effects if we were in use when they died.
  */
-public void stateChanged(PlayerStateEvent e)
+public void stateChanged(PlayerStateEvent pse)
 	{
-	reset();
+	switch (pse.getStateChanged())	
+		{
+		case PlayerStateEvent.STATE_DEAD:
+		case PlayerStateEvent.STATE_INVALID:
+		case PlayerStateEvent.STATE_SUSPENDEDSTART:
+			reset();
+			break;
+		}
 	}
 /**
  * When used filter the Player's damage for 30 seconds.

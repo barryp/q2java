@@ -370,14 +370,14 @@ protected void spawn()
  *
  * @param intermissionSpot The spot the player should be moved do.
  */
-public void startIntermission(GenericSpawnpoint intermissionSpot) 
+public void startIntermission() 
 	{
 	// clear victims and stalkers..so the hud doesn't
 	// show strange stuff during intermission
 	setVictim(null);
 	setStalker(null);
 
-	super.startIntermission(intermissionSpot);
+	super.startIntermission();
 	}
 /**
  * Welcome the player to the game.

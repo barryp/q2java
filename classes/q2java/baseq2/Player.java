@@ -20,7 +20,8 @@ import q2java.baseq2.spawn.*;
  */
 
 public class Player extends GameObject 
-implements ServerFrameListener, PlayerListener, PrintListener, CrossLevel, SwitchablePlayer
+implements ServerFrameListener, PlayerListener, PrintListener, 
+	CrossLevel, SwitchablePlayer, GameStatusListener
 	{	
 	protected transient ResourceGroup fResourceGroup;
 
@@ -137,7 +138,7 @@ implements ServerFrameListener, PlayerListener, PrintListener, CrossLevel, Switc
 
 	// ------- Public constants ---------------------------------	
 
-	public final static int PRINT_CHANNELS = PrintEvent.PRINT_ANNOUNCE+PrintEvent.PRINT_TALK+PrintEvent.PRINT_TALK_TEAM;
+	public final static int PRINT_CHANNELS = PrintEvent.PRINT_ANNOUNCE+PrintEvent.PRINT_TALK+PrintEvent.PRINT_TALK_TEAM+PrintEvent.PRINT_TALK_PRIVATE;
 	
 	public final static Color4f COLOR_LAVA  = new Color4f(1.0f, 0.3f, 0.0f, 0.6f);
 	public final static Color4f COLOR_SLIME = new Color4f(0.0f, 0.1f, 0.05f, 0.6f);
@@ -331,6 +332,10 @@ public Player(NativeEntity ent) throws GameException
 	// sign up to receive broadcast messages using the default locale
 	Game.getPrintSupport().addPrintListener(this, PRINT_CHANNELS, false);
 
+	// sign up to be called when the game status changes
+	// (mostly to watch for PAUSE, so we know when to go into intermission)
+	Game.addGameStatusListener(this);
+	
 	//CHANGES for delegation model
 	fPlayerMoveSupport = new PlayerMoveSupport(this);
 	fPlayerCvarSupport = new PlayerCvarSupport(this);
@@ -575,7 +580,7 @@ public void addPlayerStateListener(PlayerStateListener l)
  * @param allowSwitch Have the player switch weapons if they're currently using just a blaster.
  * @return boolean true if the player took the weapon (or its ammo)
  */
-protected boolean addWeapon(String weaponClassSuffix, boolean allowSwitch) 
+public boolean addWeapon(String weaponClassSuffix, boolean allowSwitch) 
 	{
 	try
 		{
@@ -594,7 +599,7 @@ protected boolean addWeapon(String weaponClassSuffix, boolean allowSwitch)
  * @param weapon baseq2.GenericWeapon
  * @param allowSwitch boolean
  */
-protected boolean addWeapon(GenericWeapon w, boolean allowSwitch) 
+public boolean addWeapon(GenericWeapon w, boolean allowSwitch) 
 	{
 	boolean weaponStay = BaseQ2.isDMFlagSet(BaseQ2.DF_WEAPONS_STAY);
 
@@ -2067,8 +2072,12 @@ public void dispose()
 	// Game should get called and then call this.
 	Game.playerDisconnect(fEntity);
 
+	// remove from various event sources
 	Game.getPrintSupport().removePrintListener(this);
-	Game.removeServerFrameListener(this, Game.FRAME_BEGINNING + Game.FRAME_END);	
+	Game.removeServerFrameListener(this, Game.FRAME_BEGINNING + Game.FRAME_END);
+	Game.removeGameStatusListener(this);
+
+	// unhook from the NativeEntity we were associated with
 	fEntity.setReference(null);
 	fEntity.setPlayerListener(null);
 	fEntity = null;
@@ -2232,6 +2241,19 @@ protected void filterDamage(PlayerDamageEvent damage, int phase)
 		}
 	}
 /**
+ * Called when the game status changes.
+ */
+public void gameStatusChanged(GameStatusEvent e)
+	{
+	switch (e.getState())
+		{
+		case GameStatusEvent.GAME_INTERMISSION:
+			if (!fInIntermission)
+				startIntermission();
+			break;		
+		}
+	}
+/**
  * This method was created by a SmartGuide.
  * @return int
  * @param itemname java.lang.String
@@ -2305,6 +2327,30 @@ public int getHealth()
 public int getHealthMax() 
 	{
 	return fHealthMax;
+	}
+/**
+ * Figure out a spot to use for intermission.  It could be that
+ * different players will see different intermission spots - unlike
+ * the stock Q2 game - but that just makes life more interesting.
+ *
+ * @return q2java.baseq2.GenericSpawnpoint
+ */
+public GenericSpawnpoint getIntermissionSpot() 
+	{
+	// gather list of info_player_intermission entities
+	Vector v = Game.getLevelRegistryList(q2java.baseq2.spawn.info_player_intermission.REGISTRY_KEY);
+
+	// if there weren't any intermission spots, try for info_player_start spots
+	if (v.size() < 1)
+		v = Game.getLevelRegistryList(q2java.baseq2.spawn.info_player_start.REGISTRY_KEY);
+
+	// still no spots found? try for info_player_deathmatch
+	if (v.size() < 1)
+		v = Game.getLevelRegistryList(q2java.baseq2.spawn.info_player_deathmatch.REGISTRY_KEY);
+		
+	// randomly pick something from the list
+	int i = (GameUtil.randomInt() & 0x0fff) % v.size();
+	return (GenericSpawnpoint) v.elementAt(i);
 	}
 /**
  * This method was created by a SmartGuide.
@@ -2813,7 +2859,7 @@ public void playerThink(PlayerCmd cmd)
 	if (fInIntermission)
 		return;
 
-	fPlayerMoveSupport.fireEvent( cmd );
+	fPlayerMoveSupport.fireEvent( cmd );		
 	PMoveResults pm = fEntity.pMove(cmd, Engine.MASK_PLAYERSOLID);
 
 //  if (pm_passent->health > 0)
@@ -2854,11 +2900,11 @@ public void playerThink(PlayerCmd cmd)
 	fLatchedButtons |= fButtons & ~fOldButtons;	
 	
 	// fire weapon from final position if needed
-	if (((fLatchedButtons & PlayerCmd.BUTTON_ATTACK) != 0) && (!fWeaponThunk) && (!fIsDead))
+	if (((fLatchedButtons & PlayerCmd.BUTTON_ATTACK) != 0) && (!fWeaponThunk) && (!fIsDead) && (fWeapon != null))
 		{
 		fWeaponThunk = true;
 		fWeapon.weaponThink();
-		}
+		}		
 	}
 /**
  * Called when an individual player variable changes.
@@ -2931,13 +2977,17 @@ protected void playerVariableChanged(String key, String oldValue, String newValu
 public void print(PrintEvent pe)
 	{
 	int channel = pe.getPrintChannel();
+	Object destination = pe.getDestination();
 
-	// ignore messages intended for teams that this player
-	// doesn't belong to
-	if ((channel == PrintEvent.PRINT_TALK_TEAM)
-	&& ((fTeam == null) || (!fTeam.equals(pe.getDestination()))))
+	// if the print event has a particular destination,
+	// and we're not related to that destination
+	// then ignore the PrintEvent.
+	if ((destination != null) 
+	&& (!destination.equals(fTeam))
+	&& (!destination.equals(fEntity))
+	&& (!destination.equals(this)))
 		return;
-		
+				
 	// see if some other player object has done the work
 	// of formatting the message so it's suitable for
 	// display on the player screens
@@ -2963,13 +3013,21 @@ public void print(PrintEvent pe)
 					}			
 				break;
 			
-			case PrintEvent.PRINT_TALK_TEAM:
-					
+			case PrintEvent.PRINT_TALK_TEAM:					
 				if (name != null)
 					{
 					sb.append('(');
 					sb.append(name);
 					sb.append("): ");
+					}			
+				break;
+				
+			case PrintEvent.PRINT_TALK_PRIVATE:					
+				if (name != null)
+					{
+					sb.append("<<");
+					sb.append(name);
+					sb.append(" tells you >>: ");
 					}			
 				break;
 			}
@@ -3538,10 +3596,14 @@ protected void spawn()
 		}
 	catch (Exception e)
 		{
+		// could be that the fov parameter is not a valid float
 		fEntity.cprint(Engine.PRINT_HIGH, e.getMessage());
 		}
 		
 	closeDisplay();
+
+	// let interested objects know the player spawnned.
+	fPlayerStateSupport.fireEvent(PlayerStateEvent.STATE_SPAWNED, BaseQ2.gWorld);	
 	}
 /**
  * Switch the player into intermission mode.  Their view should be from
@@ -3550,8 +3612,10 @@ protected void spawn()
  *
  * @param intermissionSpot The spot the player should be moved do.
  */
-public void startIntermission(GenericSpawnpoint intermissionSpot) 
+public void startIntermission() 
 	{
+	GenericSpawnpoint intermissionSpot = getIntermissionSpot();
+	
 	fEntity.setOrigin(intermissionSpot.getOrigin());
 	fEntity.setAngles(intermissionSpot.getAngles());
 	fEntity.setPlayerViewAngles(intermissionSpot.getAngles());
@@ -3588,6 +3652,9 @@ public void startIntermission(GenericSpawnpoint intermissionSpot)
  */
 public void teleport(Point3f origin, Angle3f angles) 
 	{
+	// notify objects we're drastically changing position
+	fPlayerStateSupport.fireEvent( PlayerStateEvent.STATE_TELEPORTED, this );
+	
 	// unlink to make sure it can't possibly interfere with KillBox
 	fEntity.unlinkEntity();	
 

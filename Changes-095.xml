@@ -1,0 +1,310 @@
+<?xml version="1.0"?>
+<changelog version="0.9.5">
+  <comments>
+    <para>
+      Three big changes this time: the grappling hook code has been split
+      from CTF, the code responsible for changing levels has been split from 
+      BaseQ2, and the code responsible for generating the DOM documents describing
+      a level has been generalized and made more flexible.
+    </para>
+    <para>
+      The GrapplingHook code still resides in the q2java.ctf package, but 
+      is not tied directly to the CTFPlayer class anymore.  A new gamelet
+      named q2java.ctf.GrapplingHook can stick a grappling hook in the inventory
+      of any instance or q2java.baseq2.Player - which means you can use the GH
+      in plain DM, Paranoia, BountyHunters, and hopefully in any future Q2Java game.
+    </para>
+    <para>
+      The basic level changing code, which watches the timelimit and fraglimit, initiates
+      intermission, and chooses which map comes next has been placed in a new gamelet
+      named q2java.baseq2.LevelChanger.  This gamelet can easily be extended to use some
+      other method of choosing maps or deciding when to change.  However, if this gamelet or 
+      something similar to it isn't loaded, the server will never change maps.
+    </para>
+    <para>
+      The Game class now creates a barebones DOM document when a level first starts, and 
+      fires off a GameStatusEvent.GAME_BUILD_DOCUMENT event to give interested objects
+      (such as barryp.map.XMLMaps gamelets) a chance to place map info into the document.
+      It then checks to see if the gamelets have supplied any entity info, and if they
+      either haven't at all or have included the &lt;include-default-entities/&gt; tag, 
+      the Game will cause the string passed up from the .bsp file by the Engine to
+      be parsed so that default entity info is included in the document before
+      firing GameStatusEvent.GAME_PRESPAWN.  This new scheme makes it easy for
+      multiple sources to contribute to the initial level document.
+    </para>
+  </comments>
+  
+  <class name="q2java.baseq2.BaseQ2">
+    <removed author="Barry">
+      Everything related to changing levels - from watching the fraglimit
+      and timelimit to deciding what the next map will be.  This has all 
+      been split off into a new gamelet q2java.baseq2.LevelChanger.  If that 
+      gamelet or one similar to it isn't loaded, the map will never change now.
+    </removed>
+  </class>
+  
+  <class name="q2java.baseq2.GenericWeapon">
+    <addition author="Barry">
+      getOwner() method - to complement setOwner()
+    </addition>
+  </class>
+  
+  <class name="q2java.baseq2.LevelChanger">
+    <addition author="Barry">
+      New gamelet responsible for deciding when to change levels, initiating 
+      the intermission mode, and choosing the next map.  Can easily be extended 
+      or replaced with other gamelets that choose maps in a different way.
+    </addition>
+  </class>
+    
+  <class name="q2java.baseq2.Player">
+    <change author="Barry">
+      Class now implements GameStatusListener so it can listen for notifications
+      of when to begin intermission.
+    </change>    
+    <change author="Barry">
+      The two variations of addWeapon() are now public (was needed to support
+      the new GrapplingHook gamelet).
+    </change>
+    <addition author="Barry">
+      getIntermissionSpot() for choosing where a player should be placed during intermission.
+    </addition>
+    <change author="CheezHankrn">
+      playerThink() now avoids calling fWeapon.weaponThink() if fWeapon is null -
+      in preparation for future code that might have players wielding no weapons 
+      at some points.  More work needs to be done though, since there's no real
+      easy way to put the player in a no-weapon state - the game currently assumes
+      you at least have a handblaster.     
+    </change>
+    <change author="Barry">
+      print() method updated to pay better attention to the destination field
+      of a PrintEvent, and display messages on the new PRINT_TALK_PRIVATE channel
+      slightly differently than plain PRINT_TALK messages.
+    </change>
+    <change author="Barry">
+      spawn() now fires a PlayerStateEvent.STATE_SPAWNED event to let interested
+      objects know the player has spawned (the GrapplingHook gamelet is interested
+      in this so it can slip a grappling hook weapon into the player's inventory)
+    </change>    
+    <change author="Barry">
+      startIntermission() now calls getIntermissionSpot() to find an intermission
+      spot - rather than being passed that info as a parameter.  This means that 
+      different players may now see different intermission spots (unlike stock Q2), 
+      but that should just make life more interesting. 
+    </change>   
+    <change author="Barry">
+      teleport() now fires a PlayerStateEvent.STATE_TELEPORTED event to let interested
+      objects know the Player has made a -drastic- change in position. (The grappling
+      hook is interested in this - since it needs to reset if a player teleports).
+    </change>         
+  </class>
+  
+  <class name="q2java.baseq2.event.PlayerStateEvent">
+    <addition author="Barry">
+      STATE_TELEPORTED constant for events signalling that the player
+      has stepped through a teleporter.
+    </addition>  
+    <removed author="Barry">
+      STATE_SUSPENDEDSTOP constant wasn't being used, and had the same
+      value as STATE_INVALID.
+    </removed>
+  </class>
+
+  <class name="q2java.baseq2.spawn.item_breather">
+    <change author="Barry">
+      stateChanged() altered to only reset on death or disconnection, didn't
+      want to reset when the player goes through a teleporter
+    </change>    
+  </class>  
+    
+  <class name="q2java.baseq2.spawn.item_enviro">
+    <change author="Barry">
+      stateChanged() altered to only reset on death or disconnection, didn't
+      want to reset when the player goes through a teleporter
+    </change>    
+  </class>  
+    
+  <class name="q2java.baseq2.spawn.item_health_mega">
+    <change author="Barry">
+      stateChanged() altered to only reset on death or disconnection, didn't
+      want to reset when the player goes through a teleporter
+    </change>    
+  </class>  
+    
+  <class name="q2java.baseq2.spawn.item_invulnerability">
+    <change author="Barry">
+      stateChanged() altered to only reset on death or disconnection, didn't
+      want to reset when the player goes through a teleporter
+    </change>    
+  </class>  
+    
+  <class name="q2java.baseq2.spawn.item_quad">
+    <change author="Barry">
+      stateChanged() altered to only reset on death or disconnection, didn't
+      want to reset when the player goes through a teleporter
+    </change>    
+  </class>  
+    
+  <class name="q2java.baseq2.spawn.worldspawn">
+    <removed author="Barry">
+      worldspawn no longer does anything with the "nextmap" spawn parameter.
+      Anything interested in that info (such as the new LevelChanger gamelet)
+      can examine the level document to find it.      
+    </removed>    
+  </class>  
+  
+  <class name="q2java.core.DefaultLevelDocumentFactory">
+    <removed author="Barry">
+      Class removed, most code now moved to q2java.core.GameUtil
+    </removed>    
+  </class>
+  
+  <class name="q2java.core.Game">
+    <removed author="Barry">
+      Everything related to the obsolete LevelDocumentFactory interface including setLevelDocumentFactory()
+      and getLevelDocumentFactory().
+    </removed>    
+    <fix author="Barry">
+      bprint() was causing double messages to be displayed on the console. Now
+      it -only- fires off a PrintEvent, so it'll be up to some other code, probably
+      some type of gamelet, to relay the message down to the console.
+    </fix>   
+    <addition author="Barry">
+      getCurrentMapName() for finding out the current map name (duh). This info
+      -could- be gotten from the level document, but the level document could also
+      be screwed with, so the Game class now keeps a copy of the info that can 
+      be relied on.
+    </addition>  
+    <addition author="Barry">
+      getOccupancySupport() to get access to the object the Game class uses
+      to fire off OccupancyEvents.
+    </addition>       
+    <addition author="Barry">
+      startIntermission() to fire off a new GameStatusEvent to let objects know
+      that they should go into intermission mode.  The new LevelChanger gamelet
+      calls this when it decides it's time to move on.
+    </addition>       
+    <change author="Barry">
+      startLevel() reworked to allow multiple objects to contribute to building 
+      the DOM document describing the level, by creating a mostly-empty level document
+      and firing off a GameStatusEvent.GAME_BUILD_DOCUMENT event when the level is first
+      starting.  startLevel() also fills in the document with the info passed up from
+      the .bsp file by the Q2 engine if necessary.
+    </change>  
+  </class>
+
+  <class name="q2java.core.Gamelet">
+    <change author="Barry">
+      grabPlayers() now fires off a OccupancyEvent.PLAYER_CLASSCHANGE to let
+      interested objects know that player classes are changing.  (Was necessary for
+      the grappling hook gamelet, so it could register itself with the new player 
+      objects).
+    </change>  
+  </class>
+  
+  <class name="q2java.core.GameUtil">
+    <addition author="Barry">
+      buildLevelDocument() can either build a mostly-empty level document
+      that can be filled in by various sources, of a full one if a map entString
+      is passed.
+    </addition>
+    <addition author="Barry">
+      parseAngle3f() and parsePoint3f() moved back here from the obsolete q2java.core.DefaultLevelDocumentFactory
+    </addition>
+    <addition author="Barry">
+      parseEntString() can parse a map's entString and insert the data into
+      an existing DOM document.  Used by buildLevelDocument() and Game.startLevel().
+    </addition>    
+  </class>
+  
+  <class name="q2java.core.LevelDocumentFactory">
+    <removed author="Barry">
+      This interface is no longer needed due to the new level document building system.
+    </removed>
+  </class>
+    
+  <class name="q2java.core.XMLTools">
+    <addition author="Barry">
+       copy() method can copy nodes from one document to another - handy
+       for merging multiple map data sources together.
+    </addition>
+  </class>   
+  
+  <class name="q2java.core.event.GameStatusEvent">
+    <addition author="Barry">
+      GAME_INTERMISSION constant for events that signal when intermission 
+      should begin
+    </addition>  
+    <addition author="Barry">
+      GAME_BUILD_DOCUMENT constant for events that signal when objects
+      should consider contributing info to the next level's document
+    </addition>  
+    <addition author="Barry">
+      getMapEntities() and getSpawnpoint() to find out about what was specified
+      by the engine during the GAME_BUILD_DOCUMENT event. 
+    </addition>  
+    <removed author="Barry">
+      constructor taking (int, String) parameters wasn't being used.
+    </removed>
+  </class>
+ 
+  <class name="q2java.core.event.PrintEvent">
+    <addition author="Barry">
+      PRINT_TALK_PRIVATE constant added as a channel for private messages
+    </addition>    
+    <change author="Barry">
+      getEvent() and releaseEvent() made public.
+    </change>    
+  </class>
+ 
+  <class name="q2java.ctf.CTFPlayer">
+    <change author="Barry">
+      clearSettings() no longer worries about giving the player a grappling hook.
+      This means that in order to have a GH in CTF, you must load the GrapplingHook
+      gamelet in addition to the CTF gamelet.
+    </change>    
+    <change author="Barry">
+      playerThink() no longer is aware of the grappling hook - the hook
+      itself is now smart enough to register as a PlayerMoveListener and do
+      what it needs when a PlayerMoveEvent is fired from inside q2java.baseq2.Player.playerThink().
+    </change>    
+    <removed author="Barry">
+      teleport() method that overrode q2java.baseq2.Player.teleport() no longer needed
+      since the grappling hook is smart enough to listen for PlayerStateEvent.PLAYER_TELEPORTED
+      and reset itself as necessary.
+    </removed>
+  </class>
+
+  <class name="q2java.ctf.GrappleWeapon">
+    <addition author="Barry">
+      This class used to be named q2java.ctf.spawn.weapon_grapple, but since
+      that's not an item that appears in maps, it seemed cleaner to move
+      it outside the q2java.ctf.spawn package.
+    </addition>    
+    <addition author="Barry">
+      Objects of this class register as PlayerMoveListeners when the
+      weapon is active, and playerMoved() is called so the hook gets a chance
+      to pull the player along.
+    </addition>
+    <addition author="Barry">
+      Objects of this class register as PlayerStateListeners so they can 
+      watch for the player teleporting and reset the weapon if that happens..
+    </addition>
+  </class>
+  
+  <class name="q2java.ctf.GrapplingHook">
+    <addition author="Barry">
+      New gamelet that should add the grappling hook to q2java.baseq2.Player
+      or any subclass.
+    </addition>    
+  </class>
+
+  <class name="q2java.ctf.spawn.weapon_grapple">
+    <addition author="Barry">
+      This class was renamed to q2java.ctf.GrappleWeapon since
+      that's not an item that appears in maps, and seemed cleaner to move
+      it outside the q2java.ctf.spawn package.
+    </addition>    
+  </class>
+  
+</changelog>

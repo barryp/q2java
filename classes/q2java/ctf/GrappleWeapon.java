@@ -1,4 +1,4 @@
-package q2java.ctf.spawn;
+package q2java.ctf;
 
 
 /*
@@ -26,7 +26,7 @@ import q2java.baseq2.*;
 import q2java.baseq2.event.*;
 import q2java.ctf.*;
 
-public class weapon_grapple extends GenericWeapon
+public class GrappleWeapon extends GenericWeapon implements PlayerMoveListener
 {
 	// all Grapple objects will share these arrays
 	private final static int[] PAUSE_FRAMES = new int[] {10, 18, 27, 0};
@@ -35,10 +35,10 @@ public class weapon_grapple extends GenericWeapon
 	protected GrappleHook fHook = null;
 	
 
-	public weapon_grapple()
+	public GrappleWeapon()
 	{
 	}
-	public weapon_grapple(Element spawnArgs) throws GameException
+	public GrappleWeapon(Element spawnArgs) throws GameException
 	{
 		super(spawnArgs);
 	}
@@ -92,7 +92,7 @@ public class weapon_grapple extends GenericWeapon
 		//	volume = 0.2;
 
 		fEntity.sound(NativeEntity.CHAN_RELIABLE+NativeEntity.CHAN_WEAPON, Engine.getSoundIndex("weapons/grapple/grfire.wav"), volume, NativeEntity.ATTN_NORM, 0);
-
+		fPlayer.addPlayerMoveListener(this);
 		try
 		{
 			fHook = new GrappleHook(fPlayer, start, forward, damage, GrappleHook.CTF_GRAPPLE_SPEED );
@@ -133,13 +133,6 @@ public class weapon_grapple extends GenericWeapon
 		return null;	
 	}
 	/**
-	* Maybe this method should be in GenericWeapon.java...
-	**/
-	public q2java.baseq2.Player getOwner()
-	{
-		return fPlayer;
-	}
-	/**
 	 * Get the name of the model used to show the weapon from the player's POV.
 	 * @return java.lang.String
 	 */
@@ -154,6 +147,15 @@ public class weapon_grapple extends GenericWeapon
 	{
 		return false;
 	}
+	public void playerMoved(PlayerMoveEvent pme)
+	{
+		if ( fHook != null )
+		{ 
+			if ( fHook.getState() == GrappleHook.CTF_GRAPPLE_STATE_PULLING 
+			  || fHook.getState() == GrappleHook.CTF_GRAPPLE_STATE_HANGING )
+				 fHook.pull();
+		}	
+	}
 	public void reset()
 	{
 		fEntity.sound(NativeEntity.CHAN_RELIABLE+NativeEntity.CHAN_WEAPON, Engine.getSoundIndex("weapons/grapple/grreset.wav"), 1, NativeEntity.ATTN_NORM, 0);
@@ -161,6 +163,7 @@ public class weapon_grapple extends GenericWeapon
 		{
 			fHook.dispose();
 			fHook = null;
+			getOwner().removePlayerMoveListener(this);
 		}
 	}
 	/**
@@ -177,12 +180,20 @@ public class weapon_grapple extends GenericWeapon
 		fFireFrames  = FIRE_FRAMES;					
 	}
 	/**
-	 * Called when a player dies or disconnects.
+	 * Called when a player dies, disconnects, or teleports.
 	 * @param wasDisconnected true on disconnects, false on normal deaths.
 	 */
 	public void stateChanged(PlayerStateEvent pse)
 	{
-		reset();
-		super.stateChanged(pse);
+		switch (pse.getStateChanged())	
+		{
+		case PlayerStateEvent.STATE_DEAD:
+		case PlayerStateEvent.STATE_INVALID:
+		case PlayerStateEvent.STATE_SUSPENDEDSTART:
+		case PlayerStateEvent.STATE_TELEPORTED:
+			reset();
+			super.stateChanged(pse);
+			break;
+		}	
 	}
 }

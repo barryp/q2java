@@ -89,13 +89,20 @@ public void runFrame(int phase)
 /**
  * Watch for Player disconnect or level change.
  */
-public void stateChanged(PlayerStateEvent e)
+public void stateChanged(PlayerStateEvent pse)
 	{
-	fOwner.removePlayerStateListener(this);
-	fOwner = null;
+	switch (pse.getStateChanged())	
+		{
+		case PlayerStateEvent.STATE_DEAD:
+		case PlayerStateEvent.STATE_INVALID:
+		case PlayerStateEvent.STATE_SUSPENDEDSTART:
+			fOwner.removePlayerStateListener(this);
+			fOwner = null;
 		
-	Game.removeServerFrameListener(this);
-	setRespawn(20);
+			Game.removeServerFrameListener(this);
+			setRespawn(20);
+			break;
+		}	
 	}
 /**
  * React to being touched by boosting player health 

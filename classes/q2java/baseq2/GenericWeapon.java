@@ -136,6 +136,14 @@ public int getDefaultAmmoCount()
 	return 0;
 	}
 /**
+ * Maybe this method should be in GenericWeapon.java...
+ * (yep, Menno was right)
+ */
+public q2java.baseq2.Player getOwner()
+	{
+	return fPlayer;
+	}
+/**
  * All weapons share the same pickup sound.
  * @return java.lang.String
  */
@@ -252,20 +260,27 @@ public final void setWeaponFrame(int newFrame)
  * Called when a player dies or disconnects.
  * @param wasDisconnected true on disconnects, false on normal deaths.
  */
-public void stateChanged(PlayerStateEvent e)
+public void stateChanged(PlayerStateEvent pse)
 	{
-	Player p = e.getPlayer();
-	int changeEvent = e.getStateChanged();
-	
-	// not interested anymore if the player dies
-	fPlayer.removePlayerStateListener(this);
-	
-	if ((changeEvent != PlayerStateEvent.STATE_SUSPENDEDSTART) && isDroppable())
-		{
-		setAmmoCount(getDefaultAmmoCount());
-		p.removeInventory(getItemName()); // not really necessary, but you never know
-		drop(p, GenericItem.DROP_TIMEOUT);
+	switch (pse.getStateChanged())	
+		{		
+		case PlayerStateEvent.STATE_SUSPENDEDSTART:	
+			fPlayer.removePlayerStateListener(this);
+			break;
+			
+		case PlayerStateEvent.STATE_DEAD:
+		case PlayerStateEvent.STATE_INVALID:
+			fPlayer.removePlayerStateListener(this);
+			if (isDroppable())
+				{
+				Player p = pse.getPlayer();
+				setAmmoCount(getDefaultAmmoCount());
+				p.removeInventory(getItemName()); // not really necessary, but you never know
+				drop(p, GenericItem.DROP_TIMEOUT);
+				}		
+			break;
 		}
+	
 	}
 /**
  * This method was created by a SmartGuide.

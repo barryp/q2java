@@ -92,7 +92,7 @@ public class TimeAccel extends GenericTech
 		if ((phase == Game.FRAME_BEGINNING) && (getOwner() != null))
 		{
 			q2java.baseq2.GenericWeapon gw = getOwner().getCurrentWeapon();
-			if ((!(gw instanceof q2java.ctf.spawn.weapon_grapple)) &&  getOwner().getCurrentWeapon().isFiring() )
+			if ((!(gw instanceof GrappleWeapon)) &&  getOwner().getCurrentWeapon().isFiring() )
 			{
 				gw.weaponThink();
 				playSound();

@@ -43,11 +43,19 @@ public void addGameStatusListener(GameStatusListener gsl)
 	}
 public void fireEvent(int state)
 	{
-	fireEvent(state, null);
+	fireEvent(state, null, null, null);
 	}
 public void fireEvent(int state, String filename)
 	{
-	fCurrentEvent = GameStatusEvent.getEvent(state, filename);
+	fireEvent(state, filename, null, null);
+	}
+public void fireEvent(int state, String entString, String spawnpoint)
+	{
+	fireEvent(state, null, entString, spawnpoint);
+	}
+public void fireEvent(int state, String filename, String entString, String spawnpoint)
+	{
+	fCurrentEvent = GameStatusEvent.getEvent(state, filename, entString, spawnpoint);
 	
 	try 
 		{ 

@@ -54,9 +54,12 @@ INSTALLING
                  (you might have to "chmod 555 q2java_blackdown" to 
                  make it executable)
 
-JAVA 2 (or JDK 1.2)
 
-    You'll probably want to create a Security policy file - a sample one is 
+    -------------------------------------------------------------------
+    ** VERY IMPORTANT **     JAVA 2 (or JDK 1.2)   ** VERY IMPORTANT **
+    -------------------------------------------------------------------
+    Unless you turn off Q2Java's security features completely (see below)
+    JDK 1.2 users MUST create a Java Security policy file. A sample one is 
     included as "q2java.policy.sample".  You can simple copy/rename it to 
     "q2java.policy", and edit it with a text editor to make sure the directory 
     paths listed in the file are appropriate for your particular computer.

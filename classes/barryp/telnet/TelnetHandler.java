@@ -49,7 +49,7 @@ class TelnetHandler extends Thread
 			
 		public void run() 
 			{
-			Game.bprint(Engine.PRINT_CHAT, fMessage + "\n");	
+			Game.bprint(Engine.PRINT_MEDIUM, fMessage + "\n");	
 			}			
 		}
 		
@@ -66,7 +66,7 @@ class TelnetHandler extends Thread
 			
 		public void run() 
 			{
-			Game.getPrintSupport().fireEvent(PrintEvent.PRINT_TALK, 0, null, fUserName, null, fMessage);
+			Game.getPrintSupport().fireEvent(PrintEvent.PRINT_TALK, Engine.PRINT_CHAT, null, fUserName, null, fMessage);
 			}			
 		}	
 	

@@ -18,9 +18,13 @@ public class GameStatusEvent extends GameEvent
 	public final static int GAME_PRESPAWN	= 6;
 	public final static int GAME_POSTSPAWN	= 7;
 	public final static int GAME_ENDLEVEL	= 8;
+	public final static int GAME_INTERMISSION = 9; // pause for intermission
+	public final static int GAME_BUILD_DOCUMENT = 10; // the level document is being built
 	
 	protected int fState;
 	protected String fFilename;
+	protected String fSpawnpoint;
+	protected String fMapEntities;
 
 	private static GameStatusEvent gCachedEvent = null;
 	
@@ -28,17 +32,11 @@ public class GameStatusEvent extends GameEvent
 	{
 	  super(GAME_STATUS_EVENT);
 	}
-  public GameStatusEvent(int state, String filename)
-	{
-	  super(null, GAME_STATUS_EVENT);
-	  fFilename = filename;
-	  fState = state;
-	}
 /**
  * if you want conserve memory use this method to get message objects.
  * Note you must then call releaseEvent to conserve memory
  */
-public static final GameStatusEvent getEvent(int state, String filename)
+public static final GameStatusEvent getEvent(int state, String filename, String entString, String spawnpoint)
 	{
 	GameStatusEvent event = gCachedEvent;
 	   
@@ -49,6 +47,8 @@ public static final GameStatusEvent getEvent(int state, String filename)
 	// the local gameinfo as source
 	//event.source = 
 	event.fFilename = filename;
+	event.fMapEntities = entString;
+	event.fSpawnpoint = spawnpoint;
 	event.fState = state;
 	
 	return event; 
@@ -61,11 +61,31 @@ public final String getFilename()
 	{ 
 	return fFilename; 
 	}
-  /**
-   * state of game that caused this message. 
-   * see above list of constants for possible values.
-   */
-  public final int getState() { return fState; }      
+/**
+ * For the BUILD_DOCUMENT event, this allows you to see
+ * what info was embedded in the map itself.
+ * @return java.lang.String
+ */
+public String getMapEntities() 
+	{
+	return fMapEntities;
+	}
+/**
+ * For the BUILD_DOCUMENT event, find out what spawnpoint the Engine
+ * specified.
+ */
+public String getSpawnpoint()
+	{
+	return fSpawnpoint;
+	}
+ /**
+  * state of game that caused this message. 
+  * see above list of constants for possible values.
+  */
+public final int getState() 
+	{ 
+	return fState; 
+	}
 /**
  * Releases an event any may put it in cache to be re-used.
  */
@@ -73,5 +93,7 @@ public final static void releaseEvent(GameStatusEvent event)
 	{
 	gCachedEvent = event;
 	event.fFilename = null;
+	event.fSpawnpoint = null;
+	event.fMapEntities = null;
 	}
 }

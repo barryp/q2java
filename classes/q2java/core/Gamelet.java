@@ -2,6 +2,7 @@ package q2java.core;
 
 import java.lang.reflect.*;
 import q2java.*;
+import q2java.core.event.*;
 
 /**
  * Abstract class for Game Modules
@@ -75,8 +76,10 @@ void grabPlayers()
 			{
 			try
 				{
-				params[0] = (NativeEntity) players.nextElement();	
+				NativeEntity ne = (NativeEntity) players.nextElement();
+				params[0] = ne;	
 				con.newInstance(params);
+				Game.getOccupancySupport().fireEvent(ne, OccupancyEvent.PLAYER_CLASSCHANGE );
 			
 	// if not changing map			
 	//			p.playerBegin(false);

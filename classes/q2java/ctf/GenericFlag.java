@@ -310,9 +310,16 @@ public void becomeExplosion(int tempEntity)
 	 */
 	public void stateChanged(PlayerStateEvent pse)
 	{
-		q2java.baseq2.Player p = pse.getPlayer();
-		drop(p, CTF_FLAG_AUTO_RETURN_TIME); // will handle removing listener			
-		p.removeInventory("flag");		
+		switch (pse.getStateChanged())	
+		{
+		case PlayerStateEvent.STATE_DEAD:
+		case PlayerStateEvent.STATE_INVALID:
+		case PlayerStateEvent.STATE_SUSPENDEDSTART:
+			q2java.baseq2.Player p = pse.getPlayer();
+			drop(p, CTF_FLAG_AUTO_RETURN_TIME); // will handle removing listener			
+			p.removeInventory("flag");		
+			break;
+		}	
 	}
 	/**
 	 * Called if item was actually taken.

@@ -28,10 +28,6 @@ public worldspawn(Element spawnArgs) throws GameException
 //	Engine.setConfigString(Engine.CS_MAXCLIENTS, );
 	String s = getSpawnArg("message", null);
 	if (s != null)
-		Engine.setConfigString(Engine.CS_NAME, s);
-		
-	s = getSpawnArg("nextmap", null);
-	if (s != null)
-		q2java.baseq2.BaseQ2.setNextMap(s);		
+		Engine.setConfigString(Engine.CS_NAME, s);		
 	}
 }

@@ -59,8 +59,6 @@ public class BaseQ2 extends q2java.core.Gamelet
 	public static float gMaxVelocity;	
 
 	// Mirrored CVars only the BaseQ2 gamelet looks at
-	private static int   gFragLimit;
-	private static float gTimeLimit;
 	private static int   gDMFlags;
 	private static float gCheats;
 	
@@ -71,12 +69,6 @@ public class BaseQ2 extends q2java.core.Gamelet
 	public static int gSkillLevel; // this probably isn't necessary since this is a DM-only mod, but wtf.
 	
 	// track level changes	
-	private static float gLevelStartTime;
-	private static boolean gInIntermission;
-	private static double gIntermissionEndTime;
-	private static boolean gChangeMapNow;
-	private static String gCurrentMap;
-	private static String gNextMap;
 	private static String gSpawnpoint;
 	
 	// ----------- Constants -------------------------
@@ -110,6 +102,18 @@ public BaseQ2(String gameletName)
 	{
 	super(gameletName);
 	}
+/**
+ * Add spaces to a StringBuffer (called by svcmd_scores)
+ *
+ * @param sb StringBuffer to add to
+ * @param int num Number of spaces to append
+ */
+
+public static void addSpaces(StringBuffer sb, int spaces) 
+	{
+	for ( int i = 0; i <= spaces; i++ ) 
+		sb.append(" ");
+	} 
 /**
  * Check whether an entity should be inhibited because
  * of its spawnargs.
@@ -178,21 +182,11 @@ public void gameStatusChanged(GameStatusEvent e)
 	Engine.debugLog("BaseQ2.gameStatusChanged(" + e.getState() + ")");
 
 	if( e.getState() != GameStatusEvent.GAME_PRESPAWN )
-	    {
 		return;
-	    }
-
-	Engine.debugLog("BaseQ2 initialising");
 
 	Element root = (Element) Game.getLevelDocument().getFirstChild();
 	String mapname = root.getAttribute("name");
 	String spawnPoint = root.getAttribute("spawnpoint");
-
-	gLevelStartTime = Game.getGameTime();
-	gInIntermission = false;
-	gChangeMapNow = false;
-	gCurrentMap = mapname;
-	gNextMap = mapname; // in case there isn't a target_changelevel entity in the entString
 	
 	if ((spawnPoint != null) && (spawnPoint.length() == 0))
 		gSpawnpoint = null;
@@ -334,7 +328,7 @@ public static String getSpawnpoint()
  */
 public static String getVersion() 
 	{
-	return "Q2Java Base Game, v0.9.4";
+	return "Q2Java Base Game, v0.9.5";
 	}
 /**
  * Initialize this gamelet.
@@ -342,7 +336,6 @@ public static String getVersion()
 public void init() 
 	{
 	Game.addServerFrameListener(this, Game.FRAME_BEGINNING, 0, 10.0F);
-	Game.addServerFrameListener(this, Game.FRAME_MIDDLE, 0, 0);
 	Game.addGameStatusListener(this);
 	
 	//leighd 04/10/99 - need to register package path for spawning.
@@ -359,8 +352,6 @@ public void init()
 	gGravityCVar = new CVar("sv_gravity", "800", 0);	
 	gMaxVelocityCVar = new CVar("sv_maxvelocity", "2000", 0);
 	
-	gFragLimitCVar = new CVar("fraglimit", "0", CVar.CVAR_SERVERINFO);
-	gTimeLimitCVar = new CVar("timelimit", "0", CVar.CVAR_SERVERINFO);
 	gDMFlagsCVar = new CVar("dmflags", "0", CVar.CVAR_SERVERINFO);
 	gCheatsCVar = new CVar("cheats", "0", CVar.CVAR_LATCH);
 	
@@ -406,106 +397,9 @@ public void runFrame(int phase)
 			gGravity	= gGravityCVar.getFloat();
 			gMaxVelocity= gMaxVelocityCVar.getFloat();
 
-			gFragLimit	= (int) gFragLimitCVar.getFloat();
-			gTimeLimit	= gTimeLimitCVar.getFloat();
 			gDMFlags	= (int) gDMFlagsCVar.getFloat();
 			gCheats		= gCheatsCVar.getFloat();			
-			break;
-			
-		case Game.FRAME_MIDDLE:
-			if (gInIntermission && (Game.getGameTime() > gIntermissionEndTime))
-				{
-				if (gChangeMapNow || (!isDMFlagSet(DF_SAME_LEVEL)))
-					Engine.addCommandString("gamemap \"" + gNextMap + "\"\n");
-				else
-					Engine.addCommandString("gamemap \"" + gCurrentMap + "\"\n");
-				return;
-				}
-
-			if (!gInIntermission && timeToQuit())
-				startIntermission();
-			break;
-		}
-	}
-/**
- * Set what the next map will be.
- * @param mapname java.lang.String
- */
-public static void setNextMap(String mapname) 
-	{
-	if (mapname != null)
-		gNextMap = mapname;
-	}
-/**
- * Called by svcmd_scores
- * @author _Quinn
- * @param int num Number of spaces to return
- */
-
-public String spaces( float spaces ) 
-	{
-	StringBuffer sb = new StringBuffer();
-	for ( int i = 0; i <= spaces; i++ ) 
-			{
-			sb.append(" ");
-			} // end for
-
-	return sb.toString();
-	} // end spaces
-/**
- * Pick an intermission spot, and notify each player.
- */
-public static void startIntermission() 
-	{
-	if (gInIntermission)
-		return; // already in intermission
-
-	gChangeMapNow = false; 
-		
-	Enumeration enum;
-	Vector v;
-	
-	// gather list of info_player_intermission entities
-	v = Game.getLevelRegistryList(q2java.baseq2.spawn.info_player_intermission.REGISTRY_KEY);
-
-	// if there weren't any intermission spots, try for info_player_start spots
-	if (v.size() < 1)
-		v = Game.getLevelRegistryList(q2java.baseq2.spawn.info_player_start.REGISTRY_KEY);
-
-	// still no spots found? try for info_player_deathmatch
-	if (v.size() < 1)
-		v = Game.getLevelRegistryList(q2java.baseq2.spawn.info_player_deathmatch.REGISTRY_KEY);
-		
-	// randomly pick something from the list
-	int i = (GameUtil.randomInt() & 0x0fff) % v.size();
-	GenericSpawnpoint spot = (GenericSpawnpoint) v.elementAt(i);
-
-	// notify each player
-	enum = Player.enumeratePlayers();
-	while (enum.hasMoreElements())
-		{
-		Player p = (Player) enum.nextElement();
-		p.startIntermission(spot);
-		}
-		
-	gInIntermission = true;	
-	gIntermissionEndTime = Game.getGameTime() + 5.0;	
-	}
-/**
- * Force a map change, but do it nicely so that players see the scoreboard.
- */
-public void svcmd_changemap(String[] args) 
-	{
-	gChangeMapNow = true;
-	
-	if (args.length > 2)
-		{
-		gNextMap = args[2];
-		}
-	else
-		{
-		if (isDMFlagSet(DF_SAME_LEVEL))
-			gNextMap = gCurrentMap;
+			break;			
 		}
 	}
 /**
@@ -533,7 +427,6 @@ public void svcmd_help(String[] args)
 	{
 	Game.dprint(getVersion());
 	Game.dprint("\n\n    sv commands:\n");
-	Game.dprint("       changemap [mapname]\n");
 	Game.dprint("       cheating [on | off]\n");
 	Game.dprint("       scores\n");
 	}
@@ -550,6 +443,7 @@ public void svcmd_scores(String[] args)
 	{
 	// _Quinn: 04/20/98: shamelessly looted from baseq2.Player
 	// _Quinn: 05.04.98: made pretty printing prettier
+	// Barryp: 1999-05-27: reworked for less string concatenations and StringBuffer/String object creation
 
 	// Name           Score Ping Time Rate RelPing Rank
 	// Rate is Score/Time
@@ -616,75 +510,59 @@ public void svcmd_scores(String[] args)
 	DecimalFormat dfDotThree = new DecimalFormat( "#.0##" );
 	
 		// generate the pretty printing.
-	StringBuffer sb = new StringBuffer( "Name            Score Ping  Time Rate RelPing Rank\n" );
-	String s = "";
+	StringBuffer sb = Q2Recycler.getStringBuffer();
+	sb.append("Name            Score Ping  Time Rate RelPing Rank\n" );
+	
+	String s;
 	for (i = 0; i < playerCount; i++)
 		{
 		pD = (float[])playerData.elementAt(i);
 		// name
-		sb.append( players.elementAt(i).toString() + spaces(pD[6]) );
+		sb.append( players.elementAt(i).toString());
+		addSpaces(sb, (int) pD[6]);
+		
 		// score
 		s = dfThree.format(pD[0]);
-		sb.append( spaces( 5 - s.length() ) + s );
+		addSpaces(sb, 5 - s.length());
+		sb.append(s);
+		
 		// ping
 		s = dfThree.format(pD[1]);
-		sb.append( spaces( 4 - s.length() ) + s );
+		addSpaces(sb, 4 - s.length());
+		sb.append(s);
+		
 		// time
 		s = dfThree.format(pD[2]);
-		sb.append( spaces( 4 - s.length() ) + s );
+		addSpaces(sb, 4 - s.length());
+		sb.append(s);
+		
 		// rate
 		s = dfTwoDotOne.format(pD[3]);
-		sb.append( spaces( 4 - s.length() ) + s );
+		addSpaces(sb, 4 - s.length());
+		sb.append(s);
+		
 		// relping
 		s = dfDotThree.format(pD[4]);
-		sb.append( spaces( 7 - s.length() ) + s );
+		addSpaces(sb, 7 - s.length());
+		sb.append(s);
+		
 		// rank
 		s = dfDotThree.format(pD[5]);
-		sb.append( spaces( 4 - s.length() ) + s + "\n" );
+		addSpaces(sb, 4 - s.length());
+		sb.append(s);
+		sb.append('\n');
 		}
 
-	System.out.print( sb );
+	System.out.print(sb.toString());
+	Q2Recycler.put(sb);
 	} // end scores ();
-/**
- * Check the timelimit and fraglimit values and decide
- * whether to end the level or not.
- * @return boolean true if it's time to end the level
- */
-protected static boolean timeToQuit() 
-	{
-	if (gChangeMapNow)
-		return true;
-		
-
-	if ((gTimeLimit > 0) && (Game.getGameTime() > (gLevelStartTime + (gTimeLimit * 60))))
-		{
-		Game.localecast("q2java.baseq2.Messages", "timelimit",  Engine.PRINT_HIGH);
-		return true;
-		}
-		
-	if (gFragLimit < 1)
-		return false;
-		
-	Enumeration enum = Player.enumeratePlayers();
-	while (enum.hasMoreElements())
-		{
-		Player p = (Player) enum.nextElement();
-		if (p.getScore() > gFragLimit)
-			{
-			Game.localecast("q2java.baseq2.Messages", "fraglimit", Engine.PRINT_HIGH);
-			return true;
-			}
-		}		
-		
-	return false;		
-	}
 /**
  * Unload baseq2 from the game - do this at your own risk.
  */
 public void unload() 
 	{
 	Game.removePackagePath("q2java.baseq2");
-	Game.removeServerFrameListener(this, Game.FRAME_BEGINNING + Game.FRAME_MIDDLE);
+	Game.removeServerFrameListener(this, Game.FRAME_BEGINNING);
 	Game.removeGameStatusListener(this);
 	}
 }

@@ -65,6 +65,13 @@ public void runFrame(int phase)
  */
 public void stateChanged(PlayerStateEvent pse) 
 	{
-	dispose();
+	switch (pse.getStateChanged())	
+		{
+		case PlayerStateEvent.STATE_DEAD:
+		case PlayerStateEvent.STATE_INVALID:
+		case PlayerStateEvent.STATE_SUSPENDEDSTART:
+			dispose();
+			break;
+		}
 	}
 }
