@@ -170,10 +170,10 @@ jboolean JNICALL Java_q2java_Engine_inP0
 /*
  * Class:     q2java_Engine
  * Method:    trace0
- * Signature: (FFFFFFFFFFFFLq2java/NativeEntity;I)Lq2java/TraceResults;
+ * Signature: (FFFFFFFFFFFFLq2java/NativeEntity;II)Lq2java/TraceResults;
  */
 jobject JNICALL Java_q2java_Engine_trace0
-  (JNIEnv *, jclass, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jobject, jint);
+  (JNIEnv *, jclass, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jobject, jint, jint);
 
 #ifdef __cplusplus
 }
