@@ -4,6 +4,9 @@ import java.beans.PropertyVetoException;
 import java.io.*;
 import java.lang.reflect.*;
 import java.util.*;
+
+import org.w3c.dom.Document;
+
 import q2java.*;
 import q2java.core.*;
 import q2java.core.event.*;
@@ -22,9 +25,28 @@ public class GameModule extends Gamelet
 {
   protected static FileGibStatisticsLog gGibStatisticsLog = null;
 
-  public GameModule(String moduleName) throws Exception
+  public GameModule(Document gameletInfo)
 	{
-	  super(moduleName);
+	  super(gameletInfo);
+
+	if( gGibStatisticsLog == null )
+		{
+		CVar cvar = new CVar("gibstatslog", "gibstats", CVar.CVAR_LATCH);
+		gGibStatisticsLog = new FileGibStatisticsLog( cvar.getString(), true );
+		}
+
+	Game.addOccupancyListener(this);
+
+	Enumeration enum = Player.enumeratePlayers();
+	  
+	while( enum.hasMoreElements() )
+		{
+		Player p = (Player) enum.nextElement();
+		p.addPlayerInfoListener(this);
+		}      
+
+	ScoreManager s = RuleManager.getScoreManager();
+	s.addScoreListener(this, DeathScoreEvent.class);	  
 	}
   public void deathOccured(DeathScoreEvent e)
 	{
@@ -79,30 +101,6 @@ public class GameModule extends Gamelet
 	{
 	  gGibStatisticsLog.logPlayerRename( e.getNewValue(), e.getOldValue() );
 	}
-	}
-/**
- * Initialize the Gamelet.
- */
-public void init() 
-	{
-	if( gGibStatisticsLog == null )
-		{
-		CVar cvar = new CVar("gibstatslog", "gibstats", CVar.CVAR_LATCH);
-		gGibStatisticsLog = new FileGibStatisticsLog( cvar.getString(), true );
-		}
-
-	Game.addOccupancyListener(this);
-
-	Enumeration enum = Player.enumeratePlayers();
-	  
-	while( enum.hasMoreElements() )
-		{
-		Player p = (Player) enum.nextElement();
-		p.addPlayerInfoListener(this);
-		}      
-
-	ScoreManager s = RuleManager.getScoreManager();
-	s.addScoreListener(this, DeathScoreEvent.class);	
 	}
 public void playerChanged(OccupancyEvent e) throws PropertyVetoException
 	{

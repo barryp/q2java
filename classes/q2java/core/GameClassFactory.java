@@ -14,13 +14,6 @@ public interface GameClassFactory
 	{
 	
 /**
- * Adds a package to the running game.
- * @param className The name of class to load
- * @param alias The alias of the gamelet (required for constructor)
- * @exception ClassNotFoundException if class cannot be loaded.
- */
-public Gamelet loadGamelet(String className, String alias) throws ClassNotFoundException;
-/**
  * Looks up a class in loaded packages, or attempts to load the 
  * given class if not currently loaded.
  * @param classSuffix Either a suffix, like ".spawn.weapon_shotgun", 

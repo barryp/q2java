@@ -2,11 +2,14 @@ package barryp.bountyhunters;
 
 import java.util.Vector;
 
+import org.w3c.dom.Document;
+
 import q2java.*;
+import q2java.gui.*;
 import q2java.core.*;
 import q2java.core.event.*;
 import q2java.core.gui.*;
-import q2java.gui.*;
+import q2java.baseq2.BaseQ2;
 
 /**
  * BountyHunters Game Module.  Inspired by the "Assassin Quake" mod.
@@ -15,6 +18,9 @@ import q2java.gui.*;
  */
 public class BountyHunters extends q2java.core.Gamelet implements GameStatusListener
 	{
+	// handle to the general BaseQ2 world
+	protected Object fBaseQ2Token;
+	
 	protected static Vector gVictimList = new Vector();
 
 	// handles to keep classes from being GC'ed
@@ -26,13 +32,10 @@ public class BountyHunters extends q2java.core.Gamelet implements GameStatusList
  * Constructor for BountyHunter game module.
  * @param moduleName java.lang.String
  */
-public BountyHunters(String moduleName) 
+public BountyHunters(Document gameletInfo) 
 	{
-	super(moduleName);
+	super(gameletInfo);
 
-	//leighd 04/10/99 - add the package path
-	Game.addPackagePath("barryp.bountyhunters");
-	
 	// ask to be called on level changes
 	Game.addGameStatusListener(this);	
 	}
@@ -78,6 +81,16 @@ public void gameStatusChanged(GameStatusEvent e)
 	{
 	if (e.getState() == GameStatusEvent.GAME_PRESPAWN)
 		{
+		// do this stuff only once during the first level change we hear about
+		if (fBaseQ2Token == null)
+			{
+			// make sure there's some environment for the GameObjects
+			// to operate in.
+			fBaseQ2Token = BaseQ2.getReference();	
+					
+			Game.addPackagePath("q2java.baseq2");	
+			}
+		
 		// set the players HUDs
 		Engine.setConfigString (Engine.CS_STATUSBAR, BHPlayer.BOUNTY_STATUSBAR);
 
@@ -91,29 +104,12 @@ public void gameStatusChanged(GameStatusEvent e)
 		}
 	}
 /**
- * Get which Gamelet classes this Gamelet requires.
- * @return java.lang.Class[]
- */
-public String[] getGameletDependencies() 
-	{
-	String[] result = { "q2java.baseq2.BaseQ2" };
-	return result;
-	}
-/**
  * Get which class (if any) this Gamelet wants to use for a Player class.
  * @return java.lang.Class
  */
 public Class getPlayerClass() 
 	{
 	return BHPlayer.class;
-	}
-/**
- * Since we have our own player class, wait for level changes to load/unload.
- * @return boolean
- */
-public boolean isLevelChangeRequired() 
-	{
-	return true;
 	}
 /**
  * Remove a Player from the Game.
@@ -149,9 +145,12 @@ public void svcmd_help(String[] args)
  */
 public void unload() 
 	{
-	//remove the packagePath
-	Game.removePackagePath("barryp.bountyhunters");
-	
+	if (fBaseQ2Token != null)
+		{
+		BaseQ2.freeReference(fBaseQ2Token);		
+		Game.removePackagePath("q2java.baseq2");		
+		}
+		
 	// we no longer want to be notified of level changes
 	Game.removeGameStatusListener(this);	
 	}

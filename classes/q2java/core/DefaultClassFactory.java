@@ -26,42 +26,6 @@ public DefaultClassFactory()
 	//Engine.debugLog("class factory init");
 	}
 /**
- * Loads a gamelet into the game.
- */
-public Gamelet loadGamelet(String className, String alias) throws ClassNotFoundException
-	{
-	try 
-		{
-		Class cls = Class.forName(className);
-		Object[] args = new Object[1];
-		args[0] = alias;
-		Class[] argTypes = new Class[1];
-		argTypes[0] = alias.getClass();
-		java.lang.reflect.Constructor ctor = cls.getConstructor(argTypes);		
-		Gamelet g = (Gamelet) ctor.newInstance(args);
-
-		//note that the gamelet is responsible for registering 
-		//any package paths, we just forget about it. Although
-		//we will clear the class hash in case the new gamelet does
-		//want to alter any classes
-
-// huh? how can the gamelet alter a class without changing the path?		
-//		fClassCache.clear();
-		
-		return g;
-		} 
-	catch (java.lang.reflect.InvocationTargetException ite)
-		{
-		ite.getTargetException().printStackTrace();
-		}
-	catch (Exception e) 
-		{
-		e.printStackTrace();
-		}
-
-	return null;
-	}
-/**
  * Looks up a class in loaded packages, or attempts to load the 
  * given class if not currently loaded.
  * @param classSuffix Either a suffix, like ".spawn.weapon_shotgun", 

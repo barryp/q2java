@@ -18,7 +18,6 @@ final public class InventorySupport
 {
   private static Method gInvokeMethod = null;
   private Vector fListeners = new Vector();
-  private Player fPlayer = null;
 
   static
 	{
@@ -29,20 +28,21 @@ final public class InventorySupport
 	}
 	  catch(NoSuchMethodException nsme) {}
 	}
-
-  public InventorySupport(Player player)
+  public InventorySupport()
 	{
-	  fPlayer = player;
 	}
   public void addInventoryListener(InventoryListener l)
 	{
 	  if( !fListeners.contains(l) ) fListeners.addElement(l);
 	}
-  public void fireEvent( GenericItem item, boolean isPickingUp )
+  public void fireEvent( Player p, GenericItem item, boolean isPickingUp )
 	throws PropertyVetoException
 	{
+	if (fListeners.size() == 0)
+		return;
+		
 	  InventoryEvent e =
-	InventoryEvent.getEvent( fPlayer, item, isPickingUp );
+	InventoryEvent.getEvent( p, item, isPickingUp );
 	  EventPack.fireEvent( e, gInvokeMethod, fListeners );
 	  InventoryEvent.releaseEvent(e); 
 	}

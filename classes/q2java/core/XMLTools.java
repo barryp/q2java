@@ -1,6 +1,8 @@
 package q2java.core;
 
 import java.io.*;
+import java.lang.reflect.*;
+
 import org.w3c.dom.*;
 
 /**
@@ -92,7 +94,7 @@ public static Document createXMLDocument()
 	return gXMLFactory.createXMLDocument();
 	}
 /**
- * Make sure the XMLTools actually has an object to do its work.
+ * Make sure the XMLTools actually has an object to create/read/write with.
  */
 private static void init()
 	{
@@ -110,6 +112,91 @@ private static void init()
 		// try falling back on OpenXML - if this fails then you're hosed.
 		gXMLFactory = new OpenXMLFactory();
 		}
+	}
+/**
+ * Look for &lt;param name="xxx" value="yyy"&gt; tags under a given element,
+ * and if any are found, try calling setXxx(yyy) on the given object.
+ *
+ * @param e a DOM element possibly containing &lt;param&gt; tags.
+ * @param obj an Object possibly containing methods with the signature setXxx(String s).
+ */
+public static void parseParams(Element e, Object obj) 
+	{
+	parseParams(e, obj, null);
+	}
+/**
+ * Look for &lt;param name="xxx" value="yyy"&gt; tags under a given element,
+ * and if any are found, try calling setXxx(yyy) on the given object.
+ *
+ * @param e a DOM element possibly containing &lt;param&gt; tags.
+ * @param obj an Object possibly containing methods with the signature setXxx(String s).
+ * @param targetClass the class we want to treat obj as, that way a
+ *  superclass can call this method and limit it to only setting parameters
+ *  found in the superclass, and not in any subclasses (useful if you're
+ *  calling this from a constructor, and the subclass constructors and 
+ *  instance initializers haven't been invoked yet) - may be null if you don't care.
+ */
+public static void parseParams(Element e, Object obj, Class targetClass) 
+	{
+	// declare some variable, but don't actually create them
+	// now, since they may not be needed.
+	Class cls = null;
+	Class[] methodParamTypes = null;
+	Object[] methodParams = null;
+	
+	for (Node n = e.getFirstChild(); n != null; n = n.getNextSibling())
+		{
+		if (n.getNodeType() != Node.ELEMENT_NODE)
+			continue;
+
+		Element e2 = (Element) n;
+		if (!"param".equals(e2.getTagName()))
+			continue;
+
+		String propertyName = e2.getAttribute("name");
+		if (propertyName == null)
+			continue;
+			
+		String propertyValue = e2.getAttribute("value");
+		if (propertyValue == null)
+			continue;
+
+		String gameletSetter = "set" + Character.toUpperCase(propertyName.charAt(0)) + propertyName.substring(1);
+		
+		try
+			{
+			// ok, we need those variables, so go
+			// ahead and create them
+			if (cls == null)
+				{
+				cls = obj.getClass();
+				methodParamTypes = new Class[1];
+				methodParamTypes[0] = String.class;
+				methodParams = new Object[1];
+				}
+				
+			Method setter;
+			if (targetClass == null)
+				setter = cls.getMethod(gameletSetter, methodParamTypes);
+			else
+				setter = targetClass.getDeclaredMethod(gameletSetter, methodParamTypes);
+				
+			methodParams[0] = propertyValue;
+			setter.invoke(obj, methodParams);
+			}
+		catch (NoSuchMethodException nsme)
+			{
+//			Game.dprint(gameletSetter + " method not found\n");
+			}
+		catch (InvocationTargetException ite)
+			{
+			ite.getTargetException().printStackTrace();
+			}
+		catch (Exception ex)
+			{
+			ex.printStackTrace();
+			}
+		}	
 	}
 /**
  * Read an XML file into a DOM document.

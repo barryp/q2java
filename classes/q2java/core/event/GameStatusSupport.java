@@ -15,7 +15,7 @@ final public class GameStatusSupport
 	{
 	private static Method gInvokeMethod = null;
 	private Vector fListeners = new Vector();
-	private GameStatusEvent fCurrentEvent;
+	private Vector fEventStack = new Vector();
 	
 	static
 		{
@@ -37,8 +37,9 @@ public void addGameStatusListener(GameStatusListener gsl)
 
 		// if we're adding a listener right in the middle of firing off
 		// an event, let the new listener in on the action
-		if (fCurrentEvent != null)
-			gsl.gameStatusChanged(fCurrentEvent);
+		int nEvents = fEventStack.size();
+		if (nEvents > 0)
+			gsl.gameStatusChanged((GameStatusEvent)fEventStack.elementAt(nEvents-1));
 		}
 	}
 public void fireEvent(int state)
@@ -55,18 +56,19 @@ public void fireEvent(int state, String entString, String spawnpoint)
 	}
 public void fireEvent(int state, String filename, String entString, String spawnpoint)
 	{
-	fCurrentEvent = GameStatusEvent.getEvent(state, filename, entString, spawnpoint);
+	GameStatusEvent gse = GameStatusEvent.getEvent(state, filename, entString, spawnpoint);
+	fEventStack.addElement(gse);
 	
 	try 
 		{ 
-		EventPack.fireEvent(fCurrentEvent, gInvokeMethod, fListeners); 
+		EventPack.fireEvent(gse, gInvokeMethod, fListeners); 
 		}
 	catch(PropertyVetoException pve) 
 		{
 		}
 
-	GameStatusEvent.releaseEvent(fCurrentEvent);
-	fCurrentEvent = null;
+	fEventStack.removeElement(gse);
+	GameStatusEvent.releaseEvent(gse);
 	}
 public void removeGameStatusListener(GameStatusListener gsl)
 	{

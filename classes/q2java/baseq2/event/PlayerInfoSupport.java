@@ -16,7 +16,6 @@ final public class PlayerInfoSupport
 {
   private static Method gInvokeMethod = null;
   private Vector fListeners = new Vector();
-  private Player fPlayer = null;
 
   static
 	{
@@ -28,21 +27,23 @@ final public class PlayerInfoSupport
 	  catch(NoSuchMethodException nsme) {}
 	}
 
-  public PlayerInfoSupport(Player player)
+  public PlayerInfoSupport()
 	{
-	  fPlayer = player;
 	}
   public void addPlayerInfoListener(PlayerInfoListener l)
 	{
 	  if( !fListeners.contains(l) ) fListeners.addElement(l);
 	}
-  public void fireEvent( String key, String newValue, String oldValue )
+  public void fireEvent(Player p, String key, String newValue, String oldValue )
 	throws PropertyVetoException
 	{
+	if (fListeners.size() == 0)
+		return;
+		
 	  PlayerInfoEvent e =
 	PlayerInfoEvent.getEvent( key, newValue, oldValue );
-	  e.setPlayer( fPlayer ); 
-	  e.setSource( fPlayer ); 
+	  e.setPlayer( p ); 
+	  e.setSource( p ); 
 	  EventPack.fireEvent( e, gInvokeMethod, fListeners );
 	  PlayerInfoEvent.releaseEvent(e); 
 	}

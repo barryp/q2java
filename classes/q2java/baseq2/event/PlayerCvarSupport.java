@@ -19,7 +19,6 @@ final public class PlayerCvarSupport implements PlayerCommandListener
   private static Method gInvokeMethod = null;
   private Vector fListeners = new Vector();
   private Vector fCvars = new Vector();
-  private Player fPlayer = null;
   private boolean fIsCommandListening = false;
 
   static
@@ -32,11 +31,10 @@ final public class PlayerCvarSupport implements PlayerCommandListener
 	  catch(NoSuchMethodException nsme) {}
 	}
 
-  public PlayerCvarSupport(Player player)
+  public PlayerCvarSupport()
 	{
-	  fPlayer = player;
 	}
-  public void addPlayerCvarListener(PlayerCvarListener l, String cvar)
+  public void addPlayerCvarListener(Player p, PlayerCvarListener l, String cvar)
 	{
 	  if( !fListeners.contains(l) ) 
 	{
@@ -44,12 +42,12 @@ final public class PlayerCvarSupport implements PlayerCommandListener
 	  fCvars.addElement(cvar);
 	  if( !fIsCommandListening )
 	    {
-	      fPlayer.addPlayerCommandListener(this);
+	      p.addPlayerCommandListener(this);
 	      fIsCommandListening = true;
 	    }
 	}
 
-	  GameUtil.stuffCommand(fPlayer.fEntity, "PLAYERCLIENTCVAR  $" + cvar);
+	  GameUtil.stuffCommand(p.fEntity, "PLAYERCLIENTCVAR  $" + cvar);
 	}
   public void commandIssued(PlayerCommandEvent e)
 	{
@@ -77,11 +75,11 @@ final public class PlayerCvarSupport implements PlayerCommandListener
 
 	  if( fListeners.size() == 0 && fIsCommandListening )
 	{
-	  fPlayer.removePlayerCommandListener(this);
+	  e.getPlayer().removePlayerCommandListener(this);
 	  fIsCommandListening = false;
 	}
 	}
-  public void removePlayerCvarListener(PlayerCvarListener l)
+  public void removePlayerCvarListener(Player p,PlayerCvarListener l)
 	{
 	  int index = fListeners.indexOf(l);
 	  if( index != -1 )
@@ -90,7 +88,7 @@ final public class PlayerCvarSupport implements PlayerCommandListener
 	  fCvars.removeElementAt(index);
 	  if( fListeners.size() == 0 && fIsCommandListening )
 	    {
-	      fPlayer.removePlayerCommandListener(this);
+	      p.removePlayerCommandListener(this);
 	      fIsCommandListening = false;
 	    }
 	}

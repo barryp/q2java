@@ -1,5 +1,7 @@
 package barryp.autoload;
 
+import org.w3c.dom.Document;
+
 import q2java.*;
 import q2java.core.*;
 import q2java.core.event.ServerFrameListener;
@@ -17,9 +19,9 @@ public class GameModule extends Gamelet implements ServerFrameListener, CrossLev
  * Set ourselves up to be called one time, 10 seconds after 
  * the game starts.
  */
-public GameModule(String moduleName) 
+public GameModule(Document gameletInfo) 
 	{
-	super(moduleName);
+	super(gameletInfo);
 	
 	Game.addServerFrameListener(this, Game.FRAME_BEGINNING, 10, -1);
 	}

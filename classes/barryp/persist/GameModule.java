@@ -1,5 +1,7 @@
 package barryp.persist;
 
+import org.w3c.dom.Document;
+
 import q2java.core.*;
 
 /**
@@ -12,9 +14,9 @@ public class GameModule extends q2java.core.Gamelet
 /**
  * This method was created by a SmartGuide.
  */
-public GameModule(String moduleName) 
+public GameModule(Document gameletInfo) 
 	{
-	super(moduleName);
+	super(gameletInfo);
 	}
 /**
  * This method was created by a SmartGuide.

@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<gamelet class="barryp.bountyhunters.BountyHunters">
+  <title>Bounty Hunters</title>
+  <author mail="barryp@planetquake.com">Barry Pederson</author>    
+  <game name="Q2Java"/>
+  <description>
+    Variation of deathmatch, where players are assigned a particular person to kill.
+  </description>
+  
+  <option name="wait for level change to unload"/>
+  <option name="avoid multiple instances"/>
+</gamelet>

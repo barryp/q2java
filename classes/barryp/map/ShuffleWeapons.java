@@ -47,15 +47,17 @@ public class ShuffleWeapons extends Gamelet implements GameStatusListener
  * NoBFG constructor comment.
  * @param gameletName java.lang.String
  */
-public ShuffleWeapons(String gameletName) 
+public ShuffleWeapons(Document gameletInfo) 
 	{
-	super(gameletName);
+	super(gameletInfo);
+
+	Game.addGameStatusListener(this);	
 	}
 public void gameStatusChanged(GameStatusEvent gse)
 	{
 	if (gse.getState() == GameStatusEvent.GAME_PRESPAWN)
 		{
-		Document doc = Game.getLevelDocument();
+		Document doc = Game.getDocument("q2java.level");
 
 		// look for <entity>..</entity> sections
 		NodeList nl = doc.getElementsByTagName("entity");
@@ -138,13 +140,6 @@ private String getAmmoClass(String weaponClass)
 		}
 		
 	return null;
-	}
-/**
- * Actually initialize the Gamelet for action.
- */
-public void init() 
-	{
-	Game.addGameStatusListener(this);
 	}
 /**
  * Unload this gamelet.

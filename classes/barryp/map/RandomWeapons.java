@@ -25,15 +25,17 @@ public class RandomWeapons extends Gamelet implements GameStatusListener
  * NoBFG constructor comment.
  * @param gameletName java.lang.String
  */
-public RandomWeapons(String gameletName) 
+public RandomWeapons(Document gameletInfo) 
 	{
-	super(gameletName);
+	super(gameletInfo);
+
+	Game.addGameStatusListener(this);	
 	}
 public void gameStatusChanged(GameStatusEvent gse)
 	{
 	if (gse.getState() == GameStatusEvent.GAME_PRESPAWN)
 		{
-		Document doc = Game.getLevelDocument();
+		Document doc = Game.getDocument("q2java.level");
 
 		// look for <entity>..</entity> sections
 		NodeList nl = doc.getElementsByTagName("entity");
@@ -48,13 +50,6 @@ public void gameStatusChanged(GameStatusEvent gse)
 				e.setAttribute("class", gWeapons[(GameUtil.randomInt() & 0x0fff) % gWeapons.length]);
 			}
 		}
-	}
-/**
- * Actually initialize the Gamelet for action.
- */
-public void init() 
-	{
-	Game.addGameStatusListener(this);
 	}
 /**
  * Unload this gamelet.

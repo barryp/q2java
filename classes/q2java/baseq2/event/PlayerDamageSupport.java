@@ -16,7 +16,6 @@ final public class PlayerDamageSupport
 {
   private static Method gInvokeMethod = null;
   private Vector fListeners = new Vector();
-  private Player fPlayer = null;
 
   static
 	{
@@ -28,17 +27,19 @@ final public class PlayerDamageSupport
 	  catch(NoSuchMethodException nsme) {}
 	}
 
-  public PlayerDamageSupport(Player player)
+  public PlayerDamageSupport()
 	{
-	  fPlayer = player;
 	}
   public void addPlayerDamageListener(PlayerDamageListener l)
 	{
 	  if( !fListeners.contains(l) ) fListeners.addElement(l);
 	}
-  public void fireEvent(PlayerDamageEvent e)
+  public void fireEvent(Player p, PlayerDamageEvent e)
 	{
-	  e.setPlayer( fPlayer );
+	if (fListeners.size() == 0)
+		return;
+		
+	  e.setPlayer( p );
 	  try { EventPack.fireEvent( e, gInvokeMethod, fListeners); }
 	  catch(PropertyVetoException pve) {}
 	}

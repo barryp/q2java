@@ -46,7 +46,7 @@ implements ServerFrameListener, PlayerListener, PrintListener,
 	// CHANGES for Delegation Model
 	// Peter Donald
 	protected PlayerMoveSupport fPlayerMoveSupport;
-		protected PlayerCvarSupport fPlayerCvarSupport;
+	protected PlayerCvarSupport fPlayerCvarSupport;
 	protected PlayerCommandSupport fPlayerCommandSupport;
 	protected PlayerStateSupport fPlayerStateSupport;
 	protected PlayerInfoSupport fPlayerInfoSupport;
@@ -55,6 +55,18 @@ implements ServerFrameListener, PlayerListener, PrintListener,
 	protected PlayerDamageSupport fArmorPlayerDamageSupport;
 	protected PlayerDamageSupport fPostArmorPlayerDamageSupport;
 	//END Declarations for Delegation Model
+
+	// CHANGES for static Listeners
+	// Peter Donald
+	protected static PlayerMoveSupport gPlayerMoveSupport = new PlayerMoveSupport();
+	protected static PlayerCommandSupport gPlayerCommandSupport = new PlayerCommandSupport();
+	protected static PlayerStateSupport gPlayerStateSupport = new PlayerStateSupport();
+	protected static PlayerInfoSupport gPlayerInfoSupport = new PlayerInfoSupport();
+	protected static InventorySupport gInventorySupport = new InventorySupport();
+	protected static PlayerDamageSupport gPreArmorPlayerDamageSupport = new PlayerDamageSupport();
+	protected static PlayerDamageSupport gArmorPlayerDamageSupport = new  PlayerDamageSupport();
+	protected static PlayerDamageSupport gPostArmorPlayerDamageSupport = new PlayerDamageSupport();
+	//END Declarations for static listeners
 
 	protected ArmorDamageFilter fArmor;
 	
@@ -136,6 +148,31 @@ implements ServerFrameListener, PlayerListener, PrintListener,
 	protected Vector3f fUp;
 	protected float fXYSpeed;
 
+	// ------ CVar stuff shared by all players ---------
+	private static float gNextCVarMirror;
+	private final static int MIRROR_INTERVAL = 10;
+	
+	// various CVars
+	private static CVar gRunRollCVar = new CVar("run_roll", "0.005", 0);	
+	private static CVar gRunPitchCVar = new CVar("run_pitch", "0.002", 0);	
+	private static CVar gBobUpCVar = new CVar("bob_up", "0.005", 0);	
+	private static CVar gBobRollCVar = new CVar("bob_roll", "0.002", 0);	
+	private static CVar gBobPitchCVar = new CVar("bob_pitch", "0.002", 0);	
+	private static CVar gRollAngleCVar = new CVar("sv_rollangle", "2", 0);
+	private static CVar gRollSpeedCVar = new CVar("sv_rollspeed", "200", 0);
+	
+	// mirrored copies of CVar values
+	public static float gRunRoll;
+	public static float gRunPitch;	
+	public static float gBobUp;
+	public static float gBobRoll;	
+	public static float gBobPitch;	
+	public static float gRollAngle;
+	public static float gRollSpeed;
+
+	// keep some bodies lying around		
+	protected static CorpseQueue gCorpseQueue = new CorpseQueue();
+	
 	// ------- Public constants ---------------------------------	
 
 	public final static int PRINT_CHANNELS = PrintEvent.PRINT_ANNOUNCE+PrintEvent.PRINT_TALK+PrintEvent.PRINT_TALK_TEAM+PrintEvent.PRINT_TALK_PRIVATE;
@@ -337,17 +374,17 @@ public Player(NativeEntity ent) throws GameException
 	Game.addGameStatusListener(this);
 	
 	//CHANGES for delegation model
-	fPlayerMoveSupport = new PlayerMoveSupport(this);
-	fPlayerCvarSupport = new PlayerCvarSupport(this);
-	fPlayerCommandSupport = new PlayerCommandSupport(this);
-	fPlayerStateSupport = new PlayerStateSupport(this);
-	fPlayerInfoSupport = new PlayerInfoSupport(this);
-	fInventorySupport = new InventorySupport(this);
-	fPreArmorPlayerDamageSupport = new PlayerDamageSupport(this);
-	fArmorPlayerDamageSupport = new PlayerDamageSupport(this);
-	fPostArmorPlayerDamageSupport = new PlayerDamageSupport(this);
+	fPlayerMoveSupport = new PlayerMoveSupport();
+	fPlayerCvarSupport = new PlayerCvarSupport();
+	fPlayerCommandSupport = new PlayerCommandSupport();
+	fPlayerStateSupport = new PlayerStateSupport();
+	fPlayerInfoSupport = new PlayerInfoSupport();
+	fInventorySupport = new InventorySupport();
+	fPreArmorPlayerDamageSupport = new PlayerDamageSupport();
+	fArmorPlayerDamageSupport = new PlayerDamageSupport();
+	fPostArmorPlayerDamageSupport = new PlayerDamageSupport();
 	//END changes for delegation Model
-		
+
 	fPlayerInfo = new Hashtable();
 	playerInfoChanged(fEntity.getPlayerInfo());
 	
@@ -395,6 +432,55 @@ public Player(NativeEntity ent) throws GameException
 	fDamageRoll = 0.0f;
 	fDamagePitch = 0.0f;
 	fDamageTime = 0.0f;
+	}
+public static void addAllPlayerCommandListener(PlayerCommandListener l)
+	{
+	gPlayerCommandSupport.addPlayerCommandListener(l);
+	}
+public static void addAllPlayerDamageListener(PlayerDamageListener l)
+	{
+	addAllPlayerDamageListener(l,DAMAGE_FILTER_PHASE_PREARMOR);
+	}
+/**
+ * Add an object that wants to filter damage the player takes.
+ * @param DamageFilter - The object to add as a damage filter
+ * @param int - Phase at which it wants to filter.
+ */
+public static void addAllPlayerDamageListener(PlayerDamageListener l, int phase)
+	{
+	if (l == null)
+		return;
+	
+	if (phase == DAMAGE_FILTER_PHASE_PREARMOR)
+		{
+		gPreArmorPlayerDamageSupport.addPlayerDamageListener(l);
+		}
+	else if (phase == DAMAGE_FILTER_PHASE_ARMOR)
+		{
+		gArmorPlayerDamageSupport.addPlayerDamageListener(l);
+		}
+	else if (phase == DAMAGE_FILTER_PHASE_POSTARMOR)
+	        {
+		gPostArmorPlayerDamageSupport.addPlayerDamageListener(l);
+		}
+	
+	return;
+	}
+public static void addAllPlayerInfoListener(PlayerInfoListener l)
+	{
+	gPlayerInfoSupport.addPlayerInfoListener(l);
+	}
+public static void addAllPlayerInventoryListener(InventoryListener l)
+	   {
+	   gInventorySupport.addInventoryListener(l);
+	   }
+public static void addAllPlayerMoveListener(PlayerMoveListener l)
+	{
+	gPlayerMoveSupport.addPlayerMoveListener(l);
+	}
+public static void addAllPlayerStateListener(PlayerStateListener l)
+	{
+	gPlayerStateSupport.addPlayerStateListener(l);
 	}
 /**
  * Add ammo to the player's inventory.
@@ -475,12 +561,6 @@ public void addBlend(Color4f color)
 	{
 	addBlend(color.x, color.y, color.z, color.w);
 	}
-//CHANGES for Event delegation SYstem after here
-
-public void addInventoryListener(InventoryListener l)
-	   {
-	   fInventorySupport.addInventoryListener(l);
-	   }
 /**
  * Add an item to the player's inventory.
  * @param item what we're trying to add.
@@ -493,7 +573,8 @@ public boolean addItem(GenericItem item)
 
 	try 
 		{ 
-		fInventorySupport.fireEvent(item,true); 
+		fInventorySupport.fireEvent(this,item,true); 
+		gInventorySupport.fireEvent(this,item,true); 
 		}
 	catch(PropertyVetoException pve)
 		{
@@ -531,7 +612,7 @@ public void addPlayerCommandListener(PlayerCommandListener l)
 	}
 public void addPlayerCvarListener(PlayerCvarListener l, String cvar)
 	{
-	fPlayerCvarSupport.addPlayerCvarListener(l,cvar);
+	fPlayerCvarSupport.addPlayerCvarListener(this,l,cvar);
 	}
 public void addPlayerDamageListener(PlayerDamageListener l)
 	{
@@ -566,6 +647,10 @@ public void addPlayerInfoListener(PlayerInfoListener l)
 	{
 	fPlayerInfoSupport.addPlayerInfoListener(l);
 	}
+public void addPlayerInventoryListener(InventoryListener l)
+	   {
+	   fInventorySupport.addInventoryListener(l);
+	   }
 public void addPlayerMoveListener(PlayerMoveListener l)
 	{
 	fPlayerMoveSupport.addPlayerMoveListener(l);
@@ -656,13 +741,30 @@ public boolean addWeapon(GenericWeapon w, boolean allowSwitch)
  */
 protected void beginServerFrame()
 	{
+	float time = Game.getGameTime();
+
+	// mirror various CVars that the player class
+	// needs from time to time
+	if (time > gNextCVarMirror)
+		{
+		gRunRoll	= gRunRollCVar.getFloat();
+		gRunPitch	= gRunPitchCVar.getFloat();	
+		gBobUp		= gBobUpCVar.getFloat();
+		gBobRoll	= gBobRollCVar.getFloat();	
+		gBobPitch	= gBobPitchCVar.getFloat();	
+		gRollAngle	= gRollAngleCVar.getFloat();
+		gRollSpeed	= gRollSpeedCVar.getFloat();
+		
+		gNextCVarMirror = time + MIRROR_INTERVAL;
+		}
+		
 	// reset the color blend for this frame.
 	resetBlend();
 	
 	if (fInIntermission)
 		return;
 		
-	if (fIsDead && (Game.getGameTime() > fRespawnTime) 
+	if (fIsDead && (time > fRespawnTime) 
 	&& ((fLatchedButtons != 0) || BaseQ2.isDMFlagSet(BaseQ2.DF_FORCE_RESPAWN)))
 		{
 		respawn();
@@ -933,10 +1035,10 @@ protected float calcRoll(Vector3f velocity)
 	sign = side < 0 ? -1 : 1;
 	side = Math.abs(side);
 	
-	value = BaseQ2.gRollAngle;
+	value = gRollAngle;
 
-	if (side < BaseQ2.gRollSpeed)
-		side = side * value / BaseQ2.gRollSpeed;
+	if (side < gRollSpeed)
+		side = side * value / gRollSpeed;
 	else
 		side = value;
 	
@@ -993,19 +1095,19 @@ protected void calcViewOffset()
 		Vector3f velocity = fEntity.getVelocity();
 		
 		angle.getVectors( forward, right, null );
-		angles.x += velocity.dot(forward) * BaseQ2.gRunPitch;
-		angles.z += velocity.dot(right) * BaseQ2.gRunRoll;
+		angles.x += velocity.dot(forward) * gRunPitch;
+		angles.z += velocity.dot(right) * gRunRoll;
 
 		Q2Recycler.put(right);
 		Q2Recycler.put(forward);
 		}
 
 	// add angles based on bob
-	delta = fBobFracSin * BaseQ2.gBobPitch * fXYSpeed;
+	delta = fBobFracSin * gBobPitch * fXYSpeed;
 	if (fIsDucking)
 			delta *= 6;             // crouching
 	angles.x += delta;
-	delta = fBobFracSin * BaseQ2.gBobRoll * fXYSpeed;
+	delta = fBobFracSin * gBobRoll * fXYSpeed;
 	if (fIsDucking)
 			delta *= 6;             // crouching
 	if ((fBobCycle & 1) > 0)
@@ -1015,7 +1117,7 @@ protected void calcViewOffset()
 	
 
 	// add bob height
-	float bob = fBobFracSin * fXYSpeed * BaseQ2.gBobUp; // *3 added to magnify effect
+	float bob = fBobFracSin * fXYSpeed * gBobUp; // *3 added to magnify effect
 	if (bob > 6)
 		bob = 6.0F;
 	fViewOffset.z += bob;	
@@ -1180,7 +1282,8 @@ public void cmd_drop(String[] argv, String args)
 		//CHANGES for Delegation model
 		try 
 			{ 
-			fInventorySupport.fireEvent(item,false); 
+			fInventorySupport.fireEvent(this,item,false); 
+			gInventorySupport.fireEvent(this,item,false); 
 			}
 		catch(PropertyVetoException pve)
 			{
@@ -1329,6 +1432,7 @@ public void cmd_gameversion(String[] argv, String args)
  */
 public void cmd_giveall(String[] argv, String args)
 	{
+/*	
 	if (!BaseQ2.isCheating())
 		{
 		fEntity.cprint(Engine.PRINT_HIGH, "cheating not turned on\n");
@@ -1345,6 +1449,7 @@ public void cmd_giveall(String[] argv, String args)
 	addWeapon(".spawn.weapon_hyperblaster", false);
 	addWeapon(".spawn.weapon_railgun", false);
 	addWeapon(".spawn.weapon_bfg", false);
+*/	
 	}
 /**
  * Draw the help computer.
@@ -1779,6 +1884,14 @@ public static void connect(NativeEntity ent) throws GameException
 	new Player(ent);
 	}
 /**
+ * Make a copy of an entity to keep around for a while.
+ * @param ent NativeEntity
+ */
+public static void copyCorpse(NativeEntity ent) 
+	{
+	gCorpseQueue.copyCorpse(ent);
+	}
+/**
  * Inflict damage on the Player.
  * If the player takes enough damage, this function will call the Player.die() function.
  * @param DamageObject - The damage we are taking.
@@ -2022,7 +2135,8 @@ protected void die(GameObject inflictor, GameObject attacker, int damage, Point3
 	fEntity.setSVFlags(fEntity.getSVFlags() | NativeEntity.SVF_DEADMONSTER);
 
 	// let interested objects know the player died.
-	fPlayerStateSupport.fireEvent( PlayerStateEvent.STATE_DEAD, attacker );
+	fPlayerStateSupport.fireEvent( this, PlayerStateEvent.STATE_DEAD, attacker );
+	gPlayerStateSupport.fireEvent( this, PlayerStateEvent.STATE_DEAD, attacker );
 
 
 	
@@ -2065,8 +2179,8 @@ protected void die(GameObject inflictor, GameObject attacker, int damage, Point3
 public void dispose() 
 	{
 	// let interested objects know we're disconnecting.
-	fPlayerStateSupport.fireEvent( PlayerStateEvent.STATE_INVALID, 
-					     this );	
+	fPlayerStateSupport.fireEvent( this, PlayerStateEvent.STATE_INVALID, this );	
+	gPlayerStateSupport.fireEvent( this, PlayerStateEvent.STATE_INVALID, this );	
 
 	// instead of us calling Game.PlayerDisconnect 
 	// Game should get called and then call this.
@@ -2229,15 +2343,18 @@ protected void filterDamage(PlayerDamageEvent damage, int phase)
 	{
 	if (phase == DAMAGE_FILTER_PHASE_PREARMOR)
 		{
-		fPreArmorPlayerDamageSupport.fireEvent(damage);
+		fPreArmorPlayerDamageSupport.fireEvent(this,damage);
+		gPreArmorPlayerDamageSupport.fireEvent(this,damage);
 		}
 	else if (phase == DAMAGE_FILTER_PHASE_ARMOR)
 		{
-		fArmorPlayerDamageSupport.fireEvent(damage);
+		fArmorPlayerDamageSupport.fireEvent(this,damage);
+		gArmorPlayerDamageSupport.fireEvent(this,damage);
 		}
 	else
 		{
-		fPostArmorPlayerDamageSupport.fireEvent(damage);
+		fPostArmorPlayerDamageSupport.fireEvent(this,damage);
+		gPostArmorPlayerDamageSupport.fireEvent(this,damage);
 		}
 	}
 /**
@@ -2669,7 +2786,9 @@ public void playerBegin()
 
 	// notify objects we're changing levels
 	//	notifyPlayerStateListeners(PlayerStateListener.PLAYER_LEVELCHANGE);	
-	fPlayerStateSupport.fireEvent( PlayerStateEvent.STATE_SUSPENDEDSTART, 
+	fPlayerStateSupport.fireEvent( this, PlayerStateEvent.STATE_SUSPENDEDSTART, 
+					     BaseQ2.gWorld  );
+	gPlayerStateSupport.fireEvent( this, PlayerStateEvent.STATE_SUSPENDEDSTART, 
 					     BaseQ2.gWorld  );
 	
 	// things that need to be reset on map changes or respawn
@@ -2736,7 +2855,16 @@ public void playerCommand(String methodName, String[] argv, String args)
 	Class[] paramTypes;
 	Object[] params;
 	
-	PlayerCommandEvent e = fPlayerCommandSupport.fireEvent( argv[0], args );
+	PlayerCommandEvent e = fPlayerCommandSupport.fireEvent( this, argv[0], args );
+
+	if( e.isConsumed() )
+		{
+	    return;
+		}
+
+	e = null;
+
+	e = gPlayerCommandSupport.fireEvent( this, argv[0], args );
 
 	if( e.isConsumed() )
 		{
@@ -2859,7 +2987,8 @@ public void playerThink(PlayerCmd cmd)
 	if (fInIntermission)
 		return;
 
-	fPlayerMoveSupport.fireEvent( cmd );		
+	fPlayerMoveSupport.fireEvent( this, cmd );		
+	gPlayerMoveSupport.fireEvent( this, cmd );		
 	PMoveResults pm = fEntity.pMove(cmd, Engine.MASK_PLAYERSOLID);
 
 //  if (pm_passent->health > 0)
@@ -2918,7 +3047,8 @@ protected void playerVariableChanged(String key, String oldValue, String newValu
 
 	try
 	    {
-	    fPlayerInfoSupport.fireEvent(key, newValue, oldValue);
+	    fPlayerInfoSupport.fireEvent(this, key, newValue, oldValue);
+	    gPlayerInfoSupport.fireEvent(this, key, newValue, oldValue);
 	    }
 	catch(PropertyVetoException pve)
 		{
@@ -2933,7 +3063,11 @@ protected void playerVariableChanged(String key, String oldValue, String newValu
 		// it comes back to Java through playerInfoChanged(), it
 		// won't trigger -another- call to this method thinking
 		// that the old value is a new value (if that makes any sense)
-		fPlayerInfo.put(key, oldValue);
+		
+	    //CHANGE: Pete 10/6/99
+		if( oldValue != null )
+			fPlayerInfo.put(key, oldValue);
+			
 	    GameUtil.stuffCommand(fEntity, "set " + key + " " + oldValue);
 	    return;
 		}
@@ -3106,6 +3240,53 @@ protected void registerKill(Player p)
 	else
 		setScore(1, false);	
 	}
+public static void removeAllPlayerCommandListener(PlayerCommandListener l)
+	{
+	gPlayerCommandSupport.removePlayerCommandListener(l);
+	}
+public static void removeAllPlayerDamageListener(PlayerDamageListener l)
+	{
+	removeAllPlayerDamageListener(l,DAMAGE_FILTER_PHASE_PREARMOR);
+	}
+/**
+ * Remove an object that was registered to filter damage.
+ * @param DamageFilter - filter to remove.
+ * @param int - phase the filter was at.
+ */
+public static void removeAllPlayerDamageListener(PlayerDamageListener l, int phase)
+	{
+	if (l == null)
+		return;
+		
+	if (phase == DAMAGE_FILTER_PHASE_PREARMOR)
+		{
+		gPreArmorPlayerDamageSupport.removePlayerDamageListener(l);
+		}
+	else if (phase == DAMAGE_FILTER_PHASE_ARMOR)
+		{
+		gArmorPlayerDamageSupport.removePlayerDamageListener(l);
+		}
+	else
+		{
+		gPostArmorPlayerDamageSupport.removePlayerDamageListener(l);
+		}
+	}
+public static void removeAllPlayerInfoListener(PlayerInfoListener l)
+	{
+	gPlayerInfoSupport.removePlayerInfoListener(l);
+	}
+public static void removeAllPlayerInventoryListener(InventoryListener l)
+	{
+	gInventorySupport.removeInventoryListener(l);
+	}
+public static void removeAllPlayerMoveListener(PlayerMoveListener l)
+	{
+	gPlayerMoveSupport.removePlayerMoveListener(l);
+	}
+public static void removeAllPlayerStateListener(PlayerStateListener l)
+	{
+	gPlayerStateSupport.removePlayerStateListener(l);
+	}
 /**
  * Remove an object that was registered to filter damage.
  * @param DamageFilter - filter to remove.
@@ -3153,17 +3334,13 @@ public void removeInventory(String name)
 	{
 	fInventory.remove(name);
 	}
-public void removeInventoryListener(InventoryListener l)
-	{
-	fInventorySupport.removeInventoryListener(l);
-	}
 public void removePlayerCommandListener(PlayerCommandListener l)
 	{
 	fPlayerCommandSupport.removePlayerCommandListener(l);
 	}
 public void removePlayerCvarListener(PlayerCvarListener l)
 	{
-	fPlayerCvarSupport.removePlayerCvarListener(l);
+	fPlayerCvarSupport.removePlayerCvarListener(this,l);
 	}
 public void removePlayerDamageListener(PlayerDamageListener l)
 	{
@@ -3196,6 +3373,10 @@ public void removePlayerInfoListener(PlayerInfoListener l)
 	{
 	fPlayerInfoSupport.removePlayerInfoListener(l);
 	}
+public void removePlayerInventoryListener(InventoryListener l)
+	{
+	fInventorySupport.removeInventoryListener(l);
+	}
 public void removePlayerMoveListener(PlayerMoveListener l)
 	{
 	fPlayerMoveSupport.removePlayerMoveListener(l);
@@ -3223,7 +3404,7 @@ protected void resetBlend()
 protected void respawn()
 	{
 	// leave a corpse behind
-	BaseQ2.copyCorpse(fEntity);
+	copyCorpse(fEntity);
 	
 	clearSettings();
 	
@@ -3603,7 +3784,8 @@ protected void spawn()
 	closeDisplay();
 
 	// let interested objects know the player spawnned.
-	fPlayerStateSupport.fireEvent(PlayerStateEvent.STATE_SPAWNED, BaseQ2.gWorld);	
+	fPlayerStateSupport.fireEvent(this, PlayerStateEvent.STATE_SPAWNED, BaseQ2.gWorld);	
+	gPlayerStateSupport.fireEvent(this,PlayerStateEvent.STATE_SPAWNED, BaseQ2.gWorld);	
 	}
 /**
  * Switch the player into intermission mode.  Their view should be from
@@ -3636,7 +3818,9 @@ public void startIntermission()
 
 	// notify objects we're changing levels
 	//	notifyPlayerStateListeners(PlayerStateListener.PLAYER_LEVELCHANGE);	
-	fPlayerStateSupport.fireEvent( PlayerStateEvent.STATE_SUSPENDEDSTART, 
+	fPlayerStateSupport.fireEvent( this, PlayerStateEvent.STATE_SUSPENDEDSTART, 
+					     BaseQ2.gWorld );
+	gPlayerStateSupport.fireEvent( this, PlayerStateEvent.STATE_SUSPENDEDSTART, 
 					     BaseQ2.gWorld );
 
 	writeDeathmatchScoreboardMessage(null);
@@ -3653,7 +3837,7 @@ public void startIntermission()
 public void teleport(Point3f origin, Angle3f angles) 
 	{
 	// notify objects we're drastically changing position
-	fPlayerStateSupport.fireEvent( PlayerStateEvent.STATE_TELEPORTED, this );
+	fPlayerStateSupport.fireEvent( this, PlayerStateEvent.STATE_TELEPORTED, this );
 	
 	// unlink to make sure it can't possibly interfere with KillBox
 	fEntity.unlinkEntity();	

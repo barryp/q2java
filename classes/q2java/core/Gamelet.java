@@ -1,6 +1,9 @@
 package q2java.core;
 
 import java.lang.reflect.*;
+
+import org.w3c.dom.*;
+
 import q2java.*;
 import q2java.core.event.*;
 
@@ -9,49 +12,47 @@ import q2java.core.event.*;
  *
  * @author Barry Pederson
  */
-public abstract class Gamelet 
+public abstract class Gamelet
 	{
-	// private fields because we don't want subclasses messing with them
-	private String fGameletName;
-	private boolean fIsInitialized;
-	private boolean fIsUnloading;
+	private Document fGameletInfo;
 	
 /**
  * Constructor for all Gamelets.
  * @param moduleName java.lang.String
  */
-public Gamelet(String gameletName) 
+public Gamelet(Document gameletInfo)
 	{
-	fGameletName = gameletName;	
+	fGameletInfo = gameletInfo;
 	}
 /**
  * Get which Gamelet classes this Gamelet requires.
+ * @deprecated Don't do this any more!
  * @return array of Gamelet class names
  */
-public String[] getGameletDependencies() 
+public final String[] getGameletDependencies() 
 	{
 	return null;
 	}
 /**
- * Get the name of this gamelet.
- * @return java.lang.String
+ * Get the document that was passed to the Gamelet constructor.
+ * @return org.w3c.dom.Document
  */
-public String getGameletName() 
+public Document getGameletDocument() 
 	{
-	return fGameletName;
+	return fGameletInfo;
 	}
 /**
- * Get the name of the package this gamelet belongs to.
+ * Get the name of this gamelet.
+ * @deprecated The name of a gamelet is really a property of the GameletManager and not of the gamelet itself.
  * @return java.lang.String
  */
-public String getPackageName() 
+public final String getGameletName() 
 	{
-	String clsName = getClass().getName();
-	int i = clsName.lastIndexOf('.');
-	return clsName.substring(0, i);
+	return Game.getGameletManager().getGameletName(this);
 	}
 /**
  * Get which class (if any) this Gamelet wants to use for a Player class.
+ *
  * @return java.lang.Class
  */
 public Class getPlayerClass() 
@@ -59,116 +60,24 @@ public Class getPlayerClass()
 	return null;
 	}
 /**
- * Associate players with this particular gamelet.
- */
-void grabPlayers() 
-	{
-	try
-		{
-		Class[] paramTypes = new Class[1];
-		paramTypes[0] = NativeEntity.class;
-		Constructor con = getPlayerClass().getConstructor(paramTypes);
-	
-		Object[] params = new Object[1];
-		
-		java.util.Enumeration players = NativeEntity.enumeratePlayerEntities();
-		while (players.hasMoreElements())
-			{
-			try
-				{
-				NativeEntity ne = (NativeEntity) players.nextElement();
-				params[0] = ne;	
-				con.newInstance(params);
-				Game.getOccupancySupport().fireEvent(ne, OccupancyEvent.PLAYER_CLASSCHANGE );
-			
-	// if not changing map			
-	//			p.playerBegin(false);
-				}
-			catch (Exception e)
-				{
-				e.printStackTrace();
-				}
-			}
-		}
-	catch (Exception e2)
-		{
-		e2.printStackTrace();
-		}
-	}
-/**
  * Actually initialize the Gamelet for action.
+ * @deprecated don't do this any more..initialize in the
+ *   constructor.
  */
-public void init() 
+public final void init() 
 	{
-	}
-/**
- * Check if this gamelet has been initialized.
- * @return boolean
- */
-public final boolean isInitialized() 
-	{
-	return fIsInitialized;
 	}
 /**
  * Check whether this Gamelet requires a level change to load/unload.
+ * @deprecated don't do this..store in the Gamelet Description file
  * @return boolean
  */
-public boolean isLevelChangeRequired() 
+public final boolean isLevelChangeRequired() 
 	{
 	return false;
 	}
 /**
- * Check if this gamelet is being unloaded at the next level change.
- * @return boolean
- */
-public final boolean isUnloading() 
-	{
-	return fIsUnloading;
-	}
-/**
- * Mark this gamelet as having been initialized - we have this
- * instead of a "setInitialized(boolean b)" because it should
- * never be able to be switched from true to false.
- */
-public final void markInitialized() 
-	{
-	fIsInitialized = true;
-	}
-/**
- * Mark this gamelet as being unloaded on the next level change.
- */
-public final void markUnloading() 
-	{
-	fIsUnloading = true;
-	}
-/**
- * Disassociate players from this particular gamelet.
- */
-void releasePlayers() 
-	{
-	java.util.Enumeration players = NativeEntity.enumeratePlayerEntities();
-	while (players.hasMoreElements())
-		{
-		try
-			{
-			NativeEntity ent = (NativeEntity) players.nextElement();
-			Object obj = ent.getReference();
-
-			if (obj instanceof SwitchablePlayer)
-				{
-				SwitchablePlayer sp = (SwitchablePlayer) obj;
-				sp.dispose();
-				}
-			}
-		catch (Exception e)
-			{
-			e.printStackTrace();
-			}
-		}
-	
-	}
-/**
- * Default help svcmd for a Gamelet.
+ * Try to shame gamelet authors into overriding this.
  * @param args java.lang.String[]
  */
 public void svcmd_help(String[] args) 

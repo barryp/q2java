@@ -218,37 +218,65 @@ OPTIONS
 
         Q2Java game code is broken into modules called "Gamelets", and at 
         startup we need to know which modules to load.  The default is
-        to load a gamelet called "q2java.baseq2.BaseQ2" - which implements 
+        to load a gamelet called "q2java.baseq2.Deathmatch" - which implements 
         plain DM.
         
         Override with: CVar "gamelets" and a a list of modules
                        separated with one of these characters: + , ; / \
                        
-        Example: q2java +set game q2java +set gamelets q2java.baseq2.BaseQ2+barryp.paranoia.Paranoia
+        Example: q2java +set game q2java +set gamelets q2java.baseq2.Deathmatch+barryp.misc.GlubGlub
 
-            modules are loaded in the order shows, so in the example above 
-            "baseq2" is loaded first, then "barryp.paranoia".  Aliases can 
-            also be specified inbetween '[' and ']', for example
+            modules are loaded in the order shown, so in the example above 
+            "q2java.baseq2.Deathmatch" is loaded first, then "barryp.misc.GlubGlub".  
+            Aliases can also be specified inbetween '[' and ']', for example
         
-                +set gamelets barryp.paranoia.Paranoia+q2java.baseq2.BaseQ2[dm]
+                +set gamelets q2java.baseq2.Deathmatch[dm]+barryp.misc.GlubGlub
             
             Which is convenient because later in the game, you can 
-            refer to the q2java.baseq2.BaseQ2 gamelet as "dm".  If you don't
+            refer to the q2java.baseq2.Deathmatch gamelet as "dm".  If you don't
             specify an alias, the game generates one based on the gamelet 
-            classname, for the q2java.baseq2.BaseQ2 gamelet listed above
-            it would be "BaseQ2" (generally aliases are case-insensitive)
+            classname, for the barryp.misc.GlubGlub gamelet listed above
+            it would probably be "GlubGlub" (generally aliases are case-insensitive)
 
 
-        Override with: property file entries "q2java.gamelet.<n>"
-                       where <n> starts at '1' and goes up                       
+        Startup File
+        
+            If a "gamelet" cvar doesn't exist, then Q2Java looks for an 
+            XML startup file named "q2java.startup" in the  Q2Java game 
+            directory.  The name may be changed by setting the CVar
+            "q2java_startup" on the commandline, for example:
+        
+               +set q2java_startup foobar.startup
+           
+            would cause Q2Java to try reading "foobar.startup".  
+            
+            The startup file is in XML format, and looks like:
+        
+              <startup>
+                <gamelet class="q2java.baseq2.Deathmatch" name="dm"/>
+                
+                <gamelet class="barryp.misc.GlubGlub">
+                  <!-- this is something unique to startup files..the 
+                    ability to include arbitrary XML tags that will
+                    be passed to the gamelet's constructor -->
+                  <param name="message" value="*choke* *gasp*"/>
+                </gamelet>
+                
+                <!-- also, startup files may contain tags that set CVars -->
+                <cvar name="cvarname" value="my value"/>
+              </startup>
+
+        Lastly, if a startup file isn't found, then Q2Java looks for Java System 
+        properties that would be specified in the property file as
+        q2java.gamelet.<n> where <n> starts at '1' and goes up                       
         Example:
         
-                q2java.gamelet.1=q2java.baseq2.BaseQ2 dm
-                q2java.gamelet.2=barryp.paranoia.Paranoia
+                q2java.gamelet.1=q2java.baseq2.Deathmatch dm
+                q2java.gamelet.2=barryp.misc.GlubGlub
         
-           This is equivalent to the CVar method listed above, with
-           "q2java.baseq2.BaseQ2" being loaded first with the alias "dm", 
-           then "barryp.paranoia.Paranoia"
+        This is equivalent to the CVar method listed above, with
+        "q2java.baseq2.Deathmatch" being loaded first with the alias "dm", 
+        then "barryp.misc.GlubGlub"
 
 
     Q2Java includes several gamelets you may want to try, here are a few
@@ -258,7 +286,7 @@ OPTIONS
                     
         q2java.ctf.CTFTechs - Just the powerups from Threewave CTF.
 
-        barryp.telnet.GameModule - a Telnet Server running inside Quake2, lets
+        barryp.telnet.TelnetServer - a Telnet Server running inside Quake2, lets
             telnet or mud clients connect and chat with players.  Also
             allows remote administration of game server.  Check "extras.txt"
             file for more details

@@ -1,0 +1,21 @@
+<!-- Fancy startup file, load with 
+  +set q2java_startup q2java.startup.sample
+on the command line -->
+
+<startup>
+
+  <!-- Player DM with CTF Techs and Flashgrenades -->
+  <gamelet class="q2java.baseq2.Deathmatch"/>    
+  <gamelet class="q2java.ctf.CTFTechs"/>
+  <gamelet class="barryp.flashgrenade.FlashGrenades"/>
+  
+  <!-- keep the maps changing every 15 min -->
+  <cvar name="timelimit" value="15"/>
+  <gamelet class="q2java.baseq2.LevelChanger"/>  
+  
+  <!-- keep players from yapping while underwater -->
+  <gamelet class="barryp.misc.GlubGlub">
+    <param name="message" value="*choke* *gasp*"/>
+  </gamelet>   
+  
+</startup>

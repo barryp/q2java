@@ -14,9 +14,12 @@ package q2java.ctf;
 ======================================================================================
 */
 
+import org.w3c.dom.*;
+
 import q2java.*;
 import q2java.core.*;
 import q2java.core.event.*;
+import q2java.baseq2.BaseQ2;
 import q2java.baseq2.InventoryList;
 
 /**
@@ -28,9 +31,13 @@ import q2java.baseq2.InventoryList;
 public class CTF extends q2java.core.Gamelet implements GameStatusListener
 {
 	public final static int STAT_CTF_TECH          = 26;
-	public CTF(String moduleName)
+	protected Object fBaseQ2Token;
+	public CTF(Document gameletDoc)
 	{
-		super( moduleName );		
+		super( gameletDoc );
+			
+		// ask to be called on level changes
+		Game.addGameStatusListener(this);	
 	}
 	public void gameStatusChanged(GameStatusEvent gse)
 	{
@@ -38,7 +45,24 @@ public class CTF extends q2java.core.Gamelet implements GameStatusListener
 		{
 			case GameStatusEvent.GAME_PRESPAWN:
 				// overrule the statbar
-				Engine.setConfigString (Engine.CS_STATUSBAR, CTFPlayer.CTF_STATUSBAR);				
+				Engine.setConfigString (Engine.CS_STATUSBAR, CTFPlayer.CTF_STATUSBAR);
+
+				// do this stuff only once during the first level change we hear about
+				if (fBaseQ2Token == null)
+					{
+					// make sure there's some environment for the GameObjects
+					// to operate in.
+					fBaseQ2Token = BaseQ2.getReference();	
+					
+					Game.addPackagePath("q2java.baseq2");
+					Game.addPackagePath("q2java.ctf");
+	
+					// update player inventory lists to support techs
+					InventoryList.addItem("Disruptor Shield");
+					InventoryList.addItem("AutoDoc");
+					InventoryList.addItem("Time Accel");
+					InventoryList.addItem("Power Amplifier");
+					}					
 				break;
 
 			case GameStatusEvent.GAME_POSTSPAWN:
@@ -62,46 +86,12 @@ public class CTF extends q2java.core.Gamelet implements GameStatusListener
 		}
 	}
 /**
- * Get which Gamelet classes this Gamelet requires.
- * @return java.lang.Class[]
- */
-public String[] getGameletDependencies() 
-	{
-	String[] result = { "q2java.baseq2.BaseQ2" };
-	return result;
-	}
-/**
  * Get which class (if any) this Gamelet wants to use for a Player class.
  * @return java.lang.Class
  */
 public Class getPlayerClass() 
 	{
 	return CTFPlayer.class;
-	}
-	/**
-	 * Initialize the CTF gamelet.
-	 */
-	public void init() 
-	{    
-		//leighd 04/10/99 - add the package path
-		Game.addPackagePath("q2java.ctf");
-	
-		// ask to be called on level changes
-		Game.addGameStatusListener(this);
-
-		// update player inventory lists to support techs
-		InventoryList.addItem("Disruptor Shield");
-		InventoryList.addItem("AutoDoc");
-		InventoryList.addItem("Time Accel");
-		InventoryList.addItem("Power Amplifier");			
-	}
-/**
- * CTF needs special maps, so require a level change before starting.
- * @return boolean
- */
-public boolean isLevelChangeRequired() 
-	{
-	return true;
 	}
 	/**
 	 * This method was created by a SmartGuide.
@@ -113,14 +103,20 @@ public boolean isLevelChangeRequired()
 		Game.dprint("   no commands available\n");
 	}
 	/**
-	 * Switch players back to being baseq2.Players
+	 * Detach the CTF gamelet from the system
 	 */
 	public void unload() 
 	{
-		//leighd 04/11/99 - remove the package path
-		Game.removePackagePath("q2java.ctf");
-	
+		if (fBaseQ2Token != null)
+		{
+			BaseQ2.freeReference(fBaseQ2Token);
+		
+			//leighd 04/11/99 - remove the package path
+			Game.removePackagePath("q2java.ctf");
+			Game.removePackagePath("q2java.baseq2");
+		}
+		
 		// we no longer want to be notified of level changes
-		Game.removeGameStatusListener(this);		
+		Game.removeGameStatusListener(this);
 	}
 }

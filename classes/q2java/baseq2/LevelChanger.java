@@ -39,9 +39,22 @@ public class LevelChanger extends Gamelet
  * Create the Gamelet.
  * @param gameletName java.lang.String
  */
-public LevelChanger(String gameletName) 
+public LevelChanger(Document gameletDoc) throws Throwable
 	{
-	super(gameletName);
+	super(gameletDoc);
+
+	// get called back every 10 seconds to update the timelimit and fraglimit cvars
+	Game.addServerFrameListener(this, Game.FRAME_BEGINNING, 0, 10.0F);
+
+	// get called back every second to actually check the timelimit and fraglimit
+	Game.addServerFrameListener(this, Game.FRAME_MIDDLE, 0, 1.0F);
+
+	// get called in case the map changes so we can reset our counters
+	Game.addGameStatusListener(this);
+	
+	fFragLimitCVar = new CVar("fraglimit", "0", CVar.CVAR_SERVERINFO);
+	fTimeLimitCVar = new CVar("timelimit", "0", CVar.CVAR_SERVERINFO);
+	fMapListCVar = new CVar("sv_maplist", "", 0);	
 	}
 /**
  * Called when the game status changes.
@@ -133,7 +146,7 @@ protected String getNextMapFromCVar()
  */
 protected String getNextMapFromDocument() 
 	{
-	Document doc = Game.getLevelDocument();
+	Document doc = Game.getDocument("q2java.level");
 	Element e;
 
 	try
@@ -163,24 +176,6 @@ protected String getNextMapFromDocument()
 		}
 		
 	return null;
-	}
-/**
- * Initialize this gamelet.
- */
-public void init() 
-	{
-	// get called back every 10 seconds to update the timelimit and fraglimit cvars
-	Game.addServerFrameListener(this, Game.FRAME_BEGINNING, 0, 10.0F);
-
-	// get called back every second to actually check the timelimit and fraglimit
-	Game.addServerFrameListener(this, Game.FRAME_MIDDLE, 0, 1.0F);
-
-	// get called in case the map changes so we can reset our counters
-	Game.addGameStatusListener(this);
-	
-	fFragLimitCVar = new CVar("fraglimit", "0", CVar.CVAR_SERVERINFO);
-	fTimeLimitCVar = new CVar("timelimit", "0", CVar.CVAR_SERVERINFO);
-	fMapListCVar = new CVar("sv_maplist", "", 0);
 	}
 /**
  * Check if it's time to quit this level.

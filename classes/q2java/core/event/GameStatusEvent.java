@@ -1,5 +1,7 @@
 package q2java.core.event;
 
+import q2java.Recycler;
+
 /**
  * Event to notify of Game status changes.
  * This is a conversion of the old interface GameStatusListener. 
@@ -18,19 +20,28 @@ public class GameStatusEvent extends GameEvent
 	public final static int GAME_PRESPAWN	= 6;
 	public final static int GAME_POSTSPAWN	= 7;
 	public final static int GAME_ENDLEVEL	= 8;
-	public final static int GAME_INTERMISSION = 9; // pause for intermission
-	public final static int GAME_BUILD_DOCUMENT = 10; // the level document is being built
+	public final static int GAME_INTERMISSION			= 9; // pause for intermission
+	public final static int GAME_BUILD_LEVEL_DOCUMENT	= 10; // the level document is being built
+	public final static int GAME_DOCUMENT_UPDATED		= 11; 
 	
 	protected int fState;
 	protected String fFilename;
 	protected String fSpawnpoint;
 	protected String fMapEntities;
 
-	private static GameStatusEvent gCachedEvent = null;
+	protected static Recycler gRecycler = Recycler.getRecycler(GameStatusEvent.class);
 	
-  protected GameStatusEvent()
+public GameStatusEvent()
 	{
-	  super(GAME_STATUS_EVENT);
+	super(GAME_STATUS_EVENT);
+	}
+/**
+ * Get the name of the document that was updated in a GAME_DOCUMENT_UPDATED event.
+ */
+public final String getDocumentName() 
+	{
+	// we'll reuse the fFilename field for this.
+	return fFilename; 
 	}
 /**
  * if you want conserve memory use this method to get message objects.
@@ -38,11 +49,10 @@ public class GameStatusEvent extends GameEvent
  */
 public static final GameStatusEvent getEvent(int state, String filename, String entString, String spawnpoint)
 	{
-	GameStatusEvent event = gCachedEvent;
-	   
-	if( event == null )
-		event = new GameStatusEvent();
-
+	GameStatusEvent event = (GameStatusEvent) gRecycler.getObject();
+	
+if (event == null)
+	q2java.core.Game.dprint("Recycler put out a null!\n");
 	// if ever implement single player then have to include
 	// the local gameinfo as source
 	//event.source = 
@@ -91,9 +101,10 @@ public final int getState()
  */
 public final static void releaseEvent(GameStatusEvent event)
 	{
-	gCachedEvent = event;
 	event.fFilename = null;
 	event.fSpawnpoint = null;
 	event.fMapEntities = null;
+	
+	gRecycler.putObject(event);
 	}
 }

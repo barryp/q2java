@@ -21,7 +21,7 @@ class TelnetHandler extends Thread
 	private final static int PASSWORD_TIMEOUT = 30000; 
 	private final static int LINEBUFFER_SIZE = 128;
 	
-	private TelnetServer fServer;
+	private TelnetListener fServer;
 	private Socket fSocket;
 	private OutputStream fOS;
 	private InputStream fIS;
@@ -75,7 +75,7 @@ class TelnetHandler extends Thread
  * @param group java.lang.ThreadGroup
  * @param name java.lang.String
  */
-TelnetHandler(ThreadGroup grp, TelnetServer srv, Socket s, String password, boolean noCmd, boolean noChat) 
+TelnetHandler(ThreadGroup grp, TelnetListener srv, Socket s, String password, boolean noCmd, boolean noChat) 
 	{
 	super(grp, "TelnetHandler to: " + s.getInetAddress() + " on port: " + s.getLocalPort());
 	fServer = srv;
@@ -108,7 +108,7 @@ public void doWho() throws IOException
 	// for each server, print connected users
 	while (enum.hasMoreElements())
 		{
-		TelnetHandler[] handlers = ((TelnetServer)(enum.nextElement())).getTelnetHandlers();
+		TelnetHandler[] handlers = ((TelnetListener)(enum.nextElement())).getTelnetHandlers();
 		if (handlers != null)
 			{
 			for (int i=0; i < handlers.length; i++)
@@ -327,7 +327,7 @@ public void run()
 		Engine.invokeLater(new DeferredAnnounce("<Telnet>: " + fNickname + " connected"));
 		
 		String clientAddr = fSocket.getInetAddress().getHostAddress() + ":" + fSocket.getLocalPort();
-		barryp.telnet.GameModule.addLog(clientAddr + " " + fNickname + " connected");			
+		TelnetServer.addLog(clientAddr + " " + fNickname + " connected");			
 		
 		while (fServer.isRunning())
 			{
@@ -361,7 +361,7 @@ public void run()
 			}
 
 		Engine.invokeLater(new DeferredAnnounce("<Telnet>: " + fNickname + " disconnected"));
-		barryp.telnet.GameModule.addLog(clientAddr + " " + fNickname + " disconnected");			
+		TelnetServer.addLog(clientAddr + " " + fNickname + " disconnected");			
 			
 		fOS.close();
 		fIS.close();							

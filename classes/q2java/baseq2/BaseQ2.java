@@ -21,51 +21,48 @@ import q2java.core.event.*;
  * @author Barry Pederson 
  */
 
-public class BaseQ2 extends q2java.core.Gamelet
-  implements ServerFrameListener, GameStatusListener, CrossLevel
-	{	
+public class BaseQ2 implements ServerFrameListener, GameStatusListener, CrossLevel
+	{
+	// keep track of how many objects want us around
+	private static BaseQ2 gInstance;
+	private static int gReferenceCount;	
+	private static class Key 
+		{
+		boolean fIsFreed;
+
+		// if the key is going to be gc'ed then let the BaseQ2
+		// class know the key is no longer out there
+		protected void finalize()
+			{
+			BaseQ2.freeReference(this); 
+			}
+		}
+	
 	// handy reference to the world
-	public static GameObject gWorld;
-		
-	// keep some bodies lying around		
-	protected static CorpseQueue gCorpseQueue;
+	public static GameObject gWorld;		
 
 	// various CVars
-	private static CVar gRunRollCVar;
-	private static CVar gRunPitchCVar;	
-	private static CVar gBobUpCVar;
-	private static CVar gBobRollCVar;	
-	private static CVar gBobPitchCVar;	
-	private static CVar gRollAngleCVar;
-	private static CVar gRollSpeedCVar;
 	private static CVar gGravityCVar;
 	private static CVar gMaxVelocityCVar;
 
 	// CVars only this Gamelet itself needs to worry about
-	private static CVar gFragLimitCVar;
-	private static CVar gTimeLimitCVar;
 	private static CVar gDMFlagsCVar;
 	private static CVar gCheatsCVar;
 	
 	// Mirrored CVars
-	public static float gRunRoll;
-	public static float gRunPitch;	
-	public static float gBobUp;
-	public static float gBobRoll;	
-	public static float gBobPitch;	
-	public static float gRollAngle;
-	public static float gRollSpeed;
+
 	public static float gGravity;
 	public static float gMaxVelocity;	
 
 	// Mirrored CVars only the BaseQ2 gamelet looks at
 	private static int   gDMFlags;
 	private static float gCheats;
-	
 
+	// handle to keep InventoryList from being GCed
+	Class gInventoryListClass;
+	
 	// Game options
 	public static boolean gIsDeathmatch;
-	private static boolean gIsCheating;
 	public static int gSkillLevel; // this probably isn't necessary since this is a DM-only mod, but wtf.
 	
 	// track level changes	
@@ -95,25 +92,28 @@ public class BaseQ2 extends q2java.core.Gamelet
 	public final static int SPAWNFLAG_NOT_COOP		= 0x00001000;		
 	
 /**
- * Create the Gamelet.
- * @param gameletName java.lang.String
+ * Create a reference to the BaseQ2 class.
  */
-public BaseQ2(String gameletName) 
+private BaseQ2() 
 	{
-	super(gameletName);
-	}
-/**
- * Add spaces to a StringBuffer (called by svcmd_scores)
- *
- * @param sb StringBuffer to add to
- * @param int num Number of spaces to append
- */
+	// load cvars	
+	gGravityCVar = new CVar("sv_gravity", "800", 0);	
+	gMaxVelocityCVar = new CVar("sv_maxvelocity", "2000", 0);
+	
+	gDMFlagsCVar = new CVar("dmflags", "0", CVar.CVAR_SERVERINFO);
+	gCheatsCVar = new CVar("cheats", "0", CVar.CVAR_LATCH);
+	
+	gIsDeathmatch = (new CVar("deathmatch", "0", CVar.CVAR_LATCH)).getFloat() == 1.0;
+	gSkillLevel = (int) ((new CVar("skill", "1", CVar.CVAR_LATCH)).getFloat());		
 
-public static void addSpaces(StringBuffer sb, int spaces) 
-	{
-	for ( int i = 0; i <= spaces; i++ ) 
-		sb.append(" ");
-	} 
+	gInventoryListClass = InventoryList.class;
+	InventoryList.setupList( 42, 84, 128, 172, 214, true);	
+	
+	new CVar("locale", "en_US", CVar.CVAR_USERINFO | CVar.CVAR_ARCHIVE);
+	
+	Game.addServerFrameListener(this, Game.FRAME_BEGINNING, 0, 10.0F);
+	Game.addGameStatusListener(this);	
+	}
 /**
  * Check whether an entity should be inhibited because
  * of its spawnargs.
@@ -162,12 +162,31 @@ public static void checkInhibited(Element spawnArgs) throws InhibitedException
 	checkInhibited(GameUtil.getSpawnFlags(spawnArgs));
 	}
 /**
- * Make a copy of an entity to keep around for a while.
- * @param ent NativeEntity
+ * Release this reference to the BaseQ2 class.
  */
-public static void copyCorpse(NativeEntity ent) 
+public static void freeReference(Object obj) 
 	{
-	gCorpseQueue.copyCorpse(ent);
+	Key k = (Key) obj;
+
+	// do nothing if this particular was already used
+	// in a call to this method
+	if (k.fIsFreed)
+		return;
+
+	// invalidate this key
+	k.fIsFreed = true;
+
+	// decrement the count of objects that want us around
+	gReferenceCount--;
+
+	// nobody wants us
+	if (gReferenceCount < 1)
+		{
+		Game.removeServerFrameListener(gInstance, Game.FRAME_BEGINNING);
+		Game.removeGameStatusListener(gInstance);
+		gInstance = null;
+		gWorld = null;
+		}
 	}
 /**
  * Start a new level.
@@ -179,12 +198,12 @@ public static void copyCorpse(NativeEntity ent)
  */
 public void gameStatusChanged(GameStatusEvent e)
 	{
-	Engine.debugLog("BaseQ2.gameStatusChanged(" + e.getState() + ")");
+	Engine.debugLog("World.gameStatusChanged(" + e.getState() + ")");
 
 	if( e.getState() != GameStatusEvent.GAME_PRESPAWN )
 		return;
 
-	Element root = (Element) Game.getLevelDocument().getFirstChild();
+	Element root = (Element) Game.getDocument("q2java.level").getDocumentElement();
 	String mapname = root.getAttribute("name");
 	String spawnPoint = root.getAttribute("spawnpoint");
 	
@@ -192,10 +211,6 @@ public void gameStatusChanged(GameStatusEvent e)
 		gSpawnpoint = null;
 	else
 		gSpawnpoint = spawnPoint;
-	
-	gIsCheating = (gCheats == 1.0);
-
-	gCorpseQueue = new CorpseQueue();
 	
 	InventoryList.registerList();
 
@@ -307,12 +322,18 @@ public void gameStatusChanged(GameStatusEvent e)
 	Engine.setConfigString(Engine.CS_LIGHTS+63, "a");				
 	}
 /**
- * Get which class (if any) this Gamelet wants to use for a Player class.
- * @return java.lang.Class
+ * Get a token from BaseQ2 to indicate we want it around.
+ *
+ * @see q2java.baseq2.BaseQ2#freeReference
+ * @return java.lang.Object
  */
-public Class getPlayerClass() 
+public static Object getReference() 
 	{
-	return Player.class;
+	gReferenceCount++;
+	if (gReferenceCount == 1)
+		gInstance = new BaseQ2();
+	
+	return new Key();
 	}
 /**
  * Get the name of the spawnpoint we're supposed to use (single-player).
@@ -331,46 +352,6 @@ public static String getVersion()
 	return "Q2Java Base Game, v0.9.5";
 	}
 /**
- * Initialize this gamelet.
- */
-public void init() 
-	{
-	Game.addServerFrameListener(this, Game.FRAME_BEGINNING, 0, 10.0F);
-	Game.addGameStatusListener(this);
-	
-	//leighd 04/10/99 - need to register package path for spawning.
-	Game.addPackagePath("q2java.baseq2");
-	
-	// load cvars
-	gRunRollCVar = new CVar("run_roll", "0.005", 0);	
-	gRunPitchCVar = new CVar("run_pitch", "0.002", 0);	
-	gBobUpCVar = new CVar("bob_up", "0.005", 0);	
-	gBobRollCVar = new CVar("bob_roll", "0.002", 0);	
-	gBobPitchCVar = new CVar("bob_pitch", "0.002", 0);	
-	gRollAngleCVar = new CVar("sv_rollangle", "2", 0);
-	gRollSpeedCVar = new CVar("sv_rollspeed", "200", 0);	
-	gGravityCVar = new CVar("sv_gravity", "800", 0);	
-	gMaxVelocityCVar = new CVar("sv_maxvelocity", "2000", 0);
-	
-	gDMFlagsCVar = new CVar("dmflags", "0", CVar.CVAR_SERVERINFO);
-	gCheatsCVar = new CVar("cheats", "0", CVar.CVAR_LATCH);
-	
-	gIsDeathmatch = (new CVar("deathmatch", "0", CVar.CVAR_LATCH)).getFloat() == 1.0;
-	gSkillLevel = (int) ((new CVar("skill", "1", CVar.CVAR_LATCH)).getFloat());		
-	
-	InventoryList.setupList( 42, 84, 128, 172, 214, true);	
-	
-	new CVar("locale", "en_US", CVar.CVAR_USERINFO | CVar.CVAR_ARCHIVE);
-	}
-/**
- * Check whether or not the Cheating option is on.
- * @return boolean
- */
-public static boolean isCheating() 
-	{
-	return gIsCheating;
-	}
-/**
  * Check whether a given deathmatch flag is set.  Use the Game.DF_* constants.
  * @return true if the flag is set, false if not.
  */
@@ -387,13 +368,7 @@ public void runFrame(int phase)
 		{
 		case Game.FRAME_BEGINNING:
 			// mirror various CVars
-			gRunRoll	= gRunRollCVar.getFloat();
-			gRunPitch	= gRunPitchCVar.getFloat();	
-			gBobUp		= gBobUpCVar.getFloat();
-			gBobRoll	= gBobRollCVar.getFloat();	
-			gBobPitch	= gBobPitchCVar.getFloat();	
-			gRollAngle	= gRollAngleCVar.getFloat();
-			gRollSpeed	= gRollSpeedCVar.getFloat();
+
 			gGravity	= gGravityCVar.getFloat();
 			gMaxVelocity= gMaxVelocityCVar.getFloat();
 
@@ -401,168 +376,5 @@ public void runFrame(int phase)
 			gCheats		= gCheatsCVar.getFloat();			
 			break;			
 		}
-	}
-/**
- * Control the Cheating option (for debugging of course!)
- */
-public void svcmd_cheating(String[] args) 
-	{
-	if (args.length > 2)
-		{
-		if (args[2].equalsIgnoreCase("on"))
-			gIsCheating = true;		
-		else if (args[2].equalsIgnoreCase("off"))
-			gIsCheating = false;
-		else
-			Game.dprint("Usage: sv cheating [on | off]\n");
-		}
-
-	// make sure everyone knows what the situation is.
-	Game.bprint(Engine.PRINT_HIGH, "Cheating is " + (gIsCheating ? "on" : "off") + "\n");
-	}
-/**
- * Display help info to the console.
- */
-public void svcmd_help(String[] args) 
-	{
-	Game.dprint(getVersion());
-	Game.dprint("\n\n    sv commands:\n");
-	Game.dprint("       cheating [on | off]\n");
-	Game.dprint("       scores\n");
-	}
-/**
- * Runs the svcmd.  For now, ignores arguments.
- * Later: { ping score time ascend descend }
- * and so on.
- * @param args java.lang.String[]
- * @author _Quinn <tmiller@haverford.edu>
- * @version 2
- */
-
-public void svcmd_scores(String[] args) 
-	{
-	// _Quinn: 04/20/98: shamelessly looted from baseq2.Player
-	// _Quinn: 05.04.98: made pretty printing prettier
-	// Barryp: 1999-05-27: reworked for less string concatenations and StringBuffer/String object creation
-
-	// Name           Score Ping Time Rate RelPing Rank
-	// Rate is Score/Time
-	// RelPing is relative ping, 0 to 1.0 with 1 the max.
-	// Rank is Rate times RPing
-
-	Enumeration enum = Player.enumeratePlayers();
-	Vector playerData = new Vector();
-	Vector players = new Vector();
-
-	float minPing = 25000;
-	float maxPing = 0;
-	int i = 0;
-
-	while (enum.hasMoreElements())
-		{
-		Player p = (Player) enum.nextElement();
-		float playerD[] = new float[7];
-		playerD[0] = p.getScore(); // score
-		playerD[1] = p.fEntity.getPlayerPing(); // ping
-		playerD[2] = ((Game.getGameTime() - p.fStartTime) / 60); //time
-		playerD[3] = playerD[0] / playerD[2]; // rate
-		playerD[4] = 0; // RelPing
-		playerD[5] = 0; // K/M * RelPing
-		playerD[6] = 15 - p.getName().length() - 1; // padding.
-
-		if ( playerD[1] < minPing ) { minPing = playerD[1]; }
-		if ( playerD[1] > maxPing ) { maxPing = playerD[1]; }
-
-		// perform sorting based on playerD 0 to 6
-		// ( constants ) later.
-
-		playerData.addElement( playerD );
-		players.addElement( p.getName() );
-		} // end while loop.
-
-		int playerCount = players.size();
-
-	// calculate relPing.
-	float range = maxPing - minPing;
-	if ( range == 0 ) { range = 1; } // no division errors...
-	float difference = 0;
-	for ( i = 0; i < playerCount; i++ ) 
-		{
-		difference = ((float[])playerData.elementAt(i))[1] - minPing;
-		if ( difference == 0 ) { difference = 1; } // head off zeroresults.
-		((float[])playerData.elementAt(i))[4] = difference / range;
-		} // end calculating loop.
-
-	// calculate rank.
-	float pD[] = new float[7];
-	for ( i = 0; i < playerCount; i++ ) 
-		{
-		pD = (float[])playerData.elementAt(i);
-		pD[5] = pD[3] * pD[4];
-		playerData.setElementAt( pD, i);
-		} // end rank calculation
-
-	// later, sort based on args passed in.
-
-	// prepare to pretty print the numbers
-	DecimalFormat dfThree = new DecimalFormat( "##0" );
-	DecimalFormat dfTwoDotOne = new DecimalFormat( "##.0" );
-	DecimalFormat dfDotThree = new DecimalFormat( "#.0##" );
-	
-		// generate the pretty printing.
-	StringBuffer sb = Q2Recycler.getStringBuffer();
-	sb.append("Name            Score Ping  Time Rate RelPing Rank\n" );
-	
-	String s;
-	for (i = 0; i < playerCount; i++)
-		{
-		pD = (float[])playerData.elementAt(i);
-		// name
-		sb.append( players.elementAt(i).toString());
-		addSpaces(sb, (int) pD[6]);
-		
-		// score
-		s = dfThree.format(pD[0]);
-		addSpaces(sb, 5 - s.length());
-		sb.append(s);
-		
-		// ping
-		s = dfThree.format(pD[1]);
-		addSpaces(sb, 4 - s.length());
-		sb.append(s);
-		
-		// time
-		s = dfThree.format(pD[2]);
-		addSpaces(sb, 4 - s.length());
-		sb.append(s);
-		
-		// rate
-		s = dfTwoDotOne.format(pD[3]);
-		addSpaces(sb, 4 - s.length());
-		sb.append(s);
-		
-		// relping
-		s = dfDotThree.format(pD[4]);
-		addSpaces(sb, 7 - s.length());
-		sb.append(s);
-		
-		// rank
-		s = dfDotThree.format(pD[5]);
-		addSpaces(sb, 4 - s.length());
-		sb.append(s);
-		sb.append('\n');
-		}
-
-	System.out.print(sb.toString());
-	Q2Recycler.put(sb);
-	} // end scores ();
-/**
- * Unload baseq2 from the game - do this at your own risk.
- */
-public void unload() 
-	{
-	Game.removePackagePath("q2java.baseq2");
-	Game.removeServerFrameListener(this, Game.FRAME_BEGINNING);
-	Game.removeGameStatusListener(this);
 	}
 }

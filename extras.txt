@@ -2,18 +2,41 @@ Q2JAVA EXTRAS
 
 The Q2Java distribution includes a few extra goodies intended to 
 demonstrate various interesting things programming in Java allows.  They 
-are implemented as gamelets you can load either at startup on the 
-command line with a command like: 
+are implemented as gamelets you can load either at startup on the Quake2 
+command line with parameters in the form: 
 
-    quake2 +set game q2java +set gamelets q2java.baseq2.BaseQ2+<gamelet>
+  +set gamelets {gamelet-class}[{gamelet-name}]+{gamelet-class}[{gamelet-name}]
+   
+for example:
+
+  +set gamelets q2java.baseq2.Deathmatch[dm]+q2java.baseq2.LevelChanger
+
+loads q2java.baseq2.Deathmatch with the name "dm" and q2java.baseq2.LevelChanger
+with no name specified
+
+Or ... in a startup file named "q2java.startup" (or specified as a different name
+on the command-line with "+set q2java_startup {file}") where the startup file
+is an XML file in the Q2Java game directory, that looks something like:
+
+  <startup>
+    <gamelet class="q2java.baseq2.Deathmatch"/>
     
-Or in a properties file with lines like:
+    <gamelet class="my.other.gamelet">
+      <param name="foo" value="bar"/>
+      <!-- any other gamelet-specific tags can be included which will
+        be passed to the gamelet constructor -->
+    </gamelet>
+    
+    <cvar name="timelimit" value="15"/>
+  </startup>
+    
+Or ... in a properties file with lines like:
 
     q2java.gamelet.1=q2java.baseq2.BaseQ2
     q2java.gamelet.2=<class> [<alias-name>]
     q2java.gamelet.3=<class> [<alias-name>]
     
-or in some cases while the game is running with a console command like:
+or  ... in some cases while the game is running with a console command like:
 
     sv addgamelet <class> [<alias-name>]
     
@@ -212,7 +235,7 @@ Older gamelets
         rockets as well as bullets, and a rocketlauncher that fires more 
         powerful rockets.
 
-    barryp.telnet.GameModule
+    barryp.telnet.TelnetServer
 
         Allows telnet or MUD clients to act as remote consoles. 
         
@@ -234,7 +257,7 @@ Older gamelets
         You can load the Telnet server package at the command line
         with a statement such as:
 
-            +set gamelets q2java.baseq2.BaseQ2+barryp.telnet.GameModule[telnet]
+            +set gamelets q2java.baseq2.BaseQ2+barryp.telnet.TelnetServer[telnet]
 
         To actually start a server session, set the port you want to 
         run the server on (for example: 1200) at the command line with 
@@ -252,7 +275,7 @@ Older gamelets
         You can also load the Telnet server package and start a session
         after the game has started, by typing on the console:
 
-            sv addgamelet barryp.telnet.GameModule telnet
+            sv addgamelet barryp.telnet.TelnetServer telnet
             sv telnet.start 1200 -pass foobar
        
         The Telnet server will relay all Game output to any number of

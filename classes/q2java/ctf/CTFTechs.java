@@ -1,5 +1,7 @@
 package q2java.ctf;
 
+import org.w3c.dom.*;
+
 import q2java.*;
 import q2java.core.*;
 import q2java.core.event.*;
@@ -14,9 +16,9 @@ import q2java.baseq2.InventoryList;
 public class CTFTechs extends q2java.core.Gamelet implements GameStatusListener
 	{
 	
-	public CTFTechs(String moduleName)
+	public CTFTechs(Document gameletDoc)
 	{
-		super( moduleName );
+		super( gameletDoc );
 		
 		// ask to be called on level changes
 		Game.addGameStatusListener(this);

@@ -19,7 +19,6 @@ final public class PlayerStateSupport
 {
   private static Method gInvokeMethod = null;
   private Vector fListeners = new Vector();
-  private Player fPlayer = null;
 
   static
 	{
@@ -31,18 +30,20 @@ final public class PlayerStateSupport
 	  catch(NoSuchMethodException nsme) {}
 	}
 
-  public PlayerStateSupport(Player player)
+  public PlayerStateSupport()
 	{
-	  fPlayer = player;
 	}
   public void addPlayerStateListener(PlayerStateListener l)
 	{
 	  if( !fListeners.contains(l) ) fListeners.addElement(l);
 	}
-  public void fireEvent( int stateChanged, GameObject source )
+  public void fireEvent( Player p, int stateChanged, GameObject source )
 	{
+	if (fListeners.size() == 0)
+		return;
+		
 	  PlayerStateEvent e =
-	PlayerStateEvent.getEvent( fPlayer, stateChanged, source );
+	PlayerStateEvent.getEvent( p, stateChanged, source );
 	  
 	  try { EventPack.fireEvent( e, gInvokeMethod, fListeners ); }
 	  catch(PropertyVetoException pve) {}

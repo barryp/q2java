@@ -2,6 +2,7 @@ package q2java.core;
 
 import java.lang.reflect.*;
 import java.io.*;
+import java.net.InetAddress;
 import java.util.*;
 import javax.vecmath.*;
 
@@ -36,7 +37,6 @@ public class Game implements GameListener, JavaConsoleListener
 	private static ServerCommandSupport gServerCommandSupport = null;
 	private static GameStatusSupport gGameStatusSupport = null;
 	private static OccupancySupport gOccupancySupport = null;
-	private static GameletSupport gGameletSupport = null;
 
 	// Manage PrintListeners
 	private static PrintSupport gPrintSupport;
@@ -52,12 +52,27 @@ public class Game implements GameListener, JavaConsoleListener
 
 	// Track a list of packages to search for partially specified classnames
 	private static Vector gPackagePath;
-
+	private static class PackageEntry
+		{
+		String fPackageName;
+		int fCount = 1;
+		PackageEntry(String s)
+			{
+			fPackageName = s;
+			}
+		}
+	
 	// Allow objects to find each other
 	private static Hashtable gLevelRegistry;
 
-	// DOM Document describing initial info for the current level
-	private static Document gLevelDocument;
+	// DOM Documents describing initial info for the current level
+	// and current game status
+	private static Hashtable gDocumentHashtable;
+//	private static Document gLevelDocument;
+//	private static Document gStatusDocument;
+//	private static Element gStatusDocumentRoot;
+
+	// remember the name of what we're playing.
 	private static String gCurrentMapName;
 	
 	// game clocks
@@ -121,15 +136,6 @@ public static void addFrameListener(ServerFrameListener f, int phase, float dela
 		gFrameEnd.addServerFrameListener(f, delay, interval);
 	}
 /**
- * Other packages or mods may wish to be notified when a package is added to 
- * the game. This event based interface introduces a 'PackageListener'.
- * @param pl The PackageListener to add
- */
-public static void addGameletListener(GameletListener l) 
-	{
-	gGameletSupport.addGameletListener(l);
-	}
-/**
  * Add a game listener.
  * @param pl q2jgame.GameListener
  */
@@ -163,14 +169,33 @@ public static void addOccupancyListener(OccupancyListener l)
 	gOccupancySupport.addOccupancyListener(l);
 	}
 /**
- * @see GameClassFactory.addPackagePath
+ * Add the name of a package to a list of packages that will
+ * be searched for classes.  If the specified package is already
+ * in the list, a counter is incremented to track how many times
+ * the package has been added.  Otherwise, add it with the
+ * initial count to 1, and update the class factory with the
+ * expanded list.
+ *
+ * @param pathName name of a package, such as "q2java.baseq2"
+ * @see q2java.core.Game#removePackagePath 
  */
 public static void addPackagePath(String pathName)
 	{
-	if ((pathName == null) || gPackagePath.contains(pathName))
+	if (pathName == null)
 		return;
-		
-	gPackagePath.addElement(pathName);
+
+	Enumeration enum = gPackagePath.elements();
+	while (enum.hasMoreElements())
+		{
+		PackageEntry pe = (PackageEntry) enum.nextElement();
+		if (pathName.equals(pe.fPackageName))
+			{
+			pe.fCount++;
+			return;
+			}
+		}
+
+	gPackagePath.addElement(new PackageEntry(pathName));
 
 	// let the class factory know things have changed.
 	if (gClassFactory != null)
@@ -297,6 +322,15 @@ public static String getCurrentMapName()
 	return gCurrentMapName;
 	}
 /**
+ * Get one of the DOM documents the Game keeps internally.
+ * @return org.w3c.dom.Document
+ * @param documentKey java.lang.String
+ */
+public static Document getDocument(String documentKey) 
+	{
+	return (Document) gDocumentHashtable.get(documentKey);
+	}
+/**
  * Retrieves a reference to the current GameletManager object
  * leighd 04/07/99
  */
@@ -315,11 +349,13 @@ public static float getGameTime()
 	}
 /**
  * Get the DOM document describing the current level.
+ *
+ * @deprecated use getDocument("q2java.level") instead.
  * @return org.w3c.dom.Document
  */
 public static Document getLevelDocument() 
 	{
-	return gLevelDocument;
+	return getDocument("q2java.level");
 	}
 /**
  * Fetch a list of objects that were registered under a given key.
@@ -350,8 +386,12 @@ public static OccupancySupport getOccupancySupport()
  */
 public static String[] getPackagePaths()
 	{
-	String[] result = new String[gPackagePath.size()];
-	gPackagePath.copyInto(result);
+	int n = gPackagePath.size();
+	String[] result = new String[n];
+	
+	for (int i = 0; i < n; i++)
+		result[i] = ((PackageEntry) gPackagePath.elementAt(i)).fPackageName;
+		
 	return result;
 	}
 /**
@@ -426,7 +466,6 @@ public void init()
 	// event delegation support
 	gGameStatusSupport = new GameStatusSupport();		
 	gOccupancySupport = new OccupancySupport();
-	gGameletSupport = new GameletSupport();
 	gServerCommandSupport = new ServerCommandSupport();
 
 	//leighd 04/10/99 register for commands
@@ -448,8 +487,45 @@ public void init()
 	
 	// setup to manage Gamelets
 	//leighd 04/07/99
-	setGameletManager(new GameletManager(gGameletSupport));	
+	setGameletManager(new GameletManager());	
 	setClassFactory(new DefaultClassFactory());		
+
+	gDocumentHashtable = new Hashtable();
+	Document statusDoc = XMLTools.createXMLDocument();
+	gDocumentHashtable.put("q2java.status", statusDoc);
+	Element root = statusDoc.createElement("status");
+	root.setAttribute("game", "Quake2");
+	
+	CVar ipCVar = new CVar("ip", "localhost", 0);
+
+	String ipaddr = ipCVar.getString();
+	
+	if (ipaddr.equalsIgnoreCase("localhost"))
+		{
+		try
+			{
+			byte[] addr = InetAddress.getLocalHost().getAddress();
+			StringBuffer sb = new StringBuffer();
+		
+			sb.append(((int) addr[0]) & 0x00ff);
+			sb.append('.');
+			sb.append(((int) addr[1]) & 0x00ff);
+			sb.append('.');
+			sb.append(((int) addr[2]) & 0x00ff);
+			sb.append('.');
+			sb.append(((int) addr[3]) & 0x00ff);
+		
+			ipaddr = sb.toString();
+			}
+		catch (Exception e)
+			{
+			}
+		}
+		
+	root.setAttribute("ip", ipaddr);
+	CVar portCVar = new CVar("port", "27910", 0);
+	root.setAttribute("port", portCVar.getString());	
+	statusDoc.appendChild(root);
 	
 	// Game clocks;
 	gFrameCount = 0;
@@ -532,6 +608,14 @@ public static Class lookupClass(String classSuffix) throws ClassNotFoundExceptio
 	{
 	//Withnails 04/22/98
 	return gClassFactory.lookupClass(classSuffix);
+	}
+/**
+ * Let interested objects know the status document has been updated -
+ * should be called by code that modifies that document.
+ */
+public static void notifyDocumentUpdated(String documentName) 
+	{
+	gGameStatusSupport.fireEvent(GameStatusEvent.GAME_DOCUMENT_UPDATED, documentName);	
 	}
 /**
  * Called by the DLL when a new player connects. Throw an exception to reject the connection.
@@ -636,14 +720,6 @@ public static void removeFrameListener(ServerFrameListener f, int phase)
 		gFrameEnd.removeServerFrameListener(f);
 	}
 /**
- * Removes a package listener
- * @param pl the PackageListener to remove
- */
-public static void removeGameletListener(GameletListener l)
-	{
-	gGameletSupport.removeGameletListener(l);
-	}
-/**
  * Remove a game listener.
  * @param pl q2jgame.GameListener
  */
@@ -670,18 +746,35 @@ public static void removeOccupancyListener(OccupancyListener l)
 	gOccupancySupport.removeOccupancyListener(l);
 	}
 /**
- * @see GameClassFactory.removePackagePath
+ * Decrement the counter associated with a package name, and
+ * if it hits zero, actually remove it from the list.
+ *
+ * @see q2java.core.Game#addPackagePath
  */
 public static void removePackagePath(String pathName)
 	{
 	if (pathName == null)
 		return;
 
-	gPackagePath.removeElement(pathName);
-	
-	// let the class factory know things have changed.
-	if (gClassFactory != null)
-		gClassFactory.setPackagePath(getPackagePaths());
+	for (int i = gPackagePath.size() - 1; i >= 0; i--)
+		{
+		PackageEntry pe = (PackageEntry) gPackagePath.elementAt(i);
+		if (pathName.equals(pe.fPackageName))
+			{
+			pe.fCount--;
+
+			if (pe.fCount < 1)
+				{
+				gPackagePath.removeElementAt(i);
+				
+				// let the class factory know things have changed.
+				if (gClassFactory != null)
+					gClassFactory.setPackagePath(getPackagePaths());
+				}
+				
+			return;
+			}	
+		}
 	}
 /**
  * notify server command issued...
@@ -721,38 +814,69 @@ public static void removeServerFrameListener(ServerFrameListener f, int phase)
 /**
  * Reconsider which class should be controlling players.
  */
-public static void rethinkPlayerClass() 
+private static void rethinkPlayerClass() 
 	{
 	Gamelet g = null;
 	Class cls = null;
 	
 	// look for a gamelet that provides a player class
-	// searching from highest priority on down
-	Enumeration enum = gGameletManager.getGamelets();
-	while (enum.hasMoreElements())
+	// searching from latest loaded to oldest loaded
+	Gamelet[] gamelets = gGameletManager.getGamelets();
+	for (int i = gamelets.length - 1; i >= 0; i--)
 		{
-		g = (Gamelet) enum.nextElement();
-		if (!g.isInitialized())
-			continue;
-			
+		g = gamelets[i];
 		cls = g.getPlayerClass();
 		if (cls != null)
 			break;
 		}
 
-	// check if the current player gamelet is different 
-	// from what we found
-	if (g != gPlayerGamelet)
-		{
-		// different? then do the big switch
+	// check if the current player gamelet is the same as what we found
+	if (g == gPlayerGamelet)
+		return;
 		
-		if (gPlayerGamelet != null)
-			gPlayerGamelet.releasePlayers();
-
-		gPlayerGamelet = g;
-		gPlayerClass = cls;
-		g.grabPlayers();
+	// must be different, do the big switch
+	Constructor con = null;
+	
+	try
+		{
+		Class[] paramTypes = new Class[1];
+		paramTypes[0] = NativeEntity.class;
+		con = g.getPlayerClass().getConstructor(paramTypes);	
 		}
+	catch (Exception e2)
+		{
+		e2.printStackTrace();
+		return;
+		}
+	
+	Object[] params = new Object[1];
+
+	java.util.Enumeration players = NativeEntity.enumeratePlayerEntities();
+	while (players.hasMoreElements())
+		{
+		try
+			{
+			NativeEntity ent = (NativeEntity) players.nextElement();
+			SwitchablePlayer sp = (SwitchablePlayer) ent.getReference();
+
+			sp.dispose();
+
+			params[0] = ent;	
+			con.newInstance(params);
+			Game.getOccupancySupport().fireEvent(ent, OccupancyEvent.PLAYER_CLASSCHANGE );			
+			}
+		catch (ClassCastException cce)
+		    {
+		    // entity probably didn't refer to a SwitchablePlayer
+		    }
+		catch (Exception e)
+			{
+			e.printStackTrace();
+			}
+		}		
+		
+	gPlayerGamelet = g;
+	gPlayerClass = cls;
 	}
 /**
  * Called by the DLL when the DLL's RunFrame() function is called.
@@ -867,11 +991,10 @@ public void serverCommand()
 			}
 			
 		// use reflection to look for a module command second
-		// Withnails 04/22/98 - now makes use of an enumeration instead
-		Enumeration enum = gGameletManager.getGamelets();
-		while (enum.hasMoreElements()) 
+		Gamelet[] gamelets = gGameletManager.getGamelets();
+		for (int i = 0; i < gamelets.length; i++)
 			{
-			Gamelet g2 = (Gamelet)enum.nextElement();
+			Gamelet g2 = gamelets[i];
 			if (externalServerCommand(g2, cmd, paramTypes, params))
 				return;
 			}			
@@ -942,7 +1065,7 @@ private static void spawnEntities()
 	newCtorParamTypes[0] = Element.class;
 	
 	// look for <entity>..</entity> sections
-	NodeList nl = gLevelDocument.getElementsByTagName("entity");
+	NodeList nl = getDocument("q2java.level").getElementsByTagName("entity");
 	for (int i = 0; i < nl.getLength(); i++)
 		{
 		String className = null;
@@ -1003,34 +1126,40 @@ public void startLevel(String mapname, String entString, String spawnPoint)
 	{
 	Engine.debugLog("Game.startLevel(\"" + mapname + "\", <entString>, \"" + spawnPoint + "\")");
 
-	// let interested objects know the last map is done
+	// if there -was- a level running, clean up.
 	if (gLevelStarted)
+		{
+		// let interested parties know the level is over with
 		gGameStatusSupport.fireEvent(GameStatusEvent.GAME_ENDLEVEL);
 
-	gLevelStarted = false;
+		// purge non-CrossLevel objects from FrameListener lists
+		gFrameBeginning.purge();
+		gFrameMiddle.purge();
+		gFrameEnd.purge();
 	
-	// purge non-player NativeEntity objects from FrameListener lists
-	gFrameBeginning.purge();
-	gFrameMiddle.purge();
-	gFrameEnd.purge();
-	
-	// clear the object registry
-	gLevelRegistry.clear();
+		// clear the object registry
+		gLevelRegistry.clear();
+		
+		gLevelStarted = false;
+		}	
 
 	// make a note of what map we're going to play
 	gCurrentMapName = mapname;
-
+	getDocument("q2java.status").getDocumentElement().setAttribute("map", mapname);
+	notifyDocumentUpdated("q2java.status");
+	
 	// create the inital, mostly empty level document (don't pass the entString)
-	gLevelDocument = GameUtil.buildLevelDocument(mapname, null, spawnPoint);
+	Document levelDoc = GameUtil.buildLevelDocument(mapname, null, spawnPoint);
+	gDocumentHashtable.put("q2java.level", levelDoc);
 		
 	// let interested objects know we're building a new level
 	// document, and they may add on to it.
-	gGameStatusSupport.fireEvent(GameStatusEvent.GAME_BUILD_DOCUMENT, entString, spawnPoint);	
+	gGameStatusSupport.fireEvent(GameStatusEvent.GAME_BUILD_LEVEL_DOCUMENT, entString, spawnPoint);	
 
 	// parse the entString and place its contents in the document
 	// if no spawn entities have been placed in the document yet, 
 	// or if the <include-default-entities/> tag appears
-	Element root = (Element) gLevelDocument.getDocumentElement(); 
+	Element root = levelDoc.getDocumentElement(); 
 	NodeList nl = root.getElementsByTagName("entity");
 	NodeList nl2 = root.getElementsByTagName("include-default-entities");
 	if ((nl.getLength() == 0) || (nl2.getLength() > 0))
@@ -1043,7 +1172,7 @@ public void startLevel(String mapname, String entString, String spawnPoint)
 	// ponder whether or not we need to change player classes
 	rethinkPlayerClass();
 	
-	// force a gc, to clean things up from the last level, before
+	// suggest a gc, to clean things up from the last level, before
 	// spawning all the new entities
 	System.gc();		
 	
@@ -1054,7 +1183,7 @@ public void startLevel(String mapname, String entString, String spawnPoint)
 	gGameStatusSupport.fireEvent(GameStatusEvent.GAME_POSTSPAWN);	
 						
 	// now, right before the game starts, is a good time to 
-	// force Java to do another garbage collection to tidy things up.
+	// suggest that Java to do another garbage collection to tidy things up.
 	System.gc();	
 
 	gPerformanceFrames = 0;

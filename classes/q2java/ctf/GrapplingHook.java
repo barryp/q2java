@@ -3,6 +3,8 @@ package q2java.ctf;
 import java.beans.PropertyVetoException;
 import java.util.Enumeration;
 
+import org.w3c.dom.*;
+
 import q2java.*;
 import q2java.core.*;
 import q2java.core.event.*;
@@ -23,31 +25,10 @@ implements PlayerStateListener, OccupancyListener, GameStatusListener
  * Create the gamelet object.
  * @param gameletName java.lang.String
  */
-public GrapplingHook(String gameletName) 
+public GrapplingHook(Document gameletDoc) 
 	{
-	super(gameletName);
-	}
-/**
- * This method was created in VisualAge.
- * @param gse q2java.core.event.GameStatusEvent
- */
-public void gameStatusChanged(GameStatusEvent gse) 
-	{
-	switch (gse.getState())
-		{
-		case GameStatusEvent.GAME_POSTSPAWN:
-			// create an instance of a GrappleWeapon to make sure 
-			// the grapple VWep skin is cached before we set the 
-			// player's skin
-			GrappleWeapon gw = new GrappleWeapon();
-			break;
-		}
-	}
-/**
- * Initialize this gamelet.
- */
-public void init() 
-	{    
+	super(gameletDoc);
+
 	// Listen for new players connection
 	Game.addOccupancyListener(this);
 
@@ -67,7 +48,23 @@ public void init()
 			// NativeEntity probably didn't refer to a Player object
 			// just quietly ignore and go on.
 			}
-		}			
+		}	
+	}
+/**
+ * This method was created in VisualAge.
+ * @param gse q2java.core.event.GameStatusEvent
+ */
+public void gameStatusChanged(GameStatusEvent gse) 
+	{
+	switch (gse.getState())
+		{
+		case GameStatusEvent.GAME_POSTSPAWN:
+			// create an instance of a GrappleWeapon to make sure 
+			// the grapple VWep skin is cached before we set the 
+			// player's skin
+			GrappleWeapon gw = new GrappleWeapon();
+			break;
+		}
 	}
  /**
   * Called with a new player connects - attach to the new player

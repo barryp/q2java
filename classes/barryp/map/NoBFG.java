@@ -15,36 +15,38 @@ public class NoBFG extends Gamelet implements GameStatusListener
  * NoBFG constructor comment.
  * @param gameletName java.lang.String
  */
-public NoBFG(String gameletName) 
+public NoBFG(Document gameletInfo) 
 	{
-	super(gameletName);
+	super(gameletInfo);
+
+	Game.addGameStatusListener(this);	
 	}
 public void gameStatusChanged(GameStatusEvent gse)
 	{
 	if (gse.getState() == GameStatusEvent.GAME_PRESPAWN)
 		{
-		Document doc = Game.getLevelDocument();
+		Document doc = Game.getDocument("q2java.level");
 
 		// look for <entity>..</entity> sections
-		NodeList nl = doc.getElementsByTagName("entity");
-		int count = nl.getLength();
-		for (int i = 0; i < count; i++)
+		Node nextNode = null;
+		for (Node n = doc.getDocumentElement().getFirstChild(); n != null; n = nextNode)
 			{
-			Element e = (Element) nl.item(i);
-			
-			// remove from the document if it's a BFG
-			String className = e.getAttribute("class");
-			if (className.equals("weapon_bfg"))
-				e.getParentNode().removeChild(e);
+			// get the next node now, since we may be deleting the current node
+			nextNode = n.getNextSibling();
+
+			try
+				{
+				Element e = (Element) n;
+				if ("entity".equals(e.getTagName())
+				&& "weapon_bfg".equals(e.getAttribute("class")))
+					e.getParentNode().removeChild(e);
+				}
+			catch (ClassCastException cce)
+				{
+				// guess n wasn't an Element..oh well
+				}
 			}
 		}
-	}
-/**
- * Actually initialize the Gamelet for action.
- */
-public void init() 
-	{
-	Game.addGameStatusListener(this);
 	}
 /**
  * Unload this gamelet.

@@ -343,7 +343,7 @@ public class CTFPlayer extends q2java.baseq2.Player implements CameraListener
 		if ( fViewer != null )
 		{
 			// pretend we disconnected - to drop weapons and techs and leave teams
-			fPlayerStateSupport.fireEvent(PlayerStateEvent.STATE_INVALID, q2java.baseq2.BaseQ2.gWorld);
+			fPlayerStateSupport.fireEvent(this, PlayerStateEvent.STATE_INVALID, q2java.baseq2.BaseQ2.gWorld);
 
 			//die( null, null, 0, null );
 			//fShowScore = false;
@@ -476,7 +476,7 @@ public class CTFPlayer extends q2java.baseq2.Player implements CameraListener
 		}
 
 		// pretend we disconnected - to drop weapons and techs and leave teams
-		fPlayerStateSupport.fireEvent(PlayerStateEvent.STATE_INVALID, q2java.baseq2.BaseQ2.gWorld);
+		fPlayerStateSupport.fireEvent(this, PlayerStateEvent.STATE_INVALID, q2java.baseq2.BaseQ2.gWorld);
 		
 		fTeam = null;
 		
@@ -517,7 +517,7 @@ public class CTFPlayer extends q2java.baseq2.Player implements CameraListener
 		}
 		
 		// pretend we disconnected - to drop weapons and techs and leave teams
-		fPlayerStateSupport.fireEvent(PlayerStateEvent.STATE_INVALID, q2java.baseq2.BaseQ2.gWorld);
+		fPlayerStateSupport.fireEvent(this, PlayerStateEvent.STATE_INVALID, q2java.baseq2.BaseQ2.gWorld);
 
 		// join new team
 		newTeam.addPlayer( this );

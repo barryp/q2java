@@ -4,6 +4,9 @@ import java.beans.PropertyVetoException;
 import java.io.*;
 import java.lang.reflect.*;
 import java.util.*;
+
+import org.w3c.dom.Document;
+
 import q2java.*;
 import q2java.core.*;
 import q2java.core.event.*;
@@ -26,9 +29,9 @@ public class GameModule extends Gamelet
   protected Vector fBannedIPAddresses = new Vector();
   protected Vector fBannedNames = new Vector();
   
-  public GameModule(String moduleName) throws Exception
+  public GameModule(Document gameletInfo) throws Exception
 	{
-	  super(moduleName);
+	  super(gameletInfo);
 	  CVar cvar = new CVar("ipbanfile", "ipban.txt", CVar.CVAR_LATCH);
 	  Game.addOccupancyListener(this);
 	}

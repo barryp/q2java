@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<gamelet class="barryp.paranoia.Paranoia">
+  <title>Paranoia</title>
+  <author mail="barryp@planetquake.com">Barry Pederson</author>    
+  <game name="Q2Java"/>
+  <description>
+    Variation of deathmatch, where players are either stalkers or stalkees.
+  </description>
+  
+  <option name="wait for level change to unload"/>
+  <option name="avoid multiple instances"/>
+</gamelet>

@@ -17,7 +17,6 @@ final public class PlayerMoveSupport
 	{
 	private static Method gInvokeMethod = null;
 	private Vector fListeners = new Vector();
-	private Player fPlayer = null;
 
 	static
 		{
@@ -31,21 +30,20 @@ final public class PlayerMoveSupport
 		}
 
 	
-public PlayerMoveSupport(Player player)
+public PlayerMoveSupport()
 	{
-	fPlayer = player;
 	}
 public void addPlayerMoveListener(PlayerMoveListener l)
 	{
 	if( !fListeners.contains(l) ) 
 		fListeners.addElement(l);
 	}
-public void fireEvent( PlayerCmd move )
+public void fireEvent( Player p, PlayerCmd move )
 	{
 	if (fListeners.size() == 0)
 		return;
 		
-	PlayerMoveEvent e = PlayerMoveEvent.getEvent( fPlayer, move );
+	PlayerMoveEvent e = PlayerMoveEvent.getEvent( p, move );
 
 	try 
 		{ 

@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<gamelet class="q2java.ctf.CTF">
+  <title>Capture the Flag</title>
+  <game name="Q2Java"/>
+  <description>
+    Threewave CTF
+  </description>
+  
+  <option name="wait for level change to unload"/>
+  <option name="avoid multiple instances"/>
+</gamelet>

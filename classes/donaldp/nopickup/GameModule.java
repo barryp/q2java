@@ -2,6 +2,9 @@ package donaldp.nopickup;
 
 import java.beans.PropertyVetoException;
 import java.util.Enumeration;
+
+import org.w3c.dom.Document;
+
 import q2java.NativeEntity;
 import q2java.Engine;
 import q2java.baseq2.Player;
@@ -17,16 +20,16 @@ import q2java.baseq2.event.*;
 public class GameModule extends q2java.core.Gamelet implements InventoryListener
 	{	
 	
-public GameModule(String moduleName)
+public GameModule(Document gameletInfo)
 	  {
-	  super( moduleName );
+	  super( gameletInfo );
 
 	  Enumeration enum = NativeEntity.enumeratePlayerEntities();
 	  while( enum.hasMoreElements() )
 	  {
 	  Player p = (Player)(((NativeEntity)enum.nextElement()).getReference());
 	  
-	  p.addInventoryListener(this);
+	  p.addPlayerInventoryListener(this);
 	  }
 	  }  
 public void inventoryChanged(InventoryEvent e) throws PropertyVetoException
@@ -41,7 +44,7 @@ public void unload()
 	  while( enum.hasMoreElements() )
 	  {
 	  Player p = (Player)(((NativeEntity)enum.nextElement()).getReference());
-	  p.removeInventoryListener(this);
+	  p.removePlayerInventoryListener(this);
 	  }
 	  }  
 }

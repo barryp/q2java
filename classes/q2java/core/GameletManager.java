@@ -1,8 +1,13 @@
 package q2java.core;
 
+import java.io.*;
+import java.lang.reflect.*;
+import java.util.*;
+
+import org.w3c.dom.*;
+
 import q2java.*;
 import q2java.core.event.*;
-import java.util.*;
 
 /**
  * This class implements the functionality required to load, remove 
@@ -24,24 +29,35 @@ public class GameletManager implements ServerCommandListener, GameStatusListener
 	// also checked for gamelets on command line. 
 	protected CVar fModules; 
 
-	//used when adding gamelets
-	protected Vector  fNewGameletList;
-	protected boolean fNewGameletsShouldInit;
-
 	//used to generate servlet events
 	private GameletSupport fGameletSupport;
+
+	// inner class used to GameletManager to track what's going on
+	// with the individual gamelets
+	private static class GameletItem
+		{
+		String fName;
+		boolean fLevelChangeRequired;
+		boolean fIsUnloading;
+		Gamelet fGamelet;
+		}
+
+	// handy variable can be used over and over
+	private final static Class[] gConstructorParamTypes = {Document.class};
+
+	private final static String OPTION_MULTIPLE = "avoid multiple instances";
+	private final static String OPTION_UNLOAD = "wait for level change to unload";
 	
 /**
  * Constructor. The new GameletManager object should be provided with 
  * a reference to the Games GameletSupport object so that it can 
  * generate gamelet events.
  */
-public GameletManager(GameletSupport gs)
+public GameletManager()
 	{
 	fGameletList = new Vector();
-	fNewGameletList = new Vector();
 	
-	fGameletSupport = gs;
+	fGameletSupport = new GameletSupport();
 	
 	//setup to listen for server commands
 	Game.addServerCommandListener(this);
@@ -51,120 +67,127 @@ public GameletManager(GameletSupport gs)
 	Game.addGameStatusListener(this);    
 	}
 /**
- * Add a new module to the game.  
- * If a module has already been added, nothing happens.
- * @param packageName java.lang.String
- * @param alias short name that the gamelet will be referred to as.
+ * Load a Gamelet into the system.
+ *
+ * @return q2java.core.Gamelet
+ * @param classname Classname of the Gamelet we want to load
+ * @param suggestedGameletName Suggested name of gamelet, may be altered if the suggested name is already in use - may be null.
+ * @param params Element Extra info you may want to pass to the gamelet's constructor.
+ * @param unloadAtEndLevel true if the gamelet should automatically go away when the level ends.
  */
-public Gamelet addGamelet(String className, String alias) throws ClassNotFoundException
+public Gamelet addGamelet(String classname, String suggestedGameletName, Element params, boolean unloadAtEndlevel) throws Throwable
 	{
-	//first check that this alias isn't used.
-	Gamelet g = getGamelet(alias);
-	if (g != null) 
+	// see if there is actually a class with the specified name
+	Class gameletClass = fClassFactory.lookupClass(classname);
+
+	// make sure it's a subclass of q2java.core.Gamelet	
+	if (!(Gamelet.class.isAssignableFrom(gameletClass)))
+		throw new ClassNotFoundException(classname + " is not a subclass of " + Gamelet.class.getName());
+
+	// make sure it has a compatible constructor
+	try
 		{
-		Game.dprint("There is already a [" + alias + "] loaded\n");
-		return null;
+		gameletClass.getConstructor(gConstructorParamTypes);
+		}
+	catch (Exception ex)
+		{
+		throw new ClassNotFoundException(classname + " doesn't have a compatible constructor\n");
+		}
+		
+	if (suggestedGameletName == null) 
+		suggestedGameletName = makeGameletName(classname);
+	else if (getGamelet(suggestedGameletName) != null)
+		suggestedGameletName = makeGameletName(suggestedGameletName);
+	
+
+	Document gameletDoc = null;
+
+	// try to read external Gamelet description file
+	try
+		{
+		InputStream is = gameletClass.getResourceAsStream("/" + classname.replace('.', '/') + ".gamelet");
+		InputStreamReader isr = new InputStreamReader(is);
+		gameletDoc = XMLTools.readXMLDocument(isr, null);
+		isr.close();
+		}
+	catch (Throwable t)
+		{
 		}
 
-	//leighd 04/17/99 - no need for new object
-	fNewGameletList.removeAllElements();
-	
-	//by default all new gamelets should initialise themselves.
-	fNewGameletsShouldInit = true;
-
-	// actually add the gamelet and any others it depends on
-	g = addGamelet0(className, alias, null);
-	
-	if (fNewGameletsShouldInit)
+	// if no gamelet description found, generate an
+	// empty stub
+	if (gameletDoc == null)
 		{
-		Enumeration enum = fNewGameletList.elements();
-		while (enum.hasMoreElements())
-			{
-			Gamelet g2 = (Gamelet) enum.nextElement();
-			g2.markInitialized();
-			g2.init();
-			}
+		gameletDoc = XMLTools.createXMLDocument();
+		Element root= gameletDoc.createElement("gamelet");
+		gameletDoc.appendChild(root);
 		}
 
-	//leighd 04/17/99 provide some feedback
-	int size = fNewGameletList.size();
-	String gamelet = (size > 1 ? " gamelets " : " gamelet ");
-	String lvl = (fNewGameletsShouldInit ? "\n" : " and awaiting level change\n");
-	Game.dprint(size + gamelet + "loaded" + lvl);
+	// get a hold of the doc root and make sure its attributes
+	// are valid
+	Element root = gameletDoc.getDocumentElement();
+	root.setAttribute("class", classname);
+	root.setAttribute("name", suggestedGameletName);
 	
-	//at this point we've either initialised all the 
-	//gamelets, or they are waiting for a level change,
-	//and so will be processed from the fGameletList.
-	fNewGameletList.removeAllElements();
-	
-	//save gamelet list to Cvar.
-	saveGameletList();
+	// copy any params into the gamelet doc
+	if (params != null)
+		XMLTools.copy(params, root, true);
 
-	return g;
+	// let interested parties know what we're planning to load
+	fGameletSupport.fireEvent( GameletEvent.GAMELET_LOADING, null, gameletDoc);
+
+	// start with the creation of the gamelet
+	GameletItem gi = new GameletItem();
+	gi.fName = suggestedGameletName;
+
+	// look for options
+	for (Node n = root.getFirstChild(); n != null; n = n.getNextSibling())
+		{
+		if (n.getNodeType() != Node.ELEMENT_NODE)
+			continue;
+
+		Element e = (Element) n;
+		if (!e.getTagName().equals("option"))
+			continue;
+
+		String option = e.getAttribute("name");
+
+		if (OPTION_UNLOAD.equalsIgnoreCase(option))
+			gi.fLevelChangeRequired = true;
+
+		if (OPTION_MULTIPLE.equalsIgnoreCase(option)
+		&& (getGamelet(gameletClass) != null))
+			throw new GameException("Avoided loading multiple instances of " + classname);
+		}
+		
+	gi.fGamelet = loadGamelet(gameletClass, gameletDoc);
+	gi.fIsUnloading = unloadAtEndlevel;
+	fGameletList.addElement(gi);			
+	fGameletSupport.fireEvent( GameletEvent.GAMELET_ADDED, gi.fGamelet, null);
+	Game.dprint(gi.fName + " loaded\n");
+	return gi.fGamelet;
 	}
 /**
- * Main code to add gamelets.
- * @param className java.lang.String
- * @param alias java.lang.String
+ * Load a Gamelet based on info found within a DOM Element.
+ *
+ * @return q2java.core.Gamelet
+ * @param e an Element with the attributes "class" and possibly "name".
  */
-private Gamelet addGamelet0(String className, String alias, Gamelet higherGamelet) throws ClassNotFoundException
+public Gamelet addGamelet(Element description, boolean unloadAtEndlevel) throws Throwable
 	{
-	if (alias == null)
-		{
-		// build up a default alias for this gamelet
-		int p = className.lastIndexOf('.');
-		if (p >= 0)
-			alias = className.substring(p+1);
-		else
-			alias = "unknown";
-		}
-		
-	Gamelet g = fClassFactory.loadGamelet(className, alias);
-	
-	if (g != null)
-		{
-		// the class factory successfully loaded the Gamelet        
-		fGameletSupport.fireEvent( GameletEvent.GAMELET_ADDED, g);            
+	String classname = description.getAttribute("class");
+	String gameletName = description.getAttribute("name");
 
-		int position = 0;
-		//add gamelet to list
-		if (higherGamelet != null)
-			position = fGameletList.indexOf(higherGamelet) + 1;
-		fGameletList.insertElementAt(g, position);
-
-		//add gamelet to new gamelet list, used to ensure that
-		//all dependent gamelets are initialised together
-		fNewGameletList.insertElementAt(g, 0);
-		fNewGameletsShouldInit &= !(g.isLevelChangeRequired());
-		
-		// make sure dependent gamelets are loaded
-		String[] dependencies = g.getGameletDependencies();
-		if (dependencies != null)
-			{
-			for (int i = 0; i < dependencies.length; i++)
-				{
-				try
-					{
-					//check to see if we've already got a gamelet of that
-					//type running.
-					Class depClass = Class.forName(dependencies[i]);
-					Gamelet other = getGamelet(depClass);                    
-				
-					if (other == null)
-						// not loaded? then recursively call to add -that- gamelet and -its- dependencies
-						addGamelet0(dependencies[i], null, g);
-					else
-						// already loaded, think about whether we should initialize or not
-						fNewGameletsShouldInit &= (other.isInitialized() || (!other.isLevelChangeRequired()));
-					}
-				catch (ClassNotFoundException cnfe)
-					{
-					}
-				}
-			}
-		}
-		
-	return g;
+	return addGamelet(classname, gameletName, description, unloadAtEndlevel);
+	}
+/**
+ * Other packages or mods may wish to be notified when a package is added to 
+ * the game. This event based interface introduces a 'PackageListener'.
+ * @param pl The PackageListener to add
+ */
+public void addGameletListener(GameletListener l) 
+	{
+	fGameletSupport.addGameletListener(l);
 	}
 /**
  * Called when sv addgamelet is typed at the console. Allows the 
@@ -187,19 +210,22 @@ public void commandAddGamelet(String[] args)
 
 	try
 		{
-		addGamelet(args[2], alias);
+		addGamelet(args[2], alias, null, false);
 		}
 	catch (ClassNotFoundException cnfe)
 		{
-		Game.dprint("Error: " + args[2] + " not found\n");
-		}    
+		Game.dprint("Error: " + args[2] + " not found\n");	
+		}
+	catch (Throwable t)
+		{
+		t.printStackTrace();
+		}
 	}
 /**
  * Called when sv listgamelet is typed at the console
  */
 public void commandGamelets(String[] args)
 	{
-	boolean foundLoad = false;
 	boolean foundUnload = false;
 
 	Gamelet playerGamelet = Game.getPlayerGamelet();
@@ -207,39 +233,34 @@ public void commandGamelets(String[] args)
 
 	Game.dprint("Currently Loaded Gamelets\n");
 	Game.dprint("\n");
-	Game.dprint("      Status   Player   Alias\n");
-	Game.dprint("      ======   ======   =====\n");
+	Game.dprint("  Status  Player  Name (class)\n");
+	Game.dprint("  ======  ======  ============\n");
 
 	Enumeration enum = fGameletList.elements();
 	while (enum.hasMoreElements()) 
 		{
-		Gamelet g = (Gamelet) enum.nextElement();
+		GameletItem gi = (GameletItem) enum.nextElement();
 		output.setLength(0);
-		if (g.isUnloading())
+		if (gi.fIsUnloading)
 			{
-			output.append("      Unload   ");
+			output.append("  Unload  ");
 			foundUnload = true;            
 			}
-		else if (g.isInitialized())
+		else 
 			{
-			output.append("      Active   ");
+			output.append("  Active  ");
+			}
+			
+		if (gi.fGamelet == playerGamelet)
+			{
+			output.append(" Yes    ");
 			}
 		else
 			{
-			output.append("      Load     ");
-			foundLoad = true;
+			output.append("        ");
 			}
-		if (g == playerGamelet)
-			{
-			output.append(" Yes     ");
-			}
-		else
-			{
-			output.append("         ");
-			}
-		output.append(g.getGameletName() + "\n");
-		Game.dprint(output.toString());
-		
+		output.append(getGameletName(gi.fGamelet) + " (" + gi.fGamelet.getClass().getName() + ")\n");
+		Game.dprint(output.toString());		
 		}
 
 	//be nice and recycle our used string
@@ -247,12 +268,10 @@ public void commandGamelets(String[] args)
 	
 	Game.dprint("\n");
 
-	// explain the (load)/(unload) notes if necessary
-	Game.dprint("active   = gamelet currently running\n");
-	if (foundLoad)
-		Game.dprint("load     = uninitialized gamelet waiting for level change\n");
+	// explain the (Active)/(Unload) notes if necessary
+	Game.dprint("Active   = gamelet currently running\n");
 	if (foundUnload)
-		Game.dprint("unload   = gamelet that will be removed on next level change\n");
+		Game.dprint("Unload   = gamelet that will be removed on next level change\n");
 	}
 /**
  * Called when sv removegamelet is typed at the console.
@@ -284,15 +303,9 @@ public void gameStatusChanged(GameStatusEvent e)
 		case GameStatusEvent.GAME_INIT:
 			{
 			// check the command line for modules
-			loadCommandLineGamelets();
+			loadStartupGamelets();
 			break;
 			}
-		case GameStatusEvent.GAME_PRESPAWN:
-			{
-			// init gamelets waiting for a level change
-			loadGamelets();
-			break;
-			}			
 		case GameStatusEvent.GAME_ENDLEVEL:
 			{
 			// remove gamelets waiting for a level change
@@ -314,100 +327,139 @@ public GameClassFactory getClassFactory()
 	return fClassFactory;
 	}
 /**
- * Append a gamelet and all the other gamelets it depends on to a vector.
- * @param g Gamelet we're looking at.
- * @param v Vector to append the gamelet and its dependencies to.
- */
-private void getDependantGamelets(Gamelet g, Vector v) 
-	{
-	// bail if this gamelet is already on the list
-	if (v.indexOf(g) >= 0)
-		return;
-
-	v.addElement(g);
-	String clsName = g.getClass().getName();
-
-	// look through all gamelets for ones that depend on this one
-	Enumeration enum = getGamelets();
-	while (enum.hasMoreElements())
-		{
-		Gamelet g2 = (Gamelet) enum.nextElement();
-		
-		String[] dependencies = g2.getGameletDependencies();
-		if (dependencies != null)
-			{            
-			for (int i = 0; i < dependencies.length; i++)
-				{
-				if (clsName.equals(dependencies[i]))
-					{
-					// g2 depends on g, so recursively call to see
-					// what else depends on g
-					getDependantGamelets(g2, v);
-					break; // out of the for loop
-					}
-				}
-			}
-		}
-	}
-/**
  * Look for a gamelet based on the class.
  * @return q2java.core.Gamelet, null if not found.
  * @param gameletClass class we're looking for.
  */
 public Gamelet getGamelet(Class gameletClass) 
 	{
-	for (int i = 0; i < fGameletList.size(); i++)
+	for (int i = fGameletList.size() - 1; i >= 0; i--)
 		{
-		Object obj = fGameletList.elementAt(i);
-		if (obj.getClass().equals(gameletClass))
-			return (Gamelet) obj;
+		GameletItem gi = (GameletItem) fGameletList.elementAt(i);
+		if (gi.fGamelet.getClass().equals(gameletClass))
+			return gi.fGamelet;
 		}
 		
 	return null;
 	}
 /**
- * Lookup a loaded package, based on its name.
- * @return q2jgame.GameModule, null if not found.
- * @param alias java.lang.String
+ * Lookup a loaded package, based on its name (case-insensitive) or
+ * classname.
+ *
+ * @return the gamelet with the specified name, or the first instance
+ *   if a classname was specified, null if not found.
+ * @param alias A gamelet name or classname.
  */
 public Gamelet getGamelet(String alias) 
 	{
-	for (int i = 0; i < fGameletList.size(); i++)
+	if (alias == null)
+		return null;
+		
+	boolean isClassname = alias.indexOf('.') > 0;
+	
+	for (int i = fGameletList.size() - 1; i >= 0; i--)
 		{
-		Gamelet g = (Gamelet) fGameletList.elementAt(i);
-		if (g.getGameletName().equalsIgnoreCase(alias))
-			return g;
+		GameletItem gi = (GameletItem) fGameletList.elementAt(i);
+		if (isClassname)
+			{
+			if (gi.fGamelet.getClass().getName().equals(alias))
+				return gi.fGamelet;
+			}
+		else
+			{
+			if (gi.fName.equalsIgnoreCase(alias))
+				return gi.fGamelet;
+			}
 		}
 		
 	return null;
 	}
 /**
- * Returns the number of loaded packages
+ * Returns the number of loaded gamelets.
  */
 public int getGameletCount() 
 	{
 	return fGameletList.size();
 	}
 /**
- * Get an Enumeration of all loaded packages. The enumeration will be
- * of Gamelet objects
+ * Lookup the name of a gamelet.
+ * @return java.lang.String
+ * @param g q2java.core.Gamelet
  */
-public Enumeration getGamelets() 
+public String getGameletName(Gamelet g) 
 	{
-	return fGameletList.elements();
+	for (int i = fGameletList.size() - 1; i >= 0; i--)
+		{
+		GameletItem gi = (GameletItem) fGameletList.elementAt(i);
+		if (gi.fGamelet.equals(g))
+			return gi.fName;		
+		}
+		
+	return null;
+	}
+/**
+ * Get an array of references to all loaded Gamelets.
+ */
+public Gamelet[] getGamelets() 
+	{
+	int n = fGameletList.size();
+	Gamelet[] result = new Gamelet[n];
+	for (int i = 0; i < n; i++)
+		result[i] = ((GameletItem)fGameletList.elementAt(i)).fGamelet;
+		
+	return result;
+	}
+/**
+ * Is a particular gamelet marked to unload when the level's over?
+ * @return true if the gamelet will unload
+ * @param g q2java.core.Gamelet
+ */
+public boolean isUnloadingAtLevelChange(Gamelet g) 
+	{
+	for (int i = fGameletList.size() - 1; i >= 0; i--)
+		{
+		GameletItem gi = (GameletItem) fGameletList.elementAt(i);
+		if (gi.fGamelet.equals(g))
+			return gi.fIsUnloading;		
+		}
+		
+	return false;
+	}
+/**
+ * Actually create a gamelet.
+ * @return q2java.core.Gamelet
+ * @param doc org.w3c.dom.Document
+ */
+protected Gamelet loadGamelet(Class gameletClass, Document doc) throws Throwable 
+	{
+	try
+		{
+		Constructor ctor = gameletClass.getConstructor(gConstructorParamTypes);
+	
+		Object[] params = new Object[1];
+		params[0] = doc;
+	
+		return (Gamelet) ctor.newInstance(params);
+		}
+	catch (InvocationTargetException ite)
+		{
+		throw ite.getTargetException();
+		}
 	}
 /**
  * This method is called when the GameletManager receives the
  * GAME_INIT method, which is called when the q2java game is
  * originally setup.
  */
-protected void loadCommandLineGamelets()
+protected void loadStartupGamelets()
 	{
 	// look for gamelets specified on the command line. Cvar will
 	// also contain cached gamelet names if the DLL has been reloaded.
 	fModules = new CVar("gamelets", "", 0);
 	String modules = fModules.getString();
-
+	String startup = (new CVar("q2java_startup", "q2java.startup", CVar.CVAR_SERVERINFO)).getString();
+	File startupFile = new File(Engine.getGamePath(), startup);
+	
 	if (!modules.equals(""))
 		{       
 		//Withnails 04/23/98 - parses out multiple modules on command line, separated by ;,/\\+
@@ -426,15 +478,70 @@ protected void loadCommandLineGamelets()
 			try
 				{
 				if ( tidx == -1 ) 
-					addGamelet( temp, null );
+					addGamelet( temp, null, null, false );
 				else 
-					addGamelet( temp.substring( 0, tidx ), temp.substring( tidx + 1, temp.length() - 1 ) );
+					addGamelet( temp.substring( 0, tidx ), temp.substring( tidx + 1, temp.length() - 1 ), null, false );
 				}
 			catch (ClassNotFoundException cnfe)
 				{
 				Game.dprint("Error: " + temp + " not found\n");
 				}
+			catch (Throwable t)
+				{
+				t.printStackTrace();
+				}
 			} // end for loop.
+		}
+	else if (startupFile.canRead())
+		{
+		try
+			{
+			FileReader fr = new FileReader(startupFile);
+			Document startupDoc = XMLTools.readXMLDocument(fr, null);
+			for (Node n = startupDoc.getDocumentElement().getFirstChild(); n != null; n = n.getNextSibling())
+				{
+				if (n.getNodeType() != Node.ELEMENT_NODE)
+					continue;
+
+				Element e = (Element) n;
+				String tagName = e.getTagName();
+
+				if (tagName.equals("cvar"))
+					{
+					String name = e.getAttribute("name");
+					if (name == null)
+						continue;
+
+					String value = e.getAttribute("value");
+					if (value != null)
+						{
+						CVar c = new CVar(name, value, 0);
+						c.setValue(value);						
+						}
+
+					continue;
+					}
+				
+				if (tagName.equals("gamelet"))
+					{
+					try
+						{
+						addGamelet(e, false);
+						}
+					catch (Throwable t)
+						{
+						t.printStackTrace();						
+						}
+					continue;
+					}
+				}
+			
+			fr.close();
+			}
+		catch (IOException ioe)
+			{
+			ioe.printStackTrace();
+			}
 		}
 	else
 		{
@@ -452,13 +559,16 @@ protected void loadCommandLineGamelets()
 
 			try
 				{
-				addGamelet(name, alias);
+				addGamelet(name, alias, null, false);
 				}
 			catch (ClassNotFoundException cnfe)
 				{
 				Game.dprint("Error: " + name + " not found\n");
 				}
-				
+			catch (Throwable t)
+				{
+				t.printStackTrace();
+				}
 			i++;
 			}
 
@@ -468,34 +578,48 @@ protected void loadCommandLineGamelets()
 			{
 			try
 				{                
-				addGamelet("q2java.baseq2.BaseQ2", "baseq2");
+				addGamelet("q2java.baseq2.Deathmatch", null, null, false);
 				}
 			catch (ClassNotFoundException cnfe)
 				{
-				Game.dprint("Error: the default Gamelet q2java.baseq2.BaseQ2 not found\n");
+				Game.dprint("Error: the default Gamelet q2java.baseq2.Deathmatch not found\n");
+				}
+			catch (Throwable t)
+				{
+				t.printStackTrace();
 				}
 			}
 		}
 	}
 /**
- * Called when the GameletManager receives the GAME_ENDLEVEL event.
- * Any gamelets awaiting initialisation based on a 
- * level change will be processed here.
+ * Come up with a suitable name for the gamelet based on
+ * its classname or originally specified name.
+ *
+ * @return java.lang.String
+ * @param clasname java.lang.String
  */
-protected void loadGamelets()
+protected String makeGameletName(String name) 
 	{
-	Engine.debugLog("GameletManager loading gamelets\n");
-	
-	// do this in reverse order
-	for (int i = fGameletList.size() - 1; i >= 0; i--)
+	// strip packagename from classname
+	int p = name.lastIndexOf('.');
+	if (p >= 0)
+		name = name.substring(p+1);
+
+	// see if what we have so far is unused
+	if (getGamelet(name) == null)
+		return name;
+
+	// must already be a gamelet with that name, try adding
+	// numbers
+	for (int i = 2; i < 100; i++)
 		{
-		Gamelet g = (Gamelet) fGameletList.elementAt(i);
-		if (!g.isInitialized())
-			{
-			g.markInitialized();
-			g.init();    
-			}
+		String temp = name + i;
+		if (getGamelet(temp) == null)
+			return temp;
 		}
+
+	// something is seriously wrong..
+	throw new IndexOutOfBoundsException("Can't generate gamelet name");
 	}
 /**
  * Remove a module from the game's package list
@@ -503,102 +627,54 @@ protected void loadGamelets()
  */
 public void removeGamelet(Gamelet g) 
 	{
-	// get a list of all gamelets that depend on this one
-	Vector v = new Vector();
-	getDependantGamelets(g, v);
-
-	// look them all over and decide if any require a level change
-	// and will hold all the others up
-	boolean levelChangeRequired = false;
-	Enumeration enum = v.elements();
-	while (enum.hasMoreElements())
+	for (int i = fGameletList.size() - 1; i >= 0; i--)
 		{
-		Gamelet g2 = (Gamelet) enum.nextElement();
-		levelChangeRequired |= g2.isLevelChangeRequired();
-		}
-
-	// deal with the gamelets we decided have to be unloaded together
-	if (levelChangeRequired)
-		{
-		// mark the gamelets we want to unload at level change
-		enum = v.elements();
-		while (enum.hasMoreElements())
+		GameletItem gi = (GameletItem) fGameletList.elementAt(i);
+		if (gi.fGamelet == g)
 			{
-			Gamelet g2 = (Gamelet) enum.nextElement();
-			g2.markUnloading();
-			}
-		}
-	else
-		{
-		// actually unload gamelets now, highest priority first
-		enum = getGamelets();
-		while (enum.hasMoreElements())
-			{
-			Gamelet g2 = (Gamelet) enum.nextElement();
-			if (v.indexOf(g2) >= 0)
-				removeGamelet0(g2);
-			}
-			
-		saveGameletList();    			
-		}
-	
-	//leighd 04/17/99 - provide some feedback
-	int size = v.size();
-	String gamelet = (size > 1 ? " gamelets " : " gamelet ");
-	String lvl = (levelChangeRequired ? "unloading after level change\n" : "unloaded\n");
-	Game.dprint(size + gamelet + lvl);		
-	}
-/**
- * Do the dirty work of actually removing a gamelet. Doesn't check for
- * depencencies or whether a level change is required - that should have
- * already been handled by removeGamelet()
- *
- * @param gm A loaded Gamelet
- */
-private void removeGamelet0(Gamelet g) 
-	{
-	for (int i = 0; i < fGameletList.size(); i++)
-		{
-		Gamelet g2 = (Gamelet) fGameletList.elementAt(i);
-		if (g2 == g)
-			{
-			fGameletList.removeElementAt(i);
-//			fClassFactory.clearClassHash();            
-			try
+			if (gi.fLevelChangeRequired)
 				{
-				g.unload();
+				gi.fIsUnloading = true;
+				Game.dprint(gi.fName + " will unload after level change\n");
 				}
-			catch (Exception e)
+			else
 				{
-				e.printStackTrace();				
+				unload(gi.fGamelet);
+				fGameletList.removeElementAt(i);
+				Game.dprint(gi.fName + " unloaded\n");
 				}
-				
-			fGameletSupport.fireEvent( GameletEvent.GAMELET_REMOVED, g);
 			return;
 			}
-		}
-		
-	Game.dprint("Gamelet: " + g + "wasn't loaded\n");	
+		}		
+	}
+/**
+ * Removes a package listener
+ * @param pl the PackageListener to remove
+ */
+public void removeGameletListener(GameletListener l)
+	{
+	fGameletSupport.removeGameletListener(l);
 	}
 /**
  * Save the list of loaded gamelets in a CVar.
  */
 protected void saveGameletList() 
 	{
-	StringBuffer sb = new StringBuffer();
-	Enumeration enum = getGamelets();
-	while (enum.hasMoreElements()) 
+	StringBuffer sb = Q2Recycler.getStringBuffer();
+	
+	Enumeration enum= fGameletList.elements();
+	while (enum.hasMoreElements())
 		{
-		Gamelet g = (Gamelet) enum.nextElement();
+		GameletItem gi = (GameletItem) enum.nextElement();
 
 		// insert the gamelet info in reverse order, so the
 		// first gamelet loaded appears first when all is done.
 		if (sb.length() > 0)
-			sb.insert(0, '+');
-		sb.insert(0, ']');
-		sb.insert(0, g.getGameletName());
-		sb.insert(0, '[');
-		sb.insert(0,g.getClass().getName());
+			sb.append('+');
+		sb.append(gi.fGamelet.getClass().getName());
+		sb.append('[');
+		sb.append(gi.fName);
+		sb.append(']');
 		}    
 		
 	fModules.setValue(sb.toString());        
@@ -611,16 +687,21 @@ public void serverCommandIssued(ServerCommandEvent e)
 		{
 		commandAddGamelet(e.getArgs());
 		e.consume();
+		return;
 		}
+		
 	if (command.equals("removegamelet"))
 		{
 		commandRemoveGamelet(e.getArgs());
 		e.consume();
+		return;
 		}
+		
 	if (command.equals("gamelets"))
 		{
 		commandGamelets(e.getArgs());
 		e.consume();
+		return;
 		}    
 	}
 /**
@@ -643,25 +724,11 @@ protected void shutdown()
 	Enumeration enum = fGameletList.elements();
 	while (enum.hasMoreElements())
 		{
-		Gamelet g = (Gamelet)enum.nextElement();
-		//just notify those that have been initialized, don't 
-		//bother throwing a GAMELET_REMOVED event, as we don't
-		//want anything interferring with a graceful shutdown
-		if (g.isInitialized())
-			{
-			try 
-				{
-				//gGameletSupport.fireEvent( GameletEvent.GAMELET_REMOVED, g);
-				g.unload();
-				}
-			catch (Exception e)
-				{
-				}
-			}
+		GameletItem gi = (GameletItem) enum.nextElement();		
+		unload(gi.fGamelet);
 		}
 		
 	fGameletList.removeAllElements();
-	fNewGameletList.removeAllElements();
 
 	//empty the modules cvar, in case a reconnect takes place.
 	fModules.setValue("");
@@ -676,6 +743,21 @@ protected void shutdown()
 	fClassFactory = null;
 	}
 /**
+ * Call a gamelet's unload method and fire off a notification event.
+ * @param g q2java.core.Gamelet
+ */
+protected void unload(Gamelet g) 
+	{
+	try 
+		{
+		fGameletSupport.fireEvent( GameletEvent.GAMELET_UNLOADING, g, null);
+		g.unload();
+		}
+	catch (Exception e)
+		{
+		}	
+	}
+/**
  * Called when the GameletManager receives the GAME_ENDLEVEL event.
  * Any gamelets awaiting removal based on a 
  * level change will be processed here.
@@ -683,14 +765,17 @@ protected void shutdown()
 protected void unloadGamelets()
 	{
 	Engine.debugLog("GameletManager unloading gamelets\n");
-	
+
 	// look for gamelets that were waiting for a level change
-	Enumeration enum = fGameletList.elements();
-	while (enum.hasMoreElements())
+	// do in reverse order so we don't miss anything
+	for (int i = fGameletList.size() - 1; i >= 0; i--)
 		{
-		Gamelet g = (Gamelet) enum.nextElement();
-		if (g.isUnloading())
-			removeGamelet0(g);
+		GameletItem gi = (GameletItem) fGameletList.elementAt(i);
+		if (gi.fIsUnloading)
+			{
+			unload(gi.fGamelet);
+			fGameletList.removeElementAt(i);
+			}
 		}
 	}
 }

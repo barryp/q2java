@@ -21,9 +21,11 @@ public class XMLMaps extends Gamelet implements GameStatusListener
  * Create the Gamelet.
  * @param gameletName java.lang.String
  */
-public XMLMaps(String gameletName) 
+public XMLMaps(Document gameletInfo) 
 	{
-	super(gameletName);
+	super(gameletInfo);
+	
+	Game.addGameStatusListener(this);
 	}
 /**
  * Called when the status of the game changes.
@@ -32,7 +34,7 @@ public XMLMaps(String gameletName)
 public void gameStatusChanged(GameStatusEvent gse) 
 	{
 	// we're only interested in one particular event
-	if (gse.getState() != GameStatusEvent.GAME_BUILD_DOCUMENT)
+	if (gse.getState() != GameStatusEvent.GAME_BUILD_LEVEL_DOCUMENT)
 		return;
 
 	String mapName = Game.getCurrentMapName();
@@ -41,13 +43,13 @@ public void gameStatusChanged(GameStatusEvent gse)
 		{
 		// read the XML file
 		File mapdir = new File(Engine.getGamePath(), "maps");
-		File xmlFile = new File(mapdir, mapName + ".xml");		
+		File xmlFile = new File(mapdir, mapName + fSuffix);		
 		FileReader fr = new FileReader(xmlFile);
 		Document doc = XMLTools.readXMLDocument(fr, "");
 		fr.close();
 
 		// merge it into the Game's existing level document
-		Element masterRoot = Game.getLevelDocument().getDocumentElement();
+		Element masterRoot = Game.getDocument("q2java.level").getDocumentElement();
 		Element fileRoot = doc.getDocumentElement();
 		XMLTools.copy(fileRoot, masterRoot, true);
 		}
@@ -73,7 +75,7 @@ public void gameStatusChanged(GameStatusEvent gse)
 
 			// write it out 
 			File sandbox = new File(Engine.getGamePath(), "sandbox");
-			File xmlFile = new File(sandbox, mapName + ".xml");
+			File xmlFile = new File(sandbox, mapName + fSuffix);
 			FileWriter fw = new FileWriter(xmlFile);
 			XMLTools.writeXMLDocument(doc, fw);
 			fw.close();
@@ -83,13 +85,6 @@ public void gameStatusChanged(GameStatusEvent gse)
 			e.printStackTrace();
 			}
 		}		
-	}
-/**
- * Actually initialize the Gamelet for action.
- */
-public void init() 
-	{
-	Game.addGameStatusListener(this);
 	}
 /**
  * View/set the suffix used by this gamelet when reading/writing XML files.

@@ -1,248 +1,281 @@
 package barryp.telnet;
 
 import java.io.*;
-import java.net.*;
+import java.text.*;
 import java.util.*;
 
+import org.w3c.dom.*;
+
 import q2java.*;
-import q2java.core.CrossLevel;
-import q2java.core.Game;
-import q2java.core.ResourceGroup;
-import q2java.core.event.*;
+import q2java.core.*;
 
 /**
- * Thread class that accepts Telnet-type connections,
- * spawns separate threads to handle them, and coordinates
- * communications with the Game.
+ * Class to hold the init method, and any server commands implemented
+ * by this module.
  * 
  * @author Barry Pederson
  */
-class TelnetServer extends Thread implements PrintListener, CrossLevel
+public class TelnetServer extends Gamelet
 	{
-	private final static int SOCKET_TIMEOUT = 500; // milliseconds
-	private final static String GROUP_NAME = "Telnet Handlers";
-	private final static byte[] COLON = {(byte)':', (byte)' '}; // convenient for player chats
-	private final static byte[] CRLF = {(byte)'\r', (byte)'\n'};
-	private final static int PRINT_CHANNELS = PrintEvent.PRINT_JAVA + PrintEvent.PRINT_SERVER_CONSOLE + PrintEvent.PRINT_ANNOUNCE + PrintEvent.PRINT_TALK;
-	
-	private int fPort;
-	private ServerSocket fServerSocket;
-	private ThreadGroup fHandlers;
-	private boolean fIsRunning;
-	private String fPassword;
-	private boolean fNoCmd;
-	private boolean fNoChat;
-	protected ResourceGroup fResourceGroup;
-	protected GameModule fGameModule;
+	private static String gLogName;
+	private static Vector gServers = new Vector();
+	private static SimpleDateFormat gTimestampFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");	
 	
 /**
- * TelnetServer constructor comment.
+ * Initialize a Telnet server module.
  */
-public TelnetServer(GameModule gm, int port, String password, boolean noCmd, boolean noChat) throws IOException 
+public TelnetServer(Document gameletInfo) 
 	{
-	super("Telnet Server");
-
-	// remember our GameModule
-	fGameModule = gm;
-
-	try
-		{
-		// setup the socket stuff
-		fPort = port;
-		fServerSocket = new ServerSocket(port);
-		fServerSocket.setSoTimeout(SOCKET_TIMEOUT);  
-		
-		// as long as nothing bad happened 
-		// (no exception was thrown from the socket setup)
-		// setup other stuff
-		SecurityManager mgr = System.getSecurityManager();
-		if (mgr == null)
-			fHandlers = new ThreadGroup(GROUP_NAME + " on " + fPort);
-		else
-			fHandlers = new ThreadGroup(mgr.getThreadGroup(), GROUP_NAME + " on " + fPort);
-			
-		fPassword = password;
-		fNoCmd = noCmd;
-		fNoChat = noChat;
-		
-		// call us when certain stuff is being printed
-		fResourceGroup = Game.getResourceGroup(Locale.getDefault());		
-		Game.getPrintSupport().addPrintListener(this, PRINT_CHANNELS, false);
-		}
-	catch (IOException e)
-		{
-		fServerSocket = null;
-		e.printStackTrace();
-		}			
-	}
-/**
- * This method was created by a SmartGuide.
- * @return int
- */
-public int getConnectionCount() 
-	{
-	return fHandlers.activeCount();
-	}
-/**
- * Get a reference to the telnet server game module.
- * @return barryp.telnet.GameModule
- */
-public GameModule getGameModule() 
-	{
-	return fGameModule;
-	}
-/**
- * Fetch the port this TelnetServer is listening to.
- * @return int
- */
-public int getPort() 
-	{
-	return fPort;
-	}
-/**
- * This method was created by a SmartGuide.
- * @return java.util.Locale
- */
-public ResourceGroup getResourceGroup() 
-	{
-	return fResourceGroup;
-	}
-/**
- * get an array of telnet handlers to current sessions.
- * @returns TelnetHandler[] - array of current sessions.
- */
-protected TelnetHandler[] getTelnetHandlers()
-	{
-	int nClients = fHandlers.activeCount();
-	// check if there are any clients connected
-	if (nClients < 1)
-		return null;
-
-	TelnetHandler[] handlers = new TelnetHandler[nClients];			
-	fHandlers.enumerate(handlers);	
-
-	return handlers;
-	}
-/**
- * Report whether the Telnet Server is still running.
- * @return boolean
- */
-public boolean isRunning() 
-	{
-	return fIsRunning;
-	}
-/**
- * Called when a PrintEvent is fired.
- * @param pe q2java.core.event.PrintEvent
- */
-public void print(PrintEvent pe)
-	{
-	int nClients = fHandlers.activeCount();
-	// check if there are any clients connected
-	if (nClients < 1)
-		return;
-
-	byte[] b;
-
-	// prefix player chats with their name
-	String sourceName = pe.getSourceName();
-	if ((pe.getPrintChannel() == PrintEvent.PRINT_TALK) && (sourceName != null))
-		{
-		b = TelnetHandler.getBytes(sourceName);		
-		telnetOutput(b, 0, b.length);
-		telnetOutput(COLON, 0, COLON.length);
-		}
-		
-	// use the TelnetHandler's common conversion utility.
-	b = TelnetHandler.getBytes(pe.getMessage());
-	telnetOutput(b, 0, b.length);
-
-	// force a new line
-	if (b[b.length-1] != '\n')
-		telnetOutput(CRLF, 0, CRLF.length);
-	}
-/**
- * This method was created by a SmartGuide.
- */
-public void run()
-	{
-	if (fServerSocket == null)
-		return;
+	super(gameletInfo);
 	
-	try
+	gTimestampFormat.setTimeZone(TimeZone.getDefault());
+
+	File sandbox = new File(Engine.getGamePath(), "sandbox");
+	File logfile = new File(sandbox, "telnet.log");
+	gLogName = logfile.getPath();		
+
+
+	// look for subtags in the form:
+	//    <server port="xxx" [password="yyy"] [chat="n"] [commands="n"] />
+	// or
+	//    <log file="aaaa"/>
+	//
+	for (Node n = gameletInfo.getDocumentElement().getFirstChild(); n != null; n = n.getNextSibling())	
 		{
-		fIsRunning = true;	
-		while (fIsRunning)
-			{			
-			try
-				{
-				Socket s = fServerSocket.accept();			
-				if (s != null)
-					{
-					TelnetHandler t = new TelnetHandler(fHandlers, this, s, fPassword, fNoCmd, fNoChat);
-					t.start();
-					}
-				}	
-			catch (IOException e)
-				{
-				}			
+		if (n.getNodeType() != Node.ELEMENT_NODE)
+			continue;
+
+		Element e = (Element) n;
+		String tagName = e.getTagName();
+
+		if (tagName.equals("log"))
+			{
+			gLogName = e.getAttribute("file");
+			continue;
 			}
-		
-		fServerSocket.close();		
-		}
-	catch (IOException e)
-		{
-		e.printStackTrace();
-		}	
-		
-
-	Game.getPrintSupport().removePrintListener(this);
-	}
-/**
- * Change the server's locale.
- * @param localeName java.lang.String
- */
-public void setLocale(String localeName) 
-	{
-	fResourceGroup = Game.getResourceGroup(localeName);
-	PrintSupport ps = Game.getPrintSupport();
-	ps.removePrintListener(this);
-	ps.addPrintListener(this, PRINT_CHANNELS, fResourceGroup.getLocale(), false);
-	}
-/**
- * Called when it's time to shut the server down.
- */
-public void stopServer() 
-	{
-	fIsRunning = false;		
-	GameModule.removeServer(this);
-	}
-/**
- * Send data to the connected telnet clients.
- * @param b byte[]
- * @param offset int
- * @param len int
- */
-public void telnetOutput(byte[] b, int offset, int len) 
-	{
-	int nClients = fHandlers.activeCount();
-	// check if there are any clients connected
-	if (nClients < 1)
-		return;
 			
-	TelnetHandler[] handlers = new TelnetHandler[nClients];			
-	fHandlers.enumerate(handlers);	
-	
-	// send the byte array to each client
-	for (int i = 0; i < handlers.length; i++)
-		{
-		try	
-			{	
-			handlers[i].output(b, offset, len);
+		if (!tagName.equals("server"))
+			continue;
+
+		int port;
+		try
+			{
+			port = Integer.parseInt(e.getAttribute("port"));
+			}
+		catch (NumberFormatException nfe)
+			{
+			port = 0;
+			}
+
+		boolean noChat = "n".equalsIgnoreCase(e.getAttribute("chat"));
+		boolean noCommands = "n".equalsIgnoreCase(e.getAttribute("commands"));
+			
+		try
+			{
+			TelnetListener telnet = new TelnetListener(this, port, e.getAttribute("password"), noCommands, noChat);
+			addServer(telnet);
+			telnet.start();
+
+			String locale = e.getAttribute("locale");
+			if (locale != null)
+				telnet.setLocale(locale);
+			}
+		catch (IOException ioe)
+			{
+			ioe.printStackTrace();
+			}				
+		}		
+	}
+/**
+ * Add a line of text to the telnet log.
+ * @param s java.lang.String
+ */
+static synchronized void addLog(String s) 
+	{
+	if (gLogName != null)
+		{		
+		try
+			{
+			FileWriter fw = new FileWriter(gLogName, true);
+			PrintWriter pw = new PrintWriter(fw);
+			pw.println(gTimestampFormat.format(new Date()) + " " + s);
+			pw.close();
 			}
 		catch (IOException e)
 			{
 			}
-		}	
+		}
+	}
+/**
+ * This method was created by a SmartGuide.
+ * @param s barryp.telnet.TelnetServer
+ */
+static void addServer(TelnetListener s) 
+	{
+	gServers.addElement(s);
+	}
+
+
+	
+/**
+ * get an enumeration of the current servers.
+ * @return Enumeration - enumeration of servers.
+ */
+public Enumeration getServers()
+	{
+	return gServers.elements();
+	}
+/**
+ * This method was created by a SmartGuide.
+ * @param t barryp.telnet.TelnetServer
+ */
+static void removeServer(TelnetListener t) 
+	{
+	gServers.removeElement(t);
+	}
+/**
+ * Display help info to the console.
+ */
+public void svcmd_help(String[] args) 
+	{
+	Game.dprint("Q2Java Telnet Server\n\n");
+	Game.dprint("    sv commands:\n");
+	Game.dprint("       start <port> [-pass <password>] [-nocmd] [-nochat]\n");
+	Game.dprint("       stop <port>\n");
+	Game.dprint("       locale <port> <locale-name>\n");
+	Game.dprint("\n");
+	Game.dprint("    active servers:\n");
+	
+	if (gServers.size() < 1)
+		Game.dprint("       (none)\n");
+		
+	for (int i = 0; i < gServers.size(); i++)
+		{
+		TelnetListener t = (TelnetListener) gServers.elementAt(i);
+		Game.dprint("       port: " + t.getPort() + " locale: " + t.getLocale() + " connections: " + t.getConnectionCount() + "\n");
+		}
+	}
+/**
+ * Run the "sv telnet.locale" command.
+ * @param args java.lang.String[]
+ */
+public void svcmd_locale(String[] args) 
+	{
+	if (args.length < 4)
+		{
+		Game.dprint("Usage: locale <port> <new-locale>\n");
+		return;
+		}
+		
+	int port = Integer.parseInt(args[2]);
+	
+	for (int i = 0; i < gServers.size(); i++)
+		{
+		TelnetListener t = (TelnetListener) gServers.elementAt(i);
+		if (t.getPort() == port)
+			{
+			t.setLocale(args[3]);
+			return;
+			}
+		}
+	}
+/**
+ * Control the Logging option.
+ */
+public void svcmd_log(String[] args) 
+	{
+	if (args.length > 2)
+		gLogName = args[2];
+	else
+		gLogName = null;
+
+	Game.dprint("Logging " + (gLogName == null ? "is off" : "to " + gLogName) + "\n");
+	}
+/**
+ * Run the "sv start" command.
+ * @param args java.lang.String[]
+ */
+public void svcmd_start(String[] args) 
+	{
+	if (args.length < 3)
+		{
+		Game.dprint("Usage: start <port> [-pass <password>] [-nocmd] [-nochat]\n");
+		return;
+		}
+		
+	int port = Integer.parseInt(args[2]);
+	String password = null;
+	boolean noCmd = false;
+	boolean noChat = false;
+	
+	for (int i = 3; i < args.length; i++)
+		{
+		if (args[i].equalsIgnoreCase("-pass"))
+			{
+			password = args[++i];
+			continue;
+			}
+			
+		if (args[i].equalsIgnoreCase("-nocmd"))
+			{
+			noCmd = true;
+			continue;
+			}
+			
+		if (args[i].equalsIgnoreCase("-nochat"))
+			{
+			noChat = true;
+			continue;
+			}
+		}
+			
+	try
+		{	
+		TelnetListener t = new TelnetListener(this, port, password, noCmd, noChat);
+		t.start();
+		addServer(t);
+		}
+	catch (Exception e)
+		{
+		e.printStackTrace();
+		}
+	}
+/**
+ * Run the "sv telnet.stop" command.
+ * @param args java.lang.String[]
+ */
+public void svcmd_stop(String[] args) 
+	{
+	if (args.length < 3)
+		{
+		Game.dprint("Usage: stop <port>\n");
+		return;
+		}
+		
+	int port = Integer.parseInt(args[2]);
+	
+	for (int i = 0; i < gServers.size(); i++)
+		{
+		TelnetListener t = (TelnetListener) gServers.elementAt(i);
+		if (t.getPort() == port)
+			{
+			t.stopServer();
+			return;
+			}
+		}
+	}
+/**
+ * Shutdown all the running TelnetListener objects.
+ */
+public void unload() 
+	{
+	Vector v = (Vector) gServers.clone();
+	
+	Enumeration enum = v.elements();
+	while (enum.hasMoreElements())
+		{
+		TelnetListener t = (TelnetListener) enum.nextElement();
+		t.stopServer();
+		}		
 	}
 }

@@ -1,0 +1,350 @@
+<?xml version="1.0"?>
+<changelog version="0.9.6">
+  <comments>
+    <para>
+      Two (only two?) big changes this time...the Gamelet and GameletManager
+      classes have been reworked/simplified/DOM-esticated, and a new "status"
+      facility has been added to the q2java.core.Game class.
+    </para>
+    <para>
+      The updated Gamelet scheme is basically: gamelet constructors now take
+      a DOM document as an argument (instead of just a string), and the DOM 
+      document may contain data passed to the GameletManager.addGamelet() method
+      and/or data stored in a file with the same name as the gamelet classfile
+      except with a .gamelet extension instead of .class.  
+    </para>
+    <para>
+      The GameletManager no longer supports the notion of "dependencies", the 
+      gamelets should work that sort of thing out amongst themselves.  The existing
+      BIG gamelets used to be dependant on the q2java.baseq2.BaseQ2 gamelet, but 
+      PITA situation was resolved by splitting the "gamelet" part of BaseQ2 off
+      into a new gamelet called "q2java.baseq2.Deathmatch", and what was left over
+      was no longer a gamelet, but instead is now a support class that -real- gamelets 
+      like CTF, Paranoia, BountyHunters, and the new Deathmatch could call upon.
+    </para>
+    <para> 
+      Gamelets no longer have an isLevelChangeRequired() method, or an init() method 
+      that they can have called when a level starts - instead they should just register as GameStatusListeners
+      and find out about level starts the normal way.  As far as waiting for a level 
+      change to unload goes, they can be marked that way with a 
+      &lt;option name="wait for level change to unload"&gt; tag in the corresponding
+      .gamelet file.  A &lt;option name="avoid multiple instances"&gt; tag marks
+      gamelets that should not be loaded multiple times.        
+    </para>
+    <para>
+      Because of the Gamelet and Gamelet manager changes, all the gamelets included 
+      in q2java had to be updated to fit in the new scheme...I won't bother listing
+      each one individually.     
+    </para>
+    <para>
+      The new "status" scheme is basically: the Game class creates a DOM Document containing
+      just (in XML notation) &lt;status game="Quake2" ip="a.b.c.d" port="xxx" map="yyy"/&gt;
+      and updates the mapname as necessary.  This document can be fetched by calling Game.getDocument("q2java.status"),
+      and updated by any interested code.  If the status document is updated, Game.notifyDocumentChanged("q2java.status")
+      should be called, so a GameStatusEvent.GAME_DOCUMENT_CHANGED event will be fired off
+      and interested objects will learn about the change.      
+    </para>
+    <para>
+      That may not sound very interesting, but that's what makes it so powerful.  It's completely
+      up to gamelet code to decide what to put in the status document, and what to do
+      when it's updated.  To see the status document feature in action, load the barryp.status.PlayerStatus
+      gamelet to have the status document updated to show connected players, barryp.status.GameletStatus
+      to have the doc updated to show loaded gamelets, and barryp.status.WriteXML to write
+      the document out to a file whenever it changes.
+    </para>
+    <para>
+      Other gamelets may be written to maintain additional or different info, and do
+      other things with the document when it changes, such as fire a copy off to some
+      sort of master server through UDP or TCP (as a hypothetical example).
+    </para>
+  </comments>
+  
+  <class name="q2java.baseq2.BaseQ2">
+    <change author="Barry">
+      BaseQ2 is no longer a gamelet, but instead is now a support class used 
+      by gamelets such as CTF, Paranoia, BountyHunters and the new Deathmatch 
+      to help maintain the environment used by the various BaseQ2 spawn items.
+    </change>
+    <removed author="Barry">
+      Code related to the CorpseQueue and player motion CVars such as run_roll
+      and bob_pitch moved to the Player class.
+    </removed>
+  </class>
+  
+  <class name="q2java.baseq2.Deathmatch">
+    <addition author="Barry">
+      New gamelet that provides a generic deathmatch - basically the gamelet
+      part of the old q2java.baseq2.BaseQ2
+    </addition>
+  </class>
+      
+  <class name="q2java.baseq2.Player">
+    <addition author="Pete">
+      Static addAll(XXX)Listener() methods allow code to easily register 
+      with -all- players (both current and future) rather than having to register
+      with each one separately and also watch for new players to register with.
+    </addition>
+    <addition author="Barry">
+      Code related to the CorpseQueue and player motion CVars such as run_roll
+      and bob_pitch moved here from the BaseQ2 class.
+    </addition>
+    <change author="Barry">
+      [add|remove]InventoryListener() renamed to [add|remove]PlayerInventoryListener()
+      for consistency with the new [add|remove]AllPlayerInventoryListener() methods.
+    </change>
+    <change author="Barry">
+      cmd_giveall() disabled since it relied on a "cheating" property of the old
+      BaseQ2 gamelet that I didn't bother recreating.
+    </change>
+  </class>
+  
+  <class name="q2java.baseq2.gui.PlayerMenu">
+    <change author="CheezHankrn">
+      The menu is now closed -before- executing the selected command.
+    </change>
+  </class>
+
+  
+  <class name="q2java.core.BasicServerCommands">
+    <addition author="Barry">
+      new commands "set xxx.yyy zzz" and "get xxx.yyy" to access the "yyy"
+      property of a gamelet named "xxx" and either set it to "zzz" or print
+      the current value - using reflection to call "setYyy(String s)" and 
+      "String getYyy()" methods in that particular gamelet's class.
+    </addition>    
+  </class>
+  
+  <class name="q2java.core.DefaultClassFactory">
+    <removed author="Barry">
+      loadGamelet() method was not needed anymore.
+    </removed>    
+  </class>
+  
+  <class name="q2java.core.Game">
+    <removed author="Barry">
+      Everything related to GameletEventSupport, including adding and removing Gamelet
+      listeners moved to the GameletManager class.
+    </removed>    
+    <addition author="Barry">
+      getDocument(String docName) allows code to get a hold of a named document
+      the Game class is holding onto.  Currently there are two documents: 
+      "q2java.level" and "q2java.status" - perhaps there will be more someday, or
+      there will be support for gamelets making up their own documents and having
+      the Game class hold on to them.
+    </addition>
+    <change author="Barry">
+      getLevelDocument() deprecated in favor of the more general getDocument()
+      method, specifically: getDocument("q2java.level");
+    </change>    
+    <addition author="Barry">
+      A new document, meant to contain the status of the game is created by this
+      class, and accessible to other code by calling getDocument("q2java.status");
+      Currently, the Game class just updates the document to show the name of the
+      current map, ip address and port of the server.  It's up to gamelets to 
+      supply any other information to the document.  
+    </addition>
+    <addition author="Barry">
+      a notifyDocumentChanged(String docName) method can be called to fire off a 
+      GameEvent.GAME_DOCUMENT_CHANGED event so other objects can be notified that 
+      a document such as the status document has changed.
+    </addition>
+    <change author="Barry">
+      addPackagePath() removePackagePath() now keep track of how many times
+      a particular package is added and removed, and only -really- removes 
+      it when it has been removed as many times as it's been added.
+    </change>
+    <change author="Barry">
+      rethinkPlayerClass() now deals directly with switching player classes
+      rather than call the old Gamelet.grabPlayers() and Gamelet.releasePlayers()      
+    </change>  
+    <change author="Leigh">
+      startLevel() now only cleans up after the old level if there really -was- an
+      old level (that is...it doesn't purge ServerFrame listeners and such when 
+      the first level is starting)
+    </change>
+  </class>
+
+  <class name="q2java.core.GameClassFactory">
+    <removed author="Barry">
+      loadGamelet() method was not needed anymore.
+    </removed>    
+  </class>
+
+  <class name="q2java.core.Gamelet">
+    <change author="Barry">
+      Gamelet constructors now take a DOM Document instead of a String as a 
+      parameter.  The info in the document is hopefully something useful
+      to the subclasses of Gamelet, but no particular structure is expected by 
+      this class.
+    </change>  
+    <change author="Barry">
+      getGameletDependencies() is now a deprecated final class - so any existing
+      code that overrides this method will be flagged in error.  The whole notion
+      of "dependencies" handled by the GameletManager has been tossed out, so 
+      no gamelets should be doing this anymore.  This method will eventually be
+      removed alltogether - but was just left in for now to help flag old code
+      that needs updating. 
+    </change>  
+    <addition author="Barry">
+      getGameletDocument() allows access to the document passed to the
+      gamelet's constructor.
+    </addition>
+    <change author="Barry">
+      getGameletName() is now deprecated and final - since the notion of what 
+      name a gamelet has is really a property of the gamelet manager, and the 
+      equivalent replacement code is now: 
+      Game.getGameletManager().getGameletName(xxx);
+    </change>  
+    <removed author="Barry">
+      getPackageName() was not being used, and was pretty trivial anyhow.
+    </removed>
+    <removed author="Barry">
+      grabPlayers() releasePlayers() now handled by the Game class.
+    </removed>
+    <change author="Barry">
+      init() is now a deprecated final class - so any existing
+      code that overrides this method will be flagged in error.  Gamelets 
+      should go ahead an initialize in their constructor, and if they
+      need to wait for a level to start before doing something, they
+      can register as a GameStatusLister and find out the same way
+      as everybody else.  This method will eventually be
+      removed alltogether - but was just left in for now to help flag old code
+      that needs updating. 
+    </change>         
+    <removed author="Barry">
+      isInitialized(), markInitialized() no longer needed, since Gamelets 
+      don't have an init() method anymore.
+    </removed>    
+    <change author="Barry">
+      isLevelChangeRequired() is now deprecated and final - since it's up to
+      gamelets themselves to deal with situations where they need to wait for
+      a level change before becoming active.  If gamelets wish to wait
+      for a level change before unloading, that can be specified in the gamelet
+      info Document with the element 
+      &lt;option name="wait for level change to unload"&gt;
+    </change>  
+    <removed author="Barry">
+      isUnloading(), markUnloading() is not really a property of a gamelet, 
+      but rather part of the inner workings of a GameletManager.
+    </removed>        
+  </class>
+
+  <class name="q2java.core.GameletManager">
+    <addition author="Barry">
+      addGamelet(Element e, boolean unloadAtEndLevel) can load a gamelet
+      based on XML/DOM info, and optionally mark it as needing to be unloaded
+      when the level is over (great for gamelets associated with a particular map)
+    </addition>
+    <change author="Barry">
+      addGamelet(String classname, String name) replaced with addGamelet(String, String, Element, boolean)
+      to allow an optional DOM element (may be null) and a flag specifying whether
+      the gamelet should automatically unload at the next level end.   Also, the code now
+      checks if specified gamelet name is already taken, and if so, adds some number to it
+      to ensure that all gamelets have unique names (so if you tried to add a gamelet with 
+      the name "foo", and there was already one with that name, it would try "foo2") Lastly,
+      it looks for a &lt;option name="avoid multiple instances"&gt; tag and refuses to 
+      load a gamelet if an instance of that class already is loaded.
+    </change>     
+    <addition author="Barry">
+      [add|remove]GameletListener() moved here from the Game class.
+    </addition>    
+    <change author="Barry">
+      getGamelet(String) extended to also accept classnames (which in turn makes it
+      possible for svcmds like "sv removegamelet q2java.ctf.CTF" to function).  Basically
+      if the string contains a period, it's treated as a classname, otherwise it's assumed
+      to be a gamelet name.
+    </change>  
+    <addition author="Barry">
+      getGameletName(Gamelet g) for looking up what name the GameletManager has 
+      associated with a given gamelet.
+    </addition>        
+    <change author="Barry">
+      getGamelets() now returns an array instead of a Enumeration (because of
+      the changes to the way GameletManager kept track of gamelets internally)
+    </change>
+    <addition author="Barry">
+      isUnloadingAtLevelChange(Gamelet g) to find out if the GameletManager is
+      planning on tossing a given gamelet on the next level end.
+    </addition>        
+    <change author="Barry">
+      loadCommandLineGamelets() renamed to loadStartupGamelets() (better describes
+      what it does, since it handles more than just the command-line). 
+    </change>
+    <addition author="Barry">
+      loadStartupGamelets() looks for a file specified in the CVar "q2java_startup" 
+      (default value "q2java.startup") and if found, parses that file as an XML file 
+      and looks for &lt;gamelet class="xxx"/&lt; tags specifying gamelets to load
+      and &lt;cvar name="xxx" value="yyy"/&gt; tags specifying cvars to set. 
+    </addition>    
+    <change author="Barry">
+      If no gamelets are specified on the command line, or in the q2java_startup file,
+      or in the System properties under q2java.gamelet.xxx, then the default gamelet
+      that's loaded is q2java.baseq2.Deathmatch (used to be q2java.baseq2.BaseQ2).
+    </change>
+  </class>
+  
+    
+  <class name="q2java.core.XMLTools">
+    <addition author="Barry">
+      parseParams() methods for convenience, will examine a DOM Element looking
+      for &lt;param name="xxx" value="yyy"&gt; tags, and if found, will try
+      calling setXxx(yyy) on the specified object, optionally only within
+      a given Class context (so a superclass doesn't inadvertantly initialize
+      fields in a subclass when the subclass's constructor may not have been called yet)
+    </addition>
+  </class>   
+  
+  <class name="q2java.core.event.GameletEvent">
+    <change author="Barry">
+      The constant GAMELET_REMOVED was changed to GAMELET_UNLOADING, and is now
+      called -before- a gamelet is removed, rather than after..that way listeners
+      have a chance to talk to the gamelet before it's gone.
+    </change>
+    <addition author="Barry">
+       GAMELET_LOADING event fired -before- a gamelet is created. The DOM document that
+       will be passed to the gamelet is available through the event, so listeners can
+       find out about what the GameletManager is proposing to load (and possibly throw
+       an exception)
+    </addition>
+    <removed author="Barry">
+      GameletEvent(int, String) was not being used.
+    </removed>
+  </class>
+  
+  <class name="q2java.core.event.GameStatusEvent">
+    <change author="Barry">
+        GAME_BUILD_DOCUMENT event renamed to GAME_BUILD_LEVEL_DOCUMENT for clarity. 
+    </change>  
+    <addition author="Barry">
+      GAME_DOCUMENT_CHANGED event added to notify listeners that one of
+      the game documents such as "q2java.status" has changed.
+    </addition>        
+    <addition author="Barry">
+      getDocumentName() to find out what document in a GAME_DOCUMENT_CHANGED event has changed.
+    </addition>        
+  </class>
+ 
+  <class name="q2java.core.event.GameStatusSupport">
+    <change author="Barry">
+      fireEvent() is now re-entrant, so a listener in the middle of responding to a GameStatusEvent such as 
+      GAME_INIT may fire off another GameStatusEvent such as GAME_DOCUMENT_CHANGED.      
+    </change>    
+  </class>
+ 
+  <class name="q2java.ctf.CTF">
+    <change author="Barry">
+      updated to work in new Gamelet scheme, and to handle linking to the q2java.baseq2.BaseQ2
+      object (which is no longer a gamelet) itself.
+    </change>    
+    <change author="Barry">
+      playerThink() no longer is aware of the grappling hook - the hook
+      itself is now smart enough to register as a PlayerMoveListener and do
+      what it needs when a PlayerMoveEvent is fired from inside q2java.baseq2.Player.playerThink().
+    </change>    
+    <removed author="Barry">
+      teleport() method that overrode q2java.baseq2.Player.teleport() no longer needed
+      since the grappling hook is smart enough to listen for PlayerStateEvent.PLAYER_TELEPORTED
+      and reset itself as necessary.
+    </removed>
+  </class>
+</changelog>

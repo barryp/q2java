@@ -17,7 +17,6 @@ final public class PlayerCommandSupport
 {
   private static Method gInvokeMethod = null;
   private Vector fListeners = new Vector();
-  private Player fPlayer = null;
 
   static
 	{
@@ -29,17 +28,16 @@ final public class PlayerCommandSupport
 	  catch(NoSuchMethodException nsme) {}
 	}
 
-  public PlayerCommandSupport(Player player)
+  public PlayerCommandSupport()
 	{
-	  fPlayer = player;
 	}
   public void addPlayerCommandListener(PlayerCommandListener l)
 	{
 	  if( !fListeners.contains(l) ) fListeners.addElement(l);
 	}
-  public PlayerCommandEvent fireEvent( String command, String args )
+  public PlayerCommandEvent fireEvent( Player p, String command, String args )
 	{
-	  PlayerCommandEvent e = PlayerCommandEvent.getEvent( fPlayer, command, args );
+	  PlayerCommandEvent e = PlayerCommandEvent.getEvent( p, command, args );
 
 	  try { EventPack.fireEvent( e, gInvokeMethod, fListeners ); }
 	  catch(PropertyVetoException pve) {}

@@ -15,15 +15,17 @@ import q2java.core.event.*;
  */
 public class MapCVars extends Gamelet implements GameStatusListener
 	{
-	private Vector fStack;
+	private Vector fStack = new Vector();
 	
 /**
  * NoBFG constructor comment.
  * @param gameletName java.lang.String
  */
-public MapCVars(String gameletName) 
+public MapCVars(Document gameletInfo) 
 	{
-	super(gameletName);
+	super(gameletInfo);
+
+	Game.addGameStatusListener(this);
 	}
 public void gameStatusChanged(GameStatusEvent gse)
 	{
@@ -42,7 +44,7 @@ public void gameStatusChanged(GameStatusEvent gse)
 		
 	if (gse.getState() == GameStatusEvent.GAME_PRESPAWN)
 		{
-		Document doc = Game.getLevelDocument();
+		Document doc = Game.getDocument("q2java.level");
 
 		// look for <cvar name="..." value="..."/> tags
 		NodeList nl = doc.getElementsByTagName("cvar");
@@ -60,14 +62,6 @@ public void gameStatusChanged(GameStatusEvent gse)
 			c.setValue(newValue);
 			}
 		}
-	}
-/**
- * Actually initialize the Gamelet for action.
- */
-public void init() 
-	{
-	Game.addGameStatusListener(this);
-	fStack = new Vector();
 	}
 /**
  * Unload this gamelet.

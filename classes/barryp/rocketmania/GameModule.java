@@ -1,5 +1,7 @@
 package barryp.rocketmania;
 
+import org.w3c.dom.Document;
+
 import q2java.core.*;
 
 /**
@@ -13,22 +15,12 @@ public class GameModule extends q2java.core.Gamelet
 /**
  * This method was created by a SmartGuide.
  */
-public GameModule(String moduleName) 
+public GameModule(Document gameletInfo) 
 	{
-	super(moduleName);
+	super(gameletInfo);
 	
 	//leighd 04/10/99 - add the package path
-	Game.addPackagePath("barryp.rocketmania");
-	
-	}
-/**
- * Get which Gamelet classes this Gamelet requires.
- * @return java.lang.Class[]
- */
-public String[] getGameletDependencies() 
-	{
-	String[] result = { "q2java.baseq2.BaseQ2" };
-	return result;
+	Game.addPackagePath("barryp.rocketmania");	
 	}
 /**
  * This method was created by a SmartGuide.

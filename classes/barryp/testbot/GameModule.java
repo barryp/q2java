@@ -1,5 +1,6 @@
 package barryp.testbot;
 
+import org.w3c.dom.Document;
 
 import q2java.*;
 import q2java.core.*;
@@ -15,13 +16,14 @@ public class GameModule extends q2java.core.Gamelet
 /**
  * Test the bot-enabling features
  */
-public GameModule(String moduleName) 
+public GameModule(Document gameletInfo) 
 	{
-	super(moduleName);
+	super(gameletInfo);
+	
 	try
 		{
 		NativeEntity botEnt = new NativeEntity(NativeEntity.ENTITY_PLAYER);
-		fTestBot = new TestBot(botEnt, moduleName);
+		fTestBot = new TestBot(botEnt, Game.getGameletManager().getGameletName(this));
 		}
 	catch (Exception e)
 		{

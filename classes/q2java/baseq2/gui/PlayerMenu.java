@@ -86,10 +86,14 @@ public void cmd_invprev(Player source, String[] argv, String args)
 public void cmd_invuse(Player source, String[] argv, String args)
 	{
 	String command = (String)fCommands.elementAt(getSelectedIndex());
+	
+	Player p = fPlayer;  // make a copy of the reference, since the next statement calling close() will cause fPlayer to be set to null
+	close(); 
+	
 	if (command != null)
-		fPlayer.playerCommand(command);
-	close();
+		p.playerCommand(command);
 	}
+
 /**
  * Player hit ESC?
  */
