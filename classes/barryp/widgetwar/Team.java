@@ -26,6 +26,33 @@ public class Team implements GameStatusListener, PlayerStateListener, DamageList
 	public  static Team    TEAM2 = new Team( 2 );
 
 	protected final static int MAX_PARTIAL = 3;
+
+	private class RespawnHelper implements ServerFrameListener, CrossLevel
+		{
+		private boolean fIsRunning;
+
+		public void setRunning(boolean b)
+			{
+			if (b && (!fIsRunning))
+				{
+				Game.addServerFrameListener(this, 0, 0);
+				fIsRunning = b;
+				return;
+				}
+
+			if ((!b) && fIsRunning)
+				{
+				Game.removeServerFrameListener(this);
+				fIsRunning = b;
+				return;
+				}
+			}
+			
+		public void runFrame(int phase)
+			{
+			ponderRespawn();
+			}
+		}
 	
 	protected Integer     fTeamIndex;
 
@@ -34,13 +61,23 @@ public class Team implements GameStatusListener, PlayerStateListener, DamageList
 	protected int 		  fTeamIcon;
 	
 	protected Vector      fPlayers;
+	protected Vector	  fSpawnQueue;
+	protected RespawnHelper fRespawnHelper;
 	protected Vector[]	  fTechnologies;        // technologies we totally own
 	protected Vector	  fAllTechnologies;     // all technologies, both complete and incomplete
 	protected Vector	  fPartialTechnologies; // incomplete technologies only
 
+	private Team		  fOtherTeam;
 	private TeamBase 	  fTeamBase;
-
+	
 	private float 	  fTeamScore;
+
+	static
+		{
+		TEAM1.fOtherTeam = TEAM2;
+		TEAM2.fOtherTeam = TEAM1;
+		}
+
 	
 /**
  * Private constructor so it can't be instantiated
@@ -49,6 +86,8 @@ private Team( int teamIndex )
 	{
 	fTeamIndex      = new Integer(teamIndex);
 	fPlayers        = new Vector();
+	fSpawnQueue 	= new Vector();
+	fRespawnHelper	= new RespawnHelper();
 	Game.addGameStatusListener( this );
 
 	// build the technology lists
@@ -102,8 +141,8 @@ public void addPlayer( Player p )
 	}
 /**
  * Called when a player brings back some fragments of technology to the team base.
- * @param f float
- * @param ww barryp.widgetwar.WidgetWarrior
+ * @param st What the player stole
+ * @param ww Player who made the capture.
  */
 public void addStolenTechnology(StolenTechnology st, WidgetWarrior ww) 
 	{
@@ -121,9 +160,8 @@ public void addStolenTechnology(StolenTechnology st, WidgetWarrior ww)
 			}
 		}
 
-	Game.getSoundSupport().fireEvent(getTeamBase().getBaseEntity(), NativeEntity.CHAN_RELIABLE+NativeEntity.CHAN_NO_PHS_ADD+NativeEntity.CHAN_AUTO, Engine.getSoundIndex("play ctf/flagcap.wav"), 1, NativeEntity.ATTN_NONE, 0);	
-System.out.println("Should be sound now..");	
-		
+	Game.getSoundSupport().fireEvent(getTeamBase().getBaseEntity(), NativeEntity.CHAN_RELIABLE+NativeEntity.CHAN_NO_PHS_ADD+NativeEntity.CHAN_AUTO, fCaptureSoundIndex, 1, NativeEntity.ATTN_NONE, 0);	
+
 	// give credit for the capture
 	setTeamScore(getTeamScore() + st.getFragment());
 	
@@ -157,9 +195,8 @@ System.out.println("Should be sound now..");
 	}
 /**
  * Add a technology to a team's inventory.
- * @param type int
- * @param name java.lang.String
- * @param classname java.lang.String
+ * @param t The Technology that was aquired
+ * @param announcement What if anything that should be announced to the team.
  */
 public void addTechnology(Technology t, String announcement) 
 	{
@@ -213,8 +250,11 @@ public void gameStatusChanged(GameStatusEvent e)
 
 		fAllTechnologies.removeAllElements();
 		fPartialTechnologies.removeAllElements();
+		}
 
-		fCaptureSoundIndex = Engine.getSoundIndex("play ctf/flagcap.wav");
+	if (e.getState() == GameStatusEvent.GAME_POSTSPAWN)
+		{
+		fCaptureSoundIndex = Engine.getSoundIndex("ctf/flagcap.wav");
 		}
 	}
 /**
@@ -292,6 +332,23 @@ public int getCarrierEffect()
 
 		return s;
 		
+	}
+/**
+ * Get the number of live (non-dead) players on the team.
+ * @return int
+ */
+public int getNumLivePlayers() 
+	{
+	int result = 0;
+	int n = fPlayers.size();
+	for (int i = 0; i < n; i++)
+		{
+		WidgetWarrior ww = (WidgetWarrior) fPlayers.elementAt(i);
+		if (!ww.isDead())
+			result++;			
+		}
+		
+	return result;
 	}
 public int getNumPlayers()
 	{
@@ -484,12 +541,30 @@ public boolean isTeamMember(Object obj)
 	}
 /**
  * Called when a player dies or disconnects.
- * @param wasDisconnected true on disconnects, false on normal deaths.
  */
 public void playerStateChanged(PlayerStateEvent pse)
 	{
 	if (pse.getStateChanged() == PlayerStateEvent.STATE_INVALID)
 		removePlayer((Player)pse.getPlayer());
+	}
+/**
+ * Think about respawning dead team members.
+ */
+public void ponderRespawn() 
+	{
+	int otherSize = fOtherTeam.fPlayers.size();
+	
+	while ((fSpawnQueue.size() > 0) 
+	&& ((otherSize == 0) || (getNumLivePlayers() < otherSize)))
+		{
+		WidgetWarrior ww = (WidgetWarrior) fSpawnQueue.elementAt(0);
+		fSpawnQueue.removeElementAt(0);
+
+		if (fSpawnQueue.size() == 0)
+			fRespawnHelper.setRunning(false);
+			
+		ww.respawnTeam();
+		}
 	}
 /**
  * Broadcast a message to the team.
@@ -510,7 +585,21 @@ public boolean removePlayer( Player p )
 		
 	p.removePlayerStateListener(this);
 	p.removeDamageListener(this);
+	
+	fSpawnQueue.removeElement(p);
+	if (fSpawnQueue.size() == 0)
+		fRespawnHelper.setRunning(false);
+		
 	return fPlayers.removeElement( p );
+	}
+/**
+ * Called by a WidgetWarrior when it wants to enter the game.
+ * @param ww barryp.widgetwar.WidgetWarrior
+ */
+public void respawn(WidgetWarrior ww) 
+	{
+	fSpawnQueue.addElement(ww);
+	fRespawnHelper.setRunning(true);
 	}
 /**
  * Set the location of where the Team's DataCD appears.

@@ -1,7 +1,5 @@
 package barryp.widgetwar;
 
-import javax.vecmath.Tuple3f;
-
 /**
  * Interface for Widget components, this includes both the
  * control components and the payload components.

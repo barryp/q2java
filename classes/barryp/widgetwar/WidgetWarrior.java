@@ -27,6 +27,7 @@ public class WidgetWarrior extends q2java.baseq2.Player
 	protected GenericWeapon fDeathWeapon;
 	
 	protected boolean fDestroyWarned;
+	protected boolean fUseTeamSpawnpoint;
 	protected int[][] fComponents = new int[MAX_WIDGETS][3];
 	protected WidgetBody[] fWidgets = new WidgetBody[MAX_WIDGETS];
 	protected Point3f[] fWidgetTargets = new Point3f[MAX_WIDGETS];
@@ -291,9 +292,12 @@ public void addStolenTechnology(StolenTechnology st)
 		}
 	else
 		{
-		fEntity.cprint(Engine.PRINT_HIGH, "You found a piece of enemy technology!\n");
+		fEntity.cprint(Engine.PRINT_HIGH, "You picked up a piece of enemy technology!\n");
 		fStolenTechnologies.addElement(st);
 
+		// make some local noise
+		Game.getSoundSupport().fireEvent(fEntity, NativeEntity.CHAN_AUTO, Engine.getSoundIndex("ctf/flagtk.wav"), 1, NativeEntity.ATTN_NORM, 0);	
+		
 		// look guilty
 		setCarryingTech(true);
 		}
@@ -643,6 +647,7 @@ public void cmd_team(String[] argv, String args)
 	// pretend we disconnected - to drop weapons and techs and leave teams
 	fPlayerStateSupport.fireEvent(this, PlayerStateEvent.STATE_INVALID, q2java.baseq2.BaseQ2.gWorld);
 	destroyAllWidgets();
+	fStolenTechnologies.removeAllElements();
 	
 	// join new team
 	newTeam.addPlayer(this);
@@ -668,6 +673,7 @@ public void cmd_team(String[] argv, String args)
 	// respawn to new base and set score to zero...
 	setScore(0);
 	clearSettings();
+	fUseTeamSpawnpoint = true;
 	spawn();
 	}
 /**
@@ -815,7 +821,7 @@ public void dispose()
 	destroyAllWidgets();
 		
 	super.dispose();
-	}	
+	}
 /**
  * Figure out what the ammo equivalent of our current energy charge is.
  * Overrides q2java.baseq2.Player.getAmmoCount() to make the baseq2
@@ -893,12 +899,27 @@ public static String getHUD()
 	return HUD;
 	}
 /**
- * This method was created in VisualAge.
- * @return float
+ * Override baseq2.Player.getSpawnpoint() to use team 
+ * spawnpoints if the player belongs to a team.
+ * @return baseq2.GenericSpawnpoint
  */
-public Vector getStolenTechnologyList() 
+protected GenericSpawnpoint getSpawnpoint() 
 	{
-	return fStolenTechnologies;
+	if ((fTeam != null) && fUseTeamSpawnpoint)
+		{
+		fUseTeamSpawnpoint = false; // only use team spawnpoint once per level
+		return ((Team) getTeam()).getSpawnpoint();
+		}
+	else
+		return super.getSpawnpoint();
+	}
+/**
+ * Is this player carrying stolen technology.
+ * @return boolean
+ */
+public boolean isCarryingTech() 
+	{
+	return fCarryingTech;
 	}
 /**
  * Called when players enter and at beginning of each level.
@@ -1013,9 +1034,16 @@ public void removeStolenTechnology(StolenTechnology st)
 		setCarryingTech(false);
 	}
 /**
- * This method was created in VisualAge.
+ * Override q2java.baseq2.Player.respawn() to go through team first.
  */
 public void respawn() 
+	{
+	((Team)getTeam()).respawn(this);
+	}
+/**
+ * Called by the Team to put a dead player back into the game.
+ */
+public void respawnTeam() 
 	{
 	super.respawn();
 	
@@ -1023,7 +1051,11 @@ public void respawn()
 	fWeapon = fDeathWeapon;
 
 	if (fWeapon != null)
-		fWeapon.activate();	
+		fWeapon.activate();
+
+	// you can't take it with you, so you certainly shouldn't be
+	// bringing anything back from the other side.
+	fStolenTechnologies.removeAllElements();
 	}
 /**
  * Set the current ammo count, or alter it by some amount.
@@ -1134,9 +1166,9 @@ public void setHUDTarget(WidgetBody wb, Point3f p)
 protected void spawn() 
 	{
 	super.spawn();
-
+	
 	if (getTeam() instanceof Team)
-		{
+		{	
 		fEntity.setSVFlags(fEntity.getSVFlags() & ~NativeEntity.SVF_NOCLIENT);
 		fEntity.setPlayerPMType( NativeEntity.PM_NORMAL );
 		fEntity.linkEntity();

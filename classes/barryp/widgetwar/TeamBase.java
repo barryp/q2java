@@ -12,7 +12,8 @@ import q2java.baseq2.*;
 
 /**
  * Home base for a team.
- * 
+ *
+ * @author Barry Pederson
  */
 public abstract class TeamBase extends GameObject 
 	{

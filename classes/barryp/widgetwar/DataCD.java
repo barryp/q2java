@@ -136,7 +136,10 @@ public void playerStateChanged(PlayerStateEvent pse)
 		case PlayerStateEvent.STATE_DEAD:
 		case PlayerStateEvent.STATE_SUSPENDEDSTART:	
 		case PlayerStateEvent.STATE_INVALID:
-			pse.getPlayer().removePlayerStateListener(this);
+			WidgetWarrior ww = (WidgetWarrior) pse.getPlayer();
+			
+			ww.removePlayerStateListener(this);
+			ww.removeStolenTechnology(this);
 
 			float timeRemaining = fCaptureTimelimit - (Game.getGameTime() - fTimeStolen);
 			if (timeRemaining > 0)			

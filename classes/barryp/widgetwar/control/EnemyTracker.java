@@ -21,12 +21,10 @@ public class EnemyTracker extends GenericWidgetComponent implements ServerFrameL
 	protected Point3f fLastPoint;
 	
 /**
- * This method was created in VisualAge.
+ * Choose an enemy to track.
  */
 protected void chooseTarget() 
 	{
-	Player widgetOwner = getWidgetBody().getWidgetOwner();
-	Object widgetTeam = widgetOwner.getTeam();
 	NativeEntity widgetEntity = getWidgetBody().getWidgetEntity();
 	Point3f widgetOrigin = widgetEntity.getOrigin();
 	Vector3f v = Q2Recycler.getVector3f();
@@ -41,16 +39,7 @@ protected void chooseTarget()
 			{
 			Player p = (Player) ((NativeEntity) enum.nextElement()).getReference();
 
-			// ignore whoever fired the missile
-			if (p == widgetOwner)
-				continue;
-
-			// ignore teammates
-			if ((widgetTeam != null) && (widgetTeam == p.getTeam()))
-				continue;
-				
-			// ignore dead players
-			if (p.isDead())
+			if (!isPlayerSuitable(p))
 				continue;
 
 			// check if they're closer than previously checked players
@@ -101,8 +90,31 @@ public void handleWidgetEvent(int event, Object extra)
 		}
 	}
 /**
+ * Is a given player a suitable target?
+ * @return boolean
+ * @param p q2java.baseq2.Player
+ */
+public boolean isPlayerSuitable(Player p) 
+	{
+	// ignore dead players
+	if (p.isDead())
+		return false;
+			
+	// ignore the owner of this widget
+	Player owner = getWidgetBody().getWidgetOwner();
+	if (p == owner)
+		return false;
+
+	// ignore teammates
+	Object team = owner.getTeam();
+	if ((team != null) && (team == p.getTeam()))
+		return false;
+
+	return true;
+	}
+/**
  * Called when a player dies, disconnects, teleports, etc.
- * @param wasDisconnected true on disconnects, false on normal deaths.
+ * @param pse the event describing the change.
  */
 public void playerStateChanged(PlayerStateEvent pse)
 	{
