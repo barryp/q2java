@@ -80,25 +80,6 @@ public func_wall( String[] spawnArgs ) throws GameException
 		
 	fEntity.linkEntity();
 	}
-public boolean killBox(GameObject ent)
-	{
-	java.util.Enumeration players;
-	
-	players = NativeEntity.enumeratePlayers();
-	while( players.hasMoreElements() )
-		{
-		Player player = (Player)players.nextElement();
-		// nail it
-		Vector3f nullVec = new Vector3f(0,0,0);
-		player.damage(ent, ent, nullVec, ent.fEntity.getOrigin(), nullVec, 100000, 0, DAMAGE_NO_PROTECTION, 0, "telefrag");
-		// if we didn't kill it, fail
-		if ( player.fEntity.getSolid() != NativeEntity.SOLID_NOT )
-			return false;
-		}
-		
-	return true;		// all clear
-	}
-
 public void use(Player touchedBy) 
 	{
 	if ( (fSpawnFlags & 2) == 0)
@@ -112,7 +93,7 @@ public void use(Player touchedBy)
 		{
 		fEntity.setSolid(NativeEntity.SOLID_BSP);
 		fEntity.setSVFlags(fEntity.getSVFlags() & ~NativeEntity.SVF_NOCLIENT );
-		killBox(this);
+		MiscUtil.killBox(this.fEntity);
 		}
 	else
 		{

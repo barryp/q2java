@@ -10,7 +10,11 @@ public interface LevelListener
 	{
 	
 /**
- * Called when a new level is starting.
+ * Called when a new level is starting, after entities have been spawned.
+ */
+public void levelEntitiesSpawned();
+/**
+ * Called when a new level is starting, before entities are spawned.
  */
 public void startLevel(String mapname, String entString, String spawnPoint);
 

@@ -109,6 +109,8 @@ public GameModule(String moduleName)
 	gSkillLevel = (int) ((new CVar("skill", "1", CVar.CVAR_LATCH)).getFloat());		
 	
 	InventoryList.setupList( 42, 84, 128, 172, 214, true);	
+	
+	new CVar("locale", "en_US", CVar.CVAR_USERINFO | CVar.CVAR_ARCHIVE);
 	}
 /**
  * Check whether an entity should be inhibited because
@@ -179,7 +181,7 @@ public static String getSpawnpoint()
  */
 public static String getVersion() 
 	{
-	return "Q2Java Base Game, v0.5.6";
+	return "Q2Java Base Game, v0.5.7";
 	}	
 /**
  * Check whether or not the Cheating option is on.
@@ -204,6 +206,12 @@ public static boolean isDMFlagSet(int flag)
 public static boolean isVWepOn() 
 	{
 	return gIsVWepOn;
+	}
+/**
+ * Called when a new map is starting, after entities have been spawned.
+ */
+public void levelEntitiesSpawned() 
+	{
 	}
 /**
  * Called when the DLL's ReadGame() function is called.

@@ -19,9 +19,9 @@ import baseq2.spawn.*;
 
 public class Player extends GameObject implements FrameListener, PlayerListener, CrossLevel
 	{	
-	protected static ResourceBundle gObits = ResourceBundle.getBundle("baseq2.obit");
-	
-	// ---- Instance fields ------------------------
+	protected Locale fLocale = Locale.getDefault();
+	protected ResourceBundle fObits = ResourceBundle.getBundle("baseq2.obit", fLocale);
+
 	private int fScore;
 	protected float fStartTime;
 
@@ -54,10 +54,10 @@ public class Player extends GameObject implements FrameListener, PlayerListener,
 	
 	protected int fHand;
 	protected float fBobTime;
-	public int fButtons;
-	protected Angle3f fCmdAngles;
+	public int fButtons; 
 	public int fLatchedButtons;	
 	protected int fOldButtons;
+	protected Angle3f fCmdAngles;
 	public float fViewHeight;
 	protected int fWaterType;
 	protected int fWaterLevel;
@@ -554,6 +554,31 @@ protected void applyPlayerInfo()
 	s = getUserInfo("fov");
 	if (s != null)
 		fEntity.setPlayerFOV((new Float(s)).floatValue());	
+
+	s = getUserInfo("locale");
+	if ((s != null) && (!(s.equals(fLocale.toString()))))
+		{
+		StringTokenizer st = new StringTokenizer(s, "_");
+		if (st.countTokens() >= 2)
+			{
+			String lang = st.nextToken();
+			String country = st.nextToken();
+			if (st.hasMoreTokens())
+				fLocale = new Locale(lang, country, st.nextToken());
+			else
+				fLocale = new Locale(lang, country);		
+				
+			try
+				{				
+				fObits = ResourceBundle.getBundle("baseq2.obit", fLocale);	
+				fEntity.cprint(Engine.PRINT_HIGH, "new resources loaded\n");
+				}
+			catch (Exception e)
+				{
+				e.printStackTrace();
+				}
+			}			
+		}
 
 	showVWep();
 	}
@@ -1108,6 +1133,30 @@ public void cmd_inven(String[] args)
 	return;
 	}
 /**
+ * Do-nothing placeholder to make things smoother
+ * for mods that use menus like CTF and NWRA
+ * @param args java.lang.String[] - not used.
+ */
+public void cmd_invnext(String[] args)
+	{
+	}
+/**
+ * Do-nothing placeholder to make things smoother
+ * for mods that use menus like CTF and NWRA
+ * @param args java.lang.String[] - not used.
+ */
+public void cmd_invprev(String[] args)
+	{
+	}
+/**
+ * Do-nothing placeholder to make things smoother
+ * for mods that use menus like CTF and NWRA
+ * @param args java.lang.String[] - not used.
+ */
+public void cmd_invuse(String[] args)
+	{
+	}
+/**
  * Suicide.
  * @param args java.lang.String[]
  */
@@ -1635,7 +1684,15 @@ protected void die(GameObject inflictor, GameObject attacker, int damage, Point3
 	fIsDead = true;
 	fRespawnTime = (float)(Game.getGameTime() + 1);  // the player can respawn after this time
 	
-	obituary(inflictor, attacker, obitKey);
+//	obituary(inflictor, attacker, obitKey);
+
+	Object[] args = {getName(), new Integer(isFemale() ? 1 : 0), (attacker instanceof Player ? ((Player)attacker).getName() : null)};
+	Enumeration enum = NativeEntity.enumeratePlayers();
+	while (enum.hasMoreElements())
+		{
+		Player p = (Player) ((NativeEntity)enum.nextElement()).getPlayerListener();
+		p.obituary(this, inflictor, attacker, obitKey);
+		}
 	
 	// either give the attacker a point or take one away from the deceased
 	if ((attacker != this) && (attacker instanceof Player))
@@ -1703,6 +1760,8 @@ protected void endServerFrame()
 	if (fInIntermission)
 		return;
 	
+	worldEffects();
+		
 	//
 	// set model angles from view angles so other things in
 	// the world can tell which direction you are looking
@@ -1715,7 +1774,7 @@ protected void endServerFrame()
 	newAngles.z = calcRoll(fEntity.getVelocity());
 	fEntity.setAngles(newAngles);
 	
-	worldEffects();
+//	worldEffects(); was moved higher
 	fallingDamage();
 	damageFeedback();
 	calcViewOffset();	
@@ -2069,7 +2128,7 @@ public void notifyPickup(String itemName, String iconName)
  * @param inflictor the thing that killed the player.
  * @param attacker the player responsible.
  */
-protected void obituary(GameObject inflictor, GameObject attacker, String obitKey) 
+protected void obituary(GameObject victim, GameObject inflictor, GameObject attacker, String obitKey) 
 	{
 /*	
 	if (attacker == this)
@@ -2092,19 +2151,19 @@ protected void obituary(GameObject inflictor, GameObject attacker, String obitKe
 	Game.bprint(Engine.PRINT_MEDIUM, getName() + " died.\n");
 */
 
-	if (attacker == this)
+	if (attacker == victim)
 		obitKey = "self_" + obitKey;
 
 	String msg;
 	try
 		{
-		msg = gObits.getString(obitKey);			
+		msg = fObits.getString(obitKey);			
 		}
 	catch (MissingResourceException mre)
 		{
 		try
 			{
-			msg = gObits.getString((attacker == this) ? "self_default" : "default");
+			msg = fObits.getString((attacker == victim) ? "self_default" : "default");
 			}
 		catch (MissingResourceException mre2)
 			{
@@ -2112,8 +2171,9 @@ protected void obituary(GameObject inflictor, GameObject attacker, String obitKe
 			}
 		}
 		
-	Object[] args = {getName(), new Integer(isFemale() ? 1 : 0), (attacker instanceof Player ? ((Player)attacker).getName() : null)};
-	Game.bprint(Engine.PRINT_MEDIUM, java.text.MessageFormat.format(msg, args) + "\n");
+	Object[] args = {((Player)victim).getName(), new Integer(isFemale() ? 1 : 0), (attacker instanceof Player ? ((Player)attacker).getName() : null)};
+//	Game.bprint(Engine.PRINT_MEDIUM, java.text.MessageFormat.format(msg, args) + "\n");
+	fEntity.cprint(Engine.PRINT_MEDIUM, java.text.MessageFormat.format(msg, args) + "\n");
 	}
 /**
  * Parse a userinfo string into a hashtable.
@@ -2596,18 +2656,21 @@ protected void setUserInfo(String key, String value)
  */
 public void showVWep() 
 	{
-	if (!baseq2.GameModule.isVWepOn())
-		{
-		fEntity.setModelIndex2(255);
+	if (fIsDead)
 		return;
-		}
 		
 	if (fWeapon == null)
 		{
 		fEntity.setModelIndex2(0);
 		return;		
 		}
-		
+			
+	if (!baseq2.GameModule.isVWepOn())
+		{
+		fEntity.setModelIndex2(255);
+		return;
+		}
+				
 	String weaponIcon = fWeapon.getIconName();		
 	if (weaponIcon == null)
 		fEntity.setModelIndex2(255);

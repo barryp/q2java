@@ -422,6 +422,40 @@ public static GenericSpawnpoint getSpawnpointSingle()
 	return null;
 	}
 /**
+ * Kills all entities that would touch the proposed new positioning
+ * of ent.  Ent should be unlinked before calling this!
+ */
+public static boolean killBox(NativeEntity ent)
+	{
+	TraceResults tr;	
+	Point3f boxOrigin = ent.getOrigin();
+	Point3f mins = ent.getMins();
+	Point3f maxs = ent.getMaxs();
+	Vector3f origin = new Vector3f(); // --FIXME-- not terribly efficient
+
+	while (true)
+		{
+		tr = Engine.trace(boxOrigin, mins, maxs, boxOrigin, null, Engine.MASK_PLAYERSOLID);
+		if (tr.fEntity == null)
+			break;
+		
+		// nail it
+		Object obj = tr.fEntity.getReference();
+		if (obj instanceof GameObject)
+			{
+			GameObject go = (GameObject) obj;
+			go.damage(go, go, origin, boxOrigin, origin, 100000, 0, GameObject.DAMAGE_NO_PROTECTION, Engine.TE_NONE, "telefrag");
+			}
+
+		// if we didn't kill it, fail
+		if (tr.fEntity.getSolid() != 0)
+			return false;
+		}
+
+	return true;		// all clear	
+	}
+
+/**
  * Calculate how far the nearest player away is from a given entity
  * @return float
  * @param ent q2jgame.GameEntity
