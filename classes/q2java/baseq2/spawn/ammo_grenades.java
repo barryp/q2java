@@ -2,6 +2,8 @@ package q2java.baseq2.spawn;
 
 import javax.vecmath.*;
 
+import org.w3c.dom.Element;
+
 import q2java.*;
 import q2java.core.*;
 import q2java.baseq2.*;
@@ -28,7 +30,7 @@ public class ammo_grenades extends GenericWeapon
 public ammo_grenades() 
 	{
 	}
-public ammo_grenades(String[] spawnArgs) throws GameException
+public ammo_grenades(Element spawnArgs) throws GameException
 	{
 	super(spawnArgs);
 	//We have to prechache the weapon sound ourselves

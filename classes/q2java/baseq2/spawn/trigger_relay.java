@@ -2,15 +2,18 @@ package q2java.baseq2.spawn;
 
 import java.util.Vector;
 
+import org.w3c.dom.Element;
+
 import q2java.*;
 import q2java.core.*;
+import q2java.core.event.ServerFrameListener;
 import q2java.baseq2.*;
 
-public class trigger_relay extends Trigger implements FrameListener
+public class trigger_relay extends Trigger implements ServerFrameListener
 	{
 	protected float fDelay;
 	
-public trigger_relay(String[] spawnArgs) throws GameException
+public trigger_relay(Element spawnArgs) throws GameException
 	{
 	super(spawnArgs);
 		
@@ -33,6 +36,6 @@ public void use(Player touchedBy)
 		useTargets();
 	else
 		// ask to have runFrame() called one time in a little bit.
-		Game.addFrameListener(this, fDelay, -1);
+		Game.addServerFrameListener(this, fDelay, -1);
 	}
 }

@@ -129,9 +129,9 @@ public class PowerAmplifier extends GenericTech
 
 		// ask to be or not be called back each server frame so we can play noises
 		if (p == null)
-			Game.removeFrameListener(this, Game.FRAME_BEGINNING);
+			Game.removeServerFrameListener(this, Game.FRAME_BEGINNING);
 		else
-			Game.addFrameListener(this, Game.FRAME_BEGINNING, 0, 0);
+			Game.addServerFrameListener(this, Game.FRAME_BEGINNING, 0, 0);
 		
 	}
 }

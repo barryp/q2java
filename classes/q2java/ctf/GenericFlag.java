@@ -17,6 +17,9 @@ package q2java.ctf;
 
 import java.util.*;
 import javax.vecmath.*;
+
+import org.w3c.dom.Element;
+
 import q2java.*;
 import q2java.core.*;
 import q2java.baseq2.event.*;
@@ -48,7 +51,7 @@ public abstract class GenericFlag extends q2java.baseq2.GenericItem implements q
 	
 	static final float STOP_EPSILON = 0.1f;
 
-	protected GenericFlag( String[] spawnArgs, int flagIndex ) throws GameException
+	protected GenericFlag( Element spawnArgs, int flagIndex ) throws GameException
 	{
 		super( spawnArgs );
 
@@ -184,8 +187,7 @@ public void becomeExplosion(int tempEntity)
 		CTFPlayer p = (CTFPlayer)bp;
 
 		// make sure CTF Player has joined a team
-		Team t = p.getTeam();
-		if ( t == null )
+		if ( p.getTeam() == null )
 		{
 			p.fEntity.centerprint(p.getResourceGroup().getRandomString("q2java.ctf.CTFMessages", "no_team"));
 			return false;
@@ -219,7 +221,7 @@ public void becomeExplosion(int tempEntity)
 					otherFlag.reset();
 			
 					// Add the bonuses...
-					p.getTeam().addCapture( p );				
+					((Team)p.getTeam()).addCapture( p );				
 				}
 				break;
 				
@@ -275,7 +277,7 @@ public void becomeExplosion(int tempEntity)
 		fEntity.linkEntity();
 
 		// ask to be called back each server frame to animate the wave
-		Game.addFrameListener(this, 0, 0);
+		Game.addServerFrameListener(this, 0, 0);
 
 		//update all stats (also from spectators) that our flag is at base
 		updateAllStats(getIconName());
@@ -336,7 +338,7 @@ public void becomeExplosion(int tempEntity)
 		Game.localecast("q2java.ctf.CTFMessages", "got_flag", args, Engine.PRINT_HIGH);	
 		
 		// setup the listener so, that it's called every 0.8 seconds to flash the carriers flag-icon
-		Game.addFrameListener( this, 0, 0.8F );
+		Game.addServerFrameListener( this, 0, 0.8F );
 
 		// ask to be called if the player dies
 		p.addPlayerStateListener(this);

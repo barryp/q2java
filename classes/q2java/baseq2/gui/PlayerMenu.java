@@ -1,6 +1,7 @@
 package q2java.baseq2.gui;
 
 import java.util.Vector;
+import q2java.core.Game;
 import q2java.baseq2.Player;
 import q2java.baseq2.event.*;
 import q2java.gui.*;
@@ -14,6 +15,7 @@ public class PlayerMenu extends GenericMenu implements PlayerCommandListener
 	{
 	protected Vector fCommands;
 	protected Player fPlayer;
+	protected float fLastChangeTime;
 	
 /**
  * PlayerMenu constructor comment.
@@ -59,14 +61,24 @@ public void cmd_inven(Player source, String[] argv, String args)
  */
 public void cmd_invnext(Player source, String[] argv, String args)
 	{
-	selectNextItem();
+	float t;
+	if ((t = Game.getGameTime()) != fLastChangeTime)
+		{
+		fLastChangeTime = t;
+		selectNextItem();
+		}
 	}
 /**
  * Player probably hit '['
  */
 public void cmd_invprev(Player source, String[] argv, String args)
 	{
-	selectPreviousItem();
+	float t;
+	if ((t = Game.getGameTime()) != fLastChangeTime)
+		{
+		fLastChangeTime = t;
+		selectPreviousItem();
+		}
 	}
 /**
  * Called when player presses Enter key

@@ -2,6 +2,7 @@ package barryp.autoload;
 
 import q2java.*;
 import q2java.core.*;
+import q2java.core.event.ServerFrameListener;
 
 /**
  * Simple module that automatically exec's a file
@@ -9,7 +10,7 @@ import q2java.core.*;
  * the game is running.
  * 
  */
-public class GameModule extends q2java.core.Gamelet implements FrameListener, CrossLevel
+public class GameModule extends Gamelet implements ServerFrameListener, CrossLevel
 	{
 	
 /**
@@ -20,7 +21,7 @@ public GameModule(String moduleName)
 	{
 	super(moduleName);
 	
-	Game.addFrameListener(this, Game.FRAME_BEGINNING, 10, -1);
+	Game.addServerFrameListener(this, Game.FRAME_BEGINNING, 10, -1);
 	}
 /**
  * Do our business and vacate from the scene.

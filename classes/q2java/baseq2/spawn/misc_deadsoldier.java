@@ -1,5 +1,7 @@
 package q2java.baseq2.spawn;
 
+import org.w3c.dom.Element;
+
 import q2java.*;
 import q2java.core.*;
 import q2java.baseq2.*;
@@ -7,7 +9,7 @@ import q2java.baseq2.*;
 public class misc_deadsoldier extends GameObject
 	{
 	
-public misc_deadsoldier(String[] spawnArgs) throws GameException
+public misc_deadsoldier(Element spawnArgs) throws GameException
 	{
 	super(spawnArgs);
 	

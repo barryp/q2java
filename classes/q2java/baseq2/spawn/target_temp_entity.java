@@ -1,6 +1,9 @@
 package q2java.baseq2.spawn;
 
 import javax.vecmath.*;
+
+import org.w3c.dom.Element;
+
 import q2java.*;
 import q2java.core.*;
 import q2java.baseq2.*;
@@ -17,7 +20,7 @@ public class target_temp_entity extends GameObject
 	{
 	protected int fStyle;
 	
-public target_temp_entity(String[] spawnArgs) throws GameException
+public target_temp_entity(Element spawnArgs) throws GameException
 	{
 	super(spawnArgs);
 

@@ -1,16 +1,16 @@
 package q2java.baseq2;
 
-
 import javax.vecmath.*;
 import q2java.*;
 import q2java.core.*;
+import q2java.core.event.ServerFrameListener;
 
 /**
  * Grenades that have been thrown by a player,
  * and are flying through the air.
  */
   
-public abstract class GenericGrenade extends GameObject implements FrameListener
+public abstract class GenericGrenade extends GameObject implements ServerFrameListener
 	{
 	protected float      fExpires;	
 	protected int        fDamage;
@@ -96,7 +96,7 @@ public void dispose()
 	{
 	if (fEntity != null)	
 		fEntity.freeEntity();
-	Game.removeFrameListener(this);
+	Game.removeServerFrameListener(this);
 	}
 protected void explode( TraceResults tr )
 	{
@@ -230,7 +230,7 @@ public void toss(GameObject owner, Point3f start, Vector3f aimdir, int damage, i
 		}
 	else
 		{
-		Game.addFrameListener(this, 0, 0);
+		Game.addServerFrameListener(this, 0, 0);
 		}
 	}
 }

@@ -3,14 +3,14 @@ package q2java.baseq2;
 import javax.vecmath.*;
 import q2java.*;
 import q2java.core.*;
+import q2java.core.event.ServerFrameListener;
 
 /**
  * Blaster Bolts that have been fired, 
  * and are flying through the air.
  */
  
- 
-public class BlasterBolt extends GameObject implements FrameListener
+public class BlasterBolt extends GameObject implements ServerFrameListener
 	{
 	protected float fExpires;	
 	protected int fDamage;
@@ -29,7 +29,7 @@ public BlasterBolt()
 public void dispose() 
 	{
 	fEntity.freeEntity();
-	Game.removeFrameListener(this);
+	Game.removeServerFrameListener(this);
 	}
 /**
  * We hit some NativeEntity in the world.
@@ -89,7 +89,7 @@ public void launch(GameObject owner, Point3f start, Vector3f dir, int damage, in
 		}
 	else
 		// gotta animate the bolt
-		Game.addFrameListener(this, 0, 0);
+		Game.addServerFrameListener(this, 0, 0);
 	}
 /**
  * Animate the blaster bolt over one frame.

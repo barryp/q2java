@@ -1,5 +1,7 @@
 package q2java.baseq2.spawn;
 
+import org.w3c.dom.Element;
+
 import q2java.*;
 import q2java.core.*;
 import q2java.baseq2.*;
@@ -16,7 +18,7 @@ public class item_health_mega extends GenericHealth
 public item_health_mega() 
 	{
 	}
-public item_health_mega(String[] spawnArgs) throws GameException
+public item_health_mega(Element spawnArgs) throws GameException
 	{
 	super(spawnArgs);
 	}
@@ -81,7 +83,7 @@ public void runFrame(int phase)
 	fOwner.removePlayerStateListener(this);
 	fOwner = null;
 	
-	Game.removeFrameListener(this);
+	Game.removeServerFrameListener(this);
 	setRespawn(20);		
 	}
 /**
@@ -92,7 +94,7 @@ public void stateChanged(PlayerStateEvent e)
 	fOwner.removePlayerStateListener(this);
 	fOwner = null;
 		
-	Game.removeFrameListener(this);
+	Game.removeServerFrameListener(this);
 	setRespawn(20);
 	}
 /**
@@ -105,7 +107,7 @@ public void touch(Player p)
 	super.touch(p);
 		
 	// wait 5 seconds, then start decreasing health at one-second intervals
-	Game.addFrameListener(this, 5, 1);
+	Game.addServerFrameListener(this, 5, 1);
 	
 	fOwner = p;
 	fOwner.addPlayerStateListener(this);

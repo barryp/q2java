@@ -1,6 +1,9 @@
 package q2java.baseq2.spawn;
 
 import javax.vecmath.*;
+
+import org.w3c.dom.Element;
+
 import q2java.*;
 import q2java.core.*;
 import q2java.baseq2.*;
@@ -20,7 +23,7 @@ public weapon_shotgun()
 /** 
  * Create a shotgun for lying around
  */
-public weapon_shotgun(String[] spawnArgs) throws GameException
+public weapon_shotgun(Element spawnArgs) throws GameException
 	{
 	super(spawnArgs);
 	}

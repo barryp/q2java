@@ -14,9 +14,11 @@ package q2java.ctf.spawn;
 ======================================================================================
 */
 
+import org.w3c.dom.Element;
 
 import q2java.*;
 import q2java.core.*;
+import q2java.core.event.ServerFrameListener;
 import q2java.baseq2.*;
 
 /*-----------------------------------------------------------------------*/
@@ -30,11 +32,11 @@ The banner is 248 tall.
  * just sits and flutters in the wind.
  */
 
-public class misc_ctf_banner extends GameObject implements FrameListener
+public class misc_ctf_banner extends GameObject implements ServerFrameListener
 {
 	protected int fCurrentFrame;
 	
-	public misc_ctf_banner( String[] spawnArgs ) throws GameException
+	public misc_ctf_banner( Element spawnArgs ) throws GameException
 	{
 		super( spawnArgs );
 		
@@ -51,7 +53,7 @@ public class misc_ctf_banner extends GameObject implements FrameListener
 		fEntity.linkEntity();
 		
 		// ask to be called back each server frame
-		Game.addFrameListener(this, 0, 0);
+		Game.addServerFrameListener(this, 0, 0);
 	}
 	/**
 	 * Animate the banner.

@@ -1,5 +1,7 @@
 package q2java.baseq2.spawn;
 
+import org.w3c.dom.Element;
+
 import q2java.*;
 import q2java.core.*;
 import q2java.baseq2.*;
@@ -7,7 +9,7 @@ import q2java.baseq2.*;
 public class worldspawn extends GameObject
 	{
 	
-public worldspawn(String[] spawnArgs) throws GameException
+public worldspawn(Element spawnArgs) throws GameException
 	{
 	super(spawnArgs, NativeEntity.ENTITY_WORLD); 	// make sure we get a special spot in the array
 

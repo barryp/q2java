@@ -1,25 +1,31 @@
 package javax.vecmath;
 
 /*
-   Copyright (C) 1997,1998
-   Kenji Hiranabe
+   Copyright (C) 1997,1998,1999
+   Kenji Hiranabe, Eiwa System Management, Inc.
 
    This program is free software.
    Implemented by Kenji Hiranabe(hiranabe@esm.co.jp),
-   conforming to the Java(TM) 3D API specification version 1.1
+   conforming to the Java(TM) 3D API specification version 1.1 final
    by Sun Microsystems.
 
-   This program is provided AS IS, with NO WARRANTY.
+   Permission to use, copy, modify, distribute and sell this software
+   and its documentation for any purpose is hereby granted without fee,
+   provided that the above copyright notice appear in all copies and
+   that both that copyright notice and this permission notice appear
+   in supporting documentation. Kenji Hiranabe and Eiwa System Management,Inc.
+   makes no representations about the suitability of this software for any
+   purpose.  It is provided "AS IS" with NO WARRANTY.
 */
 import java.io.Serializable;
 
 /**
  * A 4 element quaternion represented by single precision floating 
  * point x,y,z,w coordinates. 
- * @version specification 1.1, implementation $Revision: 1.6 $, $Date: 1998/10/14 00:49:10 $
+ * @version specification 1.1, implementation $Revision: 1.8 $, $Date: 1999/03/11 00:17:50 $
  * @author Kenji hiranabe
  */
-public class Quat4f extends Tuple4d implements Serializable {
+public class Quat4f extends Tuple4f implements Serializable {
 	/**
 	 * Constructs and initializes a Quat4f to (0,0,0,0).
 	 */
@@ -30,11 +36,17 @@ public class Quat4f extends Tuple4d implements Serializable {
 	 * Constructs and initializes a Quat4f from the array of length 4.
 	 * @param v the array of length 4 containing xyzw in order
 	 */
-	public Quat4f(double q[]) {
+	public Quat4f(float q[]) {
 	super(q);
 	}
 /*
  * $Log: Quat4f.java,v $
+ * Revision 1.8  1999/03/11  00:17:50  hiranabe
+ * now extends Tuple4f instead of Tuple4d
+ *
+ * Revision 1.7  1999/03/04  09:16:33  hiranabe
+ * small bug fix and copyright change
+ *
  * Revision 1.6  1998/10/14  00:49:10  hiranabe
  * API1.1 Beta02
  *
@@ -62,7 +74,7 @@ public class Quat4f extends Tuple4d implements Serializable {
 	 * @param z the z coordinate
 	 * @param w the w scalar component
 	 */
-	public Quat4f(double x, double y, double z, double w) {
+	public Quat4f(float x, float y, float z, float w) {
 	super(x, y, z, w);
 	}
 	/**
@@ -229,10 +241,10 @@ public class Quat4f extends Tuple4d implements Serializable {
 	n = (n == 0.0 ? n : 1/n);
 	// store on stack once for aliasing-safty
 	set(
-	    (x*q1.w - w*q1.x - y*q1.z + z*q1.y)*n,
-	    (y*q1.w - w*q1.y - z*q1.x + x*q1.z)*n,
-	    (z*q1.w - w*q1.z - x*q1.y + y*q1.x)*n,
-	    (w*q1.w + x*q1.x + y*q1.y + z*q1.z)*n
+	    (float)((x*q1.w - w*q1.x - y*q1.z + z*q1.y)*n),
+	    (float)((y*q1.w - w*q1.y - z*q1.x + x*q1.z)*n),
+	    (float)((z*q1.w - w*q1.z - x*q1.y + y*q1.x)*n),
+	    (float)((w*q1.w + x*q1.x + y*q1.y + z*q1.z)*n)
 	    );
 	}
 	/**
@@ -249,13 +261,13 @@ public class Quat4f extends Tuple4d implements Serializable {
 	n = (n == 0.0 ? n : 1/n);
 	// store on stack once for aliasing-safty
 	set(
-	    (q1.x*q2.w - q1.w*q2.x - q1.y*q2.z + q1.z*q2.y)*n,
-	    (q1.y*q2.w - q1.w*q2.y - q1.z*q2.x + q1.x*q2.z)*n,
-	    (q1.z*q2.w - q1.w*q2.z - q1.x*q2.y + q1.y*q2.x)*n,
-	    (q1.w*q2.w + q1.x*q2.x + q1.y*q2.y + q1.z*q2.z)*n
+	    (float)((q1.x*q2.w - q1.w*q2.x - q1.y*q2.z + q1.z*q2.y)*n),
+	    (float)((q1.y*q2.w - q1.w*q2.y - q1.z*q2.x + q1.x*q2.z)*n),
+	    (float)((q1.z*q2.w - q1.w*q2.z - q1.x*q2.y + q1.y*q2.x)*n),
+	    (float)((q1.w*q2.w + q1.x*q2.x + q1.y*q2.y + q1.z*q2.z)*n)
 	    );
 	}
-	//
+	// helper
 	private final double norm() {
 	return x*x + y*y + z*z + w*w;
 	}
@@ -263,7 +275,7 @@ public class Quat4f extends Tuple4d implements Serializable {
 	 * Normalizes the value of this quaternion in place.
 	 */
 	public final void normalize() {
-	double n = Math.sqrt(norm());
+	float n = (float)Math.sqrt(norm());
 	// zero-div may occur.
 	x /= n;
 	y /= n;
@@ -289,9 +301,9 @@ public class Quat4f extends Tuple4d implements Serializable {
 	 * @param a1 the axis-angle
 	 */
 	public final void set(AxisAngle4d a1) {
-	x = a1.x;
-	y = a1.y;
-	z = a1.z;
+	x = (float)a1.x;
+	y = (float)a1.y;
+	z = (float)a1.z;
 	double n = Math.sqrt(x*x + y*y + z*z);
 	// zero-div may occur.
 	float s = (float)(Math.sin(0.5*a1.angle)/n);

@@ -1,5 +1,7 @@
 package q2java.baseq2;
 
+import org.w3c.dom.Element;
+
 import q2java.*;
 
 /**
@@ -10,14 +12,14 @@ import q2java.*;
 public abstract class GenericAmmo extends AmmoHolder
 	{
 	
-public GenericAmmo(String[] spawnArgs, int count) throws GameException
-	{
-	super(spawnArgs);
-	setAmmoCount(count);
-	}
 public GenericAmmo(int count) throws GameException
 	{
 	super();
+	setAmmoCount(count);
+	}
+public GenericAmmo(Element spawnArgs, int count) throws GameException
+	{
+	super(spawnArgs);
 	setAmmoCount(count);
 	}
 /**

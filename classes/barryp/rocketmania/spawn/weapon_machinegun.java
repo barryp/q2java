@@ -2,6 +2,8 @@ package barryp.rocketmania.spawn;
 
 import javax.vecmath.*;
 
+import org.w3c.dom.Element;
+
 import q2java.*;
 import q2java.core.*;
 import q2java.baseq2.*;
@@ -23,7 +25,7 @@ public weapon_machinegun()
 /**
  * Create a machinegun to sit on the ground.
  */
-public weapon_machinegun(String[] spawnArgs) throws GameException
+public weapon_machinegun(Element spawnArgs) throws GameException
 	{
 	super(spawnArgs);
 	}

@@ -1,5 +1,7 @@
 package q2java.baseq2.spawn;
 
+import org.w3c.dom.Element;
+
 import q2java.*;
 import q2java.core.*;
 import q2java.baseq2.*;
@@ -14,7 +16,7 @@ public class target_changelevel extends Trigger
 	{
 	protected String fMap;
 	
-public target_changelevel(String[] spawnArgs) throws GameException
+public target_changelevel(Element spawnArgs) throws GameException
 	{
 	super(spawnArgs);
 	

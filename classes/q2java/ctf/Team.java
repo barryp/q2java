@@ -29,7 +29,7 @@ import q2java.ctf.spawn.*;
  */
 
 
-public class Team implements GameStatusListener, PlayerStateListener, PlayerDamageListener, PlayerCommandListener
+public class Team implements GameStatusListener, PlayerStateListener, PlayerDamageListener
 {
 	public static final String CTF_TEAM1_SKIN = "ctf_r";
 	public static final String CTF_TEAM2_SKIN = "ctf_b";
@@ -100,9 +100,6 @@ public class Team implements GameStatusListener, PlayerStateListener, PlayerDama
 		// act as a damage filter for this member
 		p.addPlayerDamageListener(this);
 
-		// handle the say_team command for the player
-		p.addPlayerCommandListener(this);
-		
 		// assign new skin
 		assignSkinTo( p );
 		Object[] args = {p.getName(), fTeamIndex};
@@ -154,38 +151,6 @@ public class Team implements GameStatusListener, PlayerStateListener, PlayerDama
 			client.fEntity.setPlayerStat( STAT_CTF_TEAM1_HEADER, (short)Engine.getImageIndex("ctfsb1") );
 			client.fEntity.setPlayerStat( STAT_CTF_TEAM2_HEADER, (short)Engine.getImageIndex("ctfsb2") );
 		}
-	}
-	/**
-	 * Handle "say_team" commands for our members.
-	 * @param (Ignored, uses the Engine.args() value instead)
-	 */
-	public void commandIssued(PlayerCommandEvent pce) 
-	{
-		if (pce.getCommand().equalsIgnoreCase("say_team"))
-		{
-			String args = pce.getArgs();
-			
-			// remove any quote marks
-			if (args.charAt(args.length()-1) == '"')
-				args = args.substring(args.indexOf('"')+1, args.length()-1);
-			
-			args = "(" + pce.getPlayer().getName() + "): " + args;		
-		
-			// keep the message down to a reasonable length
-			if (args.length() > 150)
-				args = args.substring(0, 150);	
-				
-			args += "\n";
-					
-			Player[] players = getPlayers();
-
-			for ( int i=0; i<players.length; i++ )
-				players[i].fEntity.cprint( Engine.PRINT_CHAT, args );
-
-			//let the event know it's been handled
-			pce.consume();	
-		}
-			
 	}
 	/**
 	 * Filter a team member's damage.

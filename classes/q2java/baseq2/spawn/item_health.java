@@ -1,5 +1,7 @@
 package q2java.baseq2.spawn;
 
+import org.w3c.dom.Element;
+
 import q2java.*;
 import q2java.core.*;
 import q2java.baseq2.*;
@@ -13,7 +15,7 @@ public class item_health extends GenericHealth
 public item_health() 
 	{
 	}
-public item_health(String[] spawnArgs) throws GameException
+public item_health(Element spawnArgs) throws GameException
 	{
 	super(spawnArgs);
 	}

@@ -1,6 +1,9 @@
 package q2java.baseq2.spawn;
 
 import javax.vecmath.*;
+
+import org.w3c.dom.Element;
+
 import q2java.*;
 import q2java.core.*;
 import q2java.baseq2.*;
@@ -21,7 +24,7 @@ public class target_blaster extends GameObject
 	protected int fEffect;
 	protected Vector3f fMoveDir;
 	
- public target_blaster(String[] spawnArgs) throws GameException
+ public target_blaster(Element spawnArgs) throws GameException
 	{
 	super(spawnArgs);
 

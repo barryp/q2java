@@ -1,5 +1,7 @@
 package q2java.baseq2.spawn;
 
+import org.w3c.dom.Element;
+
 import q2java.*;
 import q2java.core.*;
 import q2java.baseq2.*;
@@ -11,7 +13,7 @@ public ammo_cells() throws GameException
 	{
 	super(50);
 	}
-public ammo_cells(String[] spawnArgs) throws GameException
+public ammo_cells(Element spawnArgs) throws GameException
 	{
 	super(spawnArgs, 50);
 	}

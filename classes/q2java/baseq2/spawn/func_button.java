@@ -3,6 +3,8 @@ package q2java.baseq2.spawn;
 import java.util.Enumeration;
 import javax.vecmath.*;
 
+import org.w3c.dom.Element;
+
 import q2java.*;
 import q2java.core.*;
 import q2java.baseq2.*;
@@ -37,7 +39,7 @@ public class func_button extends GenericPusher
 	private final static int STATE_BUTTON_ON = 4;	
 	private final static int STATE_BUTTON_ONWAIT = 5;	
 	
-public func_button(String[] spawnArgs) throws GameException
+public func_button(Element spawnArgs) throws GameException
 	{
 	super(spawnArgs);
 	
@@ -91,7 +93,7 @@ public void activate()
 			break;	
 			
 		case STATE_BUTTON_ONWAIT:
-			Game.addFrameListener(this, fWait, -1);
+			Game.addServerFrameListener(this, fWait, -1);
 			break;				
 		}
 	}
@@ -153,7 +155,7 @@ public void moveFinished()
 			else				
 				{
 				fButtonState = STATE_BUTTON_ONWAIT;
-				Game.addFrameListener(this, fWait, -1);
+				Game.addServerFrameListener(this, fWait, -1);
 				}
 			break;			
 

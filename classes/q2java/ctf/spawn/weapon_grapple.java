@@ -18,6 +18,8 @@ package q2java.ctf.spawn;
 
 import javax.vecmath.*;
 
+import org.w3c.dom.Element;
+
 import q2java.*;
 import q2java.core.*;
 import q2java.baseq2.*;
@@ -36,7 +38,7 @@ public class weapon_grapple extends GenericWeapon
 	public weapon_grapple()
 	{
 	}
-	public weapon_grapple(String[] spawnArgs) throws GameException
+	public weapon_grapple(Element spawnArgs) throws GameException
 	{
 		super(spawnArgs);
 	}

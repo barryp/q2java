@@ -2,13 +2,14 @@ package q2java.core.gui;
 
 import q2java.NativeEntity;
 import q2java.core.*;
+import q2java.core.event.ServerFrameListener;
 import q2java.gui.*;
 
 /**
  * Runs a count down timer on the players hud.
  * @author Brian Haskin
  */
-public class IconCountdownTimer extends IconIntegerDisplay implements FrameListener
+public class IconCountdownTimer extends IconIntegerDisplay implements ServerFrameListener
 	{
 	boolean fIsRunning;
 	
@@ -59,8 +60,8 @@ public void setRunning(boolean b)
 	fIsRunning = b;
 	
 	if (fIsRunning)
-		Game.addFrameListener(this, 1, 1);
+		Game.addServerFrameListener(this, 1, 1);
 	else
-		Game.removeFrameListener(this);
+		Game.removeServerFrameListener(this);
 	}
 }

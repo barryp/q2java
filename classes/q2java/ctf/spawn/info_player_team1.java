@@ -14,6 +14,7 @@ package q2java.ctf.spawn;
 ======================================================================================
 */
 
+import org.w3c.dom.Element;
 
 import q2java.*;
 import q2java.core.*;
@@ -23,7 +24,7 @@ public class info_player_team1 extends GenericSpawnpoint
 	{
 	public final static String REGISTRY_KEY = "spawn-team1";
 	
-public info_player_team1(String[] spawnArgs) throws GameException
+public info_player_team1(Element spawnArgs) throws GameException
 	{
 	super(spawnArgs);
 	Game.addLevelRegistry(REGISTRY_KEY, this);

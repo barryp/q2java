@@ -3,6 +3,7 @@ package q2java.core.gui;
 import javax.vecmath.*;
 import q2java.*;
 import q2java.core.*;
+import q2java.core.event.ServerFrameListener;
 import q2java.gui.*;
 
 /**
@@ -12,7 +13,7 @@ import q2java.gui.*;
  * @author Barry Pederson
  */
  
-public abstract class Tracker implements CrossLevel, FrameListener
+public abstract class Tracker implements CrossLevel, ServerFrameListener
 	{
 	protected FloatIndicator fIndicator;
 	protected NativeEntity fOwnerEntity;
@@ -34,7 +35,7 @@ public Tracker(FloatIndicator fi)
 public void dispose() 
 	{
 	if (fIsRunning)
-		Game.removeFrameListener(this, Game.FRAME_BEGINNING);	
+		Game.removeServerFrameListener(this, Game.FRAME_BEGINNING);	
 	}
 /**
  * Get which entity we're tracking.
@@ -89,14 +90,14 @@ private void updateRunState()
 	// should frames be turned on?
 	if (!fIsRunning && (fTargetEntity != null) && fIndicator.isVisible())
 		{
-		Game.addFrameListener(this, Game.FRAME_BEGINNING, 0, 0);
+		Game.addServerFrameListener(this, Game.FRAME_BEGINNING, 0, 0);
 		fIsRunning = true;
 		}
 
 	// should frames be turned off?
 	if (fIsRunning && ((fTargetEntity == null) || !fIndicator.isVisible()))
 		{
-		Game.removeFrameListener(this, Game.FRAME_BEGINNING);
+		Game.removeServerFrameListener(this, Game.FRAME_BEGINNING);
 		fIsRunning = false;
 		}
 	}

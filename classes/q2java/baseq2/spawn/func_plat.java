@@ -3,6 +3,8 @@ package q2java.baseq2.spawn;
 import java.util.Enumeration;
 import javax.vecmath.*;
 
+import org.w3c.dom.Element;
+
 import q2java.*;
 import q2java.core.*;
 import q2java.baseq2.*;
@@ -40,7 +42,7 @@ public class func_plat extends GenericPusher
 	
 	private final static int PLAT_LOW_TRIGGER	= 1;	
 	
-public func_plat(String[] spawnArgs) throws GameException
+public func_plat(Element spawnArgs) throws GameException
 	{
 	super(spawnArgs);
 	
@@ -151,7 +153,7 @@ protected void moveFinished()
 			else				
 				{
 				fPlatState = STATE_PLAT_RAISEDWAIT;
-				Game.addFrameListener(this, fWait, -1);
+				Game.addServerFrameListener(this, fWait, -1);
 				}
 			break;			
 

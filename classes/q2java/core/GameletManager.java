@@ -16,9 +16,8 @@ import java.util.*;
  */
 public class GameletManager implements ServerCommandListener, GameStatusListener
 	{
-
 	//loaded mod list
-	protected Vector fModList;
+	protected Vector fGameletList;
 	protected GameClassFactory fClassFactory;
 	
 	// for persistant list of loaded modules (useful across reconnects)
@@ -31,7 +30,6 @@ public class GameletManager implements ServerCommandListener, GameStatusListener
 
 	//used to generate servlet events
 	private GameletSupport fGameletSupport;
-
 	
 /**
  * Constructor. The new GameletManager object should be provided with 
@@ -40,7 +38,9 @@ public class GameletManager implements ServerCommandListener, GameStatusListener
  */
 public GameletManager(GameletSupport gs)
 	{
-	fModList = new Vector();
+	fGameletList = new Vector();
+	fNewGameletList = new Vector();
+	
 	fGameletSupport = gs;
 	
 	//setup to listen for server commands
@@ -66,7 +66,9 @@ public Gamelet addGamelet(String className, String alias) throws ClassNotFoundEx
 		return null;
 		}
 
-	fNewGameletList = new Vector();
+	//leighd 04/17/99 - no need for new object
+	fNewGameletList.removeAllElements();
+	
 	//by default all new gamelets should initialise themselves.
 	fNewGameletsShouldInit = true;
 
@@ -84,9 +86,15 @@ public Gamelet addGamelet(String className, String alias) throws ClassNotFoundEx
 			}
 		}
 
+	//leighd 04/17/99 provide some feedback
+	int size = fNewGameletList.size();
+	String gamelet = (size > 1 ? " gamelets " : " gamelet ");
+	String lvl = (fNewGameletsShouldInit ? "\n" : " and awaiting level change\n");
+	Game.dprint(size + gamelet + "loaded" + lvl);
+	
 	//at this point we've either initialised all the 
 	//gamelets, or they are waiting for a level change,
-	//and so will be processed from the fModList.
+	//and so will be processed from the fGameletList.
 	fNewGameletList.removeAllElements();
 	
 	//save gamelet list to Cvar.
@@ -121,8 +129,8 @@ private Gamelet addGamelet0(String className, String alias, Gamelet higherGamele
 		int position = 0;
 		//add gamelet to list
 		if (higherGamelet != null)
-			position = fModList.indexOf(higherGamelet) + 1;
-		fModList.insertElementAt(g, position);
+			position = fGameletList.indexOf(higherGamelet) + 1;
+		fGameletList.insertElementAt(g, position);
 
 		//add gamelet to new gamelet list, used to ensure that
 		//all dependent gamelets are initialised together
@@ -202,7 +210,7 @@ public void commandGamelets(String[] args)
 	Game.dprint("      Status   Player   Alias\n");
 	Game.dprint("      ======   ======   =====\n");
 
-	Enumeration enum = fModList.elements();
+	Enumeration enum = fGameletList.elements();
 	while (enum.hasMoreElements()) 
 		{
 		Gamelet g = (Gamelet) enum.nextElement();
@@ -275,14 +283,20 @@ public void gameStatusChanged(GameStatusEvent e)
 		{
 		case GameStatusEvent.GAME_INIT:
 			{
-			//check the command line for modules
+			// check the command line for modules
 			loadCommandLineGamelets();
 			break;
 			}
+		case GameStatusEvent.GAME_PRESPAWN:
+			{
+			// init gamelets waiting for a level change
+			loadGamelets();
+			break;
+			}			
 		case GameStatusEvent.GAME_ENDLEVEL:
 			{
-			//remove gamelets, init others
-			processGamelets();
+			// remove gamelets waiting for a level change
+			unloadGamelets();
 			break;
 			}
 		case GameStatusEvent.GAME_SHUTDOWN:
@@ -342,9 +356,9 @@ private void getDependantGamelets(Gamelet g, Vector v)
  */
 public Gamelet getGamelet(Class gameletClass) 
 	{
-	for (int i = 0; i < fModList.size(); i++)
+	for (int i = 0; i < fGameletList.size(); i++)
 		{
-		Object obj = fModList.elementAt(i);
+		Object obj = fGameletList.elementAt(i);
 		if (obj.getClass().equals(gameletClass))
 			return (Gamelet) obj;
 		}
@@ -358,9 +372,9 @@ public Gamelet getGamelet(Class gameletClass)
  */
 public Gamelet getGamelet(String alias) 
 	{
-	for (int i = 0; i < fModList.size(); i++)
+	for (int i = 0; i < fGameletList.size(); i++)
 		{
-		Gamelet g = (Gamelet) fModList.elementAt(i);
+		Gamelet g = (Gamelet) fGameletList.elementAt(i);
 		if (g.getGameletName().equalsIgnoreCase(alias))
 			return g;
 		}
@@ -372,15 +386,15 @@ public Gamelet getGamelet(String alias)
  */
 public int getGameletCount() 
 	{
-	return fModList.size();
+	return fGameletList.size();
 	}
 /**
  * Get an Enumeration of all loaded packages. The enumeration will be
- * of LoadedPackage objects
+ * of Gamelet objects
  */
 public Enumeration getGamelets() 
 	{
-	return fModList.elements();
+	return fGameletList.elements();
 	}
 /**
  * This method is called when the GameletManager receives the
@@ -465,41 +479,23 @@ protected void loadCommandLineGamelets()
 	}
 /**
  * Called when the GameletManager receives the GAME_ENDLEVEL event.
- * Any gamelets awaiting initialisation, or removal based on a 
+ * Any gamelets awaiting initialisation based on a 
  * level change will be processed here.
  */
-protected void processGamelets()
+protected void loadGamelets()
 	{
-	Engine.debugLog("GameletManager processing gamelets\n");
+	Engine.debugLog("GameletManager loading gamelets\n");
 	
-	// look for gamelets that were waiting for a level change
-	Vector initList = new Vector();    
-	Enumeration enum = fModList.elements();
-	while (enum.hasMoreElements())
+	// do this in reverse order
+	for (int i = fGameletList.size() - 1; i >= 0; i--)
 		{
-		Gamelet g = (Gamelet) enum.nextElement();
-		if (g.isUnloading())
+		Gamelet g = (Gamelet) fGameletList.elementAt(i);
+		if (!g.isInitialized())
 			{
-			removeGamelet0(g);
-			}
-		else if (!g.isInitialized())
-			{
-			initList.insertElementAt(g, 0); // build list in reverse order
+			g.markInitialized();
+			g.init();    
 			}
 		}
-
-	// initialize gamelets we found uninitialized
-	enum = initList.elements();
-	while (enum.hasMoreElements())
-		{
-		Gamelet g = (Gamelet) enum.nextElement();
-		g.markInitialized();
-		g.init();    
-		}
-
-	//we've processed all the new gamelets, so clear the 
-	//new gamelet list.
-	fNewGameletList.removeAllElements();    
 	}
 /**
  * Remove a module from the game's package list
@@ -534,7 +530,7 @@ public void removeGamelet(Gamelet g)
 		}
 	else
 		{
-		// unload gamelets now, highest priority first
+		// actually unload gamelets now, highest priority first
 		enum = getGamelets();
 		while (enum.hasMoreElements())
 			{
@@ -542,7 +538,15 @@ public void removeGamelet(Gamelet g)
 			if (v.indexOf(g2) >= 0)
 				removeGamelet0(g2);
 			}
+			
+		saveGameletList();    			
 		}
+	
+	//leighd 04/17/99 - provide some feedback
+	int size = v.size();
+	String gamelet = (size > 1 ? " gamelets " : " gamelet ");
+	String lvl = (levelChangeRequired ? "unloading after level change\n" : "unloaded\n");
+	Game.dprint(size + gamelet + lvl);		
 	}
 /**
  * Do the dirty work of actually removing a gamelet. Doesn't check for
@@ -553,15 +557,12 @@ public void removeGamelet(Gamelet g)
  */
 private void removeGamelet0(Gamelet g) 
 	{
-	fGameletSupport.fireEvent( GameletEvent.GAMELET_REMOVED, g);
-
-	int i;
-	for (i = 0; i < fModList.size(); i++)
+	for (int i = 0; i < fGameletList.size(); i++)
 		{
-		Gamelet g2 = (Gamelet) fModList.elementAt(i);
+		Gamelet g2 = (Gamelet) fGameletList.elementAt(i);
 		if (g2 == g)
 			{
-			fModList.removeElementAt(i);
+			fGameletList.removeElementAt(i);
 //			fClassFactory.clearClassHash();            
 			try
 				{
@@ -569,14 +570,15 @@ private void removeGamelet0(Gamelet g)
 				}
 			catch (Exception e)
 				{
-				e.printStackTrace();
-				}    
+				e.printStackTrace();				
+				}
+				
+			fGameletSupport.fireEvent( GameletEvent.GAMELET_REMOVED, g);
 			return;
 			}
 		}
-	Game.dprint("Gamelet: " + g + "wasn't loaded\n");
-	
-	saveGameletList();    
+		
+	Game.dprint("Gamelet: " + g + "wasn't loaded\n");	
 	}
 /**
  * Save the list of loaded gamelets in a CVar.
@@ -630,13 +632,15 @@ public void setClassFactory(GameClassFactory gcf)
 	fClassFactory = gcf;
 	}
 /**
- * 
+ * Called when the game is shutting down, the GameletManager
+ * will clean things up here.
  */
 protected void shutdown()
 	{
-	Engine.debugLog("GameletManager shutdown\n");    
+	Engine.debugLog("GameletManager shutdown\n");
+	
 	 //remove all the gamelets    
-	Enumeration enum = fModList.elements();
+	Enumeration enum = fGameletList.elements();
 	while (enum.hasMoreElements())
 		{
 		Gamelet g = (Gamelet)enum.nextElement();
@@ -655,7 +659,8 @@ protected void shutdown()
 				}
 			}
 		}
-	fModList.removeAllElements();
+		
+	fGameletList.removeAllElements();
 	fNewGameletList.removeAllElements();
 
 	//empty the modules cvar, in case a reconnect takes place.
@@ -666,8 +671,26 @@ protected void shutdown()
 	Game.removeServerCommandListener(this);
 
 	//be nice to gc
-	fModList = null;
+	fGameletList = null;
 	fGameletSupport = null;
 	fClassFactory = null;
+	}
+/**
+ * Called when the GameletManager receives the GAME_ENDLEVEL event.
+ * Any gamelets awaiting removal based on a 
+ * level change will be processed here.
+ */
+protected void unloadGamelets()
+	{
+	Engine.debugLog("GameletManager unloading gamelets\n");
+	
+	// look for gamelets that were waiting for a level change
+	Enumeration enum = fGameletList.elements();
+	while (enum.hasMoreElements())
+		{
+		Gamelet g = (Gamelet) enum.nextElement();
+		if (g.isUnloading())
+			removeGamelet0(g);
+		}
 	}
 }

@@ -1,15 +1,21 @@
 package javax.vecmath;
 
 /*
-   Copyright (C) 1997,1998
-   Kenji Hiranabe
+   Copyright (C) 1997,1998,1999
+   Kenji Hiranabe, Eiwa System Management, Inc.
 
    This program is free software.
    Implemented by Kenji Hiranabe(hiranabe@esm.co.jp),
-   conforming to the Java(TM) 3D API specification version 1.1
+   conforming to the Java(TM) 3D API specification version 1.1 final
    by Sun Microsystems.
 
-   This program is provided AS IS, with NO WARRANTY.
+   Permission to use, copy, modify, distribute and sell this software
+   and its documentation for any purpose is hereby granted without fee,
+   provided that the above copyright notice appear in all copies and
+   that both that copyright notice and this permission notice appear
+   in supporting documentation. Kenji Hiranabe and Eiwa System Management,Inc.
+   makes no representations about the suitability of this software for any
+   purpose.  It is provided "AS IS" with NO WARRANTY.
 */
 /**
  * java.vecmath Test class.
@@ -24,6 +30,12 @@ package javax.vecmath;
 public class VecmathTest {
 /*
  * $Log: VecmathTest.java,v $
+ * Revision 1.8  1999/03/11  00:17:50  hiranabe
+ * removed some println's
+ *
+ * Revision 1.7  1999/03/04  09:16:33  hiranabe
+ * small bug fix and copyright change
+ *
  * Revision 1.6  1998/10/14  00:49:10  hiranabe
  * API1.1 Beta02
  *
@@ -591,8 +603,8 @@ public class VecmathTest {
 	m2.mul(O);
 	ASSERT(equals(m2, O), "O = m2 x O");
 	m2.mul(m1, I);
-	System.out.println("m2 = " + m2.toString());
-	System.out.println("m1 = " + m1.toString());
+	// System.out.println("m2 = " + m2.toString());
+	// System.out.println("m1 = " + m1.toString());
 	ASSERT(equals(m2, m1), "m2 = m1 x I");
 
 	// check negate, add
@@ -612,7 +624,7 @@ public class VecmathTest {
 	m3.mul(0.5);
 	ASSERT(equals(m1, m3));
 	
-	System.out.println("4");
+	// System.out.println("4");
 
 	// check invert
 	m2 = new Matrix4d(
@@ -624,7 +636,7 @@ public class VecmathTest {
 	m3.mul(m2);
 	ASSERT(equals(m3, I));
 
-	System.out.println("5");
+	// System.out.println("5");
 
 	// translate
 	m1 = new Matrix4d(
@@ -644,13 +656,13 @@ public class VecmathTest {
 "  [1.0	2.0	1.0	1.0]" + NL +
 "  [0.0	0.0	0.0	1.0] ]"));
 
-	System.out.println("6");
+	// System.out.println("6");
 	m1.transform(p1);
 	ASSERT(equals(p1, new Point3d(6,-9,9)));
-	System.out.println("7");
+	// System.out.println("7");
 	m1.transform(V2,V2);
 	ASSERT(equals(V2, new Vector4d(-1,8,-3,1)));
-	System.out.println("8");
+	// System.out.println("8");
 
 		      
 	
@@ -663,7 +675,7 @@ public class VecmathTest {
 	    Math.cos(Math.PI/6),
 	    Math.sin(Math.PI/6),
 	    0)));
-	System.out.println("9");
+	// System.out.println("9");
 
 	// rotY
 	// rotate() (1,0,0) 60degree about y axis -> (cos 60,0,-sin 60)
@@ -674,7 +686,7 @@ public class VecmathTest {
 	    Math.cos(Math.PI/3),
 	    0,
 	    -Math.sin(Math.PI/3))));
-	System.out.println("10");
+	// System.out.println("10");
 
 	// rot around arbitary axis
 	// rotate() (1,0,0) 60degree about y axis -> (cos 60,0,-sin 60)
@@ -686,7 +698,7 @@ public class VecmathTest {
 	    Math.cos(Math.PI/3),
 	    0,
 	    -Math.sin(Math.PI/3))));
-	System.out.println("11");
+	// System.out.println("11");
 
 	// use quat.
 	Quat4d q1 = new Quat4d();
@@ -694,13 +706,13 @@ public class VecmathTest {
 	q1.set(a1);
 	m2.set(q1);
 	ASSERT(equals(m1, m2));
-	System.out.println("12");
+	// System.out.println("12");
 	m2.transform(p1, p1);
 	ASSERT(equals(p1, new Point3d(
 	    Math.cos(Math.PI/3),
 	    0,
 	    -Math.sin(Math.PI/3))));
-	System.out.println("13");
+	// System.out.println("13");
 
 	// Mat <-> Quat <-> Axis
 	a1.set(1,2,-3,Math.PI/3);
@@ -728,19 +740,19 @@ public class VecmathTest {
 	m1.transform(p1);
 	//System.out.println("after transform p1="+p1);
 	ASSERT(equals(p1, new Point3d(0,1,0)));
-	System.out.println("14");
+	// System.out.println("14");
 	m1.transform(p1);
 	ASSERT(equals(p1, new Point3d(0,0,1)));
-	System.out.println("15");
+	// System.out.println("15");
 	m1.transform(p1);
 	ASSERT(equals(p1, new Point3d(1,0,0)));
-	System.out.println("16");
+	// System.out.println("16");
 
 	// check getScale
 	m1.set(a1);
 	ASSERT(equals(m1.determinant(), 1));
 	ASSERT(equals(m1.getScale(), 1));
-	System.out.println("17");
+	//	System.out.println("17");
 	m2.set(a1);
 
 	// transpose and inverse
@@ -748,7 +760,7 @@ public class VecmathTest {
 	m2.invert(m1);
 	m1.transpose();
 	ASSERT(equals(m1, m2));
-	System.out.println("18");
+	//	System.out.println("18");
 
 	// rot, scale, trans
 	Matrix3d n1 = new Matrix3d();

@@ -1,5 +1,7 @@
 package q2java.baseq2;
 
+import org.w3c.dom.Element;
+
 import q2java.*;
 import q2java.core.*;
 
@@ -18,7 +20,7 @@ public GenericHealth()
 	{
 	super();
 	}
-public GenericHealth(String[] spawnArgs) throws GameException
+public GenericHealth(Element spawnArgs) throws GameException
 	{
 	super(spawnArgs);
 	

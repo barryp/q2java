@@ -3,12 +3,13 @@ package q2java.baseq2;
 import javax.vecmath.*;
 import q2java.*;
 import q2java.core.*;
+import q2java.core.event.ServerFrameListener;
 
 /**
  * Corpse lying on the ground.
  * 
  */
-public class Corpse extends GameObject implements FrameListener
+public class Corpse extends GameObject implements ServerFrameListener
 	{
 	protected final static int CORPSE_DELAY = 45; // remove corpses after this many seconds
 	
@@ -38,7 +39,7 @@ public void copy(NativeEntity ent)
 	fEntity.linkEntity();
 	
 	// get called back to remove the corpse after a certain time.
-	Game.addFrameListener(this, CORPSE_DELAY, -1);
+	Game.addServerFrameListener(this, CORPSE_DELAY, -1);
 	}
 /**
  * Cause the corpse to spray blood.

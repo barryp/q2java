@@ -1,8 +1,12 @@
 package q2java.baseq2.spawn;
 
 import java.util.Vector;
+
+import org.w3c.dom.Element;
+
 import q2java.*;
 import q2java.core.*;
+import q2java.core.event.ServerFrameListener;
 import q2java.baseq2.*;
 
 /**  
@@ -12,7 +16,7 @@ import q2java.baseq2.*;
  * @author Barry Pederson (I think)
  */
 
-public class func_timer implements GameTarget, FrameListener
+public class func_timer implements GameTarget, ServerFrameListener
 	{
 	private float fWait;
 	private float fRandom;
@@ -23,7 +27,7 @@ public class func_timer implements GameTarget, FrameListener
 	
 	private Vector fTargets;	
 	
-public func_timer(String[] spawnArgs) throws GameException
+public func_timer(Element spawnArgs) throws GameException
 	{
 	BaseQ2.checkInhibited(spawnArgs);
 		
@@ -35,17 +39,17 @@ public func_timer(String[] spawnArgs) throws GameException
 	if (fRandom >= fWait)
 		fRandom = fWait - Engine.SECONDS_PER_FRAME;
 
-	if ((GameUtil.getSpawnArg(spawnArgs, "spawnflags", 0) & 1) != 0)
+	if ((GameUtil.getSpawnFlags(spawnArgs) & 1) != 0)
 		{
-		Game.addFrameListener(this, 1 + fPauseTime + fDelay + fWait + (float)GameUtil.cRandom() * fRandom, -1);
+		Game.addServerFrameListener(this, 1 + fPauseTime + fDelay + fWait + (float)GameUtil.cRandom() * fRandom, -1);
 		fIsOn = true;
 		}
 
-	String s = GameUtil.getSpawnArg(spawnArgs, "target", null);
+	String s = GameUtil.getSpawnArg(spawnArgs, "target", "id", null);
 	if (s != null)
 		fTargets = Game.getLevelRegistryList("target-" + s);
 		
-	s = GameUtil.getSpawnArg(spawnArgs, "targetname", null);
+	s = GameUtil.getSpawnArg(spawnArgs, "targetname", "id", null);
 	if (s != null)
 		Game.addLevelRegistry("target-" + s, this);
 	}
@@ -54,7 +58,7 @@ public void runFrame(int phase)
 	useTargets();
 	
 	// schedule another call
-	Game.addFrameListener(this, fWait + (float)GameUtil.cRandom() * fRandom, -1);
+	Game.addServerFrameListener(this, fWait + (float)GameUtil.cRandom() * fRandom, -1);
 	}
 /**
  * Trigger the timer.
@@ -64,12 +68,12 @@ public void use(Player touchedBy)
 	{
 	if (fIsOn)
 		// turn it off
-		Game.removeFrameListener(this);
+		Game.removeServerFrameListener(this);
 	else
 		{
 		// turn it on
 		if (fDelay > 0 )
-			Game.addFrameListener(this, fDelay, -1);
+			Game.addServerFrameListener(this, fDelay, -1);
 		else
 			runFrame(0);
 		}

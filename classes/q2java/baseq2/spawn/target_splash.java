@@ -1,6 +1,9 @@
 package q2java.baseq2.spawn;
 
 import javax.vecmath.*;
+
+import org.w3c.dom.Element;
+
 import q2java.*;
 import q2java.core.*;
 import q2java.baseq2.*;
@@ -20,7 +23,7 @@ public class target_splash extends GameObject
 	protected float fDmg;
 	protected Vector3f fMoveDir;
 	
-public target_splash(String[] spawnArgs) throws GameException
+public target_splash(Element spawnArgs) throws GameException
 	{
 	super(spawnArgs);
 

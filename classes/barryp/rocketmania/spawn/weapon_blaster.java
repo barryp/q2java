@@ -2,6 +2,8 @@ package barryp.rocketmania.spawn;
 
 import javax.vecmath.*;
 
+import org.w3c.dom.Element;
+
 import q2java.*;
 import q2java.core.*;
 import q2java.baseq2.*;
@@ -22,7 +24,7 @@ public class weapon_blaster extends q2java.baseq2.spawn.weapon_blaster
 public weapon_blaster()
 	{
 	}
-public weapon_blaster(String[] spawnArgs) throws GameException
+public weapon_blaster(Element spawnArgs) throws GameException
 	{
 	super(spawnArgs);
 	}

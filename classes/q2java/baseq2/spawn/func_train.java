@@ -3,6 +3,8 @@ package q2java.baseq2.spawn;
 import java.util.Enumeration;
 import javax.vecmath.*;
 
+import org.w3c.dom.Element;
+
 import q2java.*;
 import q2java.core.*;
 import q2java.baseq2.*;
@@ -40,7 +42,7 @@ public class func_train extends GenericPusher
 	private final static int TRAIN_TOGGLE		= 2;
 	private final static int TRAIN_BLOCK_STOPS	= 4;	
 	
-public func_train(String[] spawnArgs) throws GameException
+public func_train(Element spawnArgs) throws GameException
 	{
 	super(spawnArgs);
 
@@ -72,7 +74,7 @@ public func_train(String[] spawnArgs) throws GameException
 	else
 		{
 		fTrainState = STATE_TRAIN_SPAWNED;
-		Game.addFrameListener(this, 0, -1);
+		Game.addServerFrameListener(this, 0, -1);
 		}		
 	}
 /**
@@ -166,7 +168,7 @@ protected void moveFinished()
 	else		
 		{
 		fTrainState = STATE_TRAIN_WAITING;
-		Game.addFrameListener(this, fWait, -1);
+		Game.addServerFrameListener(this, fWait, -1);
 		fEntity.setSound(0);
 		}	
 	}

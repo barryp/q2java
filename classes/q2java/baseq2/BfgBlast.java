@@ -1,15 +1,15 @@
 package q2java.baseq2;
 
-
 import javax.vecmath.*;
 import q2java.*;
 import q2java.core.*;
+import q2java.core.event.ServerFrameListener;
 
 /**
  * Rockets that have been fired, and are flying through the air.
  */
   
-public class BfgBlast extends GameObject implements FrameListener
+public class BfgBlast extends GameObject implements ServerFrameListener
 	{
 	protected float fExpires;	
 	protected int fDamage;
@@ -46,7 +46,7 @@ public BfgBlast()
 public void dispose() 
 	{
 	fEntity.freeEntity();
-	Game.removeFrameListener(this);
+	Game.removeServerFrameListener(this);
 	}
 protected void explode()
 	{
@@ -132,7 +132,7 @@ public void launch(GameObject owner, Point3f start, Vector3f dir, int damage, in
 		check_dodge (self, bolt->s.origin, dir, speed);
 */
 
-	Game.addFrameListener(this, 0, 0);
+	Game.addServerFrameListener(this, 0, 0);
 	}
 protected void prepareExplosion(TraceResults tr)
 	{

@@ -1,5 +1,7 @@
 package q2java.baseq2.spawn;
 
+import org.w3c.dom.Element;
+
 import q2java.*;
 import q2java.core.*;
 import q2java.baseq2.*;
@@ -13,7 +15,7 @@ public class item_armor_jacket extends GenericArmor
 public item_armor_jacket() 
 	{
 	}
-public item_armor_jacket(String[] spawnArgs) throws GameException
+public item_armor_jacket(Element spawnArgs) throws GameException
 	{
 	super(spawnArgs);
 	}

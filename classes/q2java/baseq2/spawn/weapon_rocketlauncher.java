@@ -2,6 +2,8 @@ package q2java.baseq2.spawn;
 
 import javax.vecmath.*;
 
+import org.w3c.dom.Element;
+
 import q2java.*;
 import q2java.core.*;
 import q2java.baseq2.*;
@@ -18,7 +20,7 @@ public class weapon_rocketlauncher extends GenericWeapon
 public weapon_rocketlauncher() 
 	{
 	}
-public weapon_rocketlauncher(String[] spawnArgs) throws GameException
+public weapon_rocketlauncher(Element spawnArgs) throws GameException
 	{
 	super(spawnArgs);
 	}

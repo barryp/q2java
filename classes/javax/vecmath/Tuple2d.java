@@ -1,30 +1,42 @@
 package javax.vecmath;
 
 /*
-   Copyright (C) 1997,1998
-   Kenji Hiranabe
+   Copyright (C) 1997,1998,1999
+   Kenji Hiranabe, Eiwa System Management, Inc.
 
    This program is free software.
    Implemented by Kenji Hiranabe(hiranabe@esm.co.jp),
-   conforming to the Java(TM) 3D API specification version 1.1
+   conforming to the Java(TM) 3D API specification version 1.1 final
    by Sun Microsystems.
 
-   This program is provided AS IS, with NO WARRANTY.
+   Permission to use, copy, modify, distribute and sell this software
+   and its documentation for any purpose is hereby granted without fee,
+   provided that the above copyright notice appear in all copies and
+   that both that copyright notice and this permission notice appear
+   in supporting documentation. Kenji Hiranabe and Eiwa System Management,Inc.
+   makes no representations about the suitability of this software for any
+   purpose.  It is provided "AS IS" with NO WARRANTY.
 */
 import java.io.Serializable;
 
 /**
   * A generic 2 element tuple that is represented by
   * double precision floating point x,y coordinates.
-  * @version specification 1.1, implementation $Revision: 1.2 $, $Date: 1998/10/14 00:49:10 $
+  * @version specification 1.1, implementation $Revision: 1.3 $, $Date: 1999/03/04 09:16:33 $
   * @author Kenji hiranabe
   */
 public abstract class Tuple2d implements Serializable {
 /*
  * $Log: Tuple2d.java,v $
-# Revision 1.2  1998/10/14  00:49:10  hiranabe
-# API1.1 Beta02
-#
+ * Revision 1.3  1999/03/04  09:16:33  hiranabe
+ * small bug fix and copyright change
+ *
+ * Revision 1.3  1999/03/04  09:16:33  hiranabe
+ * small bug fix and copyright change
+ *
+ * Revision 1.2  1998/10/14  00:49:10  hiranabe
+ * API1.1 Beta02
+ *
 # Revision 1.1  1998/07/27  04:28:13  hiranabe
 # API1.1Alpha01 ->API1.1Alpha03
 #

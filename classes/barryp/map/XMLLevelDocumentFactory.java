@@ -35,9 +35,9 @@ public Document createLevelDocument(String mapName, String entString, String spa
 		// read the XML file
 		File mapdir = new File(Engine.getGamePath(), "maps");
 		File xmlFile = new File(mapdir, mapName + ".xml");		
-		FileInputStream fis = new FileInputStream(xmlFile);
-		doc = XMLTools.readXMLDocument(fis, "");
-		fis.close();
+		FileReader fr = new FileReader(xmlFile);
+		doc = XMLTools.readXMLDocument(fr, "");
+		fr.close();
 		}
 	catch (Exception e)
 		{
@@ -60,9 +60,9 @@ public Document createLevelDocument(String mapName, String entString, String spa
 				{
 				File sandbox = new File(Engine.getGamePath(), "sandbox");
 				File xmlFile = new File(sandbox, mapName + ".xml");
-				FileOutputStream fos = new FileOutputStream(xmlFile);
-				XMLTools.writeXMLDocument(doc, fos);
-				fos.close();
+				FileWriter fw = new FileWriter(xmlFile);
+				XMLTools.writeXMLDocument(doc, fw);
+				fw.close();
 				}
 			catch (IOException ioe)
 				{

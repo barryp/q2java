@@ -18,13 +18,14 @@ package q2java.ctf;
 import javax.vecmath.*;
 import q2java.*;
 import q2java.core.*;
+import q2java.core.event.ServerFrameListener;
 import q2java.baseq2.*;
 
 /**
  * The business end of a Grappling hook.
  */
   
-public class GrappleHook extends GameObject implements FrameListener
+public class GrappleHook extends GameObject implements ServerFrameListener
 {
 	private int        fDamage;
 	private GameObject fOwner;
@@ -65,14 +66,14 @@ public class GrappleHook extends GameObject implements FrameListener
 			check_dodge (self, bolt->s.origin, dir, speed);
 	*/
 
-		Game.addFrameListener(this, 0, 0);
+		Game.addServerFrameListener(this, 0, 0);
 	}
 	/**
 	 * This method was created by a SmartGuide.
 	 */
 	public void dispose() 
 	{
-		Game.removeFrameListener(this);
+		Game.removeServerFrameListener(this);
 		fState = CTF_GRAPPLE_STATE_DISPOSED;
 
 		if ( fOwner != null )
@@ -232,6 +233,6 @@ public class GrappleHook extends GameObject implements FrameListener
 
 		// Tricky: don't listen to serverframes anymore,
 		// but let Player.playerThink() call our pull() function...
-		Game.removeFrameListener( this );
+		Game.removeServerFrameListener( this );
 	}
 }

@@ -1,5 +1,7 @@
 package q2java.baseq2.spawn;
 
+import org.w3c.dom.Element;
+
 import q2java.*;
 import q2java.core.*;
 import q2java.baseq2.*;
@@ -22,13 +24,13 @@ public class light implements GameTarget
 	protected final static int LIGHT_ON = 1;
 	protected final static int LIGHT_OFF = 2;
 	
-public light(String[] spawnArgs) throws GameException
+public light(Element spawnArgs) throws GameException
 	{
 	// no targeted lights in deathmatch, because they cause global messages
 	if (BaseQ2.gIsDeathmatch)
 		return;
 		
-	String s = GameUtil.getSpawnArg(spawnArgs, "targetname", null);
+	String s = GameUtil.getSpawnArg(spawnArgs, "targetname", "id", null);
 	if (s == null)
 		return;
 		
@@ -37,7 +39,7 @@ public light(String[] spawnArgs) throws GameException
 	fStyle = GameUtil.getSpawnArg(spawnArgs, "style", 0);
 	if (fStyle >= 32)
 		{
-		int spawnFlags = GameUtil.getSpawnArg(spawnArgs, "spawnflags", 0);
+		int spawnFlags = GameUtil.getSpawnFlags(spawnArgs);
 		
 		if ((spawnFlags & START_OFF) == 1)
 			{

@@ -3,6 +3,8 @@ package q2java.baseq2;
 import java.util.Enumeration;
 import javax.vecmath.*;
 
+import org.w3c.dom.Element;
+
 import q2java.*;
 import q2java.core.*;
 
@@ -53,7 +55,7 @@ public abstract class Door extends GenericPusher
 /**
  * Setup things common to both linear and rotating doors.
  */
-public Door(String[] spawnArgs) throws GameException
+public Door(Element spawnArgs) throws GameException
 	{
 	super(spawnArgs);
 	
@@ -88,7 +90,7 @@ public Door(String[] spawnArgs) throws GameException
 		// schedule a one-shot notification
 		// so we can create an area trigger
 		// after everything has been spawned
-		Game.addFrameListener(this, 0, -1);
+		Game.addServerFrameListener(this, 0, -1);
 		}
 	else
 		fDoorState = STATE_DOOR_CLOSED;		
@@ -195,7 +197,7 @@ public void moveFinished()
 				fDoorState = STATE_DOOR_OPENWAIT;
 
 				// schedule a one-time notification fWait seconds from now
-				Game.addFrameListener(this, fWait, -1);
+				Game.addServerFrameListener(this, fWait, -1);
 				}
 			break;			
 
@@ -239,7 +241,7 @@ public void open()
 			
 		case STATE_DOOR_OPENWAIT:
 			// reschedule the notification that's outstanding
-			Game.addFrameListener(this, fWait, -1);
+			Game.addServerFrameListener(this, fWait, -1);
 			break;				
 		}
 	}

@@ -3,6 +3,8 @@ package q2java.baseq2.spawn;
 import java.util.Enumeration;
 import javax.vecmath.*;
 
+import org.w3c.dom.Element;
+
 import q2java.*;
 
 /**
@@ -14,7 +16,7 @@ import q2java.*;
 public class func_water extends func_door
 	{	
 	
-public func_water(String[] spawnArgs) throws GameException
+public func_water(Element spawnArgs) throws GameException
 	{
 	super(spawnArgs);
 

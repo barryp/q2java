@@ -16,6 +16,9 @@ package q2java.ctf.spawn;
 
 
 import javax.vecmath.*;
+
+import org.w3c.dom.Element;
+
 import q2java.*;
 import q2java.core.*;
 import q2java.ctf.*;
@@ -29,7 +32,7 @@ import q2java.ctf.*;
 public class item_flag_team1 extends GenericFlag
 {
 	
-	public item_flag_team1( String[] spawnArgs ) throws GameException
+	public item_flag_team1( Element spawnArgs ) throws GameException
 	{
 		super( spawnArgs, 1 );  // red flag is "1" in messages		
 	}

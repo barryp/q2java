@@ -2,6 +2,8 @@ package q2java.baseq2;
 
 import javax.vecmath.*;
 
+import org.w3c.dom.Element;
+
 import q2java.*;
 import q2java.core.*;
 
@@ -13,13 +15,6 @@ public abstract class GenericBlaster extends GenericWeapon
 	protected int fDamage;
 	protected int fMuzzleFlash;
 	
-/**
- * This method was created by a SmartGuide.
- */
-public GenericBlaster(String[] spawnArgs) throws GameException
-	{
-	super(spawnArgs);
-	}
 /**
  * This method was created by a SmartGuide.
  */
@@ -36,6 +31,13 @@ public GenericBlaster(int blasterEffect, int blasterDamage, int blasterMuzzleFla
 /**
  * This method was created by a SmartGuide.
  */
+public GenericBlaster(Element spawnArgs) throws GameException
+	{
+	super(spawnArgs);
+	}
+/**
+ * This method was created by a SmartGuide.
+ */
 public void fire() 
 	{
 	Vector3f forward = new Vector3f();
@@ -45,11 +47,11 @@ public void fire()
 	
 	damage *= fPlayer.getDamageMultiplier();
 	
-	Angle3f ang = fEntity.getPlayerViewAngles();
+	Angle3f ang = fPlayer.fEntity.getPlayerViewAngles();
 	ang.getVectors(forward, right, null);
 	offset.add(fBlasterOffset);
 	Point3f start = fPlayer.projectSource(offset, forward, right);
-	
+
 	fPlayer.fKickOrigin.set(forward);
 	fPlayer.fKickOrigin.scale(-2);	
 	fPlayer.fKickAngles.x = -1;

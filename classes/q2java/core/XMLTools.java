@@ -45,21 +45,21 @@ private static void init()
 /**
  * Read an XML file into a DOM document.
  */
-public static Document readXMLDocument(InputStream is, String sourceName) throws IOException
+public static Document readXMLDocument(Reader r, String sourceName) throws IOException
 	{
 	if (gXMLFactory == null)
 		init();
 	
-	return gXMLFactory.readXMLDocument(is, sourceName);
+	return gXMLFactory.readXMLDocument(r, sourceName);
 	}
 /**
  * Write a DOM document as an XML stream.
  */
-public static void writeXMLDocument(Document doc, OutputStream os) throws IOException
+public static void writeXMLDocument(Document doc, Writer w) throws IOException
 	{
 	if (gXMLFactory == null)
 		init();
 	
-	gXMLFactory.writeXMLDocument(doc, os);
+	gXMLFactory.writeXMLDocument(doc, w);
 	}
 }

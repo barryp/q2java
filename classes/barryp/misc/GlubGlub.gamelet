@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<gamelet class="barryp.misc.GlubGlub">
+  <title>Glub Glub</title>
+  <author mail="barryp@planetquake.com">Barry Pederson</author>  
+  <game name="Q2Java"/>
+  <description>
+    Prevent players from chatting while underwater by changing their
+    messages to "..glub...glub..glub.." (demonstrates print message filtering)
+  </description>
+</gamelet>

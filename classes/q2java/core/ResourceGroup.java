@@ -4,8 +4,7 @@ import java.text.MessageFormat;
 import java.util.*;
 
 /**
- * Track ResourceBundles using a given locale, along with 
- * BroadcastListeners interested in that locale.
+ * Cache ResourceBundles that use a given locale.
  *
  * @author Barry Pederson
  */
@@ -26,15 +25,6 @@ ResourceGroup(Locale loc)
 	fLocale = loc;
 	fListeners = new Vector();
 	fBundles = new Hashtable(HASHTABLE_SIZE);
-	}
-/**
- * Add an object that wants to receive broadcasts that are localized.
- * @param obj q2jgame.LocaleListener
- */
-void addLocaleListener(LocaleListener obj) 
-	{
-	if (!fListeners.contains(obj))
-		fListeners.addElement(obj);
 	}
 /**
  * Check whether this group handles the specified locale.
@@ -107,60 +97,5 @@ public String getRandomString(String basename, String key)
 		
 	// punt		
 	return obj.toString();						
-	}
-/**
- * Broadcast a localized message to registered listeners.
- * @param basename ResourceBundle basename, same as what you'd pass to java.util.ResourceBundle.getBundle().
- * @param key Name of ResourceBundle object, same as what you'd pass to java.util.ResourceBundle.getString().
- * @param args args to pass to java.text.MessageFormat.format().
- * @param printLevel One of the Engine.PRINT_* constants.
- */
-void localecast(String basename, String key, Object[] args, int printLevel) 
-	{
-	try
-		{
-		String pattern = getRandomString(basename, key);
-		MessageFormat mf = new MessageFormat(pattern);
-		mf.setLocale(fLocale);
-		String msg = mf.format(args) + "\n";
-		for (int i = 0; i < fListeners.size(); i++)
-			((LocaleListener) fListeners.elementAt(i)).localecast(fLocale, printLevel, msg);
-		}
-	catch (Exception e)
-		{
-		System.out.println(e + " " + basename + " " + key);
-		}
-	}
-/**
- * Broadcast a localized message to registered listeners.
- * @param basename ResourceBundle basename, same as what you'd pass to java.util.ResourceBundle.getBundle().
- * @param key Name of ResourceBundle object, same as what you'd pass to java.util.ResourceBundle.getString().
- * @param printLevel One of the Engine.PRINT_* constants.
- */
-void localecast(String basename, String key, int printLevel) 
-	{
-	try
-		{
-		String msg = getRandomString(basename, key) + "\n";
-		for (int i = 0; i < fListeners.size(); i++)
-			((LocaleListener) fListeners.elementAt(i)).localecast(fLocale, printLevel, msg);
-		}
-	catch (Exception e)
-		{
-		System.out.println(e + " " + basename + " " + key);
-		}
-	}
-/**
- * Remove a locale listener from the game.
- * @param obj q2jgame.LocaleListener
- */
-public void removeLocaleListener(LocaleListener obj) 
-	{
-	fListeners.removeElement(obj);
-	
-	// if all the listeners have dropped, free the 
-	// ResourceBundles so they can be GC'ed
-	if (fListeners.size() == 0)
-		fBundles.clear();
 	}
 }

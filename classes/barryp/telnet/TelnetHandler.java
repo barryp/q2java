@@ -7,6 +7,7 @@ import java.util.*;
 
 import q2java.*;
 import q2java.core.*;
+import q2java.core.event.*;
 import q2java.baseq2.Player;
 
 /**
@@ -37,11 +38,11 @@ class TelnetHandler extends Thread
 	private byte[] fLineBuffer;
 	private int fLineBufferPtr;
 
-	private class DeferredChat implements Runnable
+	private class DeferredAnnounce implements Runnable
 		{
 		protected String fMessage;
 		
-		public DeferredChat(String msg) 
+		public DeferredAnnounce(String msg) 
 			{
 			fMessage = msg;
 			}
@@ -49,6 +50,23 @@ class TelnetHandler extends Thread
 		public void run() 
 			{
 			Game.bprint(Engine.PRINT_CHAT, fMessage + "\n");	
+			}			
+		}
+		
+	private class DeferredTalk implements Runnable
+		{
+		protected String fUserName;
+		protected String fMessage;
+		
+		public DeferredTalk(String userName, String msg) 
+			{
+			fUserName = "Telnet-" + userName;
+			fMessage = msg;
+			}
+			
+		public void run() 
+			{
+			Game.getPrintSupport().fireEvent(PrintEvent.PRINT_TALK, 0, null, fUserName, null, fMessage);
 			}			
 		}	
 	
@@ -306,7 +324,7 @@ public void run()
 		if ((fSocket == null) || (fNickname == null))
 			return; // logon must have failed
 
-		Engine.invokeLater(new DeferredChat("<Telnet>: " + fNickname + " connected"));
+		Engine.invokeLater(new DeferredAnnounce("<Telnet>: " + fNickname + " connected"));
 		
 		String clientAddr = fSocket.getInetAddress().getHostAddress() + ":" + fSocket.getLocalPort();
 		barryp.telnet.GameModule.addLog(clientAddr + " " + fNickname + " connected");			
@@ -339,10 +357,10 @@ public void run()
 			// if it wasn't an IRC-style command, and we're not muzzled,
 			// then send our words of wisdom to the rest of the world.
 			if (!fNoChat)
-				Engine.invokeLater(new TelnetHandler.DeferredChat("<Telnet-" + fNickname + ">: " + s));
+				Engine.invokeLater(new TelnetHandler.DeferredTalk(fNickname, s));
 			}
 
-		Engine.invokeLater(new DeferredChat("<Telnet>: " + fNickname + " disconnected"));
+		Engine.invokeLater(new DeferredAnnounce("<Telnet>: " + fNickname + " disconnected"));
 		barryp.telnet.GameModule.addLog(clientAddr + " " + fNickname + " disconnected");			
 			
 		fOS.close();

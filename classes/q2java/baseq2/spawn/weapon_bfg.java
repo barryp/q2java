@@ -1,7 +1,9 @@
 package q2java.baseq2.spawn;
 
-
 import javax.vecmath.*;
+
+import org.w3c.dom.Element;
+
 import q2java.*;
 import q2java.core.*;
 import q2java.baseq2.*;
@@ -21,7 +23,7 @@ public weapon_bfg()
 /**
  * Create a BFG to sit on the ground 
  */
-public weapon_bfg(String[] spawnArgs) throws GameException
+public weapon_bfg(Element spawnArgs) throws GameException
 	{
 	super(spawnArgs);
 	}

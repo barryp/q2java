@@ -28,9 +28,9 @@ public class Game implements GameListener, JavaConsoleListener
 	public final static int FRAME_MIDDLE	= 0x02;
 	public final static int FRAME_END		= 0x04;
 	
-	private static FrameList gFrameBeginning;
-	private static FrameList gFrameMiddle;
-	private static FrameList gFrameEnd;
+	private static ServerFrameSupport gFrameBeginning;
+	private static ServerFrameSupport gFrameMiddle;
+	private static ServerFrameSupport gFrameEnd;
 		
 	// Event delegation support
 	private static ServerCommandSupport gServerCommandSupport = null;
@@ -39,8 +39,8 @@ public class Game implements GameListener, JavaConsoleListener
 	private static GameletSupport gGameletSupport = null;
 
 	// Manage PrintListeners
-	private static Vector gPrintListeners;	
-
+	private static PrintSupport gPrintSupport;
+	
 	// leighd 04/07/99
 	// Manage gamelets and game classes
 	protected static GameClassFactory gClassFactory = null;
@@ -78,6 +78,13 @@ public class Game implements GameListener, JavaConsoleListener
 	private static ServerCommandListener gServerCommands = null;
 	
 /**
+ * Private constructor to keep anything other than the 
+ * native code from creating instances of this class.
+ */
+private Game() 
+	{
+	}
+/**
  * Register an object that implements FrameListener to 
  * receive normal (FRAME_MIDDLE phase) frame events.
  *
@@ -85,10 +92,11 @@ public class Game implements GameListener, JavaConsoleListener
  * @param delay Number of seconds to wait before calling the listener, use 0 to start calling right away.
  * @param interval Number of seconds between calls, use 0 to call on every frame, a negative interval will
  *   be a one-shot notification with the listener removed automatically afterwards.
+ * @deprecated use addServerFrameListener instead 
  */
-public static void addFrameListener(FrameListener f, float delay, float interval) 
+public static void addFrameListener(ServerFrameListener f, float delay, float interval) 
 	{
-	gFrameMiddle.addFrameListener(f, delay, interval);
+	gFrameMiddle.addServerFrameListener(f, delay, interval);
 	}
 /**
  * Register an object that implements FrameListener to 
@@ -101,17 +109,18 @@ public static void addFrameListener(FrameListener f, float delay, float interval
  * @param delay Number of seconds to wait before calling the listener, use 0 to start calling right away.
  * @param interval Number of seconds between calls, use 0 to call on every frame, a negative interval will
  *   be a one-shot notification with the listener removed automatically afterwards.
+ * @deprecated use addServerFrameListener instead
  */
-public static void addFrameListener(FrameListener f, int phase, float delay, float interval) 
+public static void addFrameListener(ServerFrameListener f, int phase, float delay, float interval) 
 	{
 	if ((phase & FRAME_BEGINNING) != 0)
-		gFrameBeginning.addFrameListener(f, delay, interval);
+		gFrameBeginning.addServerFrameListener(f, delay, interval);
 			
 	if ((phase & FRAME_MIDDLE) != 0)
-		gFrameMiddle.addFrameListener(f, delay, interval);
+		gFrameMiddle.addServerFrameListener(f, delay, interval);
 			
 	if ((phase & FRAME_END) != 0)
-		gFrameEnd.addFrameListener(f, delay, interval);
+		gFrameEnd.addServerFrameListener(f, delay, interval);
 	}
 /**
  * Other packages or mods may wish to be notified when a package is added to 
@@ -149,40 +158,6 @@ public static Vector addLevelRegistry(Object key, Object value)
 	return list;
 	}
 /**
- * Add an object that wants to receive broadcasts that are localized with the default locale.
- * @param obj an object that implements LocaleListener - if this object
- *   has already been added, it'll be removed before being re-added.
- * @return ResourceGroup this object is now registered with.
- */
-public static ResourceGroup addLocaleListener(LocaleListener obj) 
-	{
-	return addLocaleListener(obj, Locale.getDefault());
-	}
-/**
- * Add an object that wants to receive broadcasts that are localized with the default locale.
- * @param obj an object that implements LocaleListener - if this object
- *   has already been added, it'll be removed before being re-added.
- * @param localeName String representation of locale
- * @return ResourceGroup this object is now registered with.
- */
-public static ResourceGroup addLocaleListener(LocaleListener obj, String localeName) 
-	{
-	return addLocaleListener(obj, GameUtil.getLocale(localeName));
-	}
-/**
- * Add an object that wants to receive broadcasts that are localized.
- * @param obj an object that implements LocaleListener.
- * @param loc java.util.Locale
- * @return ResourceGroup this object is now registered with. 
- */
-public static ResourceGroup addLocaleListener(LocaleListener obj, Locale loc) 
-	{
-	ResourceGroup grp = getResourceGroup(loc);
-	grp.addLocaleListener(obj);
-
-	return grp;
-	}
-/**
  * notify when number of players change or player changes class...
  */
 public static void addOccupancyListener(OccupancyListener l) 
@@ -204,20 +179,47 @@ public static void addPackagePath(String pathName)
 		gClassFactory.setPackagePath(getPackagePaths());
 	}
 /**
- * Add a print listener.
- * @param pl q2jgame.PrintListener
- */
-public static void addPrintListener(PrintListener pl) 
-	{
-	if (!gPrintListeners.contains(pl))
-		gPrintListeners.addElement(pl);
-	}
-/**
  * notify server command issued...
  */
 public static void addServerCommandListener(ServerCommandListener l) 
 	{
 	gServerCommandSupport.addServerCommandListener(l);
+	}
+/**
+ * Register an object that implements FrameListener to 
+ * receive normal (FRAME_MIDDLE phase) frame events.
+ *
+ * @param f object that wants its runFrame() method called.
+ * @param delay Number of seconds to wait before calling the listener, use 0 to start calling right away.
+ * @param interval Number of seconds between calls, use 0 to call on every frame, a negative interval will
+ *   be a one-shot notification with the listener removed automatically afterwards.
+ */
+public static void addServerFrameListener(ServerFrameListener f, float delay, float interval) 
+	{
+	gFrameMiddle.addServerFrameListener(f, delay, interval);
+	}
+/**
+ * Register an object that implements FrameListener to 
+ * receive frame events at specific phases of processing.
+ * Used for special cases like Player objects that want to be
+ * called both at the beginning and end of a server frame.
+ *
+ * @param f object that wants its runFrame() method called.
+ * @param phase A combination (or'ed or added together) of the FrameManager.FRAME_* constants.
+ * @param delay Number of seconds to wait before calling the listener, use 0 to start calling right away.
+ * @param interval Number of seconds between calls, use 0 to call on every frame, a negative interval will
+ *   be a one-shot notification with the listener removed automatically afterwards.
+ */
+public static void addServerFrameListener(ServerFrameListener f, int phase, float delay, float interval) 
+	{
+	if ((phase & FRAME_BEGINNING) != 0)
+		gFrameBeginning.addServerFrameListener(f, delay, interval);
+			
+	if ((phase & FRAME_MIDDLE) != 0)
+		gFrameMiddle.addServerFrameListener(f, delay, interval);
+			
+	if ((phase & FRAME_END) != 0)
+		gFrameEnd.addServerFrameListener(f, delay, interval);
 	}
 /**
  * Handle broadcast print messages.
@@ -226,19 +228,11 @@ public static void addServerCommandListener(ServerCommandListener l)
  */
 public static void bprint(int flags, String msg) 
 	{
+	// send message down to the server console
 	Engine.bprint(flags, msg);
 	
-	Enumeration enum = gPrintListeners.elements();
-	while (enum.hasMoreElements())
-		{
-		try
-			{
-			((PrintListener) enum.nextElement()).bprint(flags, msg);
-			}
-		catch (Exception e)
-			{
-			}
-		}
+	// send out to interested listeners
+	gPrintSupport.fireEvent(PrintEvent.PRINT_ANNOUNCE, flags, null, null, null, msg);
 	}
 /**
  * Handle debugging print messages.
@@ -246,38 +240,11 @@ public static void bprint(int flags, String msg)
  */
 public static void dprint(String msg) 
 	{
+	// send down to server console
 	Engine.dprint(msg);
 	
-	Enumeration enum = gPrintListeners.elements();
-	while (enum.hasMoreElements())
-		{
-		try
-			{
-			((PrintListener) enum.nextElement()).dprint(msg);
-			}
-		catch (Exception e)
-			{
-			}
-		}	
-	}
-/**
- * This method was created by a SmartGuide.
- * @return boolean
- * @param alias java.lang.String
- * @param cmd java.lang.String
- * @param args java.lang.String[]
- */
-private boolean externalServerCommand(String alias, String cmd, Class[] paramTypes, Object[] params) 
-	{
-	Gamelet g = gGameletManager.getGamelet(alias);
-	if (g == null) 
-		{
-		// _Quinn:05/15/98
-		dprint( alias + " is not a loaded gamelet.\n" );
-		return false;
-		}
-
-	return externalServerCommand(g, cmd, paramTypes, params);
+	// send out to interested listeners
+	gPrintSupport.fireEvent(PrintEvent.PRINT_SERVER_CONSOLE, 0, null, null, null, msg);		
 	}
 /**
  * This method was created by a SmartGuide.
@@ -287,29 +254,43 @@ private boolean externalServerCommand(String alias, String cmd, Class[] paramTyp
  * @param args java.lang.String[]
  */
 private boolean externalServerCommand(Gamelet g, String cmd, Class[] paramTypes, Object[] params) 
-	{
+	{		
 	try
 		{
 		java.lang.reflect.Method meth = g.getClass().getMethod("svcmd_" + cmd, paramTypes);						
 		meth.invoke(g, params);
+		return true;
 		}
 	catch (NoSuchMethodException nsme)
 		{
-		return false;
 		}
 	catch (java.lang.reflect.InvocationTargetException ite)		
 		{
 		Throwable t = ite.getTargetException();
 		if (t instanceof ExceptionInInitializerError)
 			t = ((ExceptionInInitializerError)t).getException();
-		t.printStackTrace();		
+		t.printStackTrace();
+		return true; 
 		}
 	catch (Exception e)
 		{
 		e.printStackTrace();
+		return true;		
 		}		
-									
-	return true;
+
+	// try event-delegation
+	if (g instanceof ServerCommandListener)
+		{
+		String[] sa = (String[]) params[0];
+	    ServerCommandEvent e = gServerCommandSupport.fireEvent(sa[1], sa); 
+	    if( e.isConsumed() )
+			return true;		
+		}
+		
+	// reflection didn't find a method and the 
+	// gamelet didn't implement ServerCommandListener
+	// or it didn't consume the event	
+	return false;
 	}
 /**
  * Retrieves a reference to the current GameletManager object
@@ -392,6 +373,23 @@ protected static Gamelet getPlayerGamelet()
 	return gPlayerGamelet;
 	}
 /**
+ * Get the PrintSupport object the game is using.
+ * @return q2java.core.event.PrintSupport
+ */
+public static PrintSupport getPrintSupport() 
+	{
+	return gPrintSupport;
+	}
+/**
+ * Get a ResourceGroup object that tracks a specified locale
+ * @return q2java.core.ResourceGroup
+ * @param localeName name of locale
+ */
+public static ResourceGroup getResourceGroup(String localeName) 
+	{
+	return getResourceGroup(GameUtil.getLocale(localeName));
+	}
+/**
  * Get a ResourceGroup object that tracks a specified locale
  * @return q2jgame.ResourceGroup
  * @param loc java.util.Locale
@@ -421,9 +419,9 @@ public void init()
 	Engine.debugLog("Game.init()");
 
 	// setup to manage FrameListeners
-	gFrameBeginning = new FrameList(64, 16);
-	gFrameMiddle = new FrameList(512, 128);
-	gFrameEnd = new FrameList(64, 16);
+	gFrameBeginning = new ServerFrameSupport(64, 16);
+	gFrameMiddle = new ServerFrameSupport(512, 128);
+	gFrameEnd = new ServerFrameSupport(64, 16);
 
 	// event delegation support
 	gGameStatusSupport = new GameStatusSupport();		
@@ -436,7 +434,7 @@ public void init()
 	addServerCommandListener(gServerCommands);
 	
 	// setup to manage PrintListeners
-	gPrintListeners = new Vector();	
+	gPrintSupport = new PrintSupport();
 	Engine.setJavaConsoleListener(this);
 	
 	// setup to manage BroadcastListeners and cached ResourceBundles
@@ -491,22 +489,13 @@ public static boolean isResourceAvailable(String basename, String key)
 		}				
 	}
 /**
- * Relay stuff sent to the console from outside the game.
+ * Relay stuff sent through System.out and System.err.
  * @param s java.lang.String
  */
 public void javaConsoleOutput(String s) 
 	{
-	Enumeration enum = gPrintListeners.elements();
-	while (enum.hasMoreElements())
-		{
-		try
-			{
-			((PrintListener) enum.nextElement()).consoleOutput(s);
-			}
-		catch (Exception e)
-			{
-			}
-		}
+	// send out to interested listeners
+	gPrintSupport.fireEvent(PrintEvent.PRINT_JAVA, 0, null, null, null, s);		
 	}
 /**
  * Broadcast a localized message to interested objects.
@@ -517,11 +506,8 @@ public void javaConsoleOutput(String s)
  */
 public static void localecast(String basename, String key, Object[] args, int printLevel) 
 	{
-	for (int i = 0; i < gResourceGroups.size(); i++)
-		{
-		ResourceGroup grp = (ResourceGroup) gResourceGroups.elementAt(i);
-		grp.localecast(basename, key, args, printLevel);
-		}
+	// new event-delegation support
+	gPrintSupport.fireLocalizedEvent(PrintEvent.PRINT_ANNOUNCE, printLevel, null, null, null, basename, key, args);		
 	}
 /**
  * Broadcast a localized message to interested objects.
@@ -531,11 +517,8 @@ public static void localecast(String basename, String key, Object[] args, int pr
  */
 public static void localecast(String basename, String key, int printLevel) 
 	{
-	for (int i = 0; i < gResourceGroups.size(); i++)
-		{
-		ResourceGroup grp = (ResourceGroup) gResourceGroups.elementAt(i);
-		grp.localecast(basename, key, printLevel);
-		}
+	// new event-delegation support
+	gPrintSupport.fireLocalizedEvent(PrintEvent.PRINT_ANNOUNCE, printLevel, null, null, null, basename, key, null);
 	}
 /**
  * Look through the game mod list, trying to find a class
@@ -627,10 +610,11 @@ public void readLevel(String filename)
  * for the middle phase of Server Frames. 
  *
  * @param f q2jgame.FrameListener
+ * @deprecated use removeServerFrameListener instead
  */
-public static void removeFrameListener(FrameListener f) 
+public static void removeFrameListener(ServerFrameListener f) 
 	{
-	gFrameMiddle.removeFrameListener(f);
+	gFrameMiddle.removeServerFrameListener(f);
 	}
 /**
  * Remove a FrameListener that's registered to be notified
@@ -638,17 +622,18 @@ public static void removeFrameListener(FrameListener f)
  *
  * @param f q2jgame.FrameListener
  * @param phase A combination (or'ed or added together) of the FrameManager.FRAME_* constants.
+ * @deprecated use removeServerFrameListener instead
  */
-public static void removeFrameListener(FrameListener f, int phase) 
+public static void removeFrameListener(ServerFrameListener f, int phase) 
 	{
 	if ((phase & FRAME_BEGINNING) != 0)
-		gFrameBeginning.removeFrameListener(f);
+		gFrameBeginning.removeServerFrameListener(f);
 			
 	if ((phase & FRAME_MIDDLE) != 0)
-		gFrameMiddle.removeFrameListener(f);
+		gFrameMiddle.removeServerFrameListener(f);
 			
 	if ((phase & FRAME_END) != 0)
-		gFrameEnd.removeFrameListener(f);
+		gFrameEnd.removeServerFrameListener(f);
 	}
 /**
  * Removes a package listener
@@ -678,35 +663,6 @@ public static void removeLevelRegistry(Object key, Object value)
 		list.removeElement(value);
 	}
 /**
- * Remove a broadcast listener from the game.
- * @param obj q2jgame.LocaleListener
- */
-public static void removeLocaleListener(LocaleListener obj) 
-	{
-	for (int i = 0; i < gResourceGroups.size(); i++)
-		{
-		ResourceGroup grp = (ResourceGroup) gResourceGroups.elementAt(i);
-		grp.removeLocaleListener(obj);
-		}
-	}
-/**
- * Remove a broadcast listener from a specific locale.
- * @param obj q2jgame.LocaleListener
- */
-public static void removeLocaleListener(LocaleListener obj, String localeName) 
-	{
-	removeLocaleListener(obj, GameUtil.getLocale(localeName));
-	}
-/**
- * Remove a broadcast listener from a specific locale.
- * @param obj q2jgame.LocaleListener
- */
-public static void removeLocaleListener(LocaleListener obj, Locale loc) 
-	{
-	ResourceGroup grp = getResourceGroup(loc);
-	grp.removeLocaleListener(obj);	
-	}
-/**
  * notify when number of players change or player changes class...
  */
 public static void removeOccupancyListener(OccupancyListener l) 
@@ -728,19 +684,39 @@ public static void removePackagePath(String pathName)
 		gClassFactory.setPackagePath(getPackagePaths());
 	}
 /**
- * Remove a listener.
- * @param pl q2jgame.PrintListener
- */
-public static void removePrintListener(PrintListener pl) 
-	{
-	gPrintListeners.removeElement(pl);
-	}
-/**
  * notify server command issued...
  */
 public static void removeServerCommandListener(ServerCommandListener l) 
 	{
 	gServerCommandSupport.removeServerCommandListener(l);
+	}
+/**
+ * Remove a normal FrameListener that's registered to listen
+ * for the middle phase of Server Frames. 
+ *
+ * @param f q2jgame.FrameListener
+ */
+public static void removeServerFrameListener(ServerFrameListener f) 
+	{
+	gFrameMiddle.removeServerFrameListener(f);
+	}
+/**
+ * Remove a FrameListener that's registered to be notified
+ * for specific phases of the Server frame.
+ *
+ * @param f q2jgame.FrameListener
+ * @param phase A combination (or'ed or added together) of the FrameManager.FRAME_* constants.
+ */
+public static void removeServerFrameListener(ServerFrameListener f, int phase) 
+	{
+	if ((phase & FRAME_BEGINNING) != 0)
+		gFrameBeginning.removeServerFrameListener(f);
+			
+	if ((phase & FRAME_MIDDLE) != 0)
+		gFrameMiddle.removeServerFrameListener(f);
+			
+	if ((phase & FRAME_END) != 0)
+		gFrameEnd.removeServerFrameListener(f);
 	}
 /**
  * Reconsider which class should be controlling players.
@@ -820,13 +796,6 @@ public void serverCommand()
 	if (argc == 1)
 		sa[1] = "help";
 
-	// try event-delegation
-		{
-	    ServerCommandEvent e = gServerCommandSupport.fireEvent(sa[1], sa); 
-	    if( e.isConsumed() )
-			return;
-		}
-
 	// create parameter type array for reflection
 	Class[] paramTypes = new Class[1];
 	paramTypes[0] = sa.getClass();
@@ -834,27 +803,42 @@ public void serverCommand()
 	params[0] = sa;
 
 	// figure out what command we're processing, and which specific
-	// package (if any) should handle it.
-	String alias = null;
+	// gamelet (if any) should handle it.
+	Gamelet g = null;
 	String cmd;
 	int dot = sa[1].lastIndexOf('.');
 	if (dot < 0)
 		cmd = sa[1].toLowerCase();
 	else
 		{
-		alias = sa[1].substring(0, dot);
+		String alias = sa[1].substring(0, dot);
+		g = gGameletManager.getGamelet(alias);		
 		cmd = sa[1].substring(dot+1).toLowerCase();
+		if (g == null)
+			{
+			dprint( alias + " is not a loaded gamelet.\n" );
+			return;
+			}
 		}
 
 	// run the command	
-	if (alias != null)
+	if (g != null)
 		{
-		if (externalServerCommand(alias, cmd, paramTypes, params))
+		if (externalServerCommand(g, cmd, paramTypes, params))
 			return;
+		// else fall through so it prints "unrecognized command below
 		}
 	else
 		{
-		// look for a built-in command first
+		// no particular gamelet was specified, look in
+		// various places for something to handle the naked command
+
+		// try event-delegation
+	    ServerCommandEvent e = gServerCommandSupport.fireEvent(sa[1], sa); 
+	    if( e.isConsumed() )
+			return;
+		
+		// look for a method inside this class
 		String methodName = null;
 		try
 			{
@@ -865,7 +849,6 @@ public void serverCommand()
 			}
 		catch (NoSuchMethodException nsme)
 			{
-			System.out.println(methodName + " not found in " + getClass().getName());
 			}			
 		catch (java.lang.reflect.InvocationTargetException ite)		
 			{
@@ -883,17 +866,18 @@ public void serverCommand()
 			e2.printStackTrace();
 			}
 			
-		// look for a module command second
-		//Withnails 04/22/98 - now makes use of an enumeration instead
+		// use reflection to look for a module command second
+		// Withnails 04/22/98 - now makes use of an enumeration instead
 		Enumeration enum = gGameletManager.getGamelets();
 		while (enum.hasMoreElements()) 
 			{
-			Gamelet g = (Gamelet)enum.nextElement();
-			if (externalServerCommand(g, cmd, paramTypes, params))
+			Gamelet g2 = (Gamelet)enum.nextElement();
+			if (externalServerCommand(g2, cmd, paramTypes, params))
 				return;
-			}
+			}			
 		}
-	
+
+		
 	// Send unrecognized input back to the console
 	dprint("Unrecognized sv command\n");
 	dprint("    args(): [" + Engine.getArgs() + "]\n");
@@ -963,10 +947,7 @@ public void shutdown()
 private static void spawnEntities() 
 	{
 	Object[] ctorParams = new Object[1];
-	Class[] oldCtorParamTypes = new Class[1];
 	Class[] newCtorParamTypes = new Class[1];
-	String[] sa = new String[1];
-	oldCtorParamTypes[0] = sa.getClass();
 	newCtorParamTypes[0] = Element.class;
 	
 	// look for <entity>..</entity> sections
@@ -979,38 +960,33 @@ private static void spawnEntities()
 			{
 			Element e = (Element) nl.item(i);
 			className = e.getAttribute("class");
+			ctorParams[0] = e;
 			
 			//leighd 04/10/99 - altered lookup method to reference class factory
 			//directly rather than calling Game.lookup class.
 			Class entClass = gClassFactory.lookupClass(".spawn." + className.toLowerCase());
-			Constructor ctor;
-			
-			// get a constructor - look first for the new-style that takes a DOM element
-			// and if that fails, go for the old-style that takes an array of strings
+			Constructor ctor = entClass.getConstructor(newCtorParamTypes);
+
 			try
 				{
-				ctor = entClass.getConstructor(newCtorParamTypes);
-				ctorParams[0] = e;
+				ctor.newInstance(ctorParams);
 				}
-			catch (NoSuchMethodException nsme)
-				{			
-				ctor = entClass.getConstructor(oldCtorParamTypes);
-				ctorParams[0] = DefaultLevelDocumentFactory.getParamPairs(e);			
+			catch (InvocationTargetException ite)
+				{
+				throw ite.getTargetException();
 				}
-
-			// we must had found an constructor, so create the object
-			ctor.newInstance(ctorParams);
+			
 			}
 		catch (ClassNotFoundException cnfe)
 			{
 			Engine.debugLog("Couldn't find class to handle: " + className);
 			}
+		catch (NoSuchMethodException nsme)
+			{
+			Engine.debugLog("Class " + className + " doesn't have the right kind of constructor");
+			}
 		catch (InhibitedException ie)
 			{
-			}
-		catch (InvocationTargetException ite)
-			{
-			ite.getTargetException().printStackTrace();
 			}
 		catch (Throwable t)
 			{

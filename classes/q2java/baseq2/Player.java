@@ -6,6 +6,7 @@ import javax.vecmath.*;
 
 import q2java.*;
 import q2java.core.*;
+import q2java.core.event.*;
 
 import q2java.baseq2.event.*;
 import q2java.baseq2.rule.*;
@@ -19,9 +20,12 @@ import q2java.baseq2.spawn.*;
  */
 
 public class Player extends GameObject 
-implements FrameListener, PlayerListener, LocaleListener, CrossLevel, SwitchablePlayer
+implements ServerFrameListener, PlayerListener, PrintListener, CrossLevel, SwitchablePlayer
 	{	
 	protected transient ResourceGroup fResourceGroup;
+
+	// "Team" player belongs to..null for plain DM
+	protected transient Object fTeam;
 	
 	private int fScore;
 	protected float fStartTime;
@@ -133,6 +137,8 @@ implements FrameListener, PlayerListener, LocaleListener, CrossLevel, Switchable
 
 	// ------- Public constants ---------------------------------	
 
+	public final static int PRINT_CHANNELS = PrintEvent.PRINT_ANNOUNCE+PrintEvent.PRINT_TALK+PrintEvent.PRINT_TALK_TEAM;
+	
 	public final static Color4f COLOR_LAVA  = new Color4f(1.0f, 0.3f, 0.0f, 0.6f);
 	public final static Color4f COLOR_SLIME = new Color4f(0.0f, 0.1f, 0.05f, 0.6f);
 	public final static Color4f COLOR_WATER = new Color4f(0.5f, 0.3f, 0.2f, 0.4f);
@@ -317,10 +323,13 @@ public Player(NativeEntity ent) throws GameException
 	GenericWeapon.precacheVWep(".spawn.weapon_blaster");
 
 	// sign up to receive server frame notices at the beginning and end of server frames
-	Game.addFrameListener(this, Game.FRAME_BEGINNING + Game.FRAME_END, 0, 0);
+	Game.addServerFrameListener(this, Game.FRAME_BEGINNING + Game.FRAME_END, 0, 0);
+
+	// get a shortcut to quickly access ResourceBundles for our particular locale
+	fResourceGroup = Game.getResourceGroup(Locale.getDefault());
 	
 	// sign up to receive broadcast messages using the default locale
-	fResourceGroup = Game.addLocaleListener(this);
+	Game.getPrintSupport().addPrintListener(this, PRINT_CHANNELS, false);
 
 	//CHANGES for delegation model
 	fPlayerMoveSupport = new PlayerMoveSupport(this);
@@ -1472,33 +1481,26 @@ public void cmd_say(String[] argv, String args)
 	if (args.charAt(args.length()-1) == '"')
 		args = args.substring(args.indexOf('"')+1, args.length()-1);
 
-	// get a StringBuffer
-	StringBuffer sb = Q2Recycler.getStringBuffer();
-
-	// build up the string to print
-	sb.append(getName());
-	sb.append(": ");
-	sb.append(args);
-	
-	// keep the message down to a reasonable length
-	if (sb.length() > 150)
-		sb.setLength(150);
-
-	// finish it off and send it out
-	sb.append('\n');
-	Game.bprint(Engine.PRINT_CHAT, sb.toString());
-
-	// be nice
-	Q2Recycler.put(sb);
+	// send it out
+	Game.getPrintSupport().fireEvent(PrintEvent.PRINT_TALK, Engine.PRINT_CHAT, fEntity, getName(), null, args);	
 	}
 /**
- * Treat "say_team" the same as "say" for now.
+ * Treat "say_team" the same as "say" if no team is set.
  * @param (Ignored, uses the Engine.args() value instead)
  */
 public void cmd_say_team(String[] argv, String args) 
 	{
-	// pretend the player typed "say"
-	playerCommand("cmd_say", argv, args);
+	//leighd 04/14/99, index out of bounds exception with no
+	//arguments - so don't do anything
+	if (args.length() == 0)
+		return;
+		
+	// remove any quote marks
+	if (args.charAt(args.length()-1) == '"')
+		args = args.substring(args.indexOf('"')+1, args.length()-1);
+
+	// send it out
+	Game.getPrintSupport().fireEvent((fTeam == null ? PrintEvent.PRINT_TALK : PrintEvent.PRINT_TALK_TEAM), Engine.PRINT_CHAT, fEntity, getName(), fTeam, args);	
 	}
 /**
  * Display the scoreboard.
@@ -2065,8 +2067,8 @@ public void dispose()
 	// Game should get called and then call this.
 	Game.playerDisconnect(fEntity);
 
-	Game.removeLocaleListener(this);
-	Game.removeFrameListener(this, Game.FRAME_BEGINNING + Game.FRAME_END);	
+	Game.getPrintSupport().removePrintListener(this);
+	Game.removeServerFrameListener(this, Game.FRAME_BEGINNING + Game.FRAME_END);	
 	fEntity.setReference(null);
 	fEntity.setPlayerListener(null);
 	fEntity = null;
@@ -2440,6 +2442,14 @@ protected GenericSpawnpoint getSpawnpoint()
 	return MiscUtil.getSpawnpointSingle();
 	}
 /**
+ * Get an object representing which team if any this player belongs to.
+ * @return java.lang.Object
+ */
+public Object getTeam() 
+	{
+	return fTeam;
+	}
+/**
  * Find out if were underwater
  * @return int - level of water. 0, we're out - 3, head is under.
  */
@@ -2500,13 +2510,13 @@ public boolean isFemale()
 	return fIsFemale;
 	}
 /**
- * Are these two player on the same team?
+ * Are these two players on the same team?
  * @return boolean
  * @param p baseq2.Player
  */
 public boolean isTeammate(Player p) 
 	{
-	return false; // override or update someday
+	return (fTeam != null) && (fTeam.equals(p.getTeam()));
 	}
 /**
  * Knock the player around. 
@@ -2542,15 +2552,6 @@ public void knockback(GameObject attacker, Vector3f dir, int knockback, int dfla
 			Q2Recycler.put(kickVelocity);
 			}
 		}
-	}
-/**
- * React to a localized game message by printing to the player's screen.
- * @param printLevel int
- * @param msg java.lang.String
- */
-public void localecast(Locale loc, int printLevel, String msg) 
-	{
-	fEntity.cprint(printLevel, msg);
 	}
 /**
  * This method was created by a SmartGuide.
@@ -2732,18 +2733,18 @@ public void playerCommand(String methodName, String[] argv, String args)
 	//
 	// Couldn't find any methods to handle it? treat command as a chat
 	//
+	//leighd 04/14/99, index out of bounds exception with no
+	//arguments - so don't do anything
+	
 	StringBuffer sb = Q2Recycler.getStringBuffer();
 	
-	sb.append(getName());
-	sb.append(": ");
 	sb.append(argv[0]);
 	sb.append(' ');
 	sb.append(args);
-	if (sb.length() > 150)
-		sb.setLength(150);
-	sb.append('\n');
-	Game.bprint(Engine.PRINT_CHAT, sb.toString());
 	
+	// send it out
+	Game.getPrintSupport().fireEvent(PrintEvent.PRINT_TALK, Engine.PRINT_CHAT, fEntity, getName(), null, sb.toString());
+		
 	Q2Recycler.put(sb);
 	}
 /**
@@ -2916,14 +2917,80 @@ protected void playerVariableChanged(String key, String oldValue, String newValu
 
 	if (key.equalsIgnoreCase("locale"))
 		{
-		// stop receiving messages for the old locale
-		if (fResourceGroup != null)
-			fResourceGroup.removeLocaleListener(this);
-			
-		// sign up to receive messages formatted for the new locale
-		fResourceGroup = Game.addLocaleListener(this, newValue);
+		Locale loc = GameUtil.getLocale(newValue);		
+		fResourceGroup = Game.getResourceGroup(loc);
+		Game.getPrintSupport().addPrintListener(this, PRINT_CHANNELS, loc, false);
 		return;
 		}
+	}
+/**
+ * Called when a PrintEvent is fired - will actually
+ * display the message on the player's screen.
+ * @param pe q2java.core.event.PrintEvent
+ */
+public void print(PrintEvent pe)
+	{
+	int channel = pe.getPrintChannel();
+
+	// ignore messages intended for teams that this player
+	// doesn't belong to
+	if ((channel == PrintEvent.PRINT_TALK_TEAM)
+	&& ((fTeam == null) || (!fTeam.equals(pe.getDestination()))))
+		return;
+		
+	// see if some other player object has done the work
+	// of formatting the message so it's suitable for
+	// display on the player screens
+	// and if not, format it and save the results
+	// so other player objects can use it if they choose.
+	//
+	String msg = pe.getPlayerMessage();
+	if (msg == null)
+		{
+		// get a StringBuffer
+		StringBuffer sb = Q2Recycler.getStringBuffer();
+	
+		// build up the string to print
+		String name = pe.getSourceName();		
+			
+		switch (channel)
+			{
+			case PrintEvent.PRINT_TALK:
+				if (name != null)
+					{
+					sb.append(name);
+					sb.append(": ");
+					}			
+				break;
+			
+			case PrintEvent.PRINT_TALK_TEAM:
+					
+				if (name != null)
+					{
+					sb.append('(');
+					sb.append(name);
+					sb.append("): ");
+					}			
+				break;
+			}
+
+		sb.append(pe.getMessage());
+		
+		// keep the message down to a reasonable length
+		if (sb.length() > 150)
+			sb.setLength(150);
+		
+		// finish it off
+		sb.append('\n');
+		msg = sb.toString();
+		pe.setPlayerMessage(msg);
+		
+		// be nice
+		Q2Recycler.put(sb);				
+		}
+				
+	// assume the PrintEvent contains a message formatted for players
+	fEntity.cprint(pe.getPrintFlags(), msg);	
 	}
 /**
  * This method was created by a SmartGuide.
@@ -3373,6 +3440,14 @@ public void setScore(int amount, boolean isAbsolute)
 		fScore += amount;
 		
 	fEntity.setPlayerStat( NativeEntity.STAT_FRAGS, (short)fScore );
+	}
+/**
+ * Associate the Player with some sort of "Team" object.
+ * @param o java.lang.Object
+ */
+public void setTeam(Object o) 
+	{
+	fTeam = o;
 	}
 /**
  * VWeap support...show the right weapon to the rest of the world.

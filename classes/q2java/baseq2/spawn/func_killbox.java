@@ -1,6 +1,9 @@
 package q2java.baseq2.spawn;
 
 import javax.vecmath.*;
+
+import org.w3c.dom.Element;
+
 import q2java.*;
 import q2java.core.*;
 import q2java.baseq2.*;
@@ -13,7 +16,7 @@ import q2java.baseq2.*;
 public class func_killbox extends GameObject
 	{
 	
-public func_killbox( String[] spawnArgs ) throws GameException
+public func_killbox(Element spawnArgs ) throws GameException
 	{
 	super(spawnArgs);
 		

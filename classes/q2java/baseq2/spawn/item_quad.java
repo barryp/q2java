@@ -1,5 +1,7 @@
 package q2java.baseq2.spawn;
 
+import org.w3c.dom.Element;
+
 import q2java.*;
 import q2java.core.*;
 import q2java.core.gui.*;
@@ -28,7 +30,7 @@ public class item_quad extends GenericPowerUp implements PlayerStateListener
 public item_quad() 
 	{
 	}
-public item_quad(String[] spawnArgs) throws GameException
+public item_quad(Element spawnArgs) throws GameException
 	{
 	super(spawnArgs);
 	}
@@ -74,7 +76,7 @@ protected void reset()
 		
 	fNumberUsed = 0;
 	fMillis = 0;
-	Game.removeFrameListener(this);
+	Game.removeServerFrameListener(this);
 
 	if (fHUDTimer != null)
 		{
@@ -153,7 +155,7 @@ public void use(Player p)
 	fOwner.setDamageMultiplier(fOwner.getDamageMultiplier() * DAMAGE_MULTIPLIER);
 	fNumberUsed++;
 	
-	Game.addFrameListener(this, 0, 0); // Call us every frame
+	Game.addServerFrameListener(this, 0, 0); // Call us every frame
 	fOwner.addPlayerStateListener(this);
 	
 	fMillis += 300;

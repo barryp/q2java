@@ -2,8 +2,11 @@ package q2java.baseq2;
 
 import javax.vecmath.*;
 
+import org.w3c.dom.Element;
+
 import q2java.*;
 import q2java.core.*;
+import q2java.core.event.ServerFrameListener;
 
 /**
  * Superclass for all entities lying around 
@@ -11,7 +14,7 @@ import q2java.core.*;
  *
  * @author Barry Pederson
  */
-public abstract class GenericItem extends GameObject implements FrameListener
+public abstract class GenericItem extends GameObject implements ServerFrameListener
 	{
 	public final static int DROP_TIMEOUT = 30; // default number of seconds before dropped items disappear
 	public final static int DEFAULT_RESPAWN = 30; // most items come back after this many seconds.
@@ -50,7 +53,7 @@ public GenericItem()
  * @param spawnArgs args passed from the map.
  * @exception q2java.GameException when there are no more entities available. 
  */
-public GenericItem(String[] spawnArgs) throws GameException
+public GenericItem(Element spawnArgs) throws GameException
 	{
 	super(spawnArgs);
 
@@ -66,7 +69,7 @@ public GenericItem(String[] spawnArgs) throws GameException
 	// schedule a one-shot runFrame() call so we can 
 	// drop to the floor
 	fItemState = STATE_SPAWN;
-	Game.addFrameListener(this, 0, -1);
+	Game.addServerFrameListener(this, 0, -1);
 	}
 /** 
  * limit velocity components
@@ -134,7 +137,7 @@ protected int clipVelocity(Vector3f normal, float overbounce)
 public void dispose() 
 	{
 	super.dispose();
-	Game.removeFrameListener(this);
+	Game.removeServerFrameListener(this);
 	}
 /**
  * Drops the item on the ground
@@ -232,7 +235,7 @@ private void drop0(Point3f spot, Vector3f velocity, float timeout)
 
 	// start continuous calls to runFrame to animate the item falling
 	fItemState = STATE_FALLING;
-	Game.addFrameListener(this, 0, 0);	
+	Game.addServerFrameListener(this, 0, 0);	
 	}
 /**
  * What to do if we've dropped, and nobody's 
@@ -388,13 +391,13 @@ public void runFrame(int phase)
 				{
 				fItemState = STATE_DROP_TIMEOUT;
 				// schedule a one-shot call for when we want to go poof!
-				Game.addFrameListener(this, fDropTimeout - Game.getGameTime(), -1);
+				Game.addServerFrameListener(this, fDropTimeout - Game.getGameTime(), -1);
 				}
 			else
 				{
 				// sit around indefinitely
 				fItemState = STATE_NORMAL;
-				Game.removeFrameListener(this); // shut off frame events
+				Game.removeServerFrameListener(this); // shut off frame events
 				}
 			break;		
 			
@@ -426,7 +429,7 @@ public void runFrame(int phase)
 				fEntity.setGroundEntity(tr.fEntity);
 
 				// avoid touching the dropper for at least a second after dropping				
-				Game.addFrameListener(this, (fDropTime + 1) - Game.getGameTime(), -1);
+				Game.addServerFrameListener(this, (fDropTime + 1) - Game.getGameTime(), -1);
 				fItemState = STATE_AVOID_TOUCH;
 				return;		
 				}
@@ -443,7 +446,7 @@ public void runFrame(int phase)
 protected void setDropTimeout(float delay) 
 	{
 	fItemState = STATE_DROP_TIMEOUT;
-	Game.addFrameListener(this, delay, -1);
+	Game.addServerFrameListener(this, delay, -1);
 	}
 /**
  * Schedule the item to be respawned.
@@ -452,7 +455,7 @@ protected void setDropTimeout(float delay)
 public void setRespawn(float delay) 
 	{
 	// schedule a one-shot notification
-	Game.addFrameListener(this, delay, -1);
+	Game.addServerFrameListener(this, delay, -1);
 	}
 /**
  * Setup this item's NativeEntity.
@@ -534,7 +537,7 @@ public void touch(Player p)
 protected void touchFinish(Player p, GenericItem itemTaken) 
 	{
 	// cancel any timeouts or animations
-	Game.removeFrameListener(this);
+	Game.removeServerFrameListener(this);
 	fItemState = STATE_NORMAL;
 		
 	// play the pickup sound

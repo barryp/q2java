@@ -3,6 +3,8 @@ package q2java.baseq2.spawn;
 import java.util.Enumeration;
 import javax.vecmath.*;
 
+import org.w3c.dom.Element;
+
 import q2java.*;
 import q2java.core.*;
 import q2java.baseq2.*;
@@ -19,7 +21,7 @@ public class func_door extends Door
 	protected Point3f fClosedOrigin;
 	protected Point3f fOpenedOrigin;
 	
-public func_door(String[] spawnArgs) throws GameException
+public func_door(Element spawnArgs) throws GameException
 	{
 	super(spawnArgs);
 	

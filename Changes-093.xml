@@ -91,7 +91,7 @@
   <class name="q2java.core.GameletManager">
     <change author="Leigh" mail="ldodds@ingenta.com">
       init() and unload() add/remove the package "q2java.ctf" to the Game's packagePath
-    </addition>
+    </change>
   </class>
   
 </changelog>

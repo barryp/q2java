@@ -12,6 +12,7 @@ import javax.vecmath.*;
 public class Q2Recycler 
 	{
 	private static Recycler gStringBufferRecycler = Recycler.getRecycler(StringBuffer.class);
+	private static Recycler gHashtableRecycler = Recycler.getRecycler(Hashtable.class);	
 	private static Recycler gVectorRecycler = Recycler.getRecycler(Vector.class);
 	private static Recycler gVector3fRecycler = Recycler.getRecycler(Vector3f.class);
 	private static Recycler gPoint3fRecycler = Recycler.getRecycler(Point3f.class);
@@ -30,6 +31,16 @@ private Q2Recycler()
 public static Angle3f getAngle3f() 
 	{
 	return (Angle3f) gAngle3fRecycler.getObject();
+	}
+/**
+ * Get a Hashtable from the Recycler.
+ * @return java.util.Hashtable with no entries.
+ */
+public static Hashtable getHashtable() 
+	{
+	Hashtable h = (Hashtable) gHashtableRecycler.getObject();
+	h.clear();
+	return h;
 	}
 /**
  * Get a Point3f.
@@ -78,6 +89,19 @@ public static Vector3f getVector3f()
 public static void put(StringBuffer sb) 
 	{
 	gStringBufferRecycler.putObject(sb);
+	}
+/**
+ * Put a Hashtable into the Recycler.  Quicker than using
+ * "Recycler.put(h)" because this class already has a reference
+ * to the Hashtable Recycler (the Recycler class would have to
+ * search for it).
+ 
+ * @param sb java.util.Hashtable
+ */
+public static void put(Hashtable h) 
+	{
+	h.clear();
+	gHashtableRecycler.putObject(h);
 	}
 /**
  * Put a Vector into the Recycler.  Quicker than using

@@ -14,6 +14,7 @@ package q2java.ctf.spawn;
 ======================================================================================
 */
 
+import org.w3c.dom.Element;
 
 import q2java.*;
 import q2java.core.*;
@@ -24,10 +25,10 @@ import q2java.baseq2.*;
  * just sits and flutters in the wind.
  */
 
-public class misc_ctf_small_banner extends misc_ctf_banner implements FrameListener
+public class misc_ctf_small_banner extends misc_ctf_banner 
 {
 	
-	public misc_ctf_small_banner( String[] spawnArgs ) throws GameException
+	public misc_ctf_small_banner( Element spawnArgs ) throws GameException
 	{
 		super( spawnArgs );
 		

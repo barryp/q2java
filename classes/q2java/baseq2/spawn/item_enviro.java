@@ -1,5 +1,7 @@
 package q2java.baseq2.spawn;
 
+import org.w3c.dom.Element;
+
 import q2java.*;
 import q2java.core.*;
 import q2java.core.gui.*;
@@ -25,7 +27,7 @@ public class item_enviro extends GenericPowerUp
 public item_enviro() 
 	{
 	}
-public item_enviro(String[] spawnArgs) throws GameException
+public item_enviro(Element spawnArgs) throws GameException
 	{
 	super(spawnArgs);
 	}
@@ -86,7 +88,7 @@ protected void reset()
 		}
 		
 	fMillis = 0;
-	Game.removeFrameListener(this);
+	Game.removeServerFrameListener(this);
 
 	if (fHUDTimer != null)
 		{
@@ -151,7 +153,7 @@ public void use(Player p)
 	{
 	fOwner = p;
 	
-	Game.addFrameListener(this, 0, 0); // Call us every frame
+	Game.addServerFrameListener(this, 0, 0); // Call us every frame
 	fOwner.addPlayerStateListener(this);
 	fOwner.addPlayerDamageListener(this);
 	

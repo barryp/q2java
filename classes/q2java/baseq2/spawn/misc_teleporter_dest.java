@@ -1,5 +1,7 @@
 package q2java.baseq2.spawn;
 
+import org.w3c.dom.Element;
+
 import q2java.*;
 import q2java.baseq2.*;
 
@@ -13,7 +15,7 @@ public class misc_teleporter_dest extends GameObject
  * Create a teleport destination pad.
  * @param spawnArgs java.lang.String[]
  */
-public misc_teleporter_dest(java.lang.String[] spawnArgs) throws q2java.GameException 
+public misc_teleporter_dest(Element spawnArgs) throws q2java.GameException 
 	{
 	super(spawnArgs);
 	

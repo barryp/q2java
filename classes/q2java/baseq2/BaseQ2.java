@@ -22,7 +22,7 @@ import q2java.core.event.*;
  */
 
 public class BaseQ2 extends q2java.core.Gamelet
-  implements FrameListener, GameStatusListener, CrossLevel
+  implements ServerFrameListener, GameStatusListener, CrossLevel
 	{	
 	// handy reference to the world
 	public static GameObject gWorld;
@@ -116,16 +116,6 @@ public BaseQ2(String gameletName)
  * @return boolean
  * @param spawnArgs java.lang.String[]
  */
-public static void checkInhibited(String[] spawnArgs) throws InhibitedException
-	{
-	checkInhibited(GameUtil.getSpawnArg(spawnArgs, "spawnflags", 0));
-	}
-/**
- * Check whether an entity should be inhibited because
- * of its spawnargs.
- * @return boolean
- * @param spawnArgs java.lang.String[]
- */
 public static void checkInhibited(int spawnFlags) throws InhibitedException
 	{
 	// inhibit entities based on the spawnflags
@@ -156,6 +146,16 @@ public static void checkInhibited(int spawnFlags) throws InhibitedException
 		if ((spawnFlags & mask) != 0)
 			throw new InhibitedException("Not in this skill-level");
 		}
+	}
+/**
+ * Check whether an entity should be inhibited because
+ * of its spawnargs.
+ * @return boolean
+ * @param spawnArgs java.lang.String[]
+ */
+public static void checkInhibited(Element spawnArgs) throws InhibitedException
+	{
+	checkInhibited(GameUtil.getSpawnFlags(spawnArgs));
 	}
 /**
  * Make a copy of an entity to keep around for a while.
@@ -334,15 +334,15 @@ public static String getSpawnpoint()
  */
 public static String getVersion() 
 	{
-	return "Q2Java Base Game, v0.9.2";
+	return "Q2Java Base Game, v0.9.4";
 	}
 /**
  * Initialize this gamelet.
  */
 public void init() 
 	{
-	Game.addFrameListener(this, Game.FRAME_BEGINNING, 0, 10.0F);
-	Game.addFrameListener(this, Game.FRAME_MIDDLE, 0, 0);
+	Game.addServerFrameListener(this, Game.FRAME_BEGINNING, 0, 10.0F);
+	Game.addServerFrameListener(this, Game.FRAME_MIDDLE, 0, 0);
 	Game.addGameStatusListener(this);
 	
 	//leighd 04/10/99 - need to register package path for spawning.
@@ -684,7 +684,7 @@ protected static boolean timeToQuit()
 public void unload() 
 	{
 	Game.removePackagePath("q2java.baseq2");
-	Game.removeFrameListener(this, Game.FRAME_BEGINNING + Game.FRAME_MIDDLE);
+	Game.removeServerFrameListener(this, Game.FRAME_BEGINNING + Game.FRAME_MIDDLE);
 	Game.removeGameStatusListener(this);
 	}
 }

@@ -131,7 +131,7 @@ public void becomeExplosion(int tempEntity)
 		// make sure player isn't already carrying a tech
 		if (bp.isCarrying("tech"))
 		{
-			bp.fEntity.centerprint(bp.getResourceGroup().getRandomString("q2java.ctftech.TechMessages", "have_tech"));		
+			bp.fEntity.centerprint(bp.getResourceGroup().getRandomString("q2java.ctf.CTFMessages", "have_tech"));		
 			return false;
 		}
 			

@@ -1,6 +1,9 @@
 package q2java.baseq2.spawn;
 
 import javax.vecmath.*;
+
+import org.w3c.dom.Element;
+
 import q2java.*;
 import q2java.core.*;
 import q2java.baseq2.*;
@@ -26,7 +29,7 @@ public class func_wall extends GameObject
 	private String  fModel;
 	private boolean fUsed = false;			
 	
-public func_wall( String[] spawnArgs ) throws GameException
+public func_wall(Element spawnArgs ) throws GameException
 	{
 	super(spawnArgs);
 		

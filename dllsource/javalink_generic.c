@@ -23,6 +23,7 @@
 
 #include <stdio.h>   // needed for the javalink_debug() function
 #include <stdarg.h>  // needed for the javalink_debug() function
+#include <stdlib.h>  // for getenv()
 
 #include "globals.h" 
 #include "properties.h"

@@ -51,7 +51,7 @@ public static Angle3f getAngle3f(Element e)
 		}
 	catch (Throwable t)
 		{
-		// either there was no origin element, or one or more of the
+		// probably one or more of the
 		// pitch,yaw,roll attributes was malformed
 		return null;
 		}	
@@ -154,87 +154,6 @@ public static Point3f getPoint3f(Element e, String tagName)
 		}	
 	}
 /**
- * Lookup an float spawn argument.
- * @return value found, or defaultValue.
- * @param args String array holding the map's entity arguments, as created by the spawnEntities() method.
- * @param name name of spawn argument.
- * @param defaultValue value to return if "name" is not found or isn't a valid float
- */
-public static float getSpawnArg(String[] args, String keyword, float defaultValue) 
-	{
-	if (args == null)
-		return defaultValue;
-
-	keyword = keyword.intern();
-	for (int i = 0; i < args.length; i+=2)
-		{
-		if (keyword == args[i])
-			{
-			try
-				{
-				float result = Float.valueOf(args[i+1]).floatValue();
-				return result;
-				}
-			catch (NumberFormatException nfe)
-				{
-				}
-			}
-		}
-		
-	return defaultValue;
-	}
-/**
- * Lookup an integer spawn argument.
- * @return value found, or defaultValue.
- * @param args String array holding the map's entity arguments, as created by the spawnEntities() method.
- * @param name name of spawn argument.
- * @param defaultValue value to return if "name" is not found or isn't a valid integer
- */
-public static int getSpawnArg(String[] args, String keyword, int defaultValue) 
-	{
-	if (args == null)
-		return defaultValue;
-
-	keyword = keyword.intern();
-	for (int i = 0; i < args.length; i+=2)
-		{
-		if (keyword == args[i])
-			{
-			try
-				{
-				int result = Integer.parseInt(args[i+1]);
-				return result;
-				}
-			catch (NumberFormatException nfe)
-				{
-				}
-			}
-		}
-
-	return defaultValue;
-	}
-/**
- * Lookup a string spawn argument.
- * @return value found, or defaultValue.
- * @param args String array holding the map's entity arguments, as created by the spawnEntities() method.
- * @param name name of spawn argument.
- * @param defaultValue value to return if "name" is not found.
- */
-public static String getSpawnArg(String[] args, String keyword, String defaultValue)
-	{
-	if (args == null)
-		return defaultValue;
-
-	keyword = keyword.intern();
-	for (int i = 0; i < args.length; i+=2)
-		{
-		if (keyword == args[i])
-			return args[i+1];
-		}
-			
-	return defaultValue;
-	}
-/**
  * Lookup a float spawn argument.
  * @return value found, or defaultValue.
  * @param e DOM element describing a particular map entity.
@@ -292,38 +211,43 @@ public static String getSpawnArg(Element e, String tagName, String defaultValue)
 		}
 	}
 /**
- * Parse an Angle3f from the standard map format of "<pitch> <yaw> <roll>".
- * @return javax.vecmath.Tuple3f
- * @param s java.lang.String
+ * Lookup a string spawn argument.
+ * @return value found, or defaultValue.
+ * @param e DOM element describing a particular map entity.
+ * @param tagName name of sub-element we're looking for.
+ * @param defaultValue value to return if "tagName" is not found.
  */
-public static Angle3f parseAngle3f(String s) 
+public static String getSpawnArg(Element e, String tagName, String attributeName, String defaultValue)
 	{
-	StringTokenizer st = new StringTokenizer(s, "(, )");
-	if (st.countTokens() != 3)
-		throw new NumberFormatException("Not a valid format for Angle3f");
-
-	float x = Float.valueOf(st.nextToken()).floatValue();
-	float y = Float.valueOf(st.nextToken()).floatValue();
-	float z = Float.valueOf(st.nextToken()).floatValue();
-	
-	return new Angle3f(x, y, z);
+	try
+		{
+		Element e2 = (Element)(e.getElementsByTagName(tagName).item(0));
+		String s = e2.getAttribute(attributeName);
+		if (s == null)
+			return defaultValue;
+		else
+			return s;
+		}
+	catch (Throwable t)
+		{
+		return defaultValue;
+		}
 	}
 /**
- * This method was created by a SmartGuide.
- * @return javax.vecmath.Tuple3f
- * @param s java.lang.String
+ * Get the spawn flags for a map element.
+ * @return value found, or 0 if not found.
+ * @param e DOM element describing a particular map entity.
  */
-public static Point3f parsePoint3f(String s) 
+public static int getSpawnFlags(Element e)
 	{
-	StringTokenizer st = new StringTokenizer(s, "(, )");
-	if (st.countTokens() != 3)
-		throw new NumberFormatException("Not a valid format for Point3f");
-
-	float x = Float.valueOf(st.nextToken()).floatValue();
-	float y = Float.valueOf(st.nextToken()).floatValue();
-	float z = Float.valueOf(st.nextToken()).floatValue();
-	
-	return new Point3f(x, y, z);
+	try
+		{
+		return Integer.parseInt(e.getAttribute("spawnflags"));
+		}
+	catch (Throwable t)
+		{
+		return 0;
+		}
 	}
 /**
  * Return A random float between 0.0 and 1.0.

@@ -1,6 +1,7 @@
 package barryp.flashgrenade;
 
 import q2java.core.*;
+import q2java.core.event.ServerFrameListener;
 import q2java.baseq2.*;
 import q2java.baseq2.event.*;
 
@@ -9,7 +10,7 @@ import q2java.baseq2.event.*;
  *
  * @author Barry Pederson
  */
-public class FlashBlindness implements FrameListener, PlayerStateListener
+public class FlashBlindness implements ServerFrameListener, PlayerStateListener
 	{
 	Player fPlayer;
 	float fPower;
@@ -29,7 +30,7 @@ public FlashBlindness(Player p, float flashPower)
 	fPlayer = p;
 	fPower = flashPower;
 	
-	Game.addFrameListener(this, 0, 0);
+	Game.addServerFrameListener(this, 0, 0);
 	p.addPlayerStateListener(this);
 	}
 /**
@@ -37,7 +38,7 @@ public FlashBlindness(Player p, float flashPower)
  */
 public void dispose() 
 	{
-	Game.removeFrameListener(this);
+	Game.removeServerFrameListener(this);
 	fPlayer.removePlayerStateListener(this);
 	}
 /**

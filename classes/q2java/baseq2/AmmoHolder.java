@@ -1,5 +1,7 @@
 package q2java.baseq2;
 
+import org.w3c.dom.Element;
+
 import q2java.core.*;
 
 /**
@@ -22,7 +24,7 @@ public AmmoHolder()
  * @param spawnArgs java.lang.String[]
  * @exception q2java.GameException The exception description.
  */
-public AmmoHolder(java.lang.String[] spawnArgs) throws q2java.GameException 
+public AmmoHolder(Element spawnArgs) throws q2java.GameException 
 	{
 	super(spawnArgs);
 	}

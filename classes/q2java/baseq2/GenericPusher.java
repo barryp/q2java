@@ -3,8 +3,12 @@ package q2java.baseq2;
 import java.util.Enumeration;
 import java.util.Vector;
 import javax.vecmath.*;
+
+import org.w3c.dom.Element;
+
 import q2java.*;
 import q2java.core.*;
+import q2java.core.event.ServerFrameListener;
  
 /**
  * Superclass for entities like doors, plats, and trains
@@ -13,7 +17,7 @@ import q2java.core.*;
  * @author Barry Pederson
  */ 
  
-public abstract class GenericPusher extends GameObject implements FrameListener, FixedObject
+public abstract class GenericPusher extends GameObject implements ServerFrameListener, FixedObject
 	{
 	// possible spawn args
 	protected float fSpeed;
@@ -57,7 +61,7 @@ public abstract class GenericPusher extends GameObject implements FrameListener,
  * @param spawnArgs java.lang.String[]
  * @exception q2java.GameException The exception description.
  */
-public GenericPusher(java.lang.String[] spawnArgs) throws q2java.GameException 
+public GenericPusher(Element spawnArgs) throws q2java.GameException 
 	{
 	super(spawnArgs);
 		
@@ -66,7 +70,7 @@ public GenericPusher(java.lang.String[] spawnArgs) throws q2java.GameException
 	fState = STATE_SPAWNED;
 	
 	// schedule a one-shot call so we can sync speeds
-	Game.addFrameListener(this, 0, -1);			
+	Game.addServerFrameListener(this, 0, -1);			
 	}
 /**
  * This method was created by a SmartGuide.
@@ -154,7 +158,7 @@ protected void moveTo(Point3f dest)
 		return;
 
 	// start getting continuous frame notifications
-	Game.addFrameListener(this, 0, 0);		
+	Game.addServerFrameListener(this, 0, 0);		
 			
 	fCurrentDest = dest;		
 	fLinearVelocity.set(0,0,0);
@@ -397,7 +401,7 @@ protected void rotateTo(Angle3f dest)
 		return;
 
 	// start getting continuous frame notifications
-	Game.addFrameListener(this, 0, 0);		
+	Game.addServerFrameListener(this, 0, 0);		
 			
 	fCurrentDestAngle = dest;		
 	fAngularVelocity.set(0,0,0);
@@ -608,7 +612,7 @@ protected void startRotating(Angle3f avelocity)
 	fAngularVelocity = new Angle3f(avelocity);
 
 	// start getting continuous frame notifications
-	Game.addFrameListener(this, 0, 0);		
+	Game.addServerFrameListener(this, 0, 0);		
 	}
 /**
  * Halt the object.  Useful for when trains are turned off.
@@ -745,7 +749,7 @@ protected void think()
 			fState = STATE_IDLE;	
 			
 			// turn off frame notifications
-			Game.removeFrameListener(this);		
+			Game.removeServerFrameListener(this);		
 			
 			moveFinished();
 			break;						

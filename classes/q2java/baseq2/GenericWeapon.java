@@ -1,6 +1,9 @@
 package q2java.baseq2;
 
 import javax.vecmath.*;
+
+import org.w3c.dom.Element;
+
 import q2java.*;
 import q2java.core.*;
 import q2java.baseq2.event.*;
@@ -69,7 +72,7 @@ public GenericWeapon()
 /**
  * Construct a weapon with map spawn arguments
  */
-public GenericWeapon(String[] spawnArgs) throws GameException
+public GenericWeapon(Element spawnArgs) throws GameException
 	{
 	super(spawnArgs);
 	setFields();

@@ -1,21 +1,27 @@
 package javax.vecmath;
 
 /*
-   Copyright (C) 1997,1998
-   Kenji Hiranabe
+   Copyright (C) 1997,1998,1999
+   Kenji Hiranabe, Eiwa System Management, Inc.
 
    This program is free software.
    Implemented by Kenji Hiranabe(hiranabe@esm.co.jp),
-   conforming to the Java(TM) 3D API specification version 1.1
+   conforming to the Java(TM) 3D API specification version 1.1 final
    by Sun Microsystems.
 
-   This program is provided AS IS, with NO WARRANTY.
+   Permission to use, copy, modify, distribute and sell this software
+   and its documentation for any purpose is hereby granted without fee,
+   provided that the above copyright notice appear in all copies and
+   that both that copyright notice and this permission notice appear
+   in supporting documentation. Kenji Hiranabe and Eiwa System Management,Inc.
+   makes no representations about the suitability of this software for any
+   purpose.  It is provided "AS IS" with NO WARRANTY.
 */
 import java.io.Serializable;
 
 /**
   * A four byte colors  (mostly used for colors with alpha).
-  * @version specification 1.1, implementation $Revision: 1.6 $, $Date: 1998/10/14 00:49:10 $
+  * @version specification 1.1, implementation $Revision: 1.7 $, $Date: 1999/03/04 09:16:33 $
   * @author Kenji hiranabe
   */
 public class Color4b extends Tuple4b implements Serializable {
@@ -35,6 +41,12 @@ public class Color4b extends Tuple4b implements Serializable {
 	}
 /*
  * $Log: Color4b.java,v $
+ * Revision 1.7  1999/03/04  09:16:33  hiranabe
+ * small bug fix and copyright change
+ *
+ * Revision 1.7  1999/03/04  09:16:33  hiranabe
+ * small bug fix and copyright change
+ *
  * Revision 1.6  1998/10/14  00:49:10  hiranabe
  * API1.1 Beta02
  *

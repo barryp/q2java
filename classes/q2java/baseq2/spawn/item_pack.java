@@ -1,5 +1,7 @@
 package q2java.baseq2.spawn;
 
+import org.w3c.dom.Element;
+
 import q2java.*;
 import q2java.baseq2.*;
 
@@ -28,7 +30,7 @@ public item_pack()
  * @param spawnArgs java.lang.String[]
  * @exception q2java.GameException The exception description.
  */
-public item_pack(java.lang.String[] spawnArgs) throws q2java.GameException 
+public item_pack(Element spawnArgs) throws q2java.GameException 
 	{
 	super(spawnArgs);
 	}

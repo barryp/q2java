@@ -2,6 +2,8 @@ package q2java.baseq2;
 
 import java.util.Vector;
 
+import org.w3c.dom.Element;
+
 import q2java.*;
 import q2java.core.*;
 import q2java.baseq2.*;
@@ -14,15 +16,15 @@ public abstract class Trigger implements GameTarget
 	{
 	protected Vector fTargets;
 	
-public Trigger(String[] spawnArgs) throws GameException
+public Trigger(Element spawnArgs) throws GameException
 	{
 	BaseQ2.checkInhibited(spawnArgs);
 	
-	String s = GameUtil.getSpawnArg(spawnArgs, "target", null);
+	String s = GameUtil.getSpawnArg(spawnArgs, "target", "id", null);
 	if (s != null)
 		fTargets = Game.getLevelRegistryList("target-" + s);
 		
-	s = GameUtil.getSpawnArg(spawnArgs, "targetname", null);
+	s = GameUtil.getSpawnArg(spawnArgs, "targetname", "id", null);
 	if (s != null)
 		Game.addLevelRegistry("target-" + s, this);	
 	}

@@ -3,8 +3,11 @@ package q2java.baseq2.spawn;
 import java.util.Vector;
 import javax.vecmath.*;
 
+import org.w3c.dom.Element;
+
 import q2java.*;
 import q2java.core.*;
+import q2java.core.event.ServerFrameListener;
 import q2java.baseq2.*;
 
 /**
@@ -15,8 +18,8 @@ import q2java.baseq2.*;
  * @author Barry Pederson
  */ 
 
-public class trigger_multiple extends GameObject implements FrameListener, FixedObject
-		{
+public class trigger_multiple extends GameObject implements ServerFrameListener, FixedObject
+	{
 	protected final static int MONSTER = 1;
 	protected final static int NOT_PLAYER = 2;
 	protected final static int TRIGGER = 4;
@@ -38,11 +41,11 @@ public class trigger_multiple extends GameObject implements FrameListener, Fixed
  * This method was created by a SmartGuide.
  * @param spawnArgs java.lang.String[]
  */
-public trigger_multiple (String[] spawnArgs) throws GameException
+public trigger_multiple (Element spawnArgs) throws GameException
 	{
 	this(spawnArgs, true);
 	}
-public trigger_multiple(String[] spawnArgs, boolean isMultiple) throws GameException
+public trigger_multiple(Element spawnArgs, boolean isMultiple) throws GameException
 	{
 	super(spawnArgs);
 
@@ -149,7 +152,7 @@ public void trigger(Object activator)
 		{
 		// setup to be called back when busy state is finished
 		fState = STATE_DISPOSING;
-		Game.addFrameListener(this, 0, -1);
+		Game.addServerFrameListener(this, 0, -1);
 		}
 	}
 /**
@@ -180,7 +183,7 @@ public void use(Player touchedBy)
 			
 	        if( fDelay > 0 )
 				{
-				Game.addFrameListener( new TriggerDelayer(this, touchedBy), 
+				Game.addServerFrameListener( new TriggerDelayer(this, touchedBy), 
 						 fDelay,
 						 -1);
 				}

@@ -3,6 +3,8 @@ package q2java.baseq2.spawn;
 import java.util.Enumeration;
 import javax.vecmath.*;
 
+import org.w3c.dom.Element;
+
 import q2java.*;
 import q2java.core.*;
 import q2java.baseq2.*;
@@ -46,7 +48,7 @@ public class func_door_secret extends GenericPusher
 	protected final static int SECRET_1ST_LEFT		= 2;
 	protected final static int SECRET_1ST_DOWN		= 4;
 	
-public func_door_secret(String[] spawnArgs) throws GameException
+public func_door_secret(Element spawnArgs) throws GameException
 	{
 	super(spawnArgs);
 	
@@ -190,20 +192,20 @@ public void moveFinished()
 		case SECRET_STATE_OPENING_INTERMEDIATE:
 			fSecretState = SECRET_STATE_OPENED_INTERMEDIATE;			
 			// schedule a one-time notification one second from now
-			Game.addFrameListener(this, 1, -1);
+			Game.addServerFrameListener(this, 1, -1);
 			break;
 			
 		case SECRET_STATE_OPENING:
 			fSecretState = SECRET_STATE_OPENED;			
 			// schedule a one-time notification fWait seconds from now
 			if (fWait != -1)
-				Game.addFrameListener(this, fWait, -1);
+				Game.addServerFrameListener(this, fWait, -1);
 			break;
 
 		case SECRET_STATE_CLOSING_INTERMEDIATE:
 			fSecretState = SECRET_STATE_CLOSED_INTERMEDIATE;			
 			// schedule a one-time notification one second from now
-			Game.addFrameListener(this, 1, -1);
+			Game.addServerFrameListener(this, 1, -1);
 			break;
 			
 		case SECRET_STATE_CLOSING:

@@ -2,6 +2,8 @@ package q2java.baseq2.spawn;
 
 import javax.vecmath.*;
 
+import org.w3c.dom.Element;
+
 import q2java.*;
 import q2java.core.*;
 import q2java.baseq2.*;
@@ -20,7 +22,7 @@ public class misc_teleporter extends GameObject
  * @param spawnArgs java.lang.String[]
  * @exception q2java.GameException The exception description.
  */
-public misc_teleporter(java.lang.String[] spawnArgs) throws q2java.GameException 
+public misc_teleporter(Element spawnArgs) throws q2java.GameException 
 	{
 	super(spawnArgs);
 	

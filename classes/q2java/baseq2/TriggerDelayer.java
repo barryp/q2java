@@ -5,6 +5,7 @@ import javax.vecmath.*;
 
 import q2java.*;
 import q2java.core.*;
+import q2java.core.event.ServerFrameListener;
 import q2java.baseq2.*;
 import q2java.baseq2.spawn.trigger_multiple;
 
@@ -14,7 +15,7 @@ import q2java.baseq2.spawn.trigger_multiple;
  * @author Peter Donald
  */
  
-public class TriggerDelayer implements FrameListener
+public class TriggerDelayer implements ServerFrameListener
 	{
 	protected trigger_multiple fOwner;
 	protected Object fActivator;

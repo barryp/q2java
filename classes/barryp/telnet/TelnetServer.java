@@ -5,7 +5,10 @@ import java.net.*;
 import java.util.*;
 
 import q2java.*;
-import q2java.core.*;
+import q2java.core.CrossLevel;
+import q2java.core.Game;
+import q2java.core.ResourceGroup;
+import q2java.core.event.*;
 
 /**
  * Thread class that accepts Telnet-type connections,
@@ -14,10 +17,13 @@ import q2java.core.*;
  * 
  * @author Barry Pederson
  */
-class TelnetServer extends Thread  implements PrintListener, LocaleListener, CrossLevel
+class TelnetServer extends Thread implements PrintListener, CrossLevel
 	{
 	private final static int SOCKET_TIMEOUT = 500; // milliseconds
 	private final static String GROUP_NAME = "Telnet Handlers";
+	private final static byte[] COLON = {(byte)':', (byte)' '}; // convenient for player chats
+	private final static byte[] CRLF = {(byte)'\r', (byte)'\n'};
+	private final static int PRINT_CHANNELS = PrintEvent.PRINT_JAVA + PrintEvent.PRINT_SERVER_CONSOLE + PrintEvent.PRINT_ANNOUNCE + PrintEvent.PRINT_TALK;
 	
 	private int fPort;
 	private ServerSocket fServerSocket;
@@ -59,11 +65,9 @@ public TelnetServer(GameModule gm, int port, String password, boolean noCmd, boo
 		fNoCmd = noCmd;
 		fNoChat = noChat;
 		
-		// call us when stuff is being printed
-		Game.addPrintListener(this);	
-	
-		// call us with localized messages using the default locale
-		fResourceGroup = Game.addLocaleListener(this);	
+		// call us when certain stuff is being printed
+		fResourceGroup = Game.getResourceGroup(Locale.getDefault());		
+		Game.getPrintSupport().addPrintListener(this, PRINT_CHANNELS, false);
 		}
 	catch (IOException e)
 		{
@@ -71,60 +75,6 @@ public TelnetServer(GameModule gm, int port, String password, boolean noCmd, boo
 		e.printStackTrace();
 		}			
 	}
-/**
- * This method was created by a SmartGuide.
- * @param flags int
- * @param msg java.lang.String
- */
-public void bprint(int flags, String msg) 
-	{
-	output(msg);
-	}
-/**
- * This method was created by a SmartGuide.
- * @param b byte[]
- * @param offset int
- * @param len int
- */
-public void consoleOutput(byte[] b, int offset, int len) 
-	{
-	int nClients = fHandlers.activeCount();
-	// check if there are any clients connected
-	if (nClients < 1)
-		return;
-			
-	TelnetHandler[] handlers = new TelnetHandler[nClients];			
-	fHandlers.enumerate(handlers);	
-	
-	// send the byte array to each client
-	for (int i = 0; i < handlers.length; i++)
-		{
-		try	
-			{	
-			handlers[i].output(b, offset, len);
-			}
-		catch (IOException e)
-			{
-			}
-		}	
-	}
-/**
- * Output text sent to the console from outside the game.
- * @param flags int
- * @param msg java.lang.String
- */
-public void consoleOutput(String msg) 
-	{
-	output(msg);
-	}
-/**
- * This method was created by a SmartGuide.
- * @param msg java.lang.String
- */
-public void dprint(String msg) 
-	{
-	output(msg);
-	}	
 /**
  * This method was created by a SmartGuide.
  * @return int
@@ -182,29 +132,34 @@ public boolean isRunning()
 	return fIsRunning;
 	}
 /**
- * Called when the listener receives a localized broadcast message.
- * @param printLevel One of the Engine.PRINT_* constants
- * @param msg java.lang.String
+ * Called when a PrintEvent is fired.
+ * @param pe q2java.core.event.PrintEvent
  */
-public void localecast(Locale loc, int printLevel, String msg)	
-	{
-	output(msg);
-	}
-/**
- * Send a string to all the connected clients.
- * @param s java.lang.String
- */
-private void output(String s) 
+public void print(PrintEvent pe)
 	{
 	int nClients = fHandlers.activeCount();
 	// check if there are any clients connected
 	if (nClients < 1)
 		return;
 
-	// use the TelnetHandler's common conversion utility.
-	byte[] b = TelnetHandler.getBytes(s);
+	byte[] b;
 
-	consoleOutput(b, 0, b.length);	
+	// prefix player chats with their name
+	String sourceName = pe.getSourceName();
+	if ((pe.getPrintChannel() == PrintEvent.PRINT_TALK) && (sourceName != null))
+		{
+		b = TelnetHandler.getBytes(sourceName);		
+		telnetOutput(b, 0, b.length);
+		telnetOutput(COLON, 0, COLON.length);
+		}
+		
+	// use the TelnetHandler's common conversion utility.
+	b = TelnetHandler.getBytes(pe.getMessage());
+	telnetOutput(b, 0, b.length);
+
+	// force a new line
+	if (b[b.length-1] != '\n')
+		telnetOutput(CRLF, 0, CRLF.length);
 	}
 /**
  * This method was created by a SmartGuide.
@@ -241,8 +196,7 @@ public void run()
 		}	
 		
 
-	Game.removeLocaleListener(this);
-	Game.removePrintListener(this);
+	Game.getPrintSupport().removePrintListener(this);
 	}
 /**
  * Change the server's locale.
@@ -250,11 +204,10 @@ public void run()
  */
 public void setLocale(String localeName) 
 	{
-	// remove ourselves from the previous locale
-	if (fResourceGroup != null)
-		fResourceGroup.removeLocaleListener(this);
-		
-	fResourceGroup = Game.addLocaleListener(this, localeName);
+	fResourceGroup = Game.getResourceGroup(localeName);
+	PrintSupport ps = Game.getPrintSupport();
+	ps.removePrintListener(this);
+	ps.addPrintListener(this, PRINT_CHANNELS, fResourceGroup.getLocale(), false);
 	}
 /**
  * Called when it's time to shut the server down.
@@ -263,5 +216,33 @@ public void stopServer()
 	{
 	fIsRunning = false;		
 	GameModule.removeServer(this);
+	}
+/**
+ * Send data to the connected telnet clients.
+ * @param b byte[]
+ * @param offset int
+ * @param len int
+ */
+public void telnetOutput(byte[] b, int offset, int len) 
+	{
+	int nClients = fHandlers.activeCount();
+	// check if there are any clients connected
+	if (nClients < 1)
+		return;
+			
+	TelnetHandler[] handlers = new TelnetHandler[nClients];			
+	fHandlers.enumerate(handlers);	
+	
+	// send the byte array to each client
+	for (int i = 0; i < handlers.length; i++)
+		{
+		try	
+			{	
+			handlers[i].output(b, offset, len);
+			}
+		catch (IOException e)
+			{
+			}
+		}	
 	}
 }

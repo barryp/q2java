@@ -4,6 +4,9 @@ import java.io.*;
 import java.util.Enumeration;
 import java.util.Vector;
 import javax.vecmath.*;
+
+import org.w3c.dom.Element;
+
 import q2java.*;
 import q2java.core.*;
 
@@ -19,31 +22,20 @@ public abstract class GenericSpawnpoint extends GameObject implements FixedObjec
 	protected Angle3f fAngles;	
 	protected String fTargetName;
 	
-public GenericSpawnpoint(String[] spawnArgs) throws GameException
+public GenericSpawnpoint(Element spawnArgs) throws GameException
 	{
 	super();
 	
-	String s = GameUtil.getSpawnArg(spawnArgs, "origin", null);
-	if (s != null)
-		fOrigin = GameUtil.parsePoint3f(s);
-
-	s = GameUtil.getSpawnArg(spawnArgs, "angles", null);
-	if (s != null)
-		fAngles = GameUtil.parseAngle3f(s);
-
-	s = GameUtil.getSpawnArg(spawnArgs, "angle", null);
-	if (s != null)
-		{
-		Float f = new Float(s);
-		fAngles = new Angle3f(0, f.floatValue(), 0);
-		}
-		
+	fOrigin = GameUtil.getPoint3f(spawnArgs, "origin");
+	fAngles = GameUtil.getAngle3f(spawnArgs, "angles");
+	
 	if (fAngles == null)
 		fAngles = new Angle3f();
 		
-	fTargetName = GameUtil.getSpawnArg(spawnArgs, "targetname", null);
+
+	fTargetName = GameUtil.getSpawnArg(spawnArgs, "targetname", "id", null);
 	if (fTargetName != null)
-		fTargetGroup = Game.addLevelRegistry("target-" + fTargetName, this);				
+		fTargetGroup = Game.addLevelRegistry("target-" + fTargetName, this);
 	}
 /**
  * Fetch a copy of the spawnpoint's orientation.

@@ -589,6 +589,13 @@ COLLISION DETECTION
 		
 	
 /**
+ * Private constructor to prevent people from trying to
+ * create instances of this class.
+ */
+private Engine() 
+	{
+	}
+/**
  * Cause the Engine to run a command (multithread-safe)
  *
  * @params s the Command to run, should end with a '\n'.

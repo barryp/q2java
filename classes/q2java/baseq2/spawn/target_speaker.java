@@ -1,5 +1,7 @@
 package q2java.baseq2.spawn;
 
+import org.w3c.dom.Element;
+
 import q2java.*;
 import q2java.core.*;
 import q2java.baseq2.*;
@@ -11,7 +13,7 @@ public class target_speaker extends GameObject
 	private float  fVolume;
 	private float  fAttenuation;
 	
-public target_speaker(String[] spawnArgs) throws GameException
+public target_speaker(Element spawnArgs) throws GameException
 	{
 	super(spawnArgs);
 

@@ -5,7 +5,7 @@ import java.io.*;
 import org.w3c.dom.Document;
 
 import org.openxml.DOMFactory;
-import org.openxml.io.Parser;
+import org.openxml.parser.XMLParser;
 import org.openxml.x3p.*;
 
 /**
@@ -26,17 +26,17 @@ public org.w3c.dom.Document createXMLDocument()
 /**
  * Read an XML file into a DOM document.
  */
-public Document readXMLDocument(InputStream is, String sourceName) throws IOException
+public Document readXMLDocument(Reader r, String sourceName) throws IOException
 	{
-	Parser p = DOMFactory.createParser(is, sourceName);
+	XMLParser p = new XMLParser(r, sourceName);
 	return p.parseDocument();
 	}
 /**
  * write a DOM document to an XML stream.
  */
-public void writeXMLDocument(Document doc, OutputStream os) throws IOException
+public void writeXMLDocument(Document doc, Writer w) throws IOException
 	{
-	Publisher pub = PublisherFactory.createPublisher( os, StreamFormat.XHTML_PRETTY );
+	Publisher pub = PublisherFactory.createPublisher(w, StreamFormat.XML_PRETTY );
 	pub.publish(doc);
 	pub.close();	
 	}

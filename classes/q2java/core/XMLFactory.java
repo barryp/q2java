@@ -17,16 +17,16 @@ public interface XMLFactory
  */
 Document createXMLDocument();
 /**
- * This method was created in VisualAge.
+ * Read an XML Document.
  * @return org.w3c.dom.Document
- * @param source InputStream
+ * @param source java.io.Reader
  * @param sourceName java.lang.String
  */
-Document readXMLDocument(InputStream source, String sourceName) throws IOException;
+Document readXMLDocument(Reader source, String sourceName) throws IOException;
 /**
  * Write a document to an output stream.
  * @param doc org.w3c.dom.Document
  * @param os java.io.OutputStream
  */
-void writeXMLDocument(Document doc, OutputStream os) throws IOException;
+void writeXMLDocument(Document doc, Writer w) throws IOException;
 }

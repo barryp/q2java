@@ -1,5 +1,7 @@
 package q2java.baseq2;
 
+import org.w3c.dom.Element;
+
 import q2java.*;
 import q2java.core.*;
 import q2java.baseq2.*;
@@ -18,7 +20,7 @@ public abstract class GenericPowerUp extends GenericItem
 public GenericPowerUp() 
 	{
 	}
-public GenericPowerUp(String[] spawnArgs) throws GameException
+public GenericPowerUp(Element spawnArgs) throws GameException
 	{
 	super(spawnArgs);
 	}

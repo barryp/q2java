@@ -166,7 +166,6 @@ public class CTFPlayer extends q2java.baseq2.Player implements CameraListener
 		  "stat_string 27 " +
 		"endif ";
 
-	protected Team     fTeam;
 	protected float    fLastCarrierHurt;
 	public    float    fLastTechMessage;
 	public    ChaseCam fChaser;			// The ChaseCam that's following us...
@@ -498,7 +497,7 @@ public class CTFPlayer extends q2java.baseq2.Player implements CameraListener
 	 */
 	public void cmd_team(String[] argv, String args) 
 	{
-		Team   oldTeam, newTeam;
+		Team newTeam;
 		String teamName = null;
 		
 		if ( argv.length > 1 )
@@ -514,7 +513,7 @@ public class CTFPlayer extends q2java.baseq2.Player implements CameraListener
 			return;
 		}
 		
-		if ( newTeam == fTeam )
+		if ( newTeam == getTeam() )
 		{
 			fEntity.cprint(Engine.PRINT_HIGH, "You are already on the " + teamName + " team.\n");
 			return;	// Can't change to same team
@@ -525,7 +524,7 @@ public class CTFPlayer extends q2java.baseq2.Player implements CameraListener
 
 		// join new team
 		newTeam.addPlayer( this );
-		fTeam = newTeam;
+		setTeam(newTeam);
 
 		// respawn to new base and set score to zero...
 		setScore( 0 );
@@ -579,27 +578,14 @@ public class CTFPlayer extends q2java.baseq2.Player implements CameraListener
 		if (( fTeam != null ) && fUseTeamSpawnpoint)
 			{
 			fUseTeamSpawnpoint = false; // only use team spawnpoint once per level
-			return fTeam.getSpawnpoint();
+			return ((Team) getTeam()).getSpawnpoint();
 			}
 		else
 			return super.getSpawnpoint();
 	}
-	public Team getTeam()
-	{
-		return fTeam;
-	}
 	public boolean isChasing()
 	{
 		return fIsChasing;
-	}
-/**
- * Override baseq2.Player.isTeammate().
- * @return boolean
- * @param p baseq2.Player
- */
-public boolean isTeammate(q2java.baseq2.Player p) 
-	{
-	return fTeam.isTeamMember(p);
 	}
 /**
  * Called by the DLL when the player should begin playing in the game.
@@ -659,7 +645,7 @@ public void playerBegin()
 
 		// overrule skin if on team
 		if (key.equals("skin") && (fTeam != null))
-			fTeam.assignSkinTo( this );
+			((Team)getTeam()).assignSkinTo( this );
 	}
 	/**
 	* Calculate the bonuses for flag defense, flag carrier defense, etc.
@@ -674,6 +660,7 @@ public void playerBegin()
 			return;
 		}
 
+		Team ctfTeam = (Team) getTeam();
 		// did the victim carry the flag?
 		if ( victim.isCarrying("flag"))
 		{
@@ -681,7 +668,7 @@ public void playerBegin()
 			fEntity.centerprint(fResourceGroup.format("q2java.ctf.CTFMessages", "bonus_points", args) + "\n");
 
 			// The victim had the flag, clear the hurt carrier field on our team
-			CTFPlayer[] players = fTeam.getPlayers();
+			CTFPlayer[] players = ctfTeam.getPlayers();
 
 			for ( int i=0; i<players.length; i++) 
 				players[i].fLastCarrierHurt = 0f;
@@ -693,14 +680,14 @@ public void playerBegin()
 		if ( Game.getGameTime() < (victim.fLastCarrierHurt+CTF_CARRIER_DANGER_PROTECT_TIMEOUT)
 				&& getInventory("flag") == null )
 		{
-			Object[] args = {getName(), fTeam.getTeamIndex()};
+			Object[] args = {getName(), ctfTeam.getTeamIndex()};
 			Game.localecast("q2java.ctf.CTFMessages", "defend_aggressive", args, Engine.PRINT_MEDIUM);	
 		
 			setScore(1 + CTF_CARRIER_DANGER_PROTECT_BONUS, false);
 		}
 
 		// if our flag is laying around somewhere, we can get extra bonuses
-		GenericFlag ourFlag = fTeam.getFlag();
+		GenericFlag ourFlag = ctfTeam.getFlag();
 
 		//if ( ourFlag.getState() == GenericFlag.CTF_FLAG_STATE_CARRIED )
 		//	return;
@@ -708,17 +695,17 @@ public void playerBegin()
 		// check to see if we are defending the base.
 		Vector3f v1 = new Vector3f( this.fEntity.getOrigin()   );
 		Vector3f v2 = new Vector3f( victim.fEntity.getOrigin() );
-		v1.sub( fTeam.getBaseOrigin() );
-		v2.sub( fTeam.getBaseOrigin() );
+		v1.sub( ctfTeam.getBaseOrigin() );
+		v2.sub( ctfTeam.getBaseOrigin() );
 		
 		//if ( v1.length() < CTF_TARGET_PROTECT_RADIUS || v2.length() < CTF_TARGET_PROTECT_RADIUS 
 		//	|| this.canSee(ourFlag) || victim.canSee(ourFlag) )
 		if ( v1.length() < CTF_TARGET_PROTECT_RADIUS || v2.length() < CTF_TARGET_PROTECT_RADIUS 
-			|| this.canSee(fTeam.getBaseOrigin()) || victim.canSee(fTeam.getBaseOrigin()) )
+			|| this.canSee(ctfTeam.getBaseOrigin()) || victim.canSee(ctfTeam.getBaseOrigin()) )
 		{
 			// OK, either we or our victim is in sight of our base.
 			// Send message based on if the flag is at base or not...
-			Object[] args = {getName(), fTeam.getTeamIndex()};
+			Object[] args = {getName(), ctfTeam.getTeamIndex()};
 			
 			if ( ourFlag.getState() == GenericFlag.CTF_FLAG_STATE_STANDING )
 				Game.localecast("q2java.ctf.CTFMessages", "defend_flag", args, Engine.PRINT_MEDIUM);	
@@ -746,7 +733,7 @@ public void playerBegin()
 			if ( v1.length() < CTF_ATTACKER_PROTECT_RADIUS || v2.length() < CTF_ATTACKER_PROTECT_RADIUS 
 				|| this.canSee(carrier.fEntity.getOrigin()) || victim.canSee(carrier.fEntity.getOrigin()) )
 			{
-				Object[] args = {getName(), fTeam.getTeamIndex()};
+				Object[] args = {getName(), ctfTeam.getTeamIndex()};
 				Game.localecast("q2java.ctf.CTFMessages", "defend_carrier", args, Engine.PRINT_MEDIUM);	
 			
 				setScore(1 + CTF_CARRIER_PROTECT_BONUS, false);
@@ -755,6 +742,17 @@ public void playerBegin()
 		
 		// Hmm, no bonusses left...
 		setScore(1, false);
+	}
+/**
+ * Override Player.setTeam() to only allow CTF Teams.
+ * @param o java.lang.Object
+ */
+public void setTeam(Object o) 
+	{
+	if (o instanceof Team)
+		super.setTeam(o);
+	else
+		Game.dprint("Tried to set CTF player to some weird sort of Team\n");
 	}
 	/**
 	 * spawn the player into the game.

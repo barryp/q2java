@@ -4,6 +4,9 @@ import java.io.*;
 import java.util.Enumeration;
 import java.util.Vector;
 import javax.vecmath.*;
+
+import org.w3c.dom.Element;
+
 import q2java.*;
 import q2java.core.*;
 
@@ -23,7 +26,8 @@ public class GameObject implements GameTarget, Serializable
 	protected Vector fTargetGroup;
 	protected Vector3f fGravity = new Vector3f(0, 0, -1); // objects tend to fall down
 
-	protected String[] fSpawnArgs;
+//	protected String[] fSpawnArgs;
+	protected Element fSpawnArgs;
 	
 	// damage flags
 	public final static int DAMAGE_RADIUS		= 0x00000001;	// damage was indirect
@@ -36,16 +40,16 @@ public class GameObject implements GameTarget, Serializable
 public GameObject()
 	{
 	}
-public GameObject(String[] spawnArgs) throws GameException
+public GameObject(Element spawnArgs) throws GameException
 	{
 	this(spawnArgs, NativeEntity.ENTITY_NORMAL);
 	}
-public GameObject(String[] spawnArgs, int entityType) throws GameException
+public GameObject(Element spawnArgs, int entityType) throws GameException
 	{
 	fSpawnArgs = spawnArgs;
 
 	// look for common spawn arguments
-	fSpawnFlags = getSpawnArg("spawnflags", 0);
+	fSpawnFlags = GameUtil.getSpawnFlags(spawnArgs);
 
 	// The worldspawn is never inhibited..although
 	// on the jail1 map, it's flagged as if it is.
@@ -58,34 +62,26 @@ public GameObject(String[] spawnArgs, int entityType) throws GameException
 			
 	fEntity = new NativeEntity(entityType);
 	fEntity.setReference(this);	
-		
-	String s = getSpawnArg("origin", null);
-	if (s != null)
-		fEntity.setOrigin(GameUtil.parsePoint3f(s));
 
-	s = getSpawnArg("angles", null);
-	if (s != null)
-		fEntity.setAngles(GameUtil.parseAngle3f(s));
+	Point3f p = GameUtil.getPoint3f(spawnArgs, "origin");
+	if (p != null)
+		fEntity.setOrigin(p);
 
-	s = getSpawnArg("angle", null);
-	if (s != null)
-		{
-		Float f = new Float(s);
-		fEntity.setAngles(0, f.floatValue(), 0);
-		}
-
+	Angle3f a = GameUtil.getAngle3f(spawnArgs, "angles");
+	if (a != null)
+		fEntity.setAngles(a);
 
 	// hook this object up with other game objects
 
-	s = getSpawnArg("target", null);
+	String s = GameUtil.getSpawnArg(spawnArgs, "target", "id", null);
 	if (s != null)
 		fTargets = Game.getLevelRegistryList("target-" + s);		
 
-	s = getSpawnArg("targetname", null);
+	s = GameUtil.getSpawnArg(spawnArgs, "targetname", "id", null);
 	if (s != null)
 		fTargetGroup = Game.addLevelRegistry("target-" + s, this);
 		
-	s = getSpawnArg("team", null);
+	s = GameUtil.getSpawnArg(spawnArgs, "team", "id", null);
 	if (s != null)
 		fGroup = Game.addLevelRegistry("team-" + s, this);
 	}
@@ -367,7 +363,7 @@ public String toString()
 		
 	// we have spawn args, so we'll return something a little fancier		
 	StringBuffer sb = new StringBuffer(super.toString());
-
+/*
 	sb.append("(");
 	for (int i = 0; i < fSpawnArgs.length; i+=2)
 		{
@@ -379,7 +375,7 @@ public String toString()
 			sb.append(", ");
 		}
 	sb.append(")");
-
+*/
 	return sb.toString();
 	}
 /**

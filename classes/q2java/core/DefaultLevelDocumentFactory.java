@@ -61,7 +61,7 @@ public static Element createEntityElement(Document doc, String classname, Vector
 		// create tag: <angles pitch="..." yaw="..." roll="..."/>
 		if (keyword.equals("angles"))
 			{
-			Angle3f ang = GameUtil.parseAngle3f(keyval);
+			Angle3f ang = parseAngle3f(keyval);
 			Element e2 = doc.createElement("angles");
 			e2.setAttribute("pitch", Float.toString(ang.x));
 			e2.setAttribute("yaw", Float.toString(ang.y));
@@ -73,7 +73,7 @@ public static Element createEntityElement(Document doc, String classname, Vector
 		// create tag: <origin x="..." y="..." z="..."/>
 		if (keyword.equals("origin"))
 			{
-			Point3f pt = GameUtil.parsePoint3f(keyval);
+			Point3f pt = parsePoint3f(keyval);
 			Element e2 = doc.createElement("origin");
 			e2.setAttribute("x", Float.toString(pt.x));
 			e2.setAttribute("y", Float.toString(pt.y));
@@ -85,7 +85,7 @@ public static Element createEntityElement(Document doc, String classname, Vector
 		// create tag: <[_]color r="..." g="..." b="..."/>
 		if (keyword.equals("color") || keyword.equals("_color"))
 			{
-			Point3f pt = GameUtil.parsePoint3f(keyval);
+			Point3f pt = parsePoint3f(keyval);
 			Element e2 = doc.createElement(keyword);
 			e2.setAttribute("r", Float.toString(pt.x));
 			e2.setAttribute("g", Float.toString(pt.y));
@@ -153,7 +153,7 @@ public Document createLevelDocument(String mapName, String entString, String spa
  */
 public static String[] getParamPairs(Element e) 
 	{
-	// build up an array of parameters like Q2Java expects
+	// build up an array of parameters like Q2Java used to expect
 	Vector v = Q2Recycler.getVector();
 
 	String s = e.getAttribute("spawnflags");
@@ -192,6 +192,23 @@ public static String[] getParamPairs(Element e)
 	String[] params = new String[v.size()];
 	v.copyInto(params);
 	return params;
+	}
+/**
+ * Parse an Angle3f from the standard map format of "<pitch> <yaw> <roll>".
+ * @return javax.vecmath.Tuple3f
+ * @param s java.lang.String
+ */
+public static Angle3f parseAngle3f(String s) 
+	{
+	StringTokenizer st = new StringTokenizer(s, "(, )");
+	if (st.countTokens() != 3)
+		throw new NumberFormatException("Not a valid format for Angle3f");
+
+	float x = Float.valueOf(st.nextToken()).floatValue();
+	float y = Float.valueOf(st.nextToken()).floatValue();
+	float z = Float.valueOf(st.nextToken()).floatValue();
+	
+	return new Angle3f(x, y, z);
 	}
 /**
  * Actually parse the ent string and create nodes in a supplied document tree.
@@ -256,5 +273,22 @@ public static void parseEntString(Document doc, Node root, String entString)
 		{
 		e.printStackTrace();
 		}
+	}
+/**
+ * This method was created by a SmartGuide.
+ * @return javax.vecmath.Tuple3f
+ * @param s java.lang.String
+ */
+public static Point3f parsePoint3f(String s) 
+	{
+	StringTokenizer st = new StringTokenizer(s, "(, )");
+	if (st.countTokens() != 3)
+		throw new NumberFormatException("Not a valid format for Point3f");
+
+	float x = Float.valueOf(st.nextToken()).floatValue();
+	float y = Float.valueOf(st.nextToken()).floatValue();
+	float z = Float.valueOf(st.nextToken()).floatValue();
+	
+	return new Point3f(x, y, z);
 	}
 }

@@ -5,14 +5,8 @@ package q2java.core;
  * of Game serverframe activities.
  *
  * @author Barry Pederson
+ * @deprecated use q2java.core.event.ServerFrameListener instead
  */
-public interface FrameListener 
+public interface FrameListener extends q2java.core.event.ServerFrameListener
 	{
-	
-/**
- * Method called to notify the running of a Server Frame.
- * @param phase Which phase of the processing the Game
- *   is in, one of the Game.FRAME_* constants.
- */
-public void runFrame(int phase);
-}
+	}

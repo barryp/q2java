@@ -1,5 +1,7 @@
 package q2java.baseq2;
 
+import org.w3c.dom.Element;
+
 import q2java.*;
 import q2java.core.*;
 
@@ -17,7 +19,7 @@ public abstract class GenericArmor extends GenericItem
 public GenericArmor() 
 	{
 	}
-public GenericArmor(String[] spawnArgs) throws GameException
+public GenericArmor(Element spawnArgs) throws GameException
 	{
 	super(spawnArgs);
 	

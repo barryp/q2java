@@ -1,7 +1,10 @@
 package q2java.baseq2.spawn;
 
+import org.w3c.dom.Element;
+
 import q2java.*;
 import q2java.core.*;
+import q2java.core.event.ServerFrameListener;
 import q2java.baseq2.*;
 
 /**
@@ -9,11 +12,11 @@ import q2java.baseq2.*;
  * just sits and flutters in the wind.
  */
 
-public class misc_banner extends GameObject implements FrameListener
+public class misc_banner extends GameObject implements ServerFrameListener
 	{
 	private int fCurrentFrame;
 	
-public misc_banner(String[] spawnArgs) throws GameException
+public misc_banner(Element spawnArgs) throws GameException
 	{
 	super(spawnArgs);
 	
@@ -26,7 +29,7 @@ public misc_banner(String[] spawnArgs) throws GameException
 	fEntity.linkEntity();
 	
 	// ask to be called back each server frame
-	Game.addFrameListener(this, 0, 0);
+	Game.addServerFrameListener(this, 0, 0);
 	}
 /**
  * Animate the banner.

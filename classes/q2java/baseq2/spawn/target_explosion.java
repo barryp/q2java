@@ -1,6 +1,9 @@
 package q2java.baseq2.spawn;
 
 import javax.vecmath.*;
+
+import org.w3c.dom.Element;
+
 import q2java.*;
 import q2java.core.*;
 import q2java.baseq2.*;
@@ -14,7 +17,7 @@ public class target_explosion extends GameObject
 
 	private Player fActivator;
 	
-public target_explosion(String[] spawnArgs) throws GameException
+public target_explosion(Element spawnArgs) throws GameException
 	{
 	super(spawnArgs);
 

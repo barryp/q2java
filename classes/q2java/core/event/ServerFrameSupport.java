@@ -1,15 +1,16 @@
-package q2java.core;
+package q2java.core.event;
 
 import q2java.*;
+import q2java.core.CrossLevel;
 
 /**
- * Private class used by Game to track FrameListeners.
+ * Private class used by Game to track ServerFrameListeners.
  *
  * @author Barry Pederson
  */
-class FrameList 
+public class ServerFrameSupport 
 	{
-	private FrameListener[] fListeners;
+	private ServerFrameListener[] fListeners;
 	private float[] fTime;
 	private float[] fInterval;
 	
@@ -20,11 +21,11 @@ class FrameList
 	private float fCurrentTime;
 	
 /**
- * Protected constructor
+ * constructor
  */
-FrameList(int initialSize, int growSize) 
+public ServerFrameSupport(int initialSize, int growSize) 
 	{
-	fListeners = new FrameListener[initialSize];
+	fListeners = new ServerFrameListener[initialSize];
 	fTime = new float[initialSize];
 	fInterval = new float[initialSize];		
 	fArraySize = initialSize;
@@ -43,7 +44,7 @@ FrameList(int initialSize, int growSize)
  * @param interval Number of seconds between calls, use 0 to call on every frame, a negative interval will
  *   be a one-shot notification with the listener removed automatically afterwards.
  */
-void addFrameListener(FrameListener f, float delay, float interval) 
+public void addServerFrameListener(ServerFrameListener f, float delay, float interval) 
 	{
 	// scan through the whole table looking for a pre-existing
 	// entry. starting at the current entry (often what we're looking for)
@@ -86,7 +87,7 @@ private void grow()
 	{	
 	fArraySize += fGrowSize;
 	
-	FrameListener[] fla = new FrameListener[fArraySize];
+	ServerFrameListener[] fla = new ServerFrameListener[fArraySize];
 	System.arraycopy(fListeners, 0, fla, 0, fListeners.length);
 	fListeners = fla;
 
@@ -101,7 +102,7 @@ private void grow()
 /**
  * Purge non-CrossLevel objects from the tables.
  */
-void purge() 
+public void purge() 
 	{
 	for (int i = 0; i < fTop; i++)
 		{
@@ -115,7 +116,7 @@ void purge()
  * Remove a FrameListener.
  * @param f q2jgame.FrameListener
  */
-void removeFrameListener(FrameListener f) 
+public void removeServerFrameListener(ServerFrameListener f) 
 	{
 	// scan through the table, starting at the current entry
 	for (int i = fCurrentEntry; i < fTop; i++)
@@ -144,7 +145,7 @@ void removeFrameListener(FrameListener f)
 /**
  * Notify all the listeners that are due for a nudge.
  */
-void runFrame(int phase, float gameTime) 
+public void runFrame(int phase, float gameTime) 
 	{
 	fCurrentTime = gameTime;
 	

@@ -6,6 +6,7 @@ import javax.vecmath.*;
 
 import q2java.*;
 import q2java.core.*;
+import q2java.core.event.*;
 
 import q2java.baseq2.*;
 import q2java.baseq2.spawn.*;
@@ -72,10 +73,11 @@ public static void connect(NativeEntity ent) throws GameException
 		p.getCurrentWeapon().activate();
 
 		// sign up to receive server frame notices at the beginning and end of server frames
-		Game.addFrameListener(p, Game.FRAME_BEGINNING + Game.FRAME_END, 0, 0);		
+		Game.addServerFrameListener(p, Game.FRAME_BEGINNING + Game.FRAME_END, 0, 0);		
 	
 		// sign up to receive broadcast messages using the default locale
-		p.fResourceGroup = Game.addLocaleListener(p);
+		p.fResourceGroup = Game.getResourceGroup(Locale.getDefault());
+		Game.getPrintSupport().addPrintListener(p, PrintEvent.PRINT_ANNOUNCE+PrintEvent.PRINT_TALK, false);
 			
 		// update the player info, in case they
 		// changed something (other than their name)
