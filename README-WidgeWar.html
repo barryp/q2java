@@ -1,0 +1,217 @@
+<html>
+<head>
+<title>Untitled Document</title>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+</head>
+
+<body bgcolor="#FFFFFF">
+<h1>WidgetWars</h1>
+<p><i>(a working title) </i></p>
+<h2>QuickStart</h2>
+<h3>Game Resources</h3>
+<p>WidgetWars is a team game that uses CTF maps and resources. To make those resources 
+  accessible in your client, you'll have to copy or move the CTF .pak file from 
+  your <code>quake2\ctf</code> directory to your <code>quake2\baseq2</code> directory 
+  (changing the number of the pak file if there's already a .pak file in your 
+  baseq2 directory with the same number). </p>
+<p>There are also some screen icons you need to download from the server the first 
+  time you play the game. You can do this by starting the game with this command:</p>
+<p><code>quake2 +set allow_downloads 1 +connect 134.129.166.11</code></p>
+<p>Once the icons are downloaded to your disk, you don't need to do the allow_downloads 
+  bit anymore, and can start q2 without that extra parameter. </p>
+<h3>Commands</h3>
+<p>The commands unique to this game are:</p>
+<ul>
+  <li>widget</li>
+  <li>body</li>
+  <li>control</li>
+  <li>payload</li>
+  <li>deploy</li>
+  <li>describe</li>
+</ul>
+<p>The first five will be frequently used, so you'll probably want to bind them 
+  to keys. I've been using this binding:</p>
+<pre><code>bind z widget
+</code><code>bind x body
+</code><code>bind c control
+</code><code>bind v payload
+</code><code>bind b deploy</code></pre>
+<p>You can type those lines in your console, or place them in a file named <code>quake2\q2java\autoexec.cfg</code> 
+  if you don't want to type them every time you connect.</p>
+<p>I'll get into what they do later in this document.</p>
+<h2>Playing the Game</h2>
+<h3>The Objective</h3>
+<p>The main objective in this game, is to steal enemy technology, and prevent 
+  the enemy team from stealing your technology. Technology is represented by CDs 
+  (compact-disks) that can be found where flags normally appear in CTF - or by 
+  DataCards occasionally dropped by dying players. </p>
+<p>If you bring a CD or DataCard back to your base (where the CTF flags would 
+  appear), you'll capture some fraction of an enemy technology. The amount captured 
+  on a CD depends on how long it took you to make the capture. The amount captured 
+  on a Datacard is fixed, but if a player dies while carrying an enemy datacard, 
+  that card is lost (unlike a CD which can be picked up by a teammate and carried 
+  on to the base)</p>
+<p>Once a team has captured 100% of a technology, the team can start using that 
+  technology.</p>
+<p>The game also keeps score based on percentage of technologies captured. If 
+  a team doesn't have any more technology to steal, then any further captures 
+  are basically just for the points - which show up on the lower right of the 
+  HUD - one point for each percent of technology captured.</p>
+<h3>Technologies</h3>
+<p>What's a technology, and why would you want to capture one? Unlike a CTF flag 
+  which is just a symbolic token worth points on a scoreboard, a technology is 
+  actually useful. A technology is the knowledge of how to build a widget component. 
+  The more technologies a team has, the greater the variety of items team members 
+  can build. </p>
+<p>When a level first starts, both teams are given some common technologies, and 
+  a few unique ones. As the level progresses, every 5 minutes or so teams are 
+  given new technologies - so there are new things to steal, and the game just 
+  gets more and more intense.</p>
+<h3>Widgets</h3>
+<p>A widget is an item you build and deploy into the world, made up of a combination 
+  of various components. Each component is an instance of a particular technology. 
+  There are three types of technologies/components:</p>
+<p><b><i>Body</i></b>: responsible for the appearance and movement of the widget 
+  in the world. For example, a simple box that sits on the ground, or a guided 
+  missile.</p>
+<p><b><i>Control</i></b>: (optional) gives some direction to the body and/or payload. 
+  For example, one control unit might automatically target enemy players, another 
+  might target enemy widgets.</p>
+<p><b><i>Payload</i></b>: (optional) hopefully does something useful - like kill 
+  enemy players. For example, a cluster bomb that might throw out a shower of 
+  grenades, or a comm jammer that screws up enemy team communications.</p>
+<p>To create a widget, you select a body using the <code>body</code> command (or 
+  by tapping whatever key you've bound that command to), select a control with 
+  the <code>control</code> command, and a payload with the <code>payload</code> 
+  command. The lower-left corner of the HUD (Heads Up Display) shows you current 
+  selection of components. Keep tapping the keys until you come up with the combination 
+  you want, and then hit the <code>deploy</code> key (which I bound to &quot;<code>b</code>&quot; 
+  in my example bindings at the top of this doc).</p>
+<p>On executing the <code>deploy</code> command, your widget should appear in 
+  front of you. What it does after that depends on the particular combination 
+  of components you selected (a box will probably just sit there, while a missile 
+  will probably launch immediately). On your HUD, above the component display, 
+  you'll see a row of box-indicators, one for each widget slot. The &quot;current&quot; 
+  widget is indicated by a yellow highlight, and an green-light indicates this 
+  widget is active. </p>
+<p>If you want to create another widget, you'll have to select another widget-slot, 
+  use the <code>widget</code> command to rotate through the various slots, until 
+  you find one that's empty (has no green light). </p>
+<p>If you want to destroy a widget to free up a slot, use the <code>widget</code> 
+  command to rotate through the slots until you come to the one you want to get 
+  rid of, and then tap the <code>deploy</code> key twice (the first time you tap 
+  it you'll hear a warning noise).</p>
+<p>The last command you might want to know about is <code>describe</code> - which 
+  prints on the console a short description of what the currently selected technologies 
+  do. </p>
+<h3>Energy</h3>
+<p>Energy is the main resource in this game. Instead of individual types of ammo, 
+  all the weapons use energy cells. Energy is also consumed when you build widgets 
+  and when you jump (bunny-hoppers beware). </p>
+<p>Where does energy come from? Your battle suit naturally generates energy, more 
+  as you're standing still, less as you're running. You can use the <code>drop 
+  cells</code> command to give energy to other players, and dying players will 
+  sometimes drop energy cells.</p>
+<p>There will also be energy-related technologies in the game, such as the &quot;<code>energy 
+  siphon</code>&quot; payload which steals energy from enemy players.</p>
+<h3>Health</h3>
+<p>Health is similar to Energy in that your suit will automatically heal you, 
+  but only if you're standing still. There will also be health-related technologies 
+  in the game such as the &quot;<code>AutoDoc</code>&quot; payload</p>
+<h3>Lastly</h3>
+<h3></h3>
+<h3></h3>
+<h3></h3>
+<h3></h3>
+<h3></h3>
+<p>You won't find any spawned items such as weapons, ammo, armor or powerups. 
+  You start off right away with all the weapons you'll ever have - which are the 
+  normal deathmatch weapons up to the hyperblaster (railgun and BFG10K are left 
+  out). The <i><b>only</b></i> things that are spawned are the two CDs in the 
+  team flagrooms.</p>
+<h2>Known Bugs</h2>
+<p>This game is <b>not</b> complete - there are quite a few things that need work. 
+</p>
+<ul>
+  <li>Widgets may be created sticking out of walls</li>
+  <li>The balance of various game elements is very rough - basically there need 
+    to be adjustments to the energy cost of each item, the speed and potency of 
+    various weapons and widget components, and various other game factors relating 
+    to timing and scorekeeping.</li>
+</ul>
+<h2></h2>
+<h2></h2>
+<h2>Examples</h2>
+<p>There will be a <b>huge</b> number of ways technologies can be combined to 
+  create widgets, but I'll list a few example combinations here to give you some 
+  idea of what's possible.</p>
+<h3>Current Technologies</h3>
+<p>These are some of the technologies currently implemented in the game:</p>
+<ul>
+  <li>Bodies 
+    <ul>
+      <li>Box - just sits on the ground, pretty simple</li>
+      <li>Body Harness - lets you attach other components to your own body. Has 
+        the special feature that any control components show their output on the 
+        upper-right of your HUD with direction and range indicators.</li>
+      <li>Guided Missile - flies towards whatever spot is specified by a control 
+        component (flies in a straight line if no control component is present, 
+        or the control hasn't specified a target).</li>
+      <li>Standby Missile - like a Guided Missile, but doesn't launch until a 
+        target is detected. </li>
+    </ul>
+  </li>
+  <li>Controls 
+    <ul>
+      <li>Enemy Tracker - tracks the nearest enemy player</li>
+      <li>Enemy Widget Tracker - tracks the nearest enemy widget</li>
+      <li>Laser Guidance - tracks whatever spot the player's crosshair is resting 
+        on, when the fire button is pushed. As a convenience, the Blaster weapon 
+        has been replaced with a null-weapon - so that when you select the blaster, 
+        you actually have no weapon at all, and can safely press the fire button 
+        without actually firing anything and giving your position away</li>
+    </ul>
+  </li>
+  <li>Payloads 
+    <ul>
+      <li>Cluster Bomb - when triggered it throws out a shower of grenades</li>
+      <li>AutoDoc - automatically heals nearby team members</li>
+      <li>Comm Jammer - disrupts enemy team communications originating near the 
+        widget</li>
+      <li>Energy Siphon - steals energy from enemy players</li>
+      <li>Explosive - simple thing that goes &quot;boom!&quot;</li>
+    </ul>
+  </li>
+</ul>
+<p>There will eventually be many more technologies, but that's what I have to 
+  start with.</p>
+<h4>Example Combinations</h4>
+<p>These are just a few example combinations - there are quite a few more that 
+  are possible. Not all combinations of components will be useful though - it'll 
+  be up to each player to figure out for themselves what works, and what is a 
+  waste of energy. </p>
+<hr>
+<p>Box + AutoDoc = First aid station. The box will simple sit on the ground, and 
+  any team member that stands near it will be healed. </p>
+<p>Body Harness + AutoDoc = Medic. Team members standing near a player wearing 
+  an AutoDoc will be healed.</p>
+<p>Box + Cluster Bomb = Remotely triggered bomb. Create a widget like this, then 
+  step back and hit the <code>deploy</code> key twice - kaboom!</p>
+<p>Box + Enemy Tracker + Cluster Bomb = Automatically triggered bomb. Set one 
+  of these up, and it will go off when an enemy player comes near.</p>
+<p>Guided Missile + Enemy Tracker + Cluster Bomb = A missile that flies off towards 
+  an enemy player, and rains a shower of grenades on his head when it comes close 
+  enough.</p>
+<p>Guilded Missile + Laser Guidance + Cluster Bomb = A missile that flies towards 
+  whatever spot you point your crosshair at while pressing the fire button. If 
+  your target is moving, just keep pointing the crosshair at him, and the missile 
+  will steer towards him.</p>
+<p>Body Harness + Enemy Tracker = Enemy Detector, will show on your HUD the direction 
+  and range of a nearby enemy player.</p>
+<p>Box + Energy Siphon = More juice for you, if you can sneak this into an area 
+  where enemy players tend to congregate.</p>
+<hr>
+<div align="right"><font size="-1">Barry Pederson &lt;<a href="mailto:bpederson@geocities.com">bpederson@geocities.com</a>&gt; 
+  12/12/1999 </font></div>
+</body>
+</html>
