@@ -1,0 +1,97 @@
+<?xml version="1.0"?>
+<changelog version="0.9.3">
+  <class name="q2java.baseq2.BaseQ2">
+    <change author="Leigh" mail="ldodds@ingenta.com">
+      init() and unload() updated to add and remove "q2java.baseq2" 
+      from the game's "packagePath" property.
+    </change>
+  </class>
+  
+  <class name="q2java.baseq2.Player">
+    <fix author="Leigh" mail="ldodds@ingenta.com">
+      cmd_say() fixed to catch case of empty-string being passed 
+      as an arg - so a NullPointerException isn't thrown.  
+    </fix>
+    <change author="Barry" mail="barryp@planetquake.com">
+      getMaxAmmoCount() made public - so that property can be
+      manipulated by external objects like item_pack
+    </change>
+    <change author="Barry" mail="barryp@planetquake.com">
+      setAmmoCount() methods make sure that the ammo count
+      doesn't exceed the maxAmmoCount
+    </change>
+    <addition author="Barry" mail="barryp@planetquake.com">
+      setMaxAmmoCount() - to go along with getMaxAmmoCount()
+    </addition>
+  </class>
+  
+  <class name="q2java.baseq2.spawn.item_pack">
+    <addition author="Barry" mail="barryp@planetquake.com">
+      New class, to implement ammo backpacks that increase a player's
+      capacity, and gives a quick ammo-refill.
+    </addition>
+  </class>
+  
+  <class name="q2java.core.BasicServerCommands">
+    <addition author="Leigh" mail="ldodds@ingenta.com">
+      Several of the basic server commands were removed from the Game class
+      and moved into this new class.
+    </addition>
+  </class>
+  
+  <class name="q2java.core.DefaultClassFactory">
+    <change author="Leigh" mail="ldodds@ingenta.com">
+      This class has been reworked to just handle locating classes, and no longer
+      involves itself with gamelet management. 
+    </change>
+  </class>
+  
+  <class name="q2java.core.Game">
+    <change author="Leigh" mail="ldodds@ingenta.com">
+       svcmd_addgamelet(), svcmd_removegamelet() moved to the new GameletManager class.
+    </change>
+    <change author="Leigh" mail="ldodds@ingenta.com">
+       svcmd_help(), svcmd_javagc(), svcmd_javamem(), svcmd_properties() moved to new
+       BasicServerCommands class.
+    </change>
+    <change author="Leigh" mail="ldodds@ingenta.com">
+       Gamelet management split off into new GameletManager class, so addGamelet(), getGamelet(),
+       removeGamelet(),
+    </change>
+    <addition author="Barry" mail="barryp@planetquake.com">
+      A new Game property, the "packagePath" - manipulated with addPackagePath() and 
+      removePackagePath() methods has been added. Basically the Game class
+      will keep track of a list of package names, and ClassFactory objects will refer
+      to it when trying to figure out the full Java classnames of partially specified
+      classes (such as when it needs to figure out that "weapon_rocket" is implemented
+      by "q2java.baseq2.spawn.weapon_rocket").  
+    </addition>
+  </class>
+  
+  <class name="q2java.core.GameletManager">
+    <addition author="Leigh" mail="ldodds@ingenta.com">
+      Gamelet management was been taken out of the Game and DefaultClassFactory classes
+      and moved here.  The Game class has setGameletManager() and getGameletManager() 
+      methods to access the Game's current GameletManager object.
+    </addition>
+  </class>
+  
+  <class name="q2java.core.GameUtil">
+    <addition author="Barry" mail="barryp@planetquake.com">
+      Versions of getAngle3f(), getPoint3f(), and getSpawnArg() to work with DOM elements
+      instead of old-fashioned arrays of strings.
+    </addition>
+    
+    <addition author="Barry" mail="barryp@planetquake.com">
+      New versions of randomInt() to more conveniently generate random numbers on the ranges
+      0..n-1, given a value n, or in the range x..y given x and y.
+    </addition>    
+  </class>
+  
+  <class name="q2java.core.GameletManager">
+    <change author="Leigh" mail="ldodds@ingenta.com">
+      init() and unload() add/remove the package "q2java.ctf" to the Game's packagePath
+    </addition>
+  </class>
+  
+</changelog>

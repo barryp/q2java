@@ -155,7 +155,7 @@ Older gamelets
 
     barryp.rocketmania.GameModule
 
-        Demonstrates replacement of the basic games weapons.  Includes a 
+        Demonstrates replacement of the basic game's weapons.  Includes a 
         blaster with that fires small rockets, a machinegun that fires 
         rockets as well as bullets, and a rocketlauncher that fires more 
         powerful rockets.

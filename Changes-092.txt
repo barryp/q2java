@@ -54,7 +54,7 @@ q2java.core.Game
     
              startLevel() fires a new event: GameStatusEvent.GAME_ENDLEVEL when
              a map is finished, and before the Game starts working on the next map.
-             Also, it creates a calls the current LevelDocumentFactory to create
+             Also, it creates and calls the current LevelDocumentFactory to create
              a DOM document describing the current level, before the GAME_PRESPAWN
              event is fired.
     

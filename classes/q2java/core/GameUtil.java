@@ -3,10 +3,14 @@ package q2java.core;
 import java.util.*;
 import javax.vecmath.Point3f;
 
+import org.w3c.dom.*;
+
 import q2java.*;
 
 /**
  * Handy Static methods.
+ *
+ * @author Barry Pederson
  */
 public class GameUtil 
 	{
@@ -19,6 +23,57 @@ public class GameUtil
 public static float cRandom() 
 	{
 	return (float)((gRandom.nextFloat() - 0.5) * 2.0);
+	}
+/**
+ * Get an Angle3f from a given document element.
+ * @return Origin of item, or null if it can't be determined or the info in the document is invalid.
+ * @param e org.w3c.dom.Element
+ */
+public static Angle3f getAngle3f(Element e) 
+	{
+	try
+		{
+		Angle3f p = new Angle3f();
+		
+		String s = e.getAttribute("pitch");
+		if (s != null)
+			p.x = Float.valueOf(s).floatValue();
+			
+		s = e.getAttribute("yaw");
+		if (s != null)
+			p.y = Float.valueOf(s).floatValue();
+			
+		s = e.getAttribute("roll");
+		if (s != null)
+			p.z = Float.valueOf(s).floatValue();
+			
+		return p;
+		}
+	catch (Throwable t)
+		{
+		// either there was no origin element, or one or more of the
+		// pitch,yaw,roll attributes was malformed
+		return null;
+		}	
+	}
+/**
+ * Get an Angle3f from a sub-element of a given document element.
+ * @return Origin of item, or null if it can't be determined or the info in the document is invalid.
+ * @param e org.w3c.dom.Element
+ * @param tagName name of sub-element containing the point information.
+ */
+public static Angle3f getAngle3f(Element e, String tagName) 
+	{
+	try
+		{
+		NodeList nl = e.getElementsByTagName(tagName);
+		return getAngle3f((Element) nl.item(0));
+		}
+	catch (Throwable t)
+		{
+		// probably no element with the given tagname
+		return null;
+		}	
 	}
 /**
  * Get a Locale object given a name.
@@ -45,6 +100,58 @@ public static Locale getLocale(String localeName)
 		return new Locale(lang, country, st.nextToken());
 	else
 		return new Locale(lang, country);
+	}
+/**
+ * Get a Point3f from a given document element.
+ * @return Origin of item, or null if it can't be determined or the info in the document is invalid.
+ * @param e org.w3c.dom.Element
+ */
+public static Point3f getPoint3f(Element e) 
+	{
+	try
+		{
+		Point3f p = new Point3f();
+		
+		String s = e.getAttribute("x");
+		if (s != null)
+			p.x = Float.valueOf(s).floatValue();
+			
+		s = e.getAttribute("y");
+		if (s != null)
+			p.y = Float.valueOf(s).floatValue();
+			
+		s = e.getAttribute("z");
+		if (s != null)
+			p.z = Float.valueOf(s).floatValue();
+			
+		return p;
+		}
+	catch (Throwable t)
+		{
+		// either there was no origin element, or one or more of the
+		// x,y,z attributes was malformed
+		return null;
+		}	
+	}
+/**
+ * Get a Point3f from a sub-element of a given document element.
+ * @return Origin of item, or null if it can't be determined or the info in the document is invalid.
+ * @param e org.w3c.dom.Element
+ * @param tagName name of sub-element containing the point information.
+ */
+public static Point3f getPoint3f(Element e, String tagName) 
+	{
+	try
+		{
+		NodeList nl = e.getElementsByTagName(tagName);
+		
+		return getPoint3f((Element) nl.item(0));
+		}
+	catch (Throwable t)
+		{
+		// probably no element with the given tagname
+		return null;
+		}	
 	}
 /**
  * Lookup an float spawn argument.
@@ -128,6 +235,63 @@ public static String getSpawnArg(String[] args, String keyword, String defaultVa
 	return defaultValue;
 	}
 /**
+ * Lookup a float spawn argument.
+ * @return value found, or defaultValue.
+ * @param e DOM element describing a particular map entity.
+ * @param tagName name of sub-element we're looking for.
+ * @param defaultValue value to return if "tagName" is not found.
+ */
+public static float getSpawnArg(Element e, String tagName, float defaultValue)
+	{
+	try
+		{
+		Element e2 = (Element)(e.getElementsByTagName(tagName).item(0));
+		return Float.valueOf(e2.getFirstChild().getNodeValue()).floatValue();
+		}
+	catch (Throwable t)
+		{
+		return defaultValue;
+		}
+	}
+/**
+ * Lookup an int spawn argument.
+ * @return value found, or defaultValue.
+ * @param e DOM element describing a particular map entity.
+ * @param tagName name of sub-element we're looking for.
+ * @param defaultValue value to return if "tagName" is not found.
+ */
+public static int getSpawnArg(Element e, String tagName, int defaultValue)
+	{
+	try
+		{
+		Element e2 = (Element)(e.getElementsByTagName(tagName).item(0));
+		return Integer.parseInt(e2.getFirstChild().getNodeValue());
+		}
+	catch (Throwable t)
+		{
+		return defaultValue;
+		}
+	}
+/**
+ * Lookup a string spawn argument.
+ * @return value found, or defaultValue.
+ * @param e DOM element describing a particular map entity.
+ * @param tagName name of sub-element we're looking for.
+ * @param defaultValue value to return if "tagName" is not found.
+ */
+public static String getSpawnArg(Element e, String tagName, String defaultValue)
+	{
+	try
+		{
+		Element e2 = (Element)(e.getElementsByTagName(tagName).item(0));
+		return e2.getFirstChild().getNodeValue();
+		}
+	catch (Throwable t)
+		{
+		return defaultValue;
+		}
+	}
+/**
  * Parse an Angle3f from the standard map format of "<pitch> <yaw> <roll>".
  * @return javax.vecmath.Tuple3f
  * @param s java.lang.String
@@ -179,14 +343,37 @@ public static int randomInt()
 	return gRandom.nextInt();
 	}
 /**
+ * Get a positive random integer less than a given value. 
+ *
+ * @return random int >=0 and < max.
+ * @param max upper bound for returned values (exclusive).
+ */
+public static int randomInt(int max) 
+	{
+	return (gRandom.nextInt() & 0x7fffffff) % max;
+	}
+/**
+ * Get a random integer within a given range. 
+ * (Max - min) should be less than (Integer.MAX_VALUE / 2), but
+ * that's probably not going to be a problem.
+ *
+ * @return random int in the range min..max (inclusive).
+ * @param min smallest integer you ever want returned.
+ * @param max largest integer you ever want returned.
+ */
+public static int randomInt(int min, int max) 
+	{
+	return  ((gRandom.nextInt() & 0x7fffffff) % ((max - min) + 1)) + min;
+	}
+/**
  * Sends a command to the clients console
  * @author Peter Donald 24/1/99  
  */
 public static void stuffCommand(NativeEntity ent, String command)
 	{
-	if( ent.isPlayer() && !ent.isBot() )
+	if (ent.isPlayer() && !ent.isBot())
 	    {
-	    Engine.writeByte( Engine.SVC_STUFFTEXT );
+	    Engine.writeByte(Engine.SVC_STUFFTEXT);
 	    Engine.writeString(command);
 	    Engine.unicast(ent, true);	  
 	    }	

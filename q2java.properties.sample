@@ -70,6 +70,11 @@
 #java.class.path=c:\quake2\q2java\classes;
 #java.class.path=/usr/local/java/jdk117_v1a/lib/classes.zip:/usr/local/games/quake2/q2java/classes
 
+
+# Turn off the JIT compiler, so that stack traces show actual line numbers
+#java.compiler=NONE
+
+
 #
 # Load Modules at startup
 #

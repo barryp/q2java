@@ -28,6 +28,6 @@ public GameModule(String moduleName)
 public void runFrame(int phase)
 	{
 	Engine.addCommandString("exec autoload.cfg");
-	Game.removeGamelet(this);
+	Game.getGameletManager().removeGamelet(this);
 	}
 }

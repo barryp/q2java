@@ -1,49 +1,35 @@
 package q2java.core;
 
 import java.util.*;
+import q2java.*;
 
 /**
- * This class provides a package addition and removal scheme for q2java. It is based
- * upon methods originally provided in q2jgame.Game which performed the main functionality.
- * <P>
- * The corresponding methods in q2jgame.Game are still available but are re-implemented 
- * in terms of the methods below.
- * <P>
- * A mod can provide a subclass of GameClassFactory which can replace any or all of the 
- * functionality of this class, but in a transparent way so that existing mods need not
- * be altered.
- * <P>
- * Note that after removing itself as GameClassFactory should ensure that the
- * system is in a stable state by calling Game.setClassFactory(new DefaultClassFactory())
- * @version 	0.2
+ * This simple ClassFactory implementation just makes use of the 
+ * virtual machines own class loader to retrieve classes from the 
+ * local file system. An more advanced implementation may add network
+ * support.
+ *
+ * @version 	0.4
  * @author 	Leigh Dodds
  */
 public class DefaultClassFactory implements GameClassFactory 
 	{
-	protected Vector gModList;
-	protected Hashtable gClassHash;
+	protected String[] fPackagePaths = null;
+	protected Hashtable fClassCache = null;
 	
 /**
  * Constructor
  */
 public DefaultClassFactory() 
 	{
-	gModList = new Vector();
-	gClassHash = new Hashtable();
+	fClassCache = new Hashtable();
+	//Engine.debugLog("class factory init");
 	}
 /**
- * Adds a package to the running game.
+ * Loads a gamelet into the game.
  */
-public Gamelet addGamelet(String className, String alias,
-	Gamelet higherGamelet) throws ClassNotFoundException
+public Gamelet loadGamelet(String className, String alias) throws ClassNotFoundException
 	{
-	Gamelet g = getGamelet(alias);
-	if (g != null) 
-		{
-		Game.dprint("There is already a [" + alias + "] loaded\n");
-		return null;
-		}
-		
 	try 
 		{
 		Class cls = Class.forName(className);
@@ -52,17 +38,16 @@ public Gamelet addGamelet(String className, String alias,
 		Class[] argTypes = new Class[1];
 		argTypes[0] = alias.getClass();
 		java.lang.reflect.Constructor ctor = cls.getConstructor(argTypes);		
-		g = (Gamelet) ctor.newInstance(args);
+		Gamelet g = (Gamelet) ctor.newInstance(args);
 
-		int position = 0;
-		if (higherGamelet != null)
-			position = gModList.indexOf(higherGamelet) + 1;
-		gModList.insertElementAt(g, position);
+		//note that the gamelet is responsible for registering 
+		//any package paths, we just forget about it. Although
+		//we will clear the class hash in case the new gamelet does
+		//want to alter any classes
 
-		// clear the cache so the new package will be 
-		// looked at when looking up classes
-		gClassHash.clear();
-
+// huh? how can the gamelet alter a class without changing the path?		
+//		fClassCache.clear();
+		
 		return g;
 		} 
 	catch (java.lang.reflect.InvocationTargetException ite)
@@ -77,53 +62,6 @@ public Gamelet addGamelet(String className, String alias,
 	return null;
 	}
 /**
- * Look for a gamelet based on the class.
- * @return q2java.core.Gamelet, null if not found.
- * @param gameletClass class we're looking for.
- */
-public Gamelet getGamelet(Class gameletClass) 
-	{
-	for (int i = 0; i < gModList.size(); i++)
-		{
-		Object obj = gModList.elementAt(i);
-		if (obj.getClass().equals(gameletClass))
-			return (Gamelet) obj;
-		}
-		
-	return null;
-	}
-/**
- * Lookup a loaded package, based on its name.
- * @return q2jgame.GameModule, null if not found.
- * @param alias java.lang.String
- */
-public Gamelet getGamelet(String alias) 
-	{
-	for (int i = 0; i < gModList.size(); i++)
-		{
-		Gamelet g = (Gamelet) gModList.elementAt(i);
-		if (g.getGameletName().equalsIgnoreCase(alias))
-			return g;
-		}
-		
-	return null;
-	}
-/**
- * Returns the number of loaded packages
- */
-public int getGameletCount() 
-	{
-	return gModList.size();
-	}
-/**
- * Get an Enumeration of all loaded packages. The enumeration will be
- * of LoadedPackage objects
- */
-public Enumeration getGamelets() 
-	{
-	return gModList.elements();
-	}
-/**
  * Looks up a class in loaded packages, or attempts to load the 
  * given class if not currently loaded.
  * @param classSuffix Either a suffix, like ".spawn.weapon_shotgun", 
@@ -132,65 +70,61 @@ public Enumeration getGamelets()
  * @exception java.lang.ClassNotFoundException if there was no match.
  */
 public Class lookupClass(String classSuffix) throws ClassNotFoundException 
-	{	
+	{
+	//Engine.debugLog("ClassFactory: lookupClass :" + classSuffix);	
 	// check for a full classname
 	if (classSuffix.charAt(0) != '.')
 		{
 		return Class.forName(classSuffix);
 		}
-		
-	Class result = (Class) gClassHash.get(classSuffix);
+
+
+	//only a suffix then huh?
+	//we may have loaded this class recently...
+	Class result = (Class) fClassCache.get(classSuffix);
 	if (result != null)
 		return result;
-	Enumeration enum = gModList.elements();
 
-	while (enum.hasMoreElements())
+	//Engine.debugLog("Looking for non-cached Class : " + classSuffix);
+
+	if (fPackagePaths == null)
 		{
-		Gamelet g = (Gamelet) enum.nextElement();
-
-		// only check initialized Gamelets
-		if (g.isInitialized())
+		//probably ought to do something sensible here, like default?
+		throw new ClassNotFoundException("No paths for suffix [" + classSuffix + "]");        
+		}
+		
+	//Check out packagePaths to see if we can find it. 
+	//most recently registered paths get checked first.
+	for (int i = fPackagePaths.length-1; i >= 0; i--)
+		{
+		try
 			{
-			try
-				{
-				result = Class.forName(g.getPackageName() + classSuffix);
-				gClassHash.put(classSuffix, result);
-				return result;
-				}
-			catch (ClassNotFoundException e)
-				{
-				}
+			Class c = Class.forName(fPackagePaths[i]+classSuffix);
+			//store it for later use
+			fClassCache.put(classSuffix, c);
+			return c;
+			}
+		catch (ClassNotFoundException e)
+			{
+			//do nothing yet
 			}
 		}
 
 	throw new ClassNotFoundException("No match for [" + classSuffix + "]");
 	}
 /**
- * Removes a module from a running game.
+ * Called by the Game if this is the current GameClassFactory to let
+ * it know the packagePath has changed.
+ * @param path java.lang.String[]
  */
-public void removeGamelet(Gamelet g)  
+public void setPackagePath(String[] path)
 	{
-	int i;
-	for (i = 0; i < gModList.size(); i++)
-		{
-		Gamelet g2 = (Gamelet) gModList.elementAt(i);
-		if (g2 == g)
-			{
-			gModList.removeElementAt(i);
-			// clear the cache so the old package won't be 
-			// looked at when looking up classes
-			gClassHash.clear();
-			try
-				{
-				g.unload();
-				}
-			catch (Exception e)
-				{
-				e.printStackTrace();
-				}	
-			return;
-			}
-		}
-	Game.dprint("Gamelet: " + g + "wasn't loaded\n");
+	// make a copy, so we know it won't be messed with externally
+	fPackagePaths = new String[path.length];
+	System.arraycopy(path, 0, fPackagePaths, 0, path.length);
+
+	// clear the hashtable, so the new path will be searched instead
+	// of relying on old info
+	fClassCache.clear();
 	}
 }

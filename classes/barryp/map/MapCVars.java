@@ -50,11 +50,7 @@ public void gameStatusChanged(GameStatusEvent gse)
 		
 		for (int i = 0; i < count; i++)
 			{
-			Node n = nl.item(i);
-			if (!(n instanceof Element))
-				continue;
-
-			Element e = (Element) n;
+			Element e = (Element) nl.item(i);
 			String name = e.getAttribute("name");
 			String newValue = e.getAttribute("value");
 

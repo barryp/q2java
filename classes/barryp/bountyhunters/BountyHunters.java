@@ -30,6 +30,9 @@ public BountyHunters(String moduleName)
 	{
 	super(moduleName);
 
+	//leighd 04/10/99 - add the package path
+	Game.addPackagePath("barryp.bountyhunters");
+	
 	// ask to be called on level changes
 	Game.addGameStatusListener(this);	
 	}
@@ -146,6 +149,9 @@ public void svcmd_help(String[] args)
  */
 public void unload() 
 	{
+	//remove the packagePath
+	Game.removePackagePath("barryp.bountyhunters");
+	
 	// we no longer want to be notified of level changes
 	Game.removeGameStatusListener(this);	
 	}

@@ -1,6 +1,5 @@
 package q2java.ctf;
 
-
 /*
 ======================================================================================
 ==                                 Q2JAVA CTF                                       ==
@@ -83,7 +82,10 @@ public Class getPlayerClass()
 	 * Initialize the CTF gamelet.
 	 */
 	public void init() 
-	{
+	{    
+		//leighd 04/10/99 - add the package path
+		Game.addPackagePath("q2java.ctf");
+	
 		// ask to be called on level changes
 		Game.addGameStatusListener(this);
 
@@ -115,6 +117,9 @@ public boolean isLevelChangeRequired()
 	 */
 	public void unload() 
 	{
+		//leighd 04/11/99 - remove the package path
+		Game.removePackagePath("q2java.ctf");
+	
 		// we no longer want to be notified of level changes
 		Game.removeGameStatusListener(this);		
 	}

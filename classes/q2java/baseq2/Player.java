@@ -466,7 +466,7 @@ public void addBlend(Color4f color)
 public void addInventoryListener(InventoryListener l)
 	   {
 	   fInventorySupport.addInventoryListener(l);
-	   }   
+	   }
 /**
  * Add an item to the player's inventory.
  * @param item what we're trying to add.
@@ -522,7 +522,7 @@ public void addPlayerCvarListener(PlayerCvarListener l, String cvar)
 public void addPlayerDamageListener(PlayerDamageListener l)
 	{
 	addPlayerDamageListener(l,DAMAGE_FILTER_PHASE_PREARMOR);
-	}   
+	}
 /**
  * Add an object that wants to filter damage the player takes.
  * @param DamageFilter - The object to add as a damage filter
@@ -551,7 +551,7 @@ public void addPlayerDamageListener(PlayerDamageListener l, int phase)
 public void addPlayerInfoListener(PlayerInfoListener l)
 	{
 	fPlayerInfoSupport.addPlayerInfoListener(l);
-	}   
+	}
 public void addPlayerMoveListener(PlayerMoveListener l)
 	{
 	fPlayerMoveSupport.addPlayerMoveListener(l);
@@ -559,7 +559,7 @@ public void addPlayerMoveListener(PlayerMoveListener l)
 public void addPlayerStateListener(PlayerStateListener l)
 	{
 	fPlayerStateSupport.addPlayerStateListener(l);
-	}   
+	}
 /**
  * Add a class of weapon to a player's inventory.
  * @param weaponClassSuffix class of the weapon, either a whole classname or a suffix.
@@ -1463,11 +1463,16 @@ public void cmd_putaway(String[] argv, String args)
  */
 public void cmd_say(String[] argv, String args) 
 	{
+	//leighd 04/14/99, index out of bounds exception with no
+	//arguments - so don't do anything
+	if (args.length() == 0)
+		return;
+		
 	// remove any quote marks
 	if (args.charAt(args.length()-1) == '"')
 		args = args.substring(args.indexOf('"')+1, args.length()-1);
 
-	// get a StringBuffer and reset it to zero-length
+	// get a StringBuffer
 	StringBuffer sb = Q2Recycler.getStringBuffer();
 
 	// build up the string to print
@@ -2326,11 +2331,11 @@ public int getMass()
 	return fMass;
 	}
 /**
- * This method was created by a SmartGuide.
+ * Get the maximum amount of a given type of ammo the player can carry.
  * @return int
- * @param itemname java.lang.String
+ * @param ammoName
  */
-protected int getMaxAmmoCount(String ammoName) 
+public int getMaxAmmoCount(String ammoName) 
 	{
 	if (ammoName == null)
 		return Integer.MAX_VALUE;
@@ -3026,7 +3031,7 @@ public void removeInventory(String name)
 public void removeInventoryListener(InventoryListener l)
 	{
 	fInventorySupport.removeInventoryListener(l);
-	}   
+	}
 public void removePlayerCommandListener(PlayerCommandListener l)
 	{
 	fPlayerCommandSupport.removePlayerCommandListener(l);
@@ -3038,7 +3043,7 @@ public void removePlayerCvarListener(PlayerCvarListener l)
 public void removePlayerDamageListener(PlayerDamageListener l)
 	{
 	removePlayerDamageListener(l,DAMAGE_FILTER_PHASE_PREARMOR);
-	}   
+	}
 /**
  * Remove an object that was registered to filter damage.
  * @param DamageFilter - filter to remove.
@@ -3065,7 +3070,7 @@ public void removePlayerDamageListener(PlayerDamageListener l, int phase)
 public void removePlayerInfoListener(PlayerInfoListener l)
 	{
 	fPlayerInfoSupport.removePlayerInfoListener(l);
-	}   
+	}
 public void removePlayerMoveListener(PlayerMoveListener l)
 	{
 	fPlayerMoveSupport.removePlayerMoveListener(l);
@@ -3073,7 +3078,7 @@ public void removePlayerMoveListener(PlayerMoveListener l)
 public void removePlayerStateListener(PlayerStateListener l)
 	{
 	fPlayerStateSupport.removePlayerStateListener(l);
-	}   
+	}
 /**
  * Reset the color blend.
  * @author Brian Haskin
@@ -3137,6 +3142,9 @@ public void setAmmoCount(int amount, boolean isAbsolute)
 		else
 			fAmmo.fAmount += amount;
 			
+		if (fAmmo.fAmount > fAmmo.fMaxAmount)
+			fAmmo.fAmount = fAmmo.fMaxAmount;
+			
 		fEntity.setPlayerStat(NativeEntity.STAT_AMMO, (short) fAmmo.fAmount);
 		}
 	}
@@ -3158,6 +3166,9 @@ public void setAmmoCount(String ammoType, int amount, boolean isAbsolute)
 			ip.fAmount = amount;
 		else
 			ip.fAmount += amount;
+
+		if (ip.fAmount > ip.fMaxAmount)
+			ip.fAmount = ip.fMaxAmount;
 		}
 	}
 /**
@@ -3307,6 +3318,24 @@ public void setHealthMax(int maxCount)
 public void setMass(int mass)
 	{
 	fMass = mass;
+	}
+/**
+ * Set the maximum amount of a given type of ammo the player can carry.
+ *
+ * @param ammoName name of type of ammo
+ * @param newMax
+ */
+public void setMaxAmmoCount(String ammoName, int newMax) 
+	{
+	InventoryPack p = fInventory.getPack(ammoName);
+	
+	if (p == null)
+		{
+		p = new InventoryPack(newMax, null); // new kind of ammo we haven't heard of I guess.
+		fInventory.addPack(ammoName, p);
+		}
+	else
+		p.fMaxAmount = newMax;
 	}
 /**
  * Put a value into the playerInfo hashtable.

@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<gamelet class="barryp.map.NoBFG">
+  <title>No BFGs</title>
+  <author mail="barryp@planetquake.com">Barry Pederson</author>  
+  <game name="Q2Java"/>
+  <description>
+     Prevents BFGs from being spawned, by stripping them out of the 
+     DOM document that describes the map at level start time.
+  </description>
+</gamelet>

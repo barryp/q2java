@@ -131,6 +131,17 @@ char *q2strcat(char *dest, const char *source)
 	return result;
     }
 
+/**
+ * Create a new string by inserting source in front of dest, and 
+ * free the old dest
+ */
+char *q2strins(const char *source, char *dest)
+    {
+	char *result = q2strcpy3(source, dest, 0);
+    if (dest)
+        q2java_gi.TagFree(dest);
+	return result;
+    }
 
 /** 
  * Allocate a string of a given length

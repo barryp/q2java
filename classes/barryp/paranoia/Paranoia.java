@@ -29,6 +29,10 @@ public class Paranoia extends q2java.core.Gamelet implements GameStatusListener
 public Paranoia(String moduleName) 
 	{
 	super(moduleName);	
+	
+	//leighd 04/10/99 - add the package path
+	Game.addPackagePath("barryp.paranoia");
+	
 	}
 /**
  * Add a player to the open contract list.
@@ -129,13 +133,16 @@ public static void removePlayer(ParanoiaPlayer p)
  */
 public void svcmd_help(String[] args) 
 	{
-	Engine.dprint("No special commands available in Paranoian");
+	Engine.dprint("No special commands available in Paranoia\n");
 	}
 /**
  * Called when module is unloaded.
  */
 public void unload() 
 	{
+	//leighd 04/10/99 - remove the package path
+	Game.removePackagePath("barryp.paranoia");
+	
 	// we no longer want to be notified of level changes
 	Game.removeGameStatusListener(this);	
 	}

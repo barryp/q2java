@@ -170,7 +170,7 @@ void releasePlayers()
  */
 public void svcmd_help(String[] args) 
 	{
-	Engine.dprint("Gamelet author was too lazy to write decent help\n");
+	Engine.dprint(getClass().getName() + " author was too lazy to write decent help\n");
 	}
 /**
  * Default do-nothing implementation for unloading a gamelet.

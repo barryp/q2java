@@ -34,7 +34,7 @@ public void gameStatusChanged(GameStatusEvent gse)
 		for (int i = fStack.size() - 1; i >= 0; i--)
 			{
 			Gamelet g = (Gamelet) fStack.elementAt(i);
-			Game.removeGamelet(g);
+			Game.getGameletManager().removeGamelet(g);
 			}
 			
 		fStack.removeAllElements();
@@ -51,17 +51,13 @@ public void gameStatusChanged(GameStatusEvent gse)
 		
 		for (int i = 0; i < count; i++)
 			{
-			Node n = nl.item(i);
-			if (!(n instanceof Element))
-				continue;
-
-			Element e = (Element) n;
+			Element e = (Element) nl.item(i);
 			String className = e.getAttribute("class");
 			String alias = e.getAttribute("alias");
 
 			try
 				{
-				Gamelet g = Game.addGamelet(className, alias);				
+				Gamelet g = Game.getGameletManager().addGamelet(className, alias);				
 				fStack.addElement(g);
 				
 				g.init(); // assume it should be initialized now

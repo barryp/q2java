@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<gamelet class="barryp.map.ShuffleWeapons">
+  <title>Shuffle Weapons</title>
+  <author mail="barryp@planetquake.com">Barry Pederson</author>  
+  <game name="Q2Java"/>
+  <description>
+     Shuffles the positions of weapons around a map at level startup.
+     The same number of each type of weapon is retained - so for example
+     if a map had one RocketLauncher and two GrenadeLaunchers, it'll still
+     have one RL and two GLs, but their positions will be randomly swapped.
+  </description>
+</gamelet>

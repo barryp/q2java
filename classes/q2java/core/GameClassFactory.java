@@ -3,7 +3,11 @@ package q2java.core;
 import java.util.*;
 
 /**
- * @version 	0.3
+ * The GameClassFactory is basically just a class loader and should
+ * be used by gamelets (via the Game.lookupClass()) method to load
+ * any specific classes.
+ *
+ * @version 	0.4
  * @author 	Leigh Dodds
  */
 public interface GameClassFactory 
@@ -11,30 +15,11 @@ public interface GameClassFactory
 	
 /**
  * Adds a package to the running game.
+ * @param className The name of class to load
+ * @param alias The alias of the gamelet (required for constructor)
+ * @exception ClassNotFoundException if class cannot be loaded.
  */
-public Gamelet addGamelet(String className, String alias, 
-	Gamelet higherGamelet) throws ClassNotFoundException;
-/**
- * Lookup a loaded package, based on its name.
- * @return q2java.core.Gamelet, null if not found.
- * @param alias java.lang.String
- */
-public Gamelet getGamelet(Class gameletClass);
-/**
- * Lookup a loaded package, based on its name.
- * @return q2java.core.Gamelet, null if not found.
- * @param alias java.lang.String
- */
-public Gamelet getGamelet(String alias);
-/**
- * Returns the number of loaded packages
- */
-public int getGameletCount();
-/**
- * Get an Enumeration of all loaded packages. The enumeration will be
- * of Gamelet objects in order of priority - highest to lowest.
- */
-public Enumeration getGamelets();
+public Gamelet loadGamelet(String className, String alias) throws ClassNotFoundException;
 /**
  * Looks up a class in loaded packages, or attempts to load the 
  * given class if not currently loaded.
@@ -45,7 +30,9 @@ public Enumeration getGamelets();
  */
 public Class lookupClass(String classSuffix) throws ClassNotFoundException;
 /**
- * Removes a gamelet from a running game.
+ * Called by the Game if this is the current GameClassFactory to let
+ * it know the packagePath has changed.
+ * @param path java.lang.String[]
  */
-public void removeGamelet(Gamelet g);
+public void setPackagePath(String[] path);
 }

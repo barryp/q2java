@@ -198,10 +198,7 @@ static void setupDebug(char *val)
  * First, check if the user set the full DLL path in an environment
  * variable named "q2java_vmdll".  If so, then return that.
  *
- * If not, then check if the user set the version of Sun's JRE they want
- * to use in an environment variable named "q2java_jreversion"
- *
- * If they didn't specify a version, check in the registry under
+ * If they didn't specify a dll, check in the registry under
  * HKEY_LOCAL_MACHINE\Software\JavaSoft\Java Runtime Environment\CurrentVersion
  * to see what the current version is.
  *
@@ -558,6 +555,7 @@ static jint createVM_JNI_12(char **properties, JavaVM **java_vm)
     char **prop;
     char *classpath;
     char *securityPolicy;
+    char *p;
     int foundPath;
     int optionCount;
     int i;
@@ -600,6 +598,15 @@ static jint createVM_JNI_12(char **properties, JavaVM **java_vm)
     classpath = 0;
     securityPolicy = 0;
 
+    // try to get classpath from an environment variable
+    // (to be consistent with the JDK 1.1 invocation code)
+    p = getenv("Q2JAVA_CLASSPATH"); 
+    if (p)
+        {
+        classpath = q2strcpy(p);
+        javalink_debug("[C   ] Found Q2JAVA_CLASSPATH environment variable\n");
+        }
+
     // copy the properties read from a properties file (if any)
     optionCount = 0;
     foundPath = 0;
@@ -624,12 +631,21 @@ static jint createVM_JNI_12(char **properties, JavaVM **java_vm)
 
         // check if one of the properties is a classpath
         if (!strncmp(s, "-Djava.class.path=", 18))
+            {
             foundPath = 1;
+
+            // if path was specified in environment variable - override the property
+            if (classpath)
+                {
+                classpath = q2strins("-Djava.class.path=", classpath);
+                options[optionCount-1].optionString = classpath;
+                }
+            }
         }
 
     javalink_debug("[C   ] createVM_JNI_12() copied properties\n");
 
-    // if the properties file didn't have a classpath, make one
+    // if the properties file didn't have a classpath, and one wasn't specified as an environment variable - make one
     if (!foundPath)
         {            
         // Build up a classpath that includes "<gamedir>\classes;"

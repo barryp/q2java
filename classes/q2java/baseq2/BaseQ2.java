@@ -175,14 +175,14 @@ public static void copyCorpse(NativeEntity ent)
  */
 public void gameStatusChanged(GameStatusEvent e)
 	{
-	Engine.debugLog("Game.gameStatusChanged(" + e.getState() + ")");
+	Engine.debugLog("BaseQ2.gameStatusChanged(" + e.getState() + ")");
 
 	if( e.getState() != GameStatusEvent.GAME_PRESPAWN )
 	    {
 		return;
 	    }
 
-	Engine.debugLog("BaseQ2 intitialising");
+	Engine.debugLog("BaseQ2 initialising");
 
 	Element root = (Element) Game.getLevelDocument().getFirstChild();
 	String mapname = root.getAttribute("name");
@@ -344,6 +344,9 @@ public void init()
 	Game.addFrameListener(this, Game.FRAME_BEGINNING, 0, 10.0F);
 	Game.addFrameListener(this, Game.FRAME_MIDDLE, 0, 0);
 	Game.addGameStatusListener(this);
+	
+	//leighd 04/10/99 - need to register package path for spawning.
+	Game.addPackagePath("q2java.baseq2");
 	
 	// load cvars
 	gRunRollCVar = new CVar("run_roll", "0.005", 0);	
@@ -680,6 +683,7 @@ protected static boolean timeToQuit()
  */
 public void unload() 
 	{
+	Game.removePackagePath("q2java.baseq2");
 	Game.removeFrameListener(this, Game.FRAME_BEGINNING + Game.FRAME_MIDDLE);
 	Game.removeGameStatusListener(this);
 	}

@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<gamelet class="barryp.map.MapGamelets">
+  <title>Map Gamelets</title>
+  <author mail="barryp@planetquake.com">Barry Pederson</author>  
+  <game name="Q2Java"/>
+  <description>
+    At level start, this gamelet looks in the level DOM document
+    for tags of the form: &lt;gamelet class="xxx" alias="yyy/>, and
+    for each one, loads the named gamelet with the specified alias.  
+    When the level ends, it unloads these gamelets.  Great for associating
+    certain gamelets with certain maps.
+  </description>
+</gamelet>

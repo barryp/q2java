@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<gamelet class="barryp.map.MapCVars">
+  <title>Map CVars</title>
+  <author mail="barryp@planetquake.com">Barry Pederson</author>  
+  <game name="Q2Java"/>
+  <description>
+    At level start, this gamelet looks in the level DOM document
+    for tags of the form: &lt;cvar name="xxx" value="yyy/>, and
+    for each one, sets the named cvar to the specified value.  When the level
+    ends, it restores the changed cvars to their original values.
+  </description>
+</gamelet>

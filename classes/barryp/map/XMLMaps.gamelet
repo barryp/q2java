@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<gamelet class="barryp.map.XMLMaps">
+  <title>XML Maps</title>
+  <author mail="barryp@planetquake.com">Barry Pederson</author>  
+  <game name="Q2Java"/>
+  <description>
+    Attempts to read map information from an external XML file named
+    q2java/maps/(mapname).xml - if it can't find one, it creates a new
+    XML file based on the info embedded in the maps themselves, and writes
+    it to q2java/sandbox/(mapname).xml.  Admins can easily edit those
+    XML files and move them to the "maps" directory.  
+  </description>
+</gamelet>

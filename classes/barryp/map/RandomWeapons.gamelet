@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<gamelet class="barryp.map.RandomWeapons">
+  <title>Random Weapons</title>
+  <author mail="barryp@planetquake.com">Barry Pederson</author>  
+  <game name="Q2Java"/>
+  <description>
+     Randomly changes the class of each spawned weapon at level startup.  It might
+     be a bit -too- random, in that a map with no BFGs might end up having several.
+     Mostly written as a simple demo of how a gamelet can manipulate the DOM document
+     that describes a level's initial starting info.
+  </description>
+</gamelet>

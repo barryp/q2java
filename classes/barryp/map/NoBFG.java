@@ -30,14 +30,10 @@ public void gameStatusChanged(GameStatusEvent gse)
 		int count = nl.getLength();
 		for (int i = 0; i < count; i++)
 			{
-			Node n = nl.item(i);
-			if (!(n instanceof Element))
-				continue;
-
-			Element e = (Element) n;
-			String className = e.getAttribute("class");
-
+			Element e = (Element) nl.item(i);
+			
 			// remove from the document if it's a BFG
+			String className = e.getAttribute("class");
 			if (className.equals("weapon_bfg"))
 				e.getParentNode().removeChild(e);
 			}
