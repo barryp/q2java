@@ -493,9 +493,13 @@ protected void touchFinish(Player p, GenericItem itemTaken)
 	if (fDropHelper != null)
 		{
 		fDropHelper.dispose();
-		fDropHelper = null;
+		fDropHelper = null;		
+		}
 
-		
+	if (fTimeoutHelper != null)
+		{
+		fTimeoutHelper.dispose();
+		fTimeoutHelper = null;
 		}
 		
 	// play the pickup sound
