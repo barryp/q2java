@@ -24,7 +24,7 @@ public func_door(String[] spawnArgs) throws GameException
 	{
 	super(spawnArgs);
 	
-	int lip = getSpawnArg("lip", 8);
+	float lip = getSpawnArg("lip", 8.0F);
 							
 	// setup for opening and closing
 	fClosedOrigin = fEntity.getOrigin();

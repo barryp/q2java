@@ -856,7 +856,7 @@ public static void removePrintListener(PrintListener pl)
  */
 public void runFrame()
 	{
-	long startTime = System.currentTimeMillis();
+	long startTime = Engine.getPerformanceCounter();
 		
 	// increment the clocks
 	// if we just added Engine.SECONDS_PER_FRAME to fGameTime,
@@ -869,7 +869,7 @@ public void runFrame()
 	gFrameMiddle.runFrame(FRAME_MIDDLE, gGameTime);
 	gFrameEnd.runFrame(FRAME_END, gGameTime);
 		
-	long endTime = System.currentTimeMillis();
+	long endTime = Engine.getPerformanceCounter();
 	gCPUTime += (endTime - startTime);	
 	gPerformanceFrames++;	
 	}
@@ -1279,7 +1279,20 @@ public static void svcmd_removemodule(String[] args)
  */
 public static void svcmd_time(String[] args) 
 	{
-	dprint(gPerformanceFrames + " server frames, " + gCPUTime + " milliseconds, " + (((double)gCPUTime) / ((double)gPerformanceFrames)) + " msec/server frame\n");
+	double frames = (double) gPerformanceFrames;
+	double tpm = Engine.getPerformanceFrequency() / 1000.0;
+	double msec = gCPUTime / tpm;
+	java.text.DecimalFormat df = new java.text.DecimalFormat("0.000");
+
+	// there seems to be a bug in the JDK where using the same format twice causes 
+	//the second usage to take on the number of digits to the left of the decimal
+	// as the first usage
+	java.text.DecimalFormat df2 = new java.text.DecimalFormat(".000"); 
+
+	dprint("Java: " + gCPUTime + " ticks, " + gPerformanceFrames + " frames, " + df.format(tpm) + " ticks/msec " + df2.format(msec / frames) + " msec/frame average\n");
+
+	gPerformanceFrames = 0;
+	gCPUTime = 0;
 	}
 /**
  * Called by the DLL when the DLL's WriteGame() function is called.

@@ -2,6 +2,12 @@
 #include "q2java_Engine.h"
 #include <stdlib.h> // for qsort()
 
+// headers required by performance counter functions.
+#ifdef _WIN32
+    #include <windows.h>
+#endif
+#include <time.h>
+
 #define CALL_MULTICAST 0
 #define CALL_WRITEPOSITION 1
 #define CALL_WRITEDIR 2
@@ -44,7 +50,9 @@ static JNINativeMethod Engine_methods[] =
     {"setConfigString",     "(ILjava/lang/String;)V",       Java_q2java_Engine_setConfigString},
     {"areasConnected",      "(II)Z",                Java_q2java_Engine_areasConnected},
     {"trace0",      "(FFFFFFFFFFFFLq2java/NativeEntity;II)Lq2java/TraceResults;",   Java_q2java_Engine_trace0},
-    {"write0",      "(Ljava/lang/Object;FFFII)V",   Java_q2java_Engine_write0}
+    {"write0",      "(Ljava/lang/Object;FFFII)V",   Java_q2java_Engine_write0},
+    {"getPerformanceFrequency", "()J",              Java_q2java_Engine_getPerformanceFrequency},
+    {"getPerformanceCounter",   "()J",              Java_q2java_Engine_getPerformanceCounter}
     };
 
 
@@ -480,4 +488,31 @@ jobjectArray JNICALL Java_q2java_Engine_getRadiusEntities0
     gi.TagFree(list);
 
     return result;
+    }
+
+
+static jlong JNICALL Java_q2java_Engine_getPerformanceFrequency(JNIEnv *env , jclass cls)
+    {
+#ifdef _WIN32
+    LARGE_INTEGER freq;
+    if (QueryPerformanceFrequency(&freq))
+        return freq.QuadPart;
+    else
+        return CLOCKS_PER_SEC;
+#else
+    return CLOCKS_PER_SEC;
+#endif
+    }
+
+static jlong JNICALL Java_q2java_Engine_getPerformanceCounter(JNIEnv *env , jclass cls)
+    {
+#ifdef _WIN32
+    LARGE_INTEGER count;
+    if (QueryPerformanceCounter(&count))
+        return count.QuadPart;
+    else
+        return clock();
+#else
+    return clock();
+#endif
     }

@@ -9,6 +9,7 @@ import baseq2.*;
 /**
  * Rotating objects like fans and such.
  * 
+ * @author Barry Pederson
  */
 public class func_rotating extends GenericPusher
 	{
@@ -31,7 +32,7 @@ public func_rotating(java.lang.String[] spawnArgs) throws q2java.GameException
 	if (s != null)
 		fEntity.setModel(s);	
 
-	float speed = getSpawnArg("speed", 100);
+	float speed = getSpawnArg("speed", 100.0F);
 	fDmg = getSpawnArg("dmg", 2);
 				
 	// set the axis of rotation

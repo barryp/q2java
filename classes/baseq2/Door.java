@@ -64,11 +64,11 @@ public Door(String[] spawnArgs) throws GameException
 	if (s != null)
 		fEntity.setModel(s);
 
-	fSpeed = getSpawnArg("speed", 100);
+	fSpeed = getSpawnArg("speed", 100.0F);
 	fAccel = getSpawnArg("accel", fSpeed);
 	fDecel = getSpawnArg("decel", fSpeed);	
-	fWait = getSpawnArg("wait", 3);	
-	fDmg = getSpawnArg("dmg", 2);
+	fWait = getSpawnArg("wait", 3.0F);	
+	fDmg = getSpawnArg("dmg", 2.0F);
 	fHealth = fMaxHealth = getSpawnArg("health", 0);
 	fMessage = getSpawnArg("message", null);
 	

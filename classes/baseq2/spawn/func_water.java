@@ -22,7 +22,7 @@ public func_water(String[] spawnArgs) throws GameException
 	super(spawnArgs);
 
 	// override door default speeds
-	fSpeed = fAccel = fDecel = getSpawnArg("speed", 25);
+	fSpeed = fAccel = fDecel = getSpawnArg("speed", 25.0F);
 	
 	// override door sounds with water sounds
 	fSoundMiddle = 0;

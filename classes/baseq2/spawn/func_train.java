@@ -8,6 +8,13 @@ import q2java.*;
 import q2jgame.*;
 import baseq2.*;
 
+/**
+ * func_train - objects that move around following
+ *  preset path
+ *
+ * @author Barry Pederson
+ */
+
 public class func_train extends GenericPusher 
 	{
 	// spawn parameters
@@ -44,7 +51,7 @@ public func_train(String[] spawnArgs) throws GameException
 	if (s != null)
 		fEntity.setModel(s);
 
-	fSpeed = getSpawnArg("speed", 100);
+	fSpeed = getSpawnArg("speed", 100.0F);
 	fAccel = getSpawnArg("accel", fSpeed);
 	fDecel = getSpawnArg("decel", fSpeed);	
 	fDmg = getSpawnArg("dmg", 100);

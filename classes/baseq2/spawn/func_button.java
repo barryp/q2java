@@ -47,12 +47,12 @@ public func_button(String[] spawnArgs) throws GameException
 	if (s != null)
 		fEntity.setModel(s);
 
-	fSpeed = getSpawnArg("speed", 40);
+	fSpeed = getSpawnArg("speed", 40.0F);
 	fAccel = getSpawnArg("accel", fSpeed);
 	fDecel = getSpawnArg("decel", fSpeed);	
-	fWait = getSpawnArg("wait", 4);	
+	fWait = getSpawnArg("wait", 4.0F);	
 	fHealth = fMaxHealth = getSpawnArg("health", 0);
-	int lip = getSpawnArg("lip", 3);
+	float lip = getSpawnArg("lip", 3.0F);
 	
 	// setup door sounds
 	if (getSpawnArg("sounds", 0) != 1)

@@ -8,12 +8,18 @@ import q2java.*;
 import q2jgame.*;
 import baseq2.*;
 
+/**
+ * func_plat - elevator platforms that raise and lower
+ * 
+ * @author Barry Pederson
+ */
+
 public class func_plat extends GenericPusher 
 	{
 	// spawn parameters
-	private int fWait;
-	private int fDmg;
-	private int fLip;
+	private float fWait;
+	private float fDmg;
+	private float fLip;
 	
 	private Point3f fRaisedOrigin;
 	private Point3f fLoweredOrigin;
@@ -46,13 +52,13 @@ public func_plat(String[] spawnArgs) throws GameException
 	if (s != null)
 		fEntity.setModel(s);
 
-	fSpeed = getSpawnArg("speed", 200) * 0.1F;
-	fAccel = getSpawnArg("accel", 50) * 0.1F;
-	fDecel = getSpawnArg("decel", 50) * 0.1F;	
-	fDmg = getSpawnArg("dmg", 2);
+	fSpeed = getSpawnArg("speed", 200.0F) * 0.1F;
+	fAccel = getSpawnArg("accel", 50.0F) * 0.1F;
+	fDecel = getSpawnArg("decel", 50.0F) * 0.1F;	
+	fDmg = getSpawnArg("dmg", 2.0F);
 	fWait = 3;
-	fLip = getSpawnArg("lip", 8);
-	int height = getSpawnArg("height", 0);
+	fLip = getSpawnArg("lip", 8.0F);
+	float height = getSpawnArg("height", 0.0F);
 
 	fRaisedOrigin = fEntity.getOrigin();
 	fLoweredOrigin = new Point3f(fRaisedOrigin);

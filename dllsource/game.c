@@ -1,5 +1,11 @@
 #include "globals.h" 
-
+#ifdef _WIN32
+    #include "windows.h" // for performance counters
+    #include <time.h> // for fallback functions
+    static double ticksPerMillisecond;
+    static LONGLONG levelTickCounter;
+    static int levelFrameCounter;
+#endif
 
 // handles to the Game class
 static jclass class_Game;
@@ -25,6 +31,17 @@ void Game_javaInit()
     jmethodID method_GameListener_ctor;
     char *p;
     char buffer[128];
+
+
+#ifdef _WIN32
+    LARGE_INTEGER tickFrequency;
+    if (QueryPerformanceFrequency(&tickFrequency))
+        ticksPerMillisecond = tickFrequency.QuadPart / 1000.0;
+    else 
+        ticksPerMillisecond = CLOCKS_PER_SEC / 1000.0;
+    levelFrameCounter = 0;
+    levelTickCounter = 0;
+#endif
 
     interface_GameListener = (*java_env)->FindClass(java_env, "q2java/GameListener");
     if (CHECK_EXCEPTION() || !interface_GameListener)
@@ -186,6 +203,11 @@ static void java_startLevel(char *mapname, char *entString, char *spawnpoint)
     (*java_env)->DeleteLocalRef(java_env, jspawnpoint);
 
     global_frameCount = 0;
+
+#ifdef _WIN32
+    levelTickCounter = 0;
+    levelFrameCounter = 0;
+#endif
     }
 
 
@@ -238,15 +260,38 @@ static void java_readLevel(char *filename)
 
 static void java_runFrame(void)
     {
+#ifdef _WIN32
+    LARGE_INTEGER tick, tock;
+    if (!QueryPerformanceCounter(&tick))
+        tick.QuadPart = clock();
+#endif
+
     // track the running time to help with entity management
     global_frameCount++;
 
     (*java_env)->CallVoidMethod(java_env, object_Game, method_GameListener_runFrame);
     CHECK_EXCEPTION();
+
+#ifdef _WIN32
+    if (!QueryPerformanceCounter(&tock))
+        tock.QuadPart = clock();
+    levelTickCounter += (tock.QuadPart - tick.QuadPart);
+    levelFrameCounter++;
+#endif
     }
 
 static void java_serverCommand(void)
     {
+#ifdef _WIN32
+    if (!strcmp(gi.argv(1), "time"))
+        {
+        double msec = (levelTickCounter / levelFrameCounter) / ticksPerMillisecond;
+        gi.dprintf(" DLL: %.0f ticks, %d frames, %.3f ticks/msec, %.3f msec/frame average\n", (float) levelTickCounter, levelFrameCounter, ticksPerMillisecond, msec);
+        levelTickCounter = 0;
+        levelFrameCounter = 0;
+        }
+#endif
+
     (*java_env)->CallVoidMethod(java_env, object_Game, method_GameListener_serverCommand);
     CHECK_EXCEPTION();
     }

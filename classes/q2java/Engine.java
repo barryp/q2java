@@ -294,6 +294,23 @@ public native static int getImageIndex(String name);
 
 public native static int getModelIndex(String name);
 
+
+/**
+ * Get a value indicating elapsed time in some number of ticks.
+ * Use getPerformanceFrequency to find out how many ticks per second
+ * occur on this system.  Similar to the Win32 QueryPerformanceCounter() function.
+ * @return long
+ */
+public native static long getPerformanceCounter();
+
+
+/**
+ * Get a value indicating how many ticks per second
+ * occur on this system.  Similar to the Win32 QueryPerformanceFrequency() function.
+ * @return long
+ */
+public native static long getPerformanceFrequency();
+
 public static int getPointContents(Point3f point)
 	{
 	return getPointContents0(point.x, point.y, point.z);

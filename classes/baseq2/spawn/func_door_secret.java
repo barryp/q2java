@@ -10,6 +10,8 @@ import baseq2.*;
 
 /**
  * Secret doors - they pop out then open
+ *
+ * @author Barry Pederson
  */
 
 public class func_door_secret extends GenericPusher 
@@ -54,8 +56,8 @@ public func_door_secret(String[] spawnArgs) throws GameException
 		fEntity.setModel(s);
 			
 	fSpeed = fAccel = fDecel = 50;
-	fWait = getSpawnArg("wait", 5);
-	fDmg = getSpawnArg("dmg", 2);
+	fWait = getSpawnArg("wait", 5.0F);
+	fDmg = getSpawnArg("dmg", 2.0F);
 	fHealth = fMaxHealth = getSpawnArg("health", 0);
 	
 	// setup door sounds

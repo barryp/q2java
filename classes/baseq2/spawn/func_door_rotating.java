@@ -9,6 +9,7 @@ import baseq2.*;
 /**
  * Rotating doors that swing on a hinge of some sort.
  * 
+ * @author Barry Pederson
  */
 public class func_door_rotating extends Door 
 	{
@@ -27,7 +28,7 @@ public func_door_rotating(java.lang.String[] spawnArgs) throws q2java.GameExcept
 					
 	fEntity.setAngles(0, 0, 0);
 
-	fMoveDistance = getSpawnArg("distance", 90);	
+	fMoveDistance = getSpawnArg("distance", 90.0F);	
 	fClosedAngle = new Angle3f();
 	
 	// set the axis of rotation

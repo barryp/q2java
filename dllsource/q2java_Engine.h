@@ -129,11 +129,27 @@ static jint JNICALL Java_q2java_Engine_getImageIndex
 
 /*
  * Class:     q2java_Engine
+ * Method:    getPerformanceCounter
+ * Signature: ()J
+ */
+static jlong JNICALL Java_q2java_Engine_getPerformanceCounter
+  (JNIEnv *, jclass);
+
+/*
+ * Class:     q2java_Engine
  * Method:    getRadiusEntities0
  * Signature: (FFFFIZZ)[Lq2java/NativeEntity;
  */
 jobjectArray JNICALL Java_q2java_Engine_getRadiusEntities0
   (JNIEnv *, jclass, jfloat, jfloat, jfloat, jfloat, jint, jboolean, jboolean);
+
+/*
+ * Class:     q2java_Engine
+ * Method:    getPerformanceFrequency
+ * Signature: ()J
+ */
+static jlong JNICALL Java_q2java_Engine_getPerformanceFrequency
+  (JNIEnv *, jclass);
 
 /*
  * Class:     q2java_Engine
