@@ -1553,7 +1553,7 @@ public void cmd_kill(String[] argv, String args)
 		DamageEvent de = DamageEvent.getEvent(this, this, this, null, fEntity.getOrigin(), null, 0,
 				       0, 0, 0, "suicide");
 		die(de);
-		DamageEvent.releaseEvent(de);		
+		de.recycle();
 		}
 	}
 /**
@@ -2084,9 +2084,9 @@ protected void die(DamageEvent de)
 	broadcastObituary(de);
 	
 	// let the attacker know he killed us
-	DeathScoreEvent e = DeathScoreEvent.getEvent(fKiller, this, de.getObitKey(), de.getInflictor());
-	RuleManager.getScoreManager().registerScoreEvent(e);
-	DeathScoreEvent.releaseEvent(e);
+	DeathScoreEvent dse = DeathScoreEvent.getEvent(fKiller, this, de.getObitKey(), de.getInflictor());
+	RuleManager.getScoreManager().registerScoreEvent(dse);
+	dse.recycle();
 
 	fEntity.setSound(0);
 	fEntity.setModelIndex2(0); // remove linked weapon model
@@ -2856,23 +2856,11 @@ public void playerCommand(String methodName, String[] argv, String args)
 	Class[] paramTypes;
 	Object[] params;
 	
-	PlayerCommandEvent e = fPlayerCommandSupport.fireEvent( this, argv[0], args );
+	if (fPlayerCommandSupport.fireEvent( this, argv[0], args ))
+		return;
 
-	if( e.isConsumed() )
-		{
-	    return;
-		}
-
-	e = null;
-
-	e = gPlayerCommandSupport.fireEvent( this, argv[0], args );
-
-	if( e.isConsumed() )
-		{
-	    return;
-		}
-
-	e = null;
+	if (gPlayerCommandSupport.fireEvent( this, argv[0], args ))
+		return;
 
 	//
 	// look for the command to be handled by the player class (or subclasses) itself

@@ -175,7 +175,7 @@ public final void damage(GameObject inflictor, GameObject attacker,
 				       knockback, dflags, tempEvent, obitKey);
 	damage(de);
 
-	DamageEvent.releaseEvent(de);	
+	de.recycle();
 	}
 /**
  * Clean a few things up before calling NativeEntity.freeEntity().
