@@ -484,12 +484,18 @@ public boolean addWeapon(Class weaponClass, boolean allowSwitch)
 
 	boolean weaponStay = GameModule.isDMFlagSet(GameModule.DF_WEAPONS_STAY);
 
-	if (fInventory.get(w.getItemName()) != null)
+	InventoryPack p = fInventory.getPack(w.getItemName());
+	if (p != null)
 		{
+		// we already have one of these weapons
 		if (weaponStay)
-			return false;
+			return false; // don't pick it up
 		else
-			return addAmmo(w.getAmmoName(), w.getAmmoCount());
+			{
+			addAmmo(w.getAmmoName(), w.getAmmoCount());
+			p.fAmount++; // inc weapon count				
+			return true; // we picked it up.
+			}
 		}
 	else
 		{
@@ -1044,6 +1050,32 @@ public void cmd_id(String[] args)
 		fEntity.centerprint(((Player)tr.fEntity.getPlayerListener()).getName());		
 	}
 /**
+ * Identify the Java object in your crosshairs.
+ * @param args java.lang.String[]
+ */
+public void cmd_iddebug(String[] args) 
+	{
+	Point3f start = fEntity.getOrigin();
+	start.z += fViewHeight;
+
+	Vector3f forward = new Vector3f();
+	Angle3f ang = fEntity.getPlayerViewAngles();
+	ang.getVectors(forward, null, null);
+
+	Point3f end = new Point3f();
+	end.scaleAdd(8192, forward, start);
+
+	TraceResults tr = Engine.trace(start, end, fEntity, Engine.MASK_ALL);
+	if (tr.fEntity == null)
+		return;
+		
+	Object obj = tr.fEntity.getReference();
+	if (obj != null)
+		fEntity.cprint(Engine.PRINT_HIGH, obj.toString() + "\n");
+	else
+		fEntity.cprint(Engine.PRINT_HIGH, tr.fEntity.toString() + "\n");		
+	}
+/**
  * displays the inventory
  * @param args java.lang.String[] - not used.
  */
@@ -1384,7 +1416,7 @@ public void damage(GameObject inflictor, GameObject attacker,
 	// but spray a little blood for kicks
 	if (fIsDead)
 		{
-		spawnDamage(Engine.TE_BLOOD, point, normal, damage);
+//		spawnDamage(Engine.TE_BLOOD, point, normal, damage);
 		return;
 		}
 
@@ -2657,6 +2689,7 @@ public void startIntermission(GenericSpawnpoint intermissionSpot)
 	fEntity.setPlayerFOV(90);
 	fEntity.setEffects(0);
 	fEntity.setSound(0);
+	fEntity.setGroundEntity(null);
 	fEntity.linkEntity();
 	
 	writeDeathmatchScoreboardMessage(null);

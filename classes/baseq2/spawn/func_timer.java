@@ -9,9 +9,11 @@ import baseq2.*;
 /**  
  *  func_timer objects wait a bit after being triggered, and
  *  then turn around and trigger other entities.
+ *
+ * @author Barry Pederson (I think)
  */
 
-public class func_timer implements FrameListener
+public class func_timer implements GameTarget, FrameListener
 	{
 	private float fWait;
 	private float fRandom;

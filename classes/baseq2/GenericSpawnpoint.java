@@ -14,7 +14,7 @@ import q2jgame.*;
  * @author Barry Pederson 
  */
 
-public abstract class GenericSpawnpoint extends GameObject
+public abstract class GenericSpawnpoint extends GameObject implements FixedObject
 	{
 	protected Point3f fOrigin;
 	protected Angle3f fAngles;	

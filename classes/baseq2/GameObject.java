@@ -164,7 +164,8 @@ public void dispose()
 	fSpawnArgs = null;
 	fTargets = null;
 				
-	fEntity.freeEntity();
+	if (fEntity != null)				
+		fEntity.freeEntity();
 	}
 /**
  * Randomly pick one of this entity's targets.
@@ -342,6 +343,12 @@ public void useTargets()
 		return;
 		
 	for (int i = 0; i < fTargets.size(); i++)
-		((GameTarget) fTargets.elementAt(i)).use(null);
+		{
+		Object obj = fTargets.elementAt(i);
+		if (obj instanceof GameTarget)
+			((GameTarget) obj).use(null);
+		else
+			System.out.println(obj.getClass().getName() + " doesn't implement GameTarget");
+		}
 	}
 }

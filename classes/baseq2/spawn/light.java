@@ -5,40 +5,72 @@ import q2java.*;
 import q2jgame.*;
 import baseq2.*;
 
-public class light extends GameObject
+/**
+ * Lights that can be turned on and off
+ *
+ * @author Barry Pederson
+ */
+
+
+public class light implements GameTarget
 	{
+	protected int fState;
+	protected int fStyle;
+
+	protected final static int START_OFF = 1;
+
+	protected final static int LIGHT_DISABLED = 0;	
+	protected final static int LIGHT_ON = 1;
+	protected final static int LIGHT_OFF = 2;
 	
 public light(String[] spawnArgs) throws GameException
 	{
-	super(spawnArgs);
-
-	int style = getSpawnArg("style", 0);
-/*		
-	if (style > 0)
-		Engine.debugLog("Styled Light: " + this + "\n");		
-		
-	if (fTargetName != null)
-		Engine.debugLog("Targeted Light: " + this + "\n");		
-*/		
-/*		
 	// no targeted lights in deathmatch, because they cause global messages
-	// ---FIXME--- ? this "if" statement looks whacked...but that's what id wrote
-	// I would think it should be: if ((fTargetName != null) && Game.fIsDeathmatch)
-	//
-	if ((fTargetName == null)|| Game.fIsDeathmatch)
+	if (baseq2.GameModule.gIsDeathmatch)
+		return;
+		
+	String s = Game.getSpawnArg(spawnArgs, "targetname", null);
+	if (s == null)
+		return;
+		
+	Game.addLevelRegistry("target-" + s, this);
+	
+	fStyle = Game.getSpawnArg(spawnArgs, "style", 0);
+	if (fStyle >= 32)
 		{
-		freeEntity();
-		throw new GameException("no targeted lights in deathmatch");
-		}
-
-	if (style >= 32)
-		{
-		self->use = light_use;
-		if (self->spawnflags & START_OFF)
-			Engine.configString(Engine.CS_LIGHTS+style, "a");
+		int spawnFlags = Game.getSpawnArg(spawnArgs, "spawnflags", 0);
+		
+		if ((spawnFlags & START_OFF) == 1)
+			{
+			fState = LIGHT_OFF;
+			Engine.setConfigString(Engine.CS_LIGHTS + fStyle, "a");
+			}
 		else
-			Engine.configString(Engine.CS_LIGHTS+style, "m");
+			{
+			fState = LIGHT_ON;
+			Engine.setConfigString(Engine.CS_LIGHTS + fStyle, "m");
+			}
 		}	
-*/		
+	else
+		fState = LIGHT_DISABLED;		
+	}
+/**
+ * Toggle lights off and on if not disabled.
+ * @param usedBy baseq2.Player
+ */
+public void use(Player usedBy) 
+	{
+	switch (fState)
+		{
+		case LIGHT_ON:
+			Engine.setConfigString(Engine.CS_LIGHTS + fStyle, "a");
+			fState = LIGHT_OFF;
+			break;
+			
+		case LIGHT_OFF:
+			Engine.setConfigString(Engine.CS_LIGHTS + fStyle, "m");
+			fState = LIGHT_ON;
+			break;								
+		}
 	}
 }

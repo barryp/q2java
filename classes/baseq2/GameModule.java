@@ -179,7 +179,7 @@ public static String getSpawnpoint()
  */
 public static String getVersion() 
 	{
-	return "Q2Java Base Game, v0.5.5";
+	return "Q2Java Base Game, v0.5.6";
 	}	
 /**
  * Check whether or not the Cheating option is on.
@@ -268,8 +268,11 @@ public String spaces( float spaces )
 /**
  * Pick an intermission spot, and notify each player.
  */
-public void startIntermission() 
+public static void startIntermission() 
 	{
+	if (gInIntermission)
+		return; // already in intermission
+		
 	Enumeration enum;
 	Vector v;
 	

@@ -5,6 +5,12 @@ import q2java.*;
 import q2jgame.*;
 import baseq2.*;
 
+/**
+ * Bundle of rockets waiting to be picked up
+ *
+ * @author Barry Pederson
+ */
+
 public class ammo_rockets extends GenericAmmo
 	{
 	
@@ -18,7 +24,7 @@ public ammo_rockets(String[] spawnArgs) throws GameException
  */
 public String getIconName() 
 	{
-	return "a_cells";
+	return "a_rockets";
 	}
 /**
  * Get the name of this item.

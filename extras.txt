@@ -1,0 +1,128 @@
+Q2JAVA EXTRAS
+
+The Q2Java distribution includes a few extra goodies intended to 
+demonstrate various interesting things programming in Java allows.  They 
+are implemented as game modules you can load either at startup on the 
+command line with a command like: 
+
+    quake2 +set game q2java +set q2jgame_modules <module>+baseq2
+    
+or in some cases while the game is running with a console command like:
+
+    sv addmodule <module> [<alias-name>]
+    
+The <module>'s are:
+
+    barryp.autoload
+
+        Simple module that automatically exec's a file named "autoload.cfg" 
+        as soon as possible once the game is running.  Great for loading 
+        other modules like barryp.telnet.   
+        
+        For example, on my test server, I have a batch file that loads 
+        Q2Java with the parameter: 
+        
+            +set q2jgame_modules barryp.autoload+baseq2
+            
+        and have a file named "autoload.cfg" that looks something like 
+        this:    
+        
+            sv addmodule barryp.telnet telnet 
+            sv telnet.start 1100 -nocmd 
+            sv telnet.log on 
+            set timelimit 15 
+            gamemap q2dm1
+
+        so that after the game has started, the "barryp.telnet" module is 
+        loaded with the alias "telnet", then the "telnet" module is given a 
+        few commands to start listening to port 1100 and to start logging 
+        connections.  Finally the timelimit CVAR is set, and the map is set 
+        to q2dm1.
+
+        
+
+    barryp.persist
+    
+        After this module is loaded, any player that connects is a 
+        "persistant" player - meaning that when they quit, their settings 
+        (including weapons, ammo, current health, etc.) are saved in a file 
+        (in the sandbox directory), and when they reconnect - their 
+        settings are automatically restored.   (Being able to store and 
+        retrieve a player's state is the first step towards multiserver 
+        clustering)
+
+    barryp.rocketmania
+
+        Demonstrates replacement of the basic games weapons.  Includes a 
+        blaster with that fires small rockets, a machinegun that fires 
+        rockets as well as bullets, and a rocketlauncher that fires more 
+        powerful rockets.
+
+    barryp.telnet
+
+        Allows telnet or MUD clients to act as remote consoles. (usage is         
+        covered in the main q2java05.txt file)
+
+    barryp.testbot
+
+        A very very very simple bot that just stands where it's spawned, 
+        but it demonstrates subclassing the baseq2.Player class to create 
+        somthing that looks and mostly acts like a player, even though 
+        nobody's actually controlling it though a Q2 client program.
+
+        You have to be running Quake2 in server mode (as opposed to         
+        single-player mode) in order to spawn bots.  Once the game is 
+        started, drop down the console and type something like:
+
+            sv addmodule barryp.testbot fred             sv.addmodule 
+            barryp.testbot barney
+
+        to create a bots named "fred" and "barney".  They will be standing         
+        on map spawnpoints (finding them bot can be a pain on some maps), 
+        and you can issue some commands to them like:
+
+            sv barney.help      // gets barney's current status             
+            sv fred.skin <skin> // changes the bot's skin, try something like 
+                                   "female/athena" to give fred a new look.
+
+            sv fred.cmd <command>  // cause the bot to execute a                                       
+                                      player-command                                  
+
+            sv fred.locale         // will tell you what locale fred uses                                       
+                                      when speaking
+
+            sv fred.locals <new-locale> // changes fred's locale
+
+        The locales are strings that are either:
+
+            "<language-code>" or "<language-code>_<country-code>" or             
+            "<language-code>_<country-code>_<variant>"
+
+        The language codes are two-letter ISO language codes, such as "en"         
+        for english and "fr" for french.  The country codes are two-letter 
+        ISO country codes like "US" for the United States, "CA" for Canada, 
+        "FR" for France and so on. The variants are user-defined.  So, a 
+        bot might have its locale set to things like:
+        
+            en                - English in general
+            en_US             - English as spoken in the U.S.
+            en_US_surferdude  - Surfer Dude variant of U.S. English
+            en_CA             - English as spoken in Canada
+            fr                - French in general
+            fr_CA             - French Canadian
+            fr_FR             - French as spoken in France
+            
+        Anyhow, the bot doesn't actually speak all those languages, but 
+        they could be easily added - look in the 
+        <gamedir>\classes\barryp\testbot directory for the files named 
+        talk*.properties to see which locales are currently supported, and 
+        feel free to create your own.            
+        
+        To cause the bot to speak, injure it (although you have to aim 
+        somewhere above the head to hit it - there's a bug there)
+        
+------------------------------------        
+
+Enjoy
+        
+        Barry

@@ -8,7 +8,14 @@ import q2jgame.*;
 
 import baseq2.spawn.func_plat;
 
-public class PlatformTrigger extends GameObject
+/**
+ * Trigger field that causes platforms to move when you 
+ * step on them
+ *
+ * @author Barry Pederson
+ */
+ 
+public class PlatformTrigger extends GameObject implements FixedObject
 	{
 	protected func_plat fOwner;	
 	

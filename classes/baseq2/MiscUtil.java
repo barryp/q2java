@@ -8,6 +8,8 @@ import q2jgame.*;
 
 /**
  * Various minor static utilities useful to the game.
+ *
+ * @author Barry Pederson
  */
 public class MiscUtil 
 	{
@@ -30,6 +32,33 @@ public static void addPointToBounds(Tuple3f point, Tuple3f mins, Tuple3f maxs)
 	maxs.y = Math.max(maxs.y, point.y);
 	maxs.z = Math.max(maxs.z, point.z);
 	}
+/**
+ * Get the direction the door or button should move.
+ * When the entity is spawned, the "angles"
+ * indicates the direction the door should move,
+ * but the format is a little bizarre, and the
+ * value doesn't actually indicate the angles
+ * for the entity, so we -have- to clear it,
+ * once we get a copy, otherwise the doors
+ * will appear on the maps in all sorts of odd positions.
+ * @return a Vec3 pointing in the direction the door opens.
+ */
+public static Vector3f calcMoveDir(Angle3f angles) 
+	{
+	// door goes up	
+	if (equals(angles, 0, -1, 0))
+		return new Vector3f(0, 0, 1);
+
+	// door goes down
+	if (equals(angles, 0, -2, 0))
+		return new Vector3f(0, 0, -1);
+
+	// some other direction?	
+	Vector3f result = new Vector3f();	
+	angles.getVectors(result, null, null);
+	return result;
+	}
+
 /**
  * Clamp the Tuple3f to 1/8 units.  This way positions will
  * be accurate for client side prediction.

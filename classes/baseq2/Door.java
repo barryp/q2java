@@ -10,6 +10,8 @@ import baseq2.*;
 
 /**
  * Abstract class to handle both sliding and rotating doors
+ *
+ * @author Barry Pederson
  */ 
 
 public abstract class Door extends GenericPusher 
@@ -150,7 +152,7 @@ public void moveFinished()
 	switch (fDoorState)
 		{
 		case STATE_DOOR_OPENING:
-			if (fWait <= 0)
+			if ((fWait <= 0) || ((fSpawnFlags & DOOR_TOGGLE) != 0))
 				fDoorState = STATE_DOOR_OPENED;
 			else				
 				{
@@ -287,13 +289,28 @@ public void touch(Player touchedBy)
  */
 public void use(Player touchedBy) 
 	{
-	open();
-	
-	// if this is the group master, then also trigger the slaves
-	if (!isGroupSlave() && (fGroup != null))
+	if (isGroupSlave())
+		return;
+
+	if (((fSpawnFlags & DOOR_TOGGLE) != 0) && (fDoorState == STATE_DOOR_OPENED))
 		{
-		for (int i = 1; i < fGroup.size(); i++)
-			((GameObject)fGroup.elementAt(i)).use(touchedBy);
+		close();
+		// if this is the group master, then also close slaves
+		if (fGroup != null)
+			{
+			for (int i = 1; i < fGroup.size(); i++)
+				((Door)fGroup.elementAt(i)).close();
+			}
 		}
+	else
+		{
+		open();
+		// if this is the group master, then also open slaves
+		if (fGroup != null)
+			{
+			for (int i = 1; i < fGroup.size(); i++)
+				((Door)fGroup.elementAt(i)).open();
+			}
+		}	
 	}
 }

@@ -8,6 +8,12 @@ import q2java.*;
 import q2jgame.*;
 import baseq2.*;
 
+/**
+ * Button pressed by players to cause something to happen
+ * 
+ * @author Barry Pederson
+ */
+
 public class func_button extends GenericPusher
 	{	
 	// spawn parameters
@@ -20,7 +26,6 @@ public class func_button extends GenericPusher
 
 	// track the state of the door
 	private int fButtonState;
-	private float fNextButtonThink;
 	private int fHealth;
 	
 	// door sounds if any
@@ -55,7 +60,8 @@ public func_button(String[] spawnArgs) throws GameException
 							
 	// setup for opening and closing
 	fOffOrigin = fEntity.getOrigin();
-	Vector3f moveDir = getMoveDir();
+	Vector3f moveDir = MiscUtil.calcMoveDir(fEntity.getAngles());
+	fEntity.setAngles(0, 0, 0);
 
 	Vector3f absMoveDir = new Vector3f(moveDir);
 	absMoveDir.absolute();
@@ -86,7 +92,7 @@ public void activate()
 			break;	
 			
 		case STATE_BUTTON_ONWAIT:
-			fNextButtonThink = (float)(Game.getGameTime() + fWait);	
+			Game.addFrameListener(this, fWait, -1);
 			break;				
 		}
 	}
@@ -147,8 +153,8 @@ public void moveFinished()
 				fButtonState = STATE_BUTTON_ON;
 			else				
 				{
-				fNextButtonThink = (float)(Game.getGameTime() + fWait);
 				fButtonState = STATE_BUTTON_ONWAIT;
+				Game.addFrameListener(this, fWait, -1);
 				}
 			break;			
 
@@ -161,27 +167,33 @@ public void moveFinished()
 /**
  * This method was created by a SmartGuide.
  */
-public void think() 
+public void runFrame(int phase) 
 	{
-	if ((fNextButtonThink > 0) && (Game.getGameTime() >= fNextButtonThink))
+	switch (fButtonState)
 		{
-		switch (fButtonState)
-			{
-			case STATE_BUTTON_ONWAIT:
-				fNextButtonThink = 0;
-				fEntity.setFrame(0);
-				deactivate();
-				break;
-			}
+		case STATE_BUTTON_ONWAIT:
+			fEntity.setFrame(0);
+			deactivate();
+			break;
+			
+		default:
+			super.runFrame(phase);
 		}
-
-	super.think();
+	}
+/**
+ * Respond to a touch if we're not targeted.
+ * @param touchedBy q2jgame.GameEntity
+ */
+public void touch(Player touchedBy) 
+	{
+	if (fTargetGroup == null)
+		activate();
 	}
 /**
  * This method was created by a SmartGuide.
  * @param touchedBy q2jgame.GameEntity
  */
-public void touch(Player touchedBy) 
+public void use(Player touchedBy) 
 	{
 	activate();
 	}

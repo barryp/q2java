@@ -1,0 +1,48 @@
+Q2JAVA CONTRIBUTORS
+
+Quite a few people have participated in the development of Q2Java with 
+testing and suggestions, but I especially want to note those who actually
+contributed Java or C code that's been incorporated in the game.
+
+(roughly alphabetical)
+
+----------------------------------------
+
+Bernd Kreimeier's <bk@gamers.org>
+
+    Linux port
+
+Brian Haskin <haskin@ptway.com>
+
+    Much work on the Player inventory, command, weapon-cycling, and 
+    scoreboard systems.
+
+gorilla <gorilla@pro-ns.net>
+
+    Solaris-SPARC port
+
+M. van Gangelen <menno@element.nl>
+
+    Worked on BFG, GrenadeLauncher, grenades, and some other classes.  His 
+    implementation of a version of CTF in Java motivated many improvements 
+    to the base game.
+
+_Quinn <tmiller@haverford.edu>
+
+    Improvements to game-module handling, sv_scores command, various other 
+    useful bits.        
+    
+Thomas Winzig <thomas@winzig.com>
+
+    Many Improvements to player effects, damage feedback, knockback.    
+    
+Withnails <leigh@praxis.co.uk>
+
+    More flexible GameFactory code    
+    
+--------------------------------------
+
+My apologies if I've overlooked anyone, and thanks to everyone who's 
+participated either by coding or though suggestions / encouragement.
+
+    Barry    

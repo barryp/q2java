@@ -10,6 +10,8 @@ import baseq2.*;
 
 /**
  * Doors that slide open (like in a grocery store)
+ *
+ * @author Barry Pederson
  */
 
 public class func_door extends Door 
@@ -26,7 +28,8 @@ public func_door(String[] spawnArgs) throws GameException
 							
 	// setup for opening and closing
 	fClosedOrigin = fEntity.getOrigin();
-	Vector3f moveDir = getMoveDir();
+	Vector3f moveDir = MiscUtil.calcMoveDir(fEntity.getAngles());
+	fEntity.setAngles(0, 0, 0);
 
 	Vector3f absMoveDir = new Vector3f(moveDir);
 	absMoveDir.absolute();
