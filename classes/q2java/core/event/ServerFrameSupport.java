@@ -8,7 +8,7 @@ import q2java.core.CrossLevel;
  *
  * @author Barry Pederson
  */
-public class ServerFrameSupport 
+public final class ServerFrameSupport 
 	{
 	private ServerFrameListener[] fListeners;
 	private float[] fTime;
