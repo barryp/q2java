@@ -1,5 +1,9 @@
 
-public class worldspawn extends Entity
+package q2jgame;
+
+import q2java.*;
+
+public class worldspawn extends GameEntity
 	{
 	public static int fHealthPic;		
 	

@@ -35,9 +35,6 @@ void	Entity_set_fEntityIndex(jobject jent, int index);
 jobjectArray Entity_createArray(edict_t **list, int count);
 void Entity_javaFinalize();
 
-void NativePlayer_javaInit();
-void NativePlayer_javaFinalize();
-
 void Player_gameInit();
 void Player_javaInit();
 void Player_javaFinalize();

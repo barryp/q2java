@@ -1,5 +1,9 @@
 
-public class GenericMobile extends Entity
+package q2jgame;
+
+import q2java.*;
+
+public class GenericMobile extends GameEntity
 	{
 	
 /**

@@ -1,4 +1,6 @@
 
+package q2java;
+
 import java.io.*;
 import java.lang.reflect.Constructor;
 import java.util.Enumeration;
@@ -135,6 +137,24 @@ COLLISION DETECTION
 	public final static int MASK_SHOT			= (CONTENTS_SOLID|CONTENTS_MONSTER|CONTENTS_WINDOW|CONTENTS_DEADMONSTER);
 	public final static int MASK_CURRENT			= (CONTENTS_CURRENT_0|CONTENTS_CURRENT_90|CONTENTS_CURRENT_180|CONTENTS_CURRENT_270|CONTENTS_CURRENT_UP|CONTENTS_CURRENT_DOWN);
 	
+	// setStat() field indexes
+	public final static int STAT_HEALTH_ICON    = 0;
+	public final static int STAT_HEALTH         = 1;
+	public final static int STAT_AMMO_ICON      = 2;
+	public final static int STAT_AMMO           = 3;
+	public final static int STAT_ARMOR_ICON     = 4;
+	public final static int STAT_ARMOR          = 5;
+	public final static int STAT_SELECTED_ICON  = 6;
+	public final static int STAT_PICKUP_ICON    = 7;
+	public final static int STAT_PICKUP_STRING  = 8;
+	public final static int STAT_TIMER_ICON     = 9;
+	public final static int STAT_TIMER          = 10;
+	public final static int STAT_HELPICON       = 11;
+	public final static int STAT_SELECTED_ITEM  = 12;
+	public final static int STAT_LAYOUTS        = 13;
+	public final static int STAT_FRAGS          = 14;
+	public final static int STAT_FLASHES        = 15; // cleared each frame, 1 = health, 2 = armor
+	public final static int MAX_STATS           = 32;
 
 
 
@@ -178,6 +198,10 @@ COLLISION DETECTION
 	protected final static int INT_CLIENT_PS_GUNINDEX = 15;
 	protected final static int INT_CLIENT_PS_GUNFRAME = 16;
 	protected final static int INT_CLIENT_PS_RDFLAGS	= 17;
+	
+	// private flags for setFloat0()
+	private final static int FLOAT_CLIENT_PS_FOV 		= 0;
+	private final static int FLOAT_CLIENT_PS_BLEND 	= 1;			
 		
 	private final static int CALL_SOUND = 1;
 	private final static int CALL_POSITIONED_SOUND = 2;
@@ -191,7 +215,6 @@ COLLISION DETECTION
 protected NativeEntity () throws GameException
 	{
 	this(false);
-	Game.debugLog("Executing NativeEntity() constructor");	
 	}
 protected NativeEntity(boolean isWorld) throws GameException
 	{
@@ -207,11 +230,37 @@ protected NativeEntity(boolean isWorld) throws GameException
 
 private native static int allocateEntity(boolean isWorld);
 
+/** 
+ * Player Only
+ */
+public void centerprint(String s)
+	{
+	centerprint0(getEntityIndex(), s);
+	}
+
+/**
+ * Player only
+ */
+private native static void centerprint0(int index, String msg);
+
 public static void clearAllEntities()
 	{
 	fEntityArray = null;
 	}
-static Enumeration enumerateEntities(String targetClassName) 
+/**
+ * Player Only
+ */
+public void cprint(int printLevel, String s)
+	{
+	cprint0(getEntityIndex(), printLevel, s);
+	}
+
+/**
+ * Player Only
+ */
+private native static void cprint0(int index, int printlevel, String msg);
+
+public static Enumeration enumerateEntities(String targetClassName) 
 	{
 	return new EntityEnumeration(targetClassName);
 	}
@@ -284,6 +333,16 @@ public Vec3 getOrigin()
 	{
 	return getVec3(fEntityIndex, VEC3_S_ORIGIN);
 	}
+/**
+ * Player Only
+ *
+ * Return the index of this player object (zero-based)
+ * @return int
+ */
+public int getPlayerNum() 
+	{
+	return getEntityIndex() - 1;
+	}
 
 private native static Vec3 getVec3(int index, int fieldNum);
 
@@ -298,6 +357,19 @@ public void linkEntity()
 
 private native static void linkEntity0(int index);
 
+/**
+ * Player Only
+ */
+public PMoveResults pMove() 
+	{
+	return pMove0(getEntityIndex());
+	}
+
+/**
+ * Player Only
+ */
+private static native PMoveResults pMove0(int index);
+
 public void positionedSound(Vec3 origin, int channel, int soundindex, float volume, float attenuation, float timeofs)
 	{   
 	sound0(origin.x, origin.y, origin.z, fEntityIndex, channel, soundindex, volume, attenuation, timeofs, CALL_POSITIONED_SOUND);
@@ -309,6 +381,17 @@ public void setAngle(float f)
 public void setAngles(Vec3 v)
 	{
 	setVec3(fEntityIndex, VEC3_S_ANGLES, v.x, v.y, v.z);
+	}
+/**
+ * Player Only
+ * @param r float
+ * @param g float
+ * @param b float
+ * @param a float
+ */
+public void setBlend(float r, float g, float b, float a) 
+	{
+	setFloat0(getEntityIndex(), FLOAT_CLIENT_PS_BLEND, r, g, b, a);
 	}
 public void setClipmask(int val)
 	{
@@ -322,9 +405,54 @@ public void setEvent(int val)
 	{
 	setInt(fEntityIndex, INT_S_EVENT, val);
 	}
+
+/**
+ * Player Only
+ */
+private native static void setFloat0(int index, int fieldNum, float r, float g, float b, float a);
+
+/**
+ * Player Only
+ * @param r float
+ * @param g float
+ * @param b float
+ * @param a float
+ */
+public void setFOV(float v) 
+	{
+	setFloat0(getEntityIndex(), FLOAT_CLIENT_PS_FOV, v, 0, 0, 0);
+	}
 public void setFrame(int val)
 	{
 	setInt(fEntityIndex, INT_S_FRAME, val);
+	}
+/**
+ * Player Only
+ */
+public void setGunAngles(Vec3 v)
+	{
+	setVec3(getEntityIndex(), VEC3_CLIENT_PS_GUNANGLES, v.x, v.y, v.z);
+	}
+/**
+ * Player Only
+ */
+public void setGunFrame(int val)
+	{
+	setInt(getEntityIndex(), INT_CLIENT_PS_GUNFRAME, val);
+	}
+/**
+ * Player Only
+ */
+public void setGunIndex(int val)
+	{
+	setInt(getEntityIndex(), INT_CLIENT_PS_GUNINDEX, val);
+	}
+/**
+ * Player Only
+ */
+public void setGunOffset(Vec3 v)
+	{
+	setVec3(getEntityIndex(), VEC3_CLIENT_PS_GUNOFFSET, v.x, v.y, v.z);
 	}
 
 //
@@ -333,6 +461,13 @@ public void setFrame(int val)
 //
 protected native static void setInt(int index, int fieldNum, int val);
 
+/**
+ * Player Only
+ */
+public void setKickAngles(Vec3 v)
+	{
+	setVec3(getEntityIndex(), VEC3_CLIENT_PS_KICKANGLES, v.x, v.y, v.z);
+	}
 public static void setMaxEntities(int max)
 	{
 	fEntityArray = new NativeEntity[max];
@@ -372,6 +507,13 @@ public void setOrigin(Vec3 v)
 	{
 	setVec3(fEntityIndex, VEC3_S_ORIGIN, v.x, v.y, v.z);
 	}
+/**
+ * Player Only
+ */
+public void setRDFlags(int val)
+	{
+	setInt(getEntityIndex(), INT_CLIENT_PS_RDFLAGS, val);
+	}
 public void setRenderFX(int val)
 	{
 	setInt(fEntityIndex, INT_S_RENDERFX, val);
@@ -380,6 +522,24 @@ public void setSolid(int val)
 	{
 	setInt(fEntityIndex, INT_SOLID, val);
 	}
+/**
+ * Player Only
+ * @param fieldindex int
+ * @param value int
+ */
+public void setStat(int fieldindex, short value) 
+	{
+	setStat0(getEntityIndex(), fieldindex, value);
+	}
+
+/**
+ * Player only
+ * @param index int
+ * @param fieldIndex int
+ * @param value int
+ */
+private native static void setStat0(int index, int fieldIndex, short value);
+
 public void setSVFlags(int val)
 	{
 	setInt(fEntityIndex, INT_SVFLAGS, val);
@@ -390,6 +550,20 @@ protected native static void setVec3(int index, int fieldNum, float x, float y, 
 public void setVelocity(Vec3 v)
 	{
 	setVec3(fEntityIndex, VEC3_S_ORIGIN, v.x, v.y, v.z);
+	}
+/**
+ * Player Only
+ */
+public void setViewAngles(Vec3 v)
+	{
+	setVec3(getEntityIndex(), VEC3_CLIENT_PS_VIEWANGLES, v.x, v.y, v.z);
+	}
+/**
+ * Player Only
+ */
+public void setViewOffset(Vec3 v)
+	{
+	setVec3(getEntityIndex(), VEC3_CLIENT_PS_VIEWOFFSET, v.x, v.y, v.z);
 	}
 public void sound(int channel, int soundindex, float volume, float attenuation, float timeofs)
 	{   

@@ -1,4 +1,8 @@
 
+package q2jgame;
+
+import q2java.*;
+
 public class GenericAmmo extends GenericItem
 	{
 	

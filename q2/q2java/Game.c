@@ -13,25 +13,62 @@ static jmethodID method_Game_readGame;
 static jmethodID method_Game_writeLevel;
 static jmethodID method_Game_readLevel;
 static jmethodID method_Game_runFrame;
+static jobject object_Game;
 
 
 void Game_javaInit()
 	{
-	class_Game = (*java_env)->FindClass(java_env, "Game");
+	cvar_t *gameclass_cvar;
+	jclass interface_nativeGame;
+	jmethodID method_Game_ctor;
+	char *p;
+	char buffer[128];
+
+	debugLog("Game_javaInit() started\n");
+
+	interface_nativeGame = (*java_env)->FindClass(java_env, "q2java/NativeGame");
+	if (!interface_nativeGame)
+		{
+		debugLog("Can't find q2java.NativeGame interface\n");
+		return;
+		}
+
+	gameclass_cvar = gi.cvar("q2java_game", "q2jgame.Game", CVAR_NOSET);
+
+	// convert classname to the strange internal format Java
+	// uses, where the periods are replaced with
+	// forward slashes
+	strcpy(buffer, gameclass_cvar->string);
+	for (p = buffer; *p; p++)
+		if (*p == '.')
+			*p = '/';
+
+	class_Game = (*java_env)->FindClass(java_env, buffer);
 	CHECK_EXCEPTION();
 	if (!class_Game)
-		debugLog("Couldn't get Java Game class\n");
-	else
 		{
-		method_Game_init = (*java_env)->GetStaticMethodID(java_env, class_Game, "init", "()V");
-		method_Game_shutdown = (*java_env)->GetStaticMethodID(java_env, class_Game, "shutdown", "()V");
-		method_Game_spawnEntities = (*java_env)->GetStaticMethodID(java_env, class_Game, "spawnEntities", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V");
-		method_Game_writeGame = (*java_env)->GetStaticMethodID(java_env, class_Game, "writeGame", "(Ljava/lang/String;)V");
-		method_Game_readGame = (*java_env)->GetStaticMethodID(java_env, class_Game, "readGame", "(Ljava/lang/String;)V");
-		method_Game_writeLevel = (*java_env)->GetStaticMethodID(java_env, class_Game, "writeLevel", "(Ljava/lang/String;)V");
-		method_Game_readLevel = (*java_env)->GetStaticMethodID(java_env, class_Game, "readLevel", "(Ljava/lang/String;)V");
-		method_Game_runFrame = (*java_env)->GetStaticMethodID(java_env, class_Game, "runFrame", "()V");
+		debugLog("Couldn't get Java game class: [%s]\n", gameclass_cvar->string);
+		return;
 		}
+
+	if (!((*java_env)->IsAssignableFrom(java_env, class_Game, interface_nativeGame)))
+		{
+		debugLog("The class %s doesn't implement q2java.NativeGame\n", gameclass_cvar->string);
+		return;
+		}
+
+	method_Game_init = (*java_env)->GetMethodID(java_env, class_Game, "init", "()V");
+	method_Game_shutdown = (*java_env)->GetMethodID(java_env, class_Game, "shutdown", "()V");
+	method_Game_spawnEntities = (*java_env)->GetMethodID(java_env, class_Game, "spawnEntities", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V");
+	method_Game_writeGame = (*java_env)->GetMethodID(java_env, class_Game, "writeGame", "(Ljava/lang/String;)V");
+	method_Game_readGame = (*java_env)->GetMethodID(java_env, class_Game, "readGame", "(Ljava/lang/String;)V");
+	method_Game_writeLevel = (*java_env)->GetMethodID(java_env, class_Game, "writeLevel", "(Ljava/lang/String;)V");
+	method_Game_readLevel = (*java_env)->GetMethodID(java_env, class_Game, "readLevel", "(Ljava/lang/String;)V");
+	method_Game_runFrame = (*java_env)->GetMethodID(java_env, class_Game, "runFrame", "()V");
+	method_Game_ctor = (*java_env)->GetMethodID(java_env, class_Game, "<init>", "()V");
+	CHECK_EXCEPTION();
+
+	object_Game = (*java_env)->NewObject(java_env, class_Game, method_Game_ctor);
 	CHECK_EXCEPTION();
 	}
 
@@ -56,7 +93,7 @@ static void java_init(void)
 		return;
 		}
 
-	(*java_env)->CallStaticVoidMethod(java_env, class_Game, method_Game_init);
+	(*java_env)->CallVoidMethod(java_env, object_Game, method_Game_init);
 	if (CHECK_EXCEPTION())
 		return;
 
@@ -86,7 +123,7 @@ static void java_shutdown(void)
 		return;
 		}
 
-	(*java_env)->CallStaticVoidMethod(java_env, class_Game, method_Game_shutdown);
+	(*java_env)->CallVoidMethod(java_env, object_Game, method_Game_shutdown);
 	CHECK_EXCEPTION();
 
 	stopJava();
@@ -110,7 +147,7 @@ static void java_spawnEntities(char *mapname, char *entString, char *spawnpoint)
 	jentString = (*java_env)->NewStringUTF(java_env, entString);
 	jspawnpoint = (*java_env)->NewStringUTF(java_env, spawnpoint);
 
-	(*java_env)->CallStaticVoidMethod(java_env, class_Game, method_Game_spawnEntities, jmapname, jentString, jspawnpoint);
+	(*java_env)->CallVoidMethod(java_env, object_Game, method_Game_spawnEntities, jmapname, jentString, jspawnpoint);
 	CHECK_EXCEPTION();
 
 	global_frameCount = 0;
@@ -129,7 +166,7 @@ static void java_writeGame(char *filename)
 		}
 
 	jfilename = (*java_env)->NewStringUTF(java_env, filename);
-	(*java_env)->CallStaticVoidMethod(java_env, class_Game, method_Game_writeGame, jfilename);
+	(*java_env)->CallVoidMethod(java_env, object_Game, method_Game_writeGame, jfilename);
 	CHECK_EXCEPTION();
 	}
 
@@ -145,7 +182,7 @@ static void java_readGame(char *filename)
 		}
 
 	jfilename = (*java_env)->NewStringUTF(java_env, filename);
-	(*java_env)->CallStaticVoidMethod(java_env, class_Game, method_Game_readGame, jfilename);
+	(*java_env)->CallVoidMethod(java_env, object_Game, method_Game_readGame, jfilename);
 	CHECK_EXCEPTION();
 	}
 
@@ -161,7 +198,7 @@ static void java_writeLevel(char *filename)
 		}
 
 	jfilename = (*java_env)->NewStringUTF(java_env, filename);
-	(*java_env)->CallStaticVoidMethod(java_env, class_Game, method_Game_writeLevel, jfilename);
+	(*java_env)->CallVoidMethod(java_env, object_Game, method_Game_writeLevel, jfilename);
 	CHECK_EXCEPTION();
 	}
 
@@ -177,7 +214,7 @@ static void java_readLevel(char *filename)
 		}
 
 	jfilename = (*java_env)->NewStringUTF(java_env, filename);
-	(*java_env)->CallStaticVoidMethod(java_env, class_Game, method_Game_readLevel, jfilename);
+	(*java_env)->CallVoidMethod(java_env, object_Game, method_Game_readLevel, jfilename);
 	CHECK_EXCEPTION();
 	}
 
@@ -193,7 +230,7 @@ static void java_runFrame(void)
 	global_frameCount++;
 	global_frameTime= global_frameCount*FRAMETIME;
 
-	(*java_env)->CallStaticVoidMethod(java_env, class_Game, method_Game_runFrame);
+	(*java_env)->CallVoidMethod(java_env, object_Game, method_Game_runFrame);
 	CHECK_EXCEPTION();
 	}
 

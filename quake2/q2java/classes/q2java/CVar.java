@@ -1,23 +1,26 @@
 
+package q2java;
+
 /**
  * Console variable handline...a little bizarre I think...but that's the way Q2 works
  */
 public class CVar
 	{
-	public final static int CVAR_ARCHIVE =  1;  // set to cause it to be saved to vars.rc
-	public final static int CVAR_USERINFO = 2;  // added to userinfo  when changed
-	public final static int CVAR_SERVERINFO = 4;// added to serverinfo when changed
-	public final static int CVAR_NOSET = 8; // don't allow change from console at all,
-										// but can be set from the command line
-	public final static int CVAR_LATCH = 16;    // save changes until server restart
+	public final static int CVAR_ARCHIVE		= 1;		// set to cause it to be saved to vars.rc
+	public final static int CVAR_USERINFO	= 2;		// added to userinfo  when changed
+	public final static int CVAR_SERVERINFO	= 4;		// added to serverinfo when changed
+	public final static int CVAR_NOSET		= 8;		// don't allow change from console at all,
+												// but can be set from the command line
+	public final static int CVAR_LATCH		= 16;	// save changes until server restart
 
-	private final static int CALL_CVAR = 0;
-	private final static int CALL_CVAR_SET = 1;
-	private final static int CALL_CVAR_FORCESET = 2;
+	// private constants for native method
+	private final static int CALL_CVAR			= 0;
+	private final static int CALL_CVAR_SET		= 1;
+	private final static int CALL_CVAR_FORCESET	= 2;
+
 	private int fCVarPointer;
 	private String fName;
 	
-
 	private CVar(String name, int pointer)
 		{
 		fName = name;

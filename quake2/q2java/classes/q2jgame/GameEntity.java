@@ -1,24 +1,26 @@
 
+package q2jgame;
+
 
 import java.io.*;
 import java.lang.reflect.Constructor;
 import java.util.Enumeration;
 import java.util.Vector;
-
-public class Entity extends NativeEntity
+import q2java.*;
+public class GameEntity extends NativeEntity
 	{
 	private String[] fSpawnArgs;
 	protected int fSpawnFlags;
 	
-public Entity() throws GameException
+public GameEntity() throws GameException
 	{
 	Game.debugLog("Executing Entity() constructor");
 	}
-public Entity(String[] spawnArgs) throws GameException
+public GameEntity(String[] spawnArgs) throws GameException
 	{
 	this(spawnArgs, false);
 	}
-public Entity(String[] spawnArgs, boolean isWorld) throws GameException
+public GameEntity(String[] spawnArgs, boolean isWorld) throws GameException
 	{
 	super(isWorld);
 	fSpawnArgs = spawnArgs;
@@ -117,9 +119,9 @@ static void spawnEntities(String entString)
 					params[0] = sa;
 					try
 						{
-						Class entClass = Class.forName(className);
+						Class entClass = Class.forName("q2jgame." + className);
 						Constructor ctor = entClass.getConstructor(paramTypes);							
-						Entity ent = (Entity) ctor.newInstance(params);
+						GameEntity ent = (GameEntity) ctor.newInstance(params);
 						ps.println(ent);
 						}
 					catch (Exception e)

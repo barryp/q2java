@@ -1,10 +1,14 @@
 
+package q2jgame;
+
 import java.io.*;
 import java.util.Enumeration;
 
-public class Game
+import q2java.*;
+
+public class Game implements NativeGame
 	{
-	public static double fTime;
+	public static double fFrameTime;
 	public static int fFrameCount;
 	
 	private static File fLogFile;	
@@ -22,7 +26,7 @@ public static void debugLog(String s)
 		{
 		}				
 	}
-public static void init()
+public void init()
 	{	
 	File gameDir = new File(Engine.getGamePath());
 	File sandbox = new File(gameDir, "sandbox");
@@ -39,45 +43,45 @@ public static void init()
 	NativeEntity.setMaxEntities((int)maxentities.getFloat());
 	debugLog("Done with init()");
 	}
-public static void readGame(String filename)
+public void readGame(String filename)
 	{
 	debugLog("readGame(\"" + filename + "\")");
 	Engine.dprint("Java readGame(\"" + filename + "\")\n");
 	}
-public static void readLevel(String filename)
+public void readLevel(String filename)
 	{
 	debugLog("readLevel(\"" + filename + "\")");
 	Engine.dprint("Java readLevel(\"" + filename + "\")\n");
 	}
-public static void runFrame()
+public void runFrame()
 	{
 	fFrameCount++;
-	fTime = fFrameCount * 0.1;
+	fFrameTime = fFrameCount * 0.1;
 	
 	Enumeration enum = new EntityEnumeration();
 	while (enum.hasMoreElements())
 		{
-		Entity e = (Entity) enum.nextElement();
+		GameEntity e = (GameEntity) enum.nextElement();
 		e.runEntity();
 		}
 	}
-public static void shutdown()
+public void shutdown()
 	{
 	debugLog("shutdown()");
 	Engine.dprint("Java shutdown() called\n");
 	NativeEntity.clearAllEntities();
 	}
-public static void spawnEntities(String mapname, String entString, String spawnPoint)
+public void spawnEntities(String mapname, String entString, String spawnPoint)
 	{
 	debugLog("spawnEntities()");
-	Entity.spawnEntities(entString);
+	GameEntity.spawnEntities(entString);
 	}
-public static void writeGame(String filename)
+public void writeGame(String filename)
 	{
 	debugLog("writeGame(\"" + filename + "\")");		
 	Engine.dprint("Java writeGame(\"" + filename + "\")\n");
 	}
-public static void writeLevel(String filename)
+public void writeLevel(String filename)
 	{
 	debugLog("writeLevel(\"" + filename + "\")");
 	Engine.dprint("Java writeLevel(\"" + filename + "\")\n");

@@ -87,6 +87,47 @@ void JNICALL Java_NativeEntity_setModel0
 void JNICALL Java_NativeEntity_linkEntity0
   (JNIEnv *, jclass, jint);
 
+
+/*
+ * Class:     NativeEntity
+ * Method:    cprint0
+ * Signature: (IILjava/lang/String;)V
+ */
+void JNICALL Java_NativeEntity_cprint0
+  (JNIEnv *, jclass, jint, jint, jstring);
+
+/*
+ * Class:     NativeEntity
+ * Method:    pMove0
+ * Signature: (I)LPMoveResults;
+ */
+jobject JNICALL Java_NativeEntity_pMove0
+  (JNIEnv *, jclass, jint);
+
+/*
+ * Class:     NativeEntity
+ * Method:    setStat0
+ * Signature: (IIS)V
+ */
+void JNICALL Java_NativeEntity_setStat0
+  (JNIEnv *, jclass, jint, jint, jshort);
+
+/*
+ * Class:     NativeEntity
+ * Method:    setFloat0
+ * Signature: (IIFFFF)V
+ */
+void JNICALL Java_NativeEntity_setFloat0
+  (JNIEnv *, jclass, jint, jint, jfloat, jfloat, jfloat, jfloat);
+
+/*
+ * Class:     NativeEntity
+ * Method:    centerprint0
+ * Signature: (ILjava/lang/String;)V
+ */
+void JNICALL Java_NativeEntity_centerprint0
+  (JNIEnv *, jclass, jint, jstring);
+
 #ifdef __cplusplus
 }
 #endif

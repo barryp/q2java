@@ -8,7 +8,7 @@
 
 extern JNIEnv *java_env;
 
-void startJava();
+int startJava();
 void stopJava();
 int checkException(char *filename, int linenum);
 jobject newJavaVec3(vec3_t *v);

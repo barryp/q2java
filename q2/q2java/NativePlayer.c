@@ -18,7 +18,7 @@ static jmethodID method_PMoveResults_ctor;
 
 static JNINativeMethod NativePlayer_methods[] = 
 	{
-	{"pMove0",			"(I)LPMoveResults;",		Java_NativePlayer_pMove0},
+	{"pMove0",			"(I)Lq2java/PMoveResults;",		Java_NativePlayer_pMove0},
 	{"setFloat0",		"(IIFFFF)V",				Java_NativePlayer_setFloat0},
 	{"setStat0",		"(IIS)V",					Java_NativePlayer_setStat0},
 	{"cprint0",			"(IILjava/lang/String;)V",	Java_NativePlayer_cprint0},

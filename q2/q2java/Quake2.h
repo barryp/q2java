@@ -67,6 +67,13 @@ COLLISION DETECTION
 #define	MASK_SHOT				(CONTENTS_SOLID|CONTENTS_MONSTER|CONTENTS_WINDOW|CONTENTS_DEADMONSTER)
 #define MASK_CURRENT			(CONTENTS_CURRENT_0|CONTENTS_CURRENT_90|CONTENTS_CURRENT_180|CONTENTS_CURRENT_270|CONTENTS_CURRENT_UP|CONTENTS_CURRENT_DOWN)
 
+#define	CVAR_ARCHIVE	1	// set to cause it to be saved to vars.rc
+#define	CVAR_USERINFO	2	// added to userinfo  when changed
+#define	CVAR_SERVERINFO	4	// added to serverinfo when changed
+#define	CVAR_NOSET		8	// don't allow change from console at all,
+							// but can be set from the command line
+#define	CVAR_LATCH		16	// save changes until server restart
+
 
 
 

@@ -1,4 +1,6 @@
 
+package q2java;
+
 public class Engine
 	{   
 	public final static int PRINT_LOW		= 0;	// pickup messages

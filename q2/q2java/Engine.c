@@ -34,12 +34,12 @@ static JNINativeMethod Engine_methods[] =
 	{"modelIndex",	"(Ljava/lang/String;)I",		Java_Engine_modelIndex},
 	{"soundIndex",	"(Ljava/lang/String;)I",		Java_Engine_soundIndex},
 	{"imageIndex",	"(Ljava/lang/String;)I",		Java_Engine_imageIndex},
-	{"trace0",		"(FFFFFFFFFFFFLNativeEntity;I)LTraceResults;",	Java_Engine_trace0},
+	{"trace0",		"(FFFFFFFFFFFFLq2java/NativeEntity;I)Lq2java/TraceResults;",	Java_Engine_trace0},
 	{"pointContents0",		"(FFF)I",				Java_Engine_pointContents0},
 	{"inP0",				"(FFFFFFI)Z",			Java_Engine_inP0},
 	{"setAreaPortalState",	"(IZ)V",				Java_Engine_setAreaPortalState},
 	{"areasConnected",		"(II)Z",				Java_Engine_areasConnected},
-	{"boxEntities0",		"(FFFFFFII)[LNativeEntity;",	Java_Engine_boxEntities0},
+	{"boxEntities0",		"(FFFFFFII)[Lq2java/NativeEntity;",	Java_Engine_boxEntities0},
 	{"write0",		"(Ljava/lang/Object;FFFII)V",	Java_Engine_write0},
 	{"argc",		"()I", 							Java_Engine_argc},
 	{"argv",		"(I)Ljava/lang/String;",		Java_Engine_argv},
@@ -52,7 +52,7 @@ static JNINativeMethod Engine_methods[] =
 
 void Engine_javaInit()
 	{
-	class_Engine = (*java_env)->FindClass(java_env, "Engine");
+	class_Engine = (*java_env)->FindClass(java_env, "q2java/Engine");
 	CHECK_EXCEPTION();
 	if (!class_Engine)
 		{
@@ -64,7 +64,7 @@ void Engine_javaInit()
 	CHECK_EXCEPTION();
 
 	
-	class_TraceResults = (*java_env)->FindClass(java_env, "TraceResults");
+	class_TraceResults = (*java_env)->FindClass(java_env, "q2java/TraceResults");
 	CHECK_EXCEPTION();
 	if (!class_TraceResults)
 		{
@@ -72,7 +72,7 @@ void Engine_javaInit()
 		return;
 		}
 
-	method_TraceResults_ctor = (*java_env)->GetMethodID(java_env, class_TraceResults, "<init>", "(ZZFLVec3;LVec3;FBBLjava/lang/String;IIILNativeEntity;)V");
+	method_TraceResults_ctor = (*java_env)->GetMethodID(java_env, class_TraceResults, "<init>", "(ZZFLq2java/Vec3;Lq2java/Vec3;FBBLjava/lang/String;IIILq2java/NativeEntity;)V");
 	CHECK_EXCEPTION();
 	if (!method_TraceResults_ctor)
 		{

@@ -1,5 +1,9 @@
 
-public class GenericItem extends Entity
+package q2jgame;
+
+import q2java.*;
+
+public class GenericItem extends GameEntity
 	{
 	
 public GenericItem(String[] spawnArgs) throws GameException

@@ -12,14 +12,44 @@ static jmethodID method_player_disconnect;
 
 void Player_javaInit()
 	{
+	cvar_t *player_cvar;
+	jclass interface_nativePlayer;
+	char *p;
+	char buffer[128];
+
 	debugLog("Player_javaInit() started\n");
-	class_player = (*java_env)->FindClass(java_env, "player");
+
+	interface_nativePlayer = (*java_env)->FindClass(java_env, "q2java/NativePlayer");
+	if (!interface_nativePlayer)
+		{
+		debugLog("Can't find q2java.NativePlayer interface\n");
+		return;
+		}
+
+	player_cvar = gi.cvar("q2java_player", "q2jgame.Player", CVAR_NOSET);
+
+	// convert classname to the strange internal format Java
+	// uses, where the periods are replaced with
+	// forward slashes
+	strcpy(buffer, player_cvar->string);
+	for (p = buffer; *p; p++)
+		if (*p == '.')
+			*p = '/';
+
+	class_player = (*java_env)->FindClass(java_env, buffer);
 	CHECK_EXCEPTION();
 	if (!class_player)
 		{
-		debugLog("Couldn't get Java player class\n");
+		debugLog("Couldn't get Java player class: [%s]\n", player_cvar->string);
 		return;
 		}
+
+	if (!((*java_env)->IsAssignableFrom(java_env, class_player, interface_nativePlayer)))
+		{
+		debugLog("The class %s doesn't implement q2java.NativePlayer\n", player_cvar->string);
+		return;
+		}
+
 	method_player_ctor = (*java_env)->GetMethodID(java_env, class_player, "<init>", "(Ljava/lang/String;Z)V");
 	method_player_begin = (*java_env)->GetMethodID(java_env, class_player, "begin", "(Z)V");
 	method_player_userinfoChanged = (*java_env)->GetMethodID(java_env, class_player, "userinfoChanged", "(Ljava/lang/String;)V");

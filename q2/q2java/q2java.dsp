@@ -256,21 +256,6 @@ SOURCE=.\NativeEntity.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\NativePlayer.c
-
-!IF  "$(CFG)" == "game - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "game - Win32 Debug"
-
-!ELSEIF  "$(CFG)" == "game - Win32 Debug Alpha"
-
-!ELSEIF  "$(CFG)" == "game - Win32 Release Alpha"
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
 SOURCE=.\player.c
 
 !IF  "$(CFG)" == "game - Win32 Release"
@@ -307,10 +292,6 @@ SOURCE=.\javalink.h
 # Begin Source File
 
 SOURCE=.\NativeEntity.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\NativePlayer.h
 # End Source File
 # Begin Source File
 

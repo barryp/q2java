@@ -40,12 +40,21 @@
 #define CALL_SOUND 1
 #define CALL_POSITIONED_SOUND 2
 
+#define FLOAT_CLIENT_PS_FOV		0
+#define FLOAT_CLIENT_PS_BLEND	1		
+
+
+usercmd_t *thinkCmd;
+static cvar_t *cvar_gravity;
 
 // handles to the Entity class
 static jclass class_NativeEntity;
 static jfieldID  field_NativeEntity_fEntityIndex;
 static jfieldID  field_NativeEntity_fEntityArray;
-// static jmethodID method_NativeEntity_ctor;
+
+// handle to PMoveResults class
+static jclass class_PMoveResults;
+static jmethodID method_PMoveResults_ctor;
 
 static JNINativeMethod Entity_methods[] = 
 	{
@@ -54,17 +63,27 @@ static JNINativeMethod Entity_methods[] =
 	{"setInt",			"(III)V",					Java_NativeEntity_setInt},
 	{"getInt",			"(II)I",					Java_NativeEntity_getInt},
 	{"setVec3",			"(IIFFF)V",					Java_NativeEntity_setVec3},
-	{"getVec3",			"(II)LVec3;",				Java_NativeEntity_getVec3},
+	{"getVec3",			"(II)Lq2java/Vec3;",		Java_NativeEntity_getVec3},
 	{"sound0",			"(FFFIIIFFFI)V",			Java_NativeEntity_sound0},
 	{"setModel0",		"(ILjava/lang/String;)V",	Java_NativeEntity_setModel0},	
 	{"linkEntity0",		"(I)V",						Java_NativeEntity_linkEntity0},
-	{"unlinkEntity0",	"(I)V",						Java_NativeEntity_unlinkEntity0}
+	{"unlinkEntity0",	"(I)V",						Java_NativeEntity_unlinkEntity0},
+
+	// methods for players only
+	{"pMove0",			"(I)Lq2java/PMoveResults;",	Java_NativeEntity_pMove0},
+	{"setFloat0",		"(IIFFFF)V",				Java_NativeEntity_setFloat0},
+	{"setStat0",		"(IIS)V",					Java_NativeEntity_setStat0},
+	{"cprint0",			"(IILjava/lang/String;)V",	Java_NativeEntity_cprint0},
+	{"centerprint0",	"(ILjava/lang/String;)V",	Java_NativeEntity_centerprint0}
 	};
 
 void Entity_javaInit()
 	{
 	debugLog("Entity_javaInit() started\n");
-	class_NativeEntity = (*java_env)->FindClass(java_env, "NativeEntity");
+
+    cvar_gravity = gi.cvar("sv_gravity", "800", 0);
+
+	class_NativeEntity = (*java_env)->FindClass(java_env, "q2java/NativeEntity");
 	CHECK_EXCEPTION();
 	if (!class_NativeEntity)
 		{
@@ -72,13 +91,28 @@ void Entity_javaInit()
 		return;
 		}
 
-	(*java_env)->RegisterNatives(java_env, class_NativeEntity, Entity_methods, 10); 
+	(*java_env)->RegisterNatives(java_env, class_NativeEntity, Entity_methods, sizeof(Entity_methods) / sizeof(Entity_methods[0])); 
 	CHECK_EXCEPTION();
 
 	field_NativeEntity_fEntityIndex = (*java_env)->GetFieldID(java_env, class_NativeEntity, "fEntityIndex", "I");
-	field_NativeEntity_fEntityArray = (*java_env)->GetStaticFieldID(java_env, class_NativeEntity, "fEntityArray", "[LNativeEntity;");
+	field_NativeEntity_fEntityArray = (*java_env)->GetStaticFieldID(java_env, class_NativeEntity, "fEntityArray", "[Lq2java/NativeEntity;");
 //	method_NativeEntity_ctor = (*java_env)->GetMethodID(java_env, class_NativeEntity, "<init>", "(I)V");
 	CHECK_EXCEPTION();
+
+	class_PMoveResults = (*java_env)->FindClass(java_env, "q2java/PMoveResults");
+	CHECK_EXCEPTION();
+	if (!class_PMoveResults)
+		{
+		debugLog("Couldn't get Java PMoveResults class\n");
+		return;
+		}
+
+	method_PMoveResults_ctor = (*java_env)->GetMethodID(java_env, class_PMoveResults, "<init>", "(BSSSSSSB[Lq2java/NativeEntity;FLq2java/NativeEntity;II)V");
+	CHECK_EXCEPTION();
+	if (!method_PMoveResults_ctor)
+		debugLog("Couldn't get PMoveResults constructor\n");
+
+
 	debugLog("Entity_javaInit() finished\n");
 	}
 
@@ -467,3 +501,156 @@ static void JNICALL Java_NativeEntity_unlinkEntity0(JNIEnv *env, jclass cls, jin
 
 	gi.unlinkentity(ge.edicts + index);
 	}
+
+
+// --------------- Player Methods ----------------------
+
+static edict_t	*pm_passent;
+
+// pmove doesn't need to know about passent and contentmask
+static trace_t	PM_trace(vec3_t start, vec3_t mins, vec3_t maxs, vec3_t end)
+	{
+//	if (pm_passent->health > 0)
+		return gi.trace (start, mins, maxs, end, pm_passent, MASK_PLAYERSOLID);
+//	else
+//		return gi.trace (start, mins, maxs, end, pm_passent, MASK_DEADSOLID);
+	}
+
+
+static jobject JNICALL Java_NativeEntity_pMove0(JNIEnv *env, jclass cls, jint index)
+	{
+	jobject groundEnt;
+	jobjectArray touched;
+	int i;
+	pmove_t pm;
+	gclient_t *client;
+	edict_t *ent;
+
+	debugLog("In C pMove0(%d)\n", index);
+
+	// sanity check
+	if ((index < 0) || (index > global_maxClients))
+		return 0;
+
+	ent = ge.edicts + index;
+	client = ent->client;
+
+	client->ps.pmove.gravity = (int)(cvar_gravity->value);
+
+	memset (&pm, 0, sizeof(pm));
+
+	pm.s = client->ps.pmove;
+/*
+	if (memcmp(&client->old_pmove, &pm.s, sizeof(pm.s)))
+		pm.snapinitial = true;
+*/
+	pm.cmd = *thinkCmd;
+
+	pm.trace = PM_trace;	// adds default parms
+	pm.pointcontents = gi.pointcontents;
+debugLog("About to call gi.Pmove()\n");
+	gi.Pmove(&pm);
+
+	// save results of pmove
+	client->ps.pmove = pm.s;
+//	client->old_pmove = pm.s;
+
+	for (i=0 ; i<3 ; i++)
+		{
+		ent->s.origin[i] = (float)(pm.s.origin[i]	* 0.125);
+		ent->velocity[i] = (float)(pm.s.velocity[i]	* 0.125);
+		ent->mins[i] = pm.mins[i];
+		ent->maxs[i] = pm.maxs[i];
+		client->ps.viewangles[i] = pm.viewangles[i];
+		}
+
+	debugLog("Done with the C part of pMove0, generating java objects\n");
+
+	touched = Entity_createArray(pm.touchents, pm.numtouch);
+
+	if (!pm.groundentity)
+		groundEnt = 0;
+	else
+		groundEnt = Entity_getEntity(pm.groundentity - ge.edicts);
+
+	debugLog("About to try returning a new PMoveResult\n");
+
+	return (*env)->NewObject(env, class_PMoveResults, method_PMoveResults_ctor,
+		pm.cmd.buttons, pm.cmd.angles[0], pm.cmd.angles[1], pm.cmd.angles[2],
+		pm.cmd.forwardmove, pm.cmd.sidemove, pm.cmd.upmove, pm.cmd.lightlevel,
+		touched, pm.viewheight, groundEnt, pm.watertype, pm.waterlevel);
+	}
+
+
+static void JNICALL Java_NativeEntity_setFloat0(JNIEnv *env, jclass cls, jint index, jint fieldindex, jfloat r, jfloat g, jfloat b, jfloat a)
+	{
+	edict_t *ent;
+	
+	// sanity check
+	if ((index < 0) || (index > global_maxClients))
+		return;
+
+	ent = ge.edicts + index;
+	
+	switch (fieldindex)
+		{
+		case FLOAT_CLIENT_PS_FOV:
+			ent->client->ps.fov = r;
+			break;
+
+		case FLOAT_CLIENT_PS_BLEND:
+			ent->client->ps.blend[0] = r;
+			ent->client->ps.blend[1] = g;
+			ent->client->ps.blend[2] = b;
+			ent->client->ps.blend[3] = a;
+			break;
+
+		default: ;  // ---FIXME-- should indicate an error somewhere
+		}
+	}
+
+static void JNICALL Java_NativeEntity_setStat0(JNIEnv *env, jclass cls, jint index, jint fieldindex, jshort value)
+	{
+	edict_t *ent;
+
+	// sanity check
+	if ((index < 0) || (index > global_maxClients) || (fieldindex < 0) || (fieldindex > MAX_STATS))
+		return;
+	
+	ent = ge.edicts + index;
+	ent->client->ps.stats[fieldindex] = value;
+	}
+
+static void JNICALL Java_NativeEntity_cprint0(JNIEnv *env , jclass cls, jint index, jint printlevel, jstring js)
+	{
+	const char *str;
+	edict_t *ent;
+
+	// sanity check
+	if ((index < 0) || (index > global_maxClients))
+		return;
+
+	ent = ge.edicts + index;
+
+	str = (*env)->GetStringUTFChars(env, js, 0);
+	gi.cprintf(ent, printlevel, "%s", str);
+	(*env)->ReleaseStringUTFChars(env, js, str);
+	}
+
+
+static void JNICALL Java_NativeEntity_centerprint0(JNIEnv *env, jclass cls, jint index, jstring js)
+	{
+	const char *str;
+	edict_t *ent;
+
+	// sanity check
+	if ((index < 0) || (index > global_maxClients))
+		return;
+
+	ent = ge.edicts + index;
+
+	str = (*env)->GetStringUTFChars(env, js, 0);
+	gi.centerprintf(ent, "%s", str);
+	(*env)->ReleaseStringUTFChars(env, js, str);
+	}
+

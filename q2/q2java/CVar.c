@@ -18,7 +18,7 @@ static JNINativeMethod CVar_methods[] =
 
 void CVar_javaInit()
 	{
-	class_CVar = (*java_env)->FindClass(java_env, "CVar");
+	class_CVar = (*java_env)->FindClass(java_env, "q2java/CVar");
 	CHECK_EXCEPTION();
 	if (!class_CVar)
 		{

@@ -1,5 +1,9 @@
 
-public class misc_deadsoldier extends Entity
+package q2jgame;
+
+import q2java.*;
+
+public class misc_deadsoldier extends GameEntity
 	{
 	
 public misc_deadsoldier(String[] spawnArgs) throws GameException
