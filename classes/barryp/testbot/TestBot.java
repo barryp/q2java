@@ -14,10 +14,11 @@ import java.util.*;
  * Simple test bot
  *
  */
-public class TestBot extends baseq2.Player
+public class TestBot extends baseq2.Player implements LevelListener
 	{
 	protected Player fLastAttacker;
-
+	protected boolean fLevelChanged;
+	
 	protected final static int RESPAWN_INTERVAL = 15;
 	protected final static String BUNDLE_NAME = "barryp.testbot.talk";
 	
@@ -36,9 +37,11 @@ TestBot(q2java.NativeEntity ent, String name) throws q2java.GameException
 
 	fEntity.setGroundEntity(baseq2.GameModule.gWorld.fEntity);
 
-	clearSettings();
-	spawn();
-	Game.dprint("Test bot spawned at " + fEntity.getOrigin() + "\n");
+	// place the bot into the game
+	playerBegin(false);
+
+	// ask to be notified when levels change (so the bot can respawn)
+	Game.addLevelListener(this);
 	}
 /**
  * Extend the Player.clearSettings() method to clear
@@ -56,7 +59,7 @@ public void clearSettings()
  * @param attacker the entity that's gets credit for the damage, for example the player who fired the above example rocket.
  * @param dir the direction the damage is coming from.
  * @param point the point where the damage is being inflicted.
- * @param normal q2java.Vec3
+ * @param normal surface normal at the point damage is inflicted
  * @param damage how much damage the player is being hit with.
  * @param knockback how much the player should be pushed around because of the damage.
  * @param dflags flags indicating the type of damage, corresponding to GameEntity.DAMAGE_* constants.
@@ -78,7 +81,7 @@ public void damage(GameObject inflictor, GameObject attacker,
 			// randomly pick a reaction message from the resource bundle
 			Object[] args = {p.getName()};
 			say(fResourceGroup.format("barryp.testbot.Messages", "react", args));
-//			fLastAttacker = p;
+			fLastAttacker = p;
 			}
 		}
 
@@ -100,6 +103,14 @@ public Locale getLocale()
 	return fResourceGroup.getLocale();
 	}
 /**
+ * Called when a new level is starting, after entities have been spawned.
+ */
+public void levelEntitiesSpawned()
+	{
+	// Make a note of the level change
+	fLevelChanged = true;
+	}
+/**
  * Disconnect the Bot.
  */
 public void playerDisconnect()
@@ -109,12 +120,26 @@ public void playerDisconnect()
 	ent.freeEntity();
 	}
 /**
- * This method was created by a SmartGuide.
+ * Tick-tock, tick-tock, the game moves along.
  * @param phase int
  */
 public void runFrame(int phase)
 	{
 	super.runFrame(phase);
+
+	// if the level has changed, re-place the
+	// bot into the game
+	if (fLevelChanged)
+		{
+		fLevelChanged = false;
+		playerBegin(false);
+		}
+		
+	// if the fRespawnTime field isn't zero, then
+	// the bot must be dead, and that field shows
+	// the soonest the bot/player is allowed to reenter
+	// the game.  If that time has been reached, stick
+	// the bot back in.
 	if ((fRespawnTime > 0) && (Game.getGameTime() > (fRespawnTime + RESPAWN_INTERVAL)))
 		{
 		fRespawnTime = 0;
@@ -144,6 +169,12 @@ public void setName(String name)
 public void setSkin(String name) 
 	{
 	setPlayerInfo("skin", name);
+	}
+/**
+ * Called when a new level is starting, before entities are spawned.
+ */
+public void startLevel(String mapname, String entString, String spawnPoint)
+	{
 	}
 /**
  * Do nothing - sending a scoreboard to a bot would crash the game.

@@ -78,6 +78,14 @@ public String getAmmoName()
 	return "shells";
 	}
 /**
+ * Get how much ammo this weapon starts off with.
+ * @return int
+ */
+public int getDefaultAmmoCount() 
+	{
+	return 10;
+	}
+/**
  * Get the name of this item's icon.
  * @return java.lang.String
  */
@@ -114,9 +122,7 @@ public String getViewModelName()
  */
 protected void setFields() 
 	{
-	setAmmoCount(10);
-	
-	fFrameActivateLast		= 7;
+	fFrameActivateLast	= 7;
 	fFrameFireLast 		= 18;
 	fFrameIdleLast 		= 36;
 	fFrameDeactivateLast 	= 39;

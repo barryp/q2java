@@ -1,10 +1,11 @@
 package javax.vecmath;
 
 /*
-   Copyright (C) Kenji Hiranabe 1997,1998
-   This program is free software.
+   Copyright (C) 1997,1998
+   Kenji Hiranabe
 
-   This class was implemented by Kenji Hiranabe(hiranabe@esm.co.jp),
+   This program is free software.
+   Implemented by Kenji Hiranabe(hiranabe@esm.co.jp),
    conforming to the Java(TM) 3D API specification version 1.1
    by Sun Microsystems.
 
@@ -16,12 +17,18 @@ import java.io.Serializable;
  * A double precision, general, real, and dynamically resizeable 
  * two dimensional N x M matrix class. Row and column numbering 
  * begins with zero. The representation is row major. 
- * @version specification 1.1, implementation $Revision: 1.6 $, $Date: 1998/04/17 10:30:46 $
+ * @version specification 1.1, implementation $Revision: 1.8 $, $Date: 1998/10/14 00:49:10 $
  * @author Kenji hiranabe
  */
 public class GMatrix implements Serializable {
 /*
  * $Log: GMatrix.java,v $
+ * Revision 1.8  1998/10/14  00:49:10  hiranabe
+ * API1.1 Beta02
+ *
+ * Revision 1.7  1998/07/27  04:28:13  hiranabe
+ * API1.1Alpha01 ->API1.1Alpha03
+ *
  * Revision 1.6  1998/04/17  10:30:46  hiranabe
  * null check for equals
  *
@@ -672,7 +679,7 @@ public class GMatrix implements Serializable {
 	for (int i = 0; i < nRow; i++)
 	    for (int j = 0; j < nCol; j++)
 		elementData[i*nCol + j] = v1.getElement(i)*v2.getElement(j);
-	}        
+	}
 	/**
 	 * Multiplies the transpose of matrix m1 times the transpose of matrix m2, and places the
 	 * result into this.

@@ -1,10 +1,11 @@
 package javax.vecmath;
 
 /*
-   Copyright (C) Kenji Hiranabe 1997,1998
-   This program is free software.
+   Copyright (C) 1997,1998
+   Kenji Hiranabe
 
-   This class was implemented by Kenji Hiranabe(hiranabe@esm.co.jp),
+   This program is free software.
+   Implemented by Kenji Hiranabe(hiranabe@esm.co.jp),
    conforming to the Java(TM) 3D API specification version 1.1
    by Sun Microsystems.
 
@@ -15,7 +16,7 @@ import java.io.Serializable;
 /**
   * A 3 element point that is represented by double precision
   * floating point x,y,z coordinates.
-  * @version specification 1.1, implementation $Revision: 1.5 $, $Date: 1998/04/10 04:52:14 $
+  * @version specification 1.1, implementation $Revision: 1.6 $, $Date: 1998/10/14 00:49:10 $
   * @author Kenji hiranabe
   */
 public class Point3d extends Tuple3d implements Serializable {
@@ -34,6 +35,9 @@ public class Point3d extends Tuple3d implements Serializable {
 	}
 /*
  * $Log: Point3d.java,v $
+ * Revision 1.6  1998/10/14  00:49:10  hiranabe
+ * API1.1 Beta02
+ *
  * Revision 1.5  1998/04/10  04:52:14  hiranabe
  * API1.0 -> API1.1 (added constructors, methods)
  *
@@ -102,18 +106,18 @@ public class Point3d extends Tuple3d implements Serializable {
 	  * The L-1 distance is equal to abs(x1-x2) + abs(y1-y2).
 	  * @param p1 the other point
 	  */
-	public final float distanceL1(Point3d p1) {
-	// why returns float ?
-	return (float)(Math.abs(x-p1.x) + Math.abs(y-p1.y) + Math.abs(z-p1.z));
+	public final double distanceL1(Point3d p1) {
+	// return type changed from float to double as of API1.1 Beta02
+	return Math.abs(x-p1.x) + Math.abs(y-p1.y) + Math.abs(z-p1.z);
 	}
 	/**
 	  * Computes the L-infinite distance between this point and point p1.
 	  * The L-infinite distance is equal to MAX[abs(x1-x2), abs(y1-y2)].
 	  * @param p1 the other point
 	  */
-	public final float distanceLinf(Point3d p1) {
-	// why returns float ?
-	return (float)Math.max(Math.max(Math.abs(x-p1.x), Math.abs(y-p1.y)), Math.abs(z-p1.z));
+	public final double distanceLinf(Point3d p1) {
+	// return type changed from float to double as of API1.1 Beta02
+	return Math.max(Math.max(Math.abs(x-p1.x), Math.abs(y-p1.y)), Math.abs(z-p1.z));
 	}
 	/**
 	  * Computes the square of the distance between this point and point p1.

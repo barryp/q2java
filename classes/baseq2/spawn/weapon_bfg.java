@@ -99,6 +99,14 @@ public String getAmmoName()
 	return "cells";
 	}
 /**
+ * Get how much ammo this weapon starts off with.
+ * @return int
+ */
+public int getDefaultAmmoCount() 
+	{
+	return 50;
+	}
+/**
  * Get the name of this item's icon.
  * @return java.lang.String
  */
@@ -142,8 +150,6 @@ public String getWeaponSound()
  */
 protected void setFields() 
 	{
-	setAmmoCount(50);
-	
 	fFrameActivateLast		= 8;
 	fFrameFireLast 		= 32;
 	fFrameIdleLast 		= 55;

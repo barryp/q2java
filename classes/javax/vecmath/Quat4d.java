@@ -1,10 +1,11 @@
 package javax.vecmath;
 
 /*
-   Copyright (C) Kenji Hiranabe 1997,1998
-   This program is free software.
+   Copyright (C) 1997,1998
+   Kenji Hiranabe
 
-   This class was implemented by Kenji Hiranabe(hiranabe@esm.co.jp),
+   This program is free software.
+   Implemented by Kenji Hiranabe(hiranabe@esm.co.jp),
    conforming to the Java(TM) 3D API specification version 1.1
    by Sun Microsystems.
 
@@ -15,7 +16,7 @@ import java.io.Serializable;
 /**
  * A 4 element quaternion represented by double precision floating 
  * point x,y,z,w coordinates. 
- * @version specification 1.1, implementation $Revision: 1.5 $, $Date: 1998/04/10 04:52:14 $
+ * @version specification 1.1, implementation $Revision: 1.6 $, $Date: 1998/10/14 00:49:10 $
  * @author Kenji hiranabe
  */
 public class Quat4d extends Tuple4d implements Serializable {
@@ -34,6 +35,9 @@ public class Quat4d extends Tuple4d implements Serializable {
 	}
 /*
  * $Log: Quat4d.java,v $
+ * Revision 1.6  1998/10/14  00:49:10  hiranabe
+ * API1.1 Beta02
+ *
  * Revision 1.5  1998/04/10  04:52:14  hiranabe
  * API1.0 -> API1.1 (added constructors, methods)
  *

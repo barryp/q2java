@@ -1,10 +1,11 @@
 package javax.vecmath;
 
 /*
-   Copyright (C) Kenji Hiranabe 1997,1998
-   This program is free software.
+   Copyright (C) 1997,1998
+   Kenji Hiranabe
 
-   This class was implemented by Kenji Hiranabe(hiranabe@esm.co.jp),
+   This program is free software.
+   Implemented by Kenji Hiranabe(hiranabe@esm.co.jp),
    conforming to the Java(TM) 3D API specification version 1.1
    by Sun Microsystems.
 
@@ -15,12 +16,28 @@ import java.io.Serializable;
 /**
  * A double precision floating point 3 by 3 matrix.
  * Primarily to support rotations
- * @version specification 1.1, implementation $Revision: 1.7 $, $Date: 1998/04/17 10:30:46 $
+ * @version specification 1.1, implementation $Revision: 1.11 $, $Date: 1998/10/14 00:49:10 $
  * @author Kenji hiranabe
  */
 public class Matrix3d implements Serializable {
 /*
  * $Log: Matrix3d.java,v $
+ * Revision 1.11  1998/10/14  00:49:10  hiranabe
+ * API1.1 Beta02
+ *
+ * Revision 1.10  1998/08/24  00:17:20  hiranabe
+ * ** Matrix3f#set(float []) m22 should be m[ 8] but was m[ 9]
+ * thanks > nsawa@po.cnet-ta.ne.jp
+ *
+ * ** added Matrix3{f,d}f#set(Matrix3{f,d})
+ * thanks > nsawa@po.cnet-ta.ne.jp
+ *
+ * Revision 1.9  1998/07/27  04:33:08  hiranabe
+ * transpose(M m1) bug. It acted as the same as 'set'.
+ *
+ * Revision 1.8  1998/07/27  04:28:13  hiranabe
+ * API1.1Alpha01 ->API1.1Alpha03
+ *
  * Revision 1.7  1998/04/17  10:30:46  hiranabe
  * null check for equals
  *
@@ -690,9 +707,10 @@ public class Matrix3d implements Serializable {
 	setFromAxisAngle(a1.x, a1.y, a1.z, a1.angle);
 	}
 	/**
-	  * Sets 9 values	
+	  * Sets the value of this matrix to the value of the Matrix3d
+	  * argument.
 	  */
-	private void set(Matrix3d m1) {
+	public final void set(Matrix3d m1) {
 	m00 = m1.m00; m01 = m1.m01; m02 = m1.m02;
 	m10 = m1.m10; m11 = m1.m11; m12 = m1.m12;
 	m20 = m1.m20; m21 = m1.m21; m22 = m1.m22;
@@ -700,7 +718,7 @@ public class Matrix3d implements Serializable {
 	/**
 	  * Sets the value of this matrix to the double value of the Matrix3f
 	  * argument.
-	  * @param m1 the matrix3d to be converted to double
+	  * @param m1 the matrix3f to be converted to double
 	  */
 	public final void set(Matrix3f m1)  {
 	m00 = m1.m00; m01 = m1.m01; m02 = m1.m02;
@@ -1102,10 +1120,7 @@ public class Matrix3d implements Serializable {
 	 */
 	public final void transpose(Matrix3d m1) {
 	// alias-safe
-	set(
-	    m1.m00, m1.m01, m1.m02,
-	    m1.m10, m1.m11, m1.m12,
-	    m1.m20, m1.m21, m1.m22
-	    );
+	set(m1);
+	transpose();
 	}
 }

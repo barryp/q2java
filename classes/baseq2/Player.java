@@ -983,6 +983,9 @@ protected void clearSettings( )
 	fInventory.addPack("cells", new InventoryPack(200, "a_cells"));
 	fInventory.addPack("slugs", new InventoryPack(50, "a_slugs"));
 
+	// clear weapon references
+	fWeapon = fNextWeapon = fLastWeapon = null;
+	
 	// give the player a hand blaster
 	addWeapon(".spawn.weapon_blaster", true);
 
@@ -1881,7 +1884,9 @@ protected void die(GameObject inflictor, GameObject attacker, int damage, Point3
 	fKiller = attacker;
 	
 	fIsDead = true;
-	fRespawnTime = (float)(Game.getGameTime() + 1);  // the player can respawn after this time
+
+	// figure the soonest time the player will be allowed to respawn
+	fRespawnTime = (float)(Game.getGameTime() + 1);  
 	
 	// broadcast a message announcing our death
 	Object[] args = {getName(), new Integer(isFemale() ? 1 : 0), (attacker instanceof Player ? ((Player)attacker).getName() : null)};
@@ -1973,8 +1978,8 @@ protected void dropInventory()
 		{
 		try
 			{
-			// transfer ammo into the weapon
-			fWeapon.setAmmoCount(getAmmoCount(fWeapon.getAmmoName()));
+			// put default amount of ammo into the weapon
+			fWeapon.setAmmoCount(fWeapon.getDefaultAmmoCount());
 
 			// toss it
 			fWeapon.drop(this, GenericItem.DROP_TIMEOUT);

@@ -1,11 +1,16 @@
 package baseq2.spawn;
 
-
 import javax.vecmath.*;
 
 import q2java.*;
 import q2jgame.*;
 import baseq2.*;
+
+/**
+ * Grenades - act both as weapon and ammo
+ *
+ * @author Menno van Gangelen &ltmenno@element.nl&gt
+ */
 
 public class ammo_grenades extends GenericWeapon
 	{
@@ -15,6 +20,7 @@ public class ammo_grenades extends GenericWeapon
 
 	private float   fTimer = 0;
 	private boolean fHeld;
+	protected String fGrenadeSound;
 	
 /**
  * Construct a grenade launcher for a player to carry.
@@ -25,6 +31,9 @@ public ammo_grenades()
 public ammo_grenades(String[] spawnArgs) throws GameException
 	{
 	super(spawnArgs);
+	//We have to prechache the weapon sound ourselves
+	Engine.getSoundIndex("weapons/hgrenc1b.wav");
+	fGrenadeSound = null;
 	fEntity.setEffects( fEntity.getEffects() & ~NativeEntity.EF_ROTATE); // all weapons rotate, except grenades...
 	}
 public void activate() 
@@ -117,6 +126,13 @@ public String getViewModelName()
 	return "models/weapons/v_handgr/tris.md2";
 	}
 /**
+ * Replace the sound
+ */
+public String getWeaponSound() 
+	{
+	return fGrenadeSound;
+	}
+/**
  * Fill in the info specific to this type of weapon.
  */
 protected void setFields() 
@@ -164,9 +180,7 @@ public void weaponThink()
 					fEntity.sound(NativeEntity.CHAN_VOICE, Engine.getSoundIndex("weapons/noammo.wav"), 1, NativeEntity.ATTN_NORM, 0);
 					//ent->pain_debounce_time = level.time + 1;
 					//}
-				// c:NoAmmoWeaponChange (ent);
-				// java:fWeaponState = WEAPON_DROPPING;
-				// java:setWeaponFrame(fFrameIdleLast + 1); // FRAME_DEACTIVATE_FIRST = FRAME_IDLE_LAST + 1
+				fPlayer.changeWeapon();
 				}
 			return;
 			}
@@ -195,17 +209,16 @@ public void weaponThink()
 			if (fTimer == 0L)
 				{
 				fTimer = Game.getGameTime() + GRENADE_TIMER + 0.2F;
-				//why??: ent->client->weapon_sound = gi.soundindex("weapons/hgrenc1b.wav");
-				fEntity.setSound(Engine.getSoundIndex("weapons/hgrenc1b.wav"));
+				fGrenadeSound = "weapons/hgrenc1b.wav";
 				}
 
 			// they waited too long, detonate it in their hand
-			if ( /*!ent->client->grenade_blew_up &&*/ Game.getGameTime() >= fTimer)
+			if ( Game.getGameTime() >= fTimer)
 				{
 				//ent->client->weapon_sound = 0;
 				//weapon_grenade_fire (ent, true);
 				//ent->client->grenade_blew_up = true;
-				fEntity.setSound(0);
+				fGrenadeSound = null;
 				fHeld = true;
 				fire();
 				setWeaponFrame(15);
@@ -215,7 +228,7 @@ public void weaponThink()
 
 			if ((fPlayer.fButtons & PlayerCmd.BUTTON_ATTACK) != 0)
 				return;
-				// retuned without increasing weaponframe, so it is held behind the player...
+				// returned without increasing weaponframe, so it is held behind the player...
 
 			// There is a hack in the c-version of fire(),
 			// which increaases the grenade_time with one second.
@@ -239,7 +252,7 @@ public void weaponThink()
 			{
 			//ent->client->weapon_sound = 0;
 			//weapon_grenade_fire (ent, false);
-			fEntity.setSound(0);
+			fGrenadeSound = null;
 			fHeld = false;
 			fire();
 			return;

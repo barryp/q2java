@@ -51,20 +51,29 @@ public abstract class GenericWeapon extends AmmoHolder
 	protected final static int WEAPON_FIRING		= 4;	
 	
 /**
- * This method was created by a SmartGuide.
+ * Construct a weapon without any map spawn arguments.
  */
 public GenericWeapon() 
 	{
 	super();
 	setFields();
 
+	// fill the weapon with ammo
+	setAmmoCount(getDefaultAmmoCount());
+	
 	// precache VWep
 	fVWepIndex = Game.getVWepIndex(getIconName());	
 	}
+/**
+ * Construct a weapon with map spawn arguments
+ */
 public GenericWeapon(String[] spawnArgs) throws GameException
 	{
 	super(spawnArgs);
 	setFields();
+
+	// fill the weapon with ammo
+	setAmmoCount(getDefaultAmmoCount());
 	
 	// precache VWep
 	fVWepIndex = Game.getVWepIndex(getIconName());	
@@ -106,6 +115,14 @@ public abstract void fire();
 public String getAmmoName() 
 	{
 	return null;
+	}
+/**
+ * Get how much ammo this weapon starts off with.
+ * @return int
+ */
+public int getDefaultAmmoCount()
+	{
+	return 0;
 	}
 /**
  * All weapons share the same pickup sound.

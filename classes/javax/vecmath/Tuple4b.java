@@ -1,10 +1,11 @@
 package javax.vecmath;
 
 /*
-   Copyright (C) Kenji Hiranabe 1997,1998
-   This program is free software.
+   Copyright (C) 1997,1998
+   Kenji Hiranabe
 
-   This class was implemented by Kenji Hiranabe(hiranabe@esm.co.jp),
+   This program is free software.
+   Implemented by Kenji Hiranabe(hiranabe@esm.co.jp),
    conforming to the Java(TM) 3D API specification version 1.1
    by Sun Microsystems.
 
@@ -14,12 +15,15 @@ import java.io.Serializable;
 
 /**
   * A four byte tuple.
-  * @version specification 1.1, implementation $Revision: 1.5 $, $Date: 1998/04/17 10:30:46 $
+  * @version specification 1.1, implementation $Revision: 1.6 $, $Date: 1998/10/14 00:49:10 $
   * @author Kenji hiranabe
   */
 public abstract class Tuple4b implements Serializable {
 /*
  * $Log: Tuple4b.java,v $
+ * Revision 1.6  1998/10/14  00:49:10  hiranabe
+ * API1.1 Beta02
+ *
  * Revision 1.5  1998/04/17  10:30:46  hiranabe
  * null check for equals
  *

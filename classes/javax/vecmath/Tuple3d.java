@@ -1,10 +1,11 @@
 package javax.vecmath;
 
 /*
-   Copyright (C) Kenji Hiranabe 1997,1998
-   This program is free software.
+   Copyright (C) 1997,1998
+   Kenji Hiranabe
 
-   This class was implemented by Kenji Hiranabe(hiranabe@esm.co.jp),
+   This program is free software.
+   Implemented by Kenji Hiranabe(hiranabe@esm.co.jp),
    conforming to the Java(TM) 3D API specification version 1.1
    by Sun Microsystems.
 
@@ -15,12 +16,18 @@ import java.io.Serializable;
 /**
   * A generic 3 element tuple that is represented by
   * double precision floating point x,y and z coordinates.
-  * @version specification 1.1, implementation $Revision: 1.6 $, $Date: 1998/04/17 10:30:46 $
+  * @version specification 1.1, implementation $Revision: 1.8 $, $Date: 1998/10/14 00:49:10 $
   * @author Kenji hiranabe
   */
 public abstract class Tuple3d implements Serializable {
 /*
  * $Log: Tuple3d.java,v $
+ * Revision 1.8  1998/10/14  00:49:10  hiranabe
+ * API1.1 Beta02
+ *
+ * Revision 1.7  1998/07/27  04:28:13  hiranabe
+ * API1.1Alpha01 ->API1.1Alpha03
+ *
  * Revision 1.6  1998/04/17  10:30:46  hiranabe
  * null check for equals
  *
@@ -148,6 +155,27 @@ public abstract class Tuple3d implements Serializable {
 	  * @param min the lowest value in this tuple after clamping
 	  * @param max the highest value in this tuple after clamping
 	  */
+	public final void clamp(double min, double max) {
+	clampMin(min);
+	clampMax(max);
+	}
+	/**
+	  * Clamps the tuple parameter to the range [low, high] and places the values
+	  * into this tuple.
+	  * @param min the lowest value in the tuple after clamping
+	  * @param max the highest value in the tuple after clamping
+	  * @param t the source tuple, which will not be modified
+	  */
+	public final void clamp(double min, double max, Tuple3d t) {
+	set(t);
+	clamp(min, max);
+	}
+	/**
+	  * Clamps this tuple to the range [low, high].
+	  * @param min the lowest value in this tuple after clamping
+	  * @param max the highest value in this tuple after clamping
+	  * @deprecated As of Java3D API 1.1 Beta02
+	  */
 	public final void clamp(float min, float max) {
 	// why float ?
 	clampMin(min);
@@ -159,6 +187,7 @@ public abstract class Tuple3d implements Serializable {
 	  * @param min the lowest value in the tuple after clamping
 	  * @param max the highest value in the tuple after clamping
 	  * @param t the source tuple, which will not be modified
+	  * @deprecated As of Java3D API 1.1 Beta02
 	  */
 	public final void clamp(float min, float max, Tuple3d t) {
 	// why float ?
@@ -168,6 +197,29 @@ public abstract class Tuple3d implements Serializable {
 	/**
 	  * Clamps the maximum value of this tuple to the max parameter.
 	  * @param max the highest value in the tuple after clamping
+	  */
+	public final void clampMax(double max) {
+	if (x > max)
+	    x = max;
+	if (y > max)
+	    y = max;
+	if (z > max)
+	    z = max;
+	}
+	/**
+	  * Clamps the maximum value of the tuple parameter to the max parameter and
+	  * places the values into this tuple.
+	  * @param max the highest value in the tuple after clamping
+	  * @param t the source tuple, which will not be modified
+	  */
+	public final void clampMax(double max, Tuple3d t) {
+	set(t);
+	clampMax(max);
+	}
+	/**
+	  * Clamps the maximum value of this tuple to the max parameter.
+	  * @param max the highest value in the tuple after clamping
+	  * @deprecated As of Java3D API 1.1 Beta02
 	  */
 	public final void clampMax(float max) {
 	// why float ?
@@ -183,6 +235,7 @@ public abstract class Tuple3d implements Serializable {
 	  * places the values into this tuple.
 	  * @param max the highest value in the tuple after clamping
 	  * @param t the source tuple, which will not be modified
+	  * @deprecated As of Java3D API 1.1 Beta02
 	  */
 	public final void clampMax(float max, Tuple3d t) {
 	// why float ?
@@ -192,6 +245,29 @@ public abstract class Tuple3d implements Serializable {
 	/**
 	  * Clamps the minimum value of this tuple to the min parameter.
 	  * @param min the lowest value in this tuple after clamping
+	  */
+	public final void clampMin(double min) {
+	if (x < min)
+	    x = min;
+	if (y < min)
+	    y = min;
+	if (z < min)
+	    z = min;
+	}
+	/**
+	  * Clamps the minimum value of the tuple parameter to the min parameter
+	  * and places the values into this tuple.
+	  * @param min the lowest value in the tuple after clamping
+	  * @parm t the source tuple, which will not be modified
+	  */
+	public final void clampMin(double min, Tuple3d t) {
+	set(t);
+	clampMin(min);
+	}
+	/**
+	  * Clamps the minimum value of this tuple to the min parameter.
+	  * @param min the lowest value in this tuple after clamping
+	  * @deprecated As of Java3D API 1.1 Beta02
 	  */
 	public final void clampMin(float min) {
 	// why float ?
@@ -207,6 +283,7 @@ public abstract class Tuple3d implements Serializable {
 	  * and places the values into this tuple.
 	  * @param min the lowest value in the tuple after clamping
 	  * @parm t the source tuple, which will not be modified
+	  * @deprecated As of Java3D API 1.1 Beta02
 	  */
 	public final void clampMin(float min, Tuple3d t) {
 	// why float ?
@@ -272,7 +349,19 @@ public abstract class Tuple3d implements Serializable {
 	  * result into this tuple: this = (1-alpha)*this + alpha*t1.
 	  * @param t1 the first tuple
 	  * @param alpha the alpha interpolation parameter
-	  *
+	  */
+	public final void interpolate(Tuple3d t1, double alpha) {
+	double beta = 1 - alpha;
+	x = beta*x + alpha*t1.x;
+	y = beta*y + alpha*t1.y;
+	z = beta*z + alpha*t1.z;
+	}
+	/**
+	  * Linearly interpolates between this tuple and tuple t1 and places the
+	  * result into this tuple: this = (1-alpha)*this + alpha*t1.
+	  * @param t1 the first tuple
+	  * @param alpha the alpha interpolation parameter
+	  * @deprecated As of Java3D API 1.1 Beta02
 	  */
 	public final void interpolate(Tuple3d t1, float alpha) {
 	// why float ?
@@ -287,6 +376,18 @@ public abstract class Tuple3d implements Serializable {
 	  * @param t1 the first tuple
 	  * @param t2 the second tuple
 	  * @param alpha the alpha interpolation parameter
+	  */
+	public final void interpolate(Tuple3d t1, Tuple3d t2, double alpha) {
+	set(t1);
+	interpolate(t2, alpha);
+	}
+	/**
+	  * Linearly interpolates between tuples t1 and t2 and places the
+	  * result into this tuple: this = (1-alpha)*t1 + alpha*t2.
+	  * @param t1 the first tuple
+	  * @param t2 the second tuple
+	  * @param alpha the alpha interpolation parameter
+	  * @deprecated As of Java3D API 1.1 Beta02
 	  */
 	public final void interpolate(Tuple3d t1, Tuple3d t2, float alpha) {
 	// why float ?

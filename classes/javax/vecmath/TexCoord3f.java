@@ -1,10 +1,11 @@
 package javax.vecmath;
 
 /*
-   Copyright (C) Kenji Hiranabe 1997,1998
-   This program is free software.
+   Copyright (C) 1997,1998
+   Kenji Hiranabe
 
-   This class was implemented by Kenji Hiranabe(hiranabe@esm.co.jp),
+   This program is free software.
+   Implemented by Kenji Hiranabe(hiranabe@esm.co.jp),
    conforming to the Java(TM) 3D API specification version 1.1
    by Sun Microsystems.
 
@@ -15,7 +16,7 @@ import java.io.Serializable;
 /**
   * A 3 element texture coordinate that is represented by single precision
   * floating point x,y,z coordinates.
-  * @version specification 1.1, implementation $Revision: 1.4 $, $Date: 1998/04/09 08:18:15 $
+  * @version specification 1.1, implementation $Revision: 1.5 $, $Date: 1998/10/14 00:49:10 $
   * @author Kenji hiranabe
   */
 public class TexCoord3f extends Tuple3f implements Serializable {
@@ -34,6 +35,9 @@ public class TexCoord3f extends Tuple3f implements Serializable {
 	}
 /*
  * $Log: TexCoord3f.java,v $
+ * Revision 1.5  1998/10/14  00:49:10  hiranabe
+ * API1.1 Beta02
+ *
  * Revision 1.4  1998/04/09  08:18:15  hiranabe
  * minor comment change
  *

@@ -1,10 +1,11 @@
 package javax.vecmath;
 
 /*
-   Copyright (C) Kenji Hiranabe 1997,1998
-   This program is free software.
+   Copyright (C) 1997,1998
+   Kenji Hiranabe
 
-   This class was implemented by Kenji Hiranabe(hiranabe@esm.co.jp),
+   This program is free software.
+   Implemented by Kenji Hiranabe(hiranabe@esm.co.jp),
    conforming to the Java(TM) 3D API specification version 1.1
    by Sun Microsystems.
 
@@ -14,12 +15,21 @@ import java.io.Serializable;
 
 /**
  * A double precision floating point 4 by 4 matrix.
- * @version specification 1.1, implementation $Revision: 1.8 $, $Date: 1998/04/17 10:30:46 $
+ * @version specification 1.1, implementation $Revision: 1.11 $, $Date: 1998/10/14 00:49:10 $
  * @author Kenji hiranabe
  */
 public class Matrix4d implements Serializable {
 /*
  * $Log: Matrix4d.java,v $
+ * Revision 1.11  1998/10/14  00:49:10  hiranabe
+ * API1.1 Beta02
+ *
+ * Revision 1.10  1998/07/27  04:33:08  hiranabe
+ * transpose(M m1) bug. It acted as the same as 'set'.
+ *
+ * Revision 1.9  1998/07/27  04:28:13  hiranabe
+ * API1.1Alpha01 ->API1.1Alpha03
+ *
  * Revision 1.8  1998/04/17  10:30:46  hiranabe
  * null check for equals
  *
@@ -317,6 +327,36 @@ public class Matrix4d implements Serializable {
 	  * abs(this.m(i,j) - m1.m(i,j)]
 	  * @param m1 The matrix to be compared to this matrix
 	  * @param epsilon the threshold value
+	  */
+	  public boolean epsilonEquals(Matrix4d m1, double epsilon) {
+	  return  Math.abs(m00 - m1.m00) <= epsilon
+		&& Math.abs(m01 - m1.m01) <= epsilon
+		&& Math.abs(m02 - m1.m02 ) <= epsilon
+		&& Math.abs(m03 - m1.m03) <= epsilon
+
+		&& Math.abs(m10 - m1.m10) <= epsilon
+		&& Math.abs(m11 - m1.m11) <= epsilon
+		&& Math.abs(m12 - m1.m12) <= epsilon
+		&& Math.abs(m13 - m1.m13) <= epsilon
+
+		&& Math.abs(m20 - m1.m20) <= epsilon
+		&& Math.abs(m21 - m1.m21) <= epsilon
+		&& Math.abs(m22 - m1.m22) <= epsilon
+		&& Math.abs(m23 - m1.m23) <= epsilon
+
+		&& Math.abs(m30 - m1.m30) <= epsilon
+		&& Math.abs(m31 - m1.m31) <= epsilon
+		&& Math.abs(m32 - m1.m32) <= epsilon
+		&& Math.abs(m33 - m1.m33) <= epsilon;
+	  }  
+	/**
+	  * Returns true if the L-infinite distance between this matrix and matrix
+	  * m1 is less than or equal to the epsilon parameter, otherwise returns
+	  * false. The L-infinite distance is equal to MAX[i=0,1,2,3 ; j=0,1,2,3 ;
+	  * abs(this.m(i,j) - m1.m(i,j)]
+	  * @param m1 The matrix to be compared to this matrix
+	  * @param epsilon the threshold value
+	  * @deprecated As of Java3D API1.1 Beta02
 	  */
 	  public boolean epsilonEquals(Matrix4d m1, float epsilon) {
 	  // why epsilon is float ??
@@ -1915,11 +1955,7 @@ public class Matrix4d implements Serializable {
 	 */
 	public final void transpose(Matrix4d m1) {
 	// alias-safe
-	set(
-	    m1.m00, m1.m01, m1.m02, m1.m03,
-	    m1.m10, m1.m11, m1.m12, m1.m13,
-	    m1.m20, m1.m21, m1.m22, m1.m23,
-	    m1.m30, m1.m31, m1.m32, m1.m33
-	    );
+	set(m1);
+	transpose();
 	}
 }

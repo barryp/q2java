@@ -1,10 +1,11 @@
 package javax.vecmath;
 
 /*
-   Copyright (C) Kenji Hiranabe 1997,1998
-   This program is free software.
+   Copyright (C) 1997,1998
+   Kenji Hiranabe
 
-   This class was implemented by Kenji Hiranabe(hiranabe@esm.co.jp),
+   This program is free software.
+   Implemented by Kenji Hiranabe(hiranabe@esm.co.jp),
    conforming to the Java(TM) 3D API specification version 1.1
    by Sun Microsystems.
 
@@ -15,7 +16,7 @@ import java.io.Serializable;
 /**
   * A 4 element point that is represented by double precision
   * floating point x,y,z,w coordinates.
-  * @version specification 1.1, implementation $Revision: 1.5 $, $Date: 1998/04/10 04:52:14 $
+  * @version specification 1.1, implementation $Revision: 1.6 $, $Date: 1998/10/14 00:49:10 $
   * @author Kenji hiranabe
   */
 public class Point4d extends Tuple4d implements Serializable {
@@ -34,6 +35,9 @@ public class Point4d extends Tuple4d implements Serializable {
 	}
 /*
  * $Log: Point4d.java,v $
+ * Revision 1.6  1998/10/14  00:49:10  hiranabe
+ * API1.1 Beta02
+ *
  * Revision 1.5  1998/04/10  04:52:14  hiranabe
  * API1.0 -> API1.1 (added constructors, methods)
  *
@@ -105,9 +109,10 @@ public class Point4d extends Tuple4d implements Serializable {
 	  * @param p1 the other point
 	  * @return L-1 distance
 	  */
-	public final float distanceL1(Point4d p1) {
-	return (float)(Math.abs(x-p1.x) + Math.abs(y-p1.y)
-	    + Math.abs(z-p1.z) + Math.abs(w-p1.w));
+	public final double distanceL1(Point4d p1) {
+	// return type changed from float to double as of API1.1 Beta02
+	return Math.abs(x-p1.x) + Math.abs(y-p1.y)
+	    + Math.abs(z-p1.z) + Math.abs(w-p1.w);
 	}
 	/**
 	  * Computes the L-infinite distance between this point and point p1.
@@ -115,9 +120,10 @@ public class Point4d extends Tuple4d implements Serializable {
 	  * @param p1 the other point
 	  * @return L-infinite distance
 	  */
-	public final float distanceLinf(Point4d p1) {
-	return (float)(Math.max(Math.max(Math.abs(x-p1.x), Math.abs(y-p1.y)),
-			Math.max(Math.abs(z-p1.z), Math.abs(w-p1.w))));
+	public final double distanceLinf(Point4d p1) {
+	// return type changed from float to double as of API1.1 Beta02
+	return Math.max(Math.max(Math.abs(x-p1.x), Math.abs(y-p1.y)),
+			Math.max(Math.abs(z-p1.z), Math.abs(w-p1.w)));
 	}
 	/**
 	  * Computes the square of the distance between this point and point p1.

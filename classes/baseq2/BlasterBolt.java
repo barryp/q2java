@@ -41,23 +41,46 @@ public BlasterBolt(GameObject owner, Point3f start, Vector3f dir, int damage, in
 	fDamage = damage;
 	fObitKey = obitKey;
 	fEntity.linkEntity();
-/*
-	tr = gi.trace (self->s.origin, NULL, NULL, bolt->s.origin, bolt, MASK_SHOT);
-	if (tr.fraction < 1.0)
+
+	// do a trace to check for firing against a wall
+	TraceResults tr = Engine.trace(owner.fEntity.getOrigin(), start, fEntity, Engine.MASK_SHOT);
+	
+	if (tr.fFraction < 1.0)
 		{
-		VectorMA (bolt->s.origin, -10, dir, bolt->s.origin);
-		bolt->touch (bolt, tr.ent, NULL, NULL);
-		}		
-*/
-	Game.addFrameListener(this, 0, 0);
+		// ran into something immediately
+		start.scaleAdd(-10, dir, start);
+		fEntity.setOrigin(start);
+		hit(tr);
+		return;
+		}
+	else
+		// gotta animate the bolt
+		Game.addFrameListener(this, 0, 0);
 	}
 /**
- * This method was created by a SmartGuide.
+ * Get rid of the blaster bolt.
  */
 public void dispose() 
 	{
 	fEntity.freeEntity();
 	Game.removeFrameListener(this);
+	}
+/**
+ * We hit some NativeEntity in the world.
+ * @param ent q2java.NativeEntity
+ */
+public void hit(TraceResults tr) 
+	{
+	if ((tr.fSurfaceName == null) || ((tr.fSurfaceFlags & Engine.SURF_SKY) == 0))
+		{
+		// hit something besides the sky..see if we can damage it
+		Object obj = tr.fEntity.getReference();
+		if (obj instanceof GameObject)
+			((GameObject)obj).damage(this, fOwner, fEntity.getVelocity(), fEntity.getOrigin(), tr.fPlaneNormal, fDamage, 1, GameObject.DAMAGE_ENERGY, Engine.TE_BLASTER, fObitKey);
+		}
+		
+	// get rid of the bolt
+	dispose();
 	}
 /**
  * Animate the blaster bolt over one frame.
@@ -66,26 +89,14 @@ public void runFrame(int phase)
 	{
 	if (Game.getGameTime() >= fExpires)
 		{
+		// get rid of the bolt
 		dispose();
 		return;
 		}
 
 	TraceResults tr = fEntity.traceMove(Engine.MASK_SHOT, 1.0F);
-	
-	if (tr.fFraction == 1)
-		return;	// moved the entire distance without hitting anything
 
-	// 'scuse me while I kiss the sky...
-	if ((tr.fSurfaceName != null) && ((tr.fSurfaceFlags & Engine.SURF_SKY) != 0))
-		{
-		dispose();
-		return;
-		}
-
-	// we hit something other than the sky.  Damage it and remove the bolt.
-	if (tr.fEntity.getReference() instanceof GameObject)
-		((GameObject)tr.fEntity.getReference()).damage(this, fOwner, fEntity.getVelocity(), fEntity.getOrigin(), tr.fPlaneNormal, fDamage, 1, GameObject.DAMAGE_ENERGY, Engine.TE_BLASTER, fObitKey);
-		
-	dispose();
+	if (tr.fFraction < 1)
+		hit(tr); // we hit something!
 	}
-}	
+}
