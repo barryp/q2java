@@ -101,44 +101,6 @@ private Game()
 	{
 	}
 /**
- * Register an object that implements FrameListener to 
- * receive normal (FRAME_MIDDLE phase) frame events.
- *
- * @param f object that wants its runFrame() method called.
- * @param delay Number of seconds to wait before calling the listener, use 0 to start calling right away.
- * @param interval Number of seconds between calls, use 0 to call on every frame, a negative interval will
- *   be a one-shot notification with the listener removed automatically afterwards.
- * @deprecated use addServerFrameListener instead 
- */
-public static void addFrameListener(ServerFrameListener f, float delay, float interval) 
-	{
-	gFrameMiddle.addServerFrameListener(f, delay, interval);
-	}
-/**
- * Register an object that implements FrameListener to 
- * receive frame events at specific phases of processing.
- * Used for special cases like Player objects that want to be
- * called both at the beginning and end of a server frame.
- *
- * @param f object that wants its runFrame() method called.
- * @param phase A combination (or'ed or added together) of the FrameManager.FRAME_* constants.
- * @param delay Number of seconds to wait before calling the listener, use 0 to start calling right away.
- * @param interval Number of seconds between calls, use 0 to call on every frame, a negative interval will
- *   be a one-shot notification with the listener removed automatically afterwards.
- * @deprecated use addServerFrameListener instead
- */
-public static void addFrameListener(ServerFrameListener f, int phase, float delay, float interval) 
-	{
-	if ((phase & FRAME_BEGINNING) != 0)
-		gFrameBeginning.addServerFrameListener(f, delay, interval);
-			
-	if ((phase & FRAME_MIDDLE) != 0)
-		gFrameMiddle.addServerFrameListener(f, delay, interval);
-			
-	if ((phase & FRAME_END) != 0)
-		gFrameEnd.addServerFrameListener(f, delay, interval);
-	}
-/**
  * Add a game listener.
  * @param pl q2jgame.GameListener
  */
@@ -331,7 +293,7 @@ public static String getCurrentMapName()
 /**
  * Get one of the DOM documents the Game keeps internally.
  * @return org.w3c.dom.Document
- * @param documentKey java.lang.String
+ * @param documentKey Some known documents are "q2java.level" and "q2java.status"
  */
 public static Document getDocument(String documentKey) 
 	{
@@ -353,16 +315,6 @@ public static GameletManager getGameletManager()
 public static float getGameTime() 
 	{
 	return gGameTime;
-	}
-/**
- * Get the DOM document describing the current level.
- *
- * @deprecated use getDocument("q2java.level") instead.
- * @return org.w3c.dom.Document
- */
-public static Document getLevelDocument() 
-	{
-	return getDocument("q2java.level");
 	}
 /**
  * Fetch a list of objects that were registered under a given key.
@@ -708,36 +660,6 @@ public void readGame(String filename)
 public void readLevel(String filename)
 	{
 	gGameStatusSupport.fireEvent( GameStatusEvent.GAME_READLEVEL, filename );
-	}
-/**
- * Remove a normal FrameListener that's registered to listen
- * for the middle phase of Server Frames. 
- *
- * @param f q2jgame.FrameListener
- * @deprecated use removeServerFrameListener instead
- */
-public static void removeFrameListener(ServerFrameListener f) 
-	{
-	gFrameMiddle.removeServerFrameListener(f);
-	}
-/**
- * Remove a FrameListener that's registered to be notified
- * for specific phases of the Server frame.
- *
- * @param f q2jgame.FrameListener
- * @param phase A combination (or'ed or added together) of the FrameManager.FRAME_* constants.
- * @deprecated use removeServerFrameListener instead
- */
-public static void removeFrameListener(ServerFrameListener f, int phase) 
-	{
-	if ((phase & FRAME_BEGINNING) != 0)
-		gFrameBeginning.removeServerFrameListener(f);
-			
-	if ((phase & FRAME_MIDDLE) != 0)
-		gFrameMiddle.removeServerFrameListener(f);
-			
-	if ((phase & FRAME_END) != 0)
-		gFrameEnd.removeServerFrameListener(f);
 	}
 /**
  * Remove a game listener.

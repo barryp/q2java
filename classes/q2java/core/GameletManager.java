@@ -703,7 +703,7 @@ public void serverCommandIssued(ServerCommandEvent e)
 		}    
 	}
 /**
- * @see Game.setClassFactory
+ * @see Game#setClassFactory(GameClassFactory)
  */
 public void setClassFactory(GameClassFactory gcf)
 	{
