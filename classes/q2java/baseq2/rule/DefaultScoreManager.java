@@ -3,7 +3,6 @@ package q2java.baseq2.rule;
 import java.util.*;
 import java.lang.reflect.*;
 import q2java.Engine;
-import q2java.core.event.EventPack;
 import q2java.baseq2.Player;
 import q2java.baseq2.event.*;
 
