@@ -176,6 +176,11 @@ public static void addOccupancyListener(OccupancyListener l)
  * initial count to 1, and update the class factory with the
  * expanded list.
  *
+ * When the game is looking up a class, packages are searched in
+ * reverse order of the sequence they were added...so the last
+ * package added is the first one searched, and the first one
+ * added is actually the last one searched.
+ *
  * @param pathName name of a package, such as "q2java.baseq2"
  * @see q2java.core.Game#removePackagePath 
  */
@@ -597,8 +602,11 @@ public static void localecast(String basename, String key, int printLevel)
 	gPrintSupport.fireLocalizedEvent(PrintEvent.PRINT_ANNOUNCE, printLevel, null, null, null, basename, key, null);
 	}
 /**
- * Look through the game mod list, trying to find a class
- * that matches the classSuffix
+ * Look through the game package path, trying to find a class
+ * that matches the classSuffix.  Packages are searched in reverse
+ * order of the sequence they were added - the the last package added
+ * is the first one looked at.
+ * 
  * @param classSuffix Either a suffix, like ".spawn.weapon_shotgun", 
  * 	or a whole classname like "baseq2.spawn.weapon_shotgun"
  * @return The class matching the suffix/name

@@ -15,7 +15,10 @@ public interface GameClassFactory
 	
 /**
  * Looks up a class in loaded packages, or attempts to load the 
- * given class if not currently loaded.
+ * given class if not currently loaded. Packages are searched in reverse
+ * order of the sequence they were added - the the last package added
+ * is the first one looked at.
+ *
  * @param classSuffix Either a suffix, like ".spawn.weapon_shotgun", 
  * 	or a whole classname like "baseq2.spawn.weapon_shotgun"
  * @return The class matching the suffix/name
