@@ -74,12 +74,12 @@ public class GoalScoreEvent extends ScoreEvent
 	{
 	  return fScoreChange;
 	}
-  public final static void releaseEvent(GoalScoreEvent event)
+public final void recycle()
 	{
-	  gCachedEvent = event;
-	  event.fActive = null;
-	  event.fPassive = null;
-	  event.fGoalKey = null;
+	fActive = null;
+	fPassive = null;
+	fGoalKey = null;
+  	gCachedEvent = this;
 	}
   public void setScoreChange(int score)
 	{

@@ -17,7 +17,7 @@ public class PrintEvent extends GenericEvent implements Consumable
 	protected Object fDestination;
 	protected Locale fLocale;
 	protected String fMessage;
-	protected String fPlayerMessage; // hack where Player class can cache the message suitable formatted for player display
+	protected String fPlayerMessage; // hack where Player class can cache the message suitably formatted for player display
 
 	// various print "channels"
 	public final static int PRINT_JAVA				= 1; // System.out & System.err
@@ -130,18 +130,18 @@ public String getSourceName()
  * Clean up a PrintEvent and make it available for reuse.
  * @param pe q2java.core.event.PrintEvent
  */
-public final static void releaseEvent(PrintEvent pe) 
+public final void recycle() 
 	{
 	// clear references
-	pe.source = null;
-	pe.fSourceName = null;
-	pe.fDestination = null;
-	pe.fMessage = null;
-	pe.fLocale = null;
-	pe.fPlayerMessage = null;
+	source = null;
+	fSourceName = null;
+	fDestination = null;
+	fMessage = null;
+	fLocale = null;
+	fPlayerMessage = null;
 
 	// put back in recycler
-	gRecycler.putObject(pe);
+	gRecycler.putObject(this);
 	}
 public final void setConsumed(boolean consumed) 
 	{ 

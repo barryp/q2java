@@ -57,13 +57,13 @@ public class PlayerInfoEvent extends PlayerEvent
    * how was damaged
    */
   public final String getOldValue() { return fOldValue; }    
-  public final static void releaseEvent(PlayerInfoEvent event)
+public final void recycle()
 	{
-	  gCachedEvent = event;
-	  event.fPlayer = null;
-	  event.source = null;
-	  event.fKey = null;
-	  event.fNewValue = null;
-	  event.fOldValue = null;
+	source = null;
+	fPlayer = null;
+	fKey = null;
+	fNewValue = null;
+	fOldValue = null;
+	gCachedEvent = this;
 	}
 }

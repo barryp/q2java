@@ -2,10 +2,7 @@ package q2java.baseq2.event;
 
 import java.beans.PropertyVetoException;
 import java.lang.reflect.*;
-import java.util.Enumeration;
-import java.util.Vector;
-import q2java.Engine;
-import q2java.core.event.EventPack;
+import q2java.core.event.*;
 import q2java.baseq2.Player;
 
 /**
@@ -13,43 +10,42 @@ import q2java.baseq2.Player;
  *
  * @author Peter Donald
  */
-final public class PlayerCommandSupport
-{
-  private static Method gInvokeMethod = null;
-  private Vector fListeners = new Vector();
+public final class PlayerCommandSupport extends GenericEventSupport
+	{
+  	private static Method gInvokeMethod;
 
-  static
+  	static
+		{
+	  	try
+			{
+	  		gInvokeMethod = PlayerCommandListener.class.
+	    		getMethod("commandIssued", new Class[] { PlayerCommandEvent.class } );	
+			}
+	  	catch(NoSuchMethodException nsme) {}
+		}
+	
+public void addPlayerCommandListener(PlayerCommandListener pcl)
 	{
-	  try
+	addListener(pcl);
+	}
+/**
+ * Fire an Event
+ *
+ * @return true if the event was consumed, false if not
+ */
+public boolean fireEvent( Player p, String command, String args )
 	{
-	  gInvokeMethod = PlayerCommandListener.class.
-	    getMethod("commandIssued", new Class[] { PlayerCommandEvent.class } );	
-	}
-	  catch(NoSuchMethodException nsme) {}
-	}
+	PlayerCommandEvent pce = PlayerCommandEvent.getEvent( p, command, args );
 
-  public PlayerCommandSupport()
-	{
-	}
-  public void addPlayerCommandListener(PlayerCommandListener l)
-	{
-	  if( !fListeners.contains(l) ) fListeners.addElement(l);
-	}
-  public PlayerCommandEvent fireEvent( Player p, String command, String args )
-	{
-	  PlayerCommandEvent e = PlayerCommandEvent.getEvent( p, command, args );
+	fireEvent(pce, gInvokeMethod);
+	boolean isConsumed = pce.isConsumed();
+	
+	pce.recycle(); 
 
-	  try { EventPack.fireEvent( e, gInvokeMethod, fListeners ); }
-	  catch(PropertyVetoException pve) {}
-
-	  PlayerCommandEvent.releaseEvent(e); 
-
-	  // nb: e is not guarenteed to be valid when returned
-	  // if multiple threads are accessing PlayerCommandSupport
-	  return e;
+	return isConsumed;
 	}
-  public void removePlayerCommandListener(PlayerCommandListener l)
+public void removePlayerCommandListener(PlayerCommandListener pcl)
 	{
-	  fListeners.removeElement(l);
+	removeListener(pcl);
 	}
 }

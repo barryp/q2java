@@ -99,12 +99,12 @@ public final int getState()
 /**
  * Releases an event any may put it in cache to be re-used.
  */
-public final static void releaseEvent(GameStatusEvent event)
+public final void recycle()
 	{
-	event.fFilename = null;
-	event.fSpawnpoint = null;
-	event.fMapEntities = null;
+	fFilename = null;
+	fSpawnpoint = null;
+	fMapEntities = null;
 	
-	gRecycler.putObject(event);
+	gRecycler.putObject(this);
 	}
 }

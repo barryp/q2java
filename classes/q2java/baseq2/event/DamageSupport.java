@@ -1,49 +1,41 @@
 package q2java.baseq2.event;
 
 import java.beans.PropertyVetoException;
-import java.util.Enumeration;
-import java.util.Vector;
-import java.lang.reflect.*;
-import q2java.core.event.EventPack;
 import q2java.baseq2.Player;
+import q2java.core.event.*;
 
 /**
  * Support class used to delegate PlayerDamage events.
  *
  * @author Peter Donald
  */
-final public class DamageSupport
-{
-  private static Method gInvokeMethod = null;
-  private Vector fListeners = new Vector();
+public final class DamageSupport extends GenericEventSupport
+	{
+	
+public void addDamageListener(DamageListener dl)
+	{
+	addListener(dl);
+	}
+public void fireEvent(DamageEvent e)
+	{
+	// grab a reference to the list
+	Object[] array = fListeners;
 
-  static
-	{
-	  try
-	{
-	  gInvokeMethod = DamageListener.class.
-	    getMethod("damageOccured", new Class[] { DamageEvent.class } );	
+	// fire the events
+	for (int i = 0; i < array.length; i++)
+		{
+		try
+			{
+			((DamageListener)array[i]).damageOccured(e);
+			}
+		catch (Throwable t)
+			{
+			t.printStackTrace();
+			}
+		}
 	}
-	  catch(NoSuchMethodException nsme) {}
-	}
-
-  public DamageSupport()
+public void removeDamageListener(DamageListener dl)
 	{
-	}
-  public void addDamageListener(DamageListener l)
-	{
-	  if( !fListeners.contains(l) ) fListeners.addElement(l);
-	}
-  public void fireEvent(DamageEvent e)
-	{
-	if (fListeners.size() == 0)
-		return;
-		
-	  try { EventPack.fireEvent( e, gInvokeMethod, fListeners); }
-	  catch(PropertyVetoException pve) {}
-	}
-  public void removeDamageListener(DamageListener l)
-	{
-	  fListeners.removeElement(l);
+	removeListener(dl);
 	}
 }

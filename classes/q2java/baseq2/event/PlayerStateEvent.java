@@ -63,10 +63,10 @@ public class PlayerStateEvent extends PlayerEvent
 	  return event; 
 	}
   public final int getStateChanged() { return fStateChanged; }    
-  public final static void releaseEvent(PlayerStateEvent event)
+public final void recycle()
 	{
-	  gCachedEvent = event;
-	  event.fPlayer = null;
-	  event.source = null;
+	source = null;
+	fPlayer = null;
+	gCachedEvent = this;
 	}
 }

@@ -1,62 +1,55 @@
 package q2java.baseq2.event;
 
-import java.lang.reflect.*;
 import java.beans.PropertyVetoException;
-import java.util.Enumeration;
-import java.util.Vector;
 import q2java.PlayerCmd;
-import q2java.core.event.EventPack;
 import q2java.baseq2.Player;
+import q2java.core.event.*;
 
 /**
  * support class for PlayerMove events delegation.
  *
  * @author Peter Donald
  */
-final public class PlayerMoveSupport
+public final class PlayerMoveSupport extends GenericEventSupport
 	{
-	private static Method gInvokeMethod = null;
-	private Vector fListeners = new Vector();
+	
+public void addPlayerMoveListener(PlayerMoveListener listener)
+	{
+	addListener(listener);
+	}
+/**
+ * Let interested listeners know about the player moving.
+ */
+public void fireEvent( Player p, PlayerCmd move )
+	{
+	// I've implemented a custom fire method, instead of using
+	// the superclass's, for a little extra speed, since this
+	// is called very very often.
+	
+	// grab a reference to the listeners
+	Object[] array = fListeners;
+	
+	if (array.length == 0)
+		return;
+		
+	PlayerMoveEvent evt = PlayerMoveEvent.getEvent( p, move );
 
-	static
+	for (int i = 0; i < array.length; i++)
 		{
 		try
 			{
-			gInvokeMethod = PlayerMoveListener.class.getMethod("playerMoved", new Class[] { PlayerMoveEvent.class } );	
+			((PlayerMoveListener)array[i]).playerMoved(evt);
 			}
-		catch(NoSuchMethodException nsme) 
+		catch (Throwable t) 
 			{
+			t.printStackTrace();
 			}
 		}
 
-	
-public PlayerMoveSupport()
-	{
+	PlayerMoveEvent.releaseEvent(evt);
 	}
-public void addPlayerMoveListener(PlayerMoveListener l)
+public void removePlayerMoveListener(PlayerMoveListener listener)
 	{
-	if( !fListeners.contains(l) ) 
-		fListeners.addElement(l);
-	}
-public void fireEvent( Player p, PlayerCmd move )
-	{
-	if (fListeners.size() == 0)
-		return;
-		
-	PlayerMoveEvent e = PlayerMoveEvent.getEvent( p, move );
-
-	try 
-		{ 
-		EventPack.fireEvent( e, gInvokeMethod, fListeners ); 
-		}
-	catch(PropertyVetoException pve) 
-		{
-		}
-
-	PlayerMoveEvent.releaseEvent(e); 
-	}
-public void removePlayerMoveListener(PlayerMoveListener l)
-	{
-	fListeners.removeElement(l);
+	removeListener(listener);
 	}
 }

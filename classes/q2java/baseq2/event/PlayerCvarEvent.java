@@ -43,11 +43,11 @@ public class PlayerCvarEvent extends PlayerEvent
 	  return event; 
 	}
   public String getValue() { return fValue; }    
-  public final static void releaseEvent(PlayerCvarEvent event)
+public final void recycle()
 	{
-	  gCachedEvent = event;
-	  event.fPlayer = null;
-	  event.source = null;
-	  event.fValue = null;
+	source = null;
+	fPlayer = null;
+	fValue = null;
+  	gCachedEvent = this;
 	}
 }

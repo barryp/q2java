@@ -92,15 +92,16 @@ public class DamageEvent extends GenericEvent
   public final int getTakeDamage() { return fTakeDamage; }      
   public final int getTempEvent() { return fTempEvent; }      
   public final GameObject getVictim() { return fVictim; }          
-  public final static void releaseEvent(DamageEvent event)
+public final void recycle()
 	{
-	  gCachedEvent = event;
-	  event.source = null;
-	  event.fAttacker = null;
-	  event.fDirection = null;
-	  event.fPoint = null;
-	  event.fNormal = null;
-	  event.fObitKey = null;
+	source = null;
+	fAttacker = null;
+	fDirection = null;
+	fPoint = null;
+	fNormal = null;
+	fObitKey = null;
+	
+	gCachedEvent = this;
 	}
   /*
    * setter/getter for property amount.

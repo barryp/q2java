@@ -39,11 +39,11 @@ public class ServerCommandEvent extends GameEvent implements Consumable
 	  return event; 
 	}
   public final boolean isConsumed() { return fConsumed; }      
-  public final static void releaseEvent(ServerCommandEvent event)
+public final void recycle()
 	{
-	  gCachedEvent = event;
-	  event.source = null;
-	  event.fArgs = null;
+  	source = null;
+	fArgs = null;
+  	gCachedEvent = this;
 	}
   public final void setConsumed(boolean consumed) { fConsumed = consumed; }      
 }

@@ -7,12 +7,14 @@ import java.util.*;
 
 /**
  * Handles the dirty details of tracking and working with PrintListeners.
+ *
+ * @author Barry Pederson
  */
 public class PrintSupport 
 	{
-	protected Vector fListeners = new Vector();
-	protected Vector fLocales = new Vector();
-
+	protected PrintSupportNode[] fPSNA = new PrintSupportNode[0];
+	protected Locale[] fLocales = new Locale[0];
+	
 	/**
 	 * Class just used by PrintSupport to help track PrintListeners.
 	 */
@@ -24,10 +26,12 @@ public class PrintSupport
 		}	
 	
 /**
- * Add a print listener - if the specified listener has already been added, the old entry is replaced.
+ * Add a print listener - if the specified listener has already been 
+ * added, the old entry is replaced.  Threadsafe to support gamelets
+ * like the telnet server.
  *
  * @param pl q2java.core.event.PrintListener
- * @param channels int
+ * @param channels which print channels the listener wants to hear (PrintEvent.PRINT_* constants or'ed together)
  * @param loc Locale that the PrintListener wants to receive - use null to receive all locales
  * @param highPriority use true for PrintListeners that need to be called
  *  as early on as possible (so they can consume the event or change it), false
@@ -41,20 +45,48 @@ public synchronized void addPrintListener(PrintListener pl, int channels, Locale
 	psn.fListener = pl;
 	psn.fChannels = channels;
 	psn.fLocale = loc;
-	
-	if (highPriority)
-		fListeners.insertElementAt(psn, 0); // insert at front
-	else
-		fListeners.addElement(psn); // add to end
 
-	// update list of active locales
-	if ((loc != null) && !fLocales.contains(loc))
-		fLocales.addElement(loc);
+	// make a new vector and add the listener
+	PrintSupportNode[] psna = new PrintSupportNode[fPSNA.length+1];
+	if (highPriority)
+		{
+		// insert at front
+		psna[0] = psn;
+		System.arraycopy(fPSNA, 0, psna, 1, fPSNA.length);
+		}
+	else
+		{
+		// add to end
+		System.arraycopy(fPSNA, 0, psna, 0, fPSNA.length);
+		psna[fPSNA.length] = psn;
+		}
+
+	// start using the new array
+	fPSNA = psna;
+
+	// if no locale, then nothing more to do
+	if (loc == null)
+		return;
+
+	// nothing more to do if the locale is already known
+	for (int i = 0; i < fLocales.length; i++)
+		{
+		if (fLocales[i] == loc)
+			return;
+		}
+
+	// must be a new locale, so make a new locale array and
+	// add the new locale to the end
+	Locale[] la = new Locale[fLocales.length+1];
+	System.arraycopy(fLocales, 0, la, 0, fLocales.length);
+	la[fLocales.length] = loc;
+	fLocales = la;
 	}
 /**
- * Add a print listener to the specified channels.
+ * Add a print listener to the specified channels for the default Locale.
+ *
  * @param pl q2java.core.event.PrintListener
- * @param channels int
+ * @param channels which print channels the listener wants to hear (PrintEvent.PRINT_* constants or'ed together)
  * @param highPriority use true for PrintListeners that need to be called
  *  as early on as possible (so they can consume the event or change it), false
  *  for normal Listeners that don't care.
@@ -65,7 +97,7 @@ public void addPrintListener(PrintListener pl, int channels, boolean highPriorit
 	}
 /**
  * Fire a PrintEvent off to whatever listeners have registered to receive
- * messages on its particular channel.
+ * messages on its particular channel - NOT threadsafe.
  *
  * Be ***VERY*** careful putting debugging print statmements in this
  * method since they can throw the game into a loop.  Use the
@@ -81,18 +113,11 @@ public void addPrintListener(PrintListener pl, int channels, boolean highPriorit
  */
 public void fireEvent(int printChannel, int printFlags, Object source, String sourceName, Object dest, String msg) 
 	{
-	PrintSupportNode[] psna = null;
-
-	synchronized(this)
-		{
-		int n = fListeners.size();
-		if (n < 1)
-			return;
-			
-		psna = new PrintSupportNode[n];
-		fListeners.copyInto(psna);
-		}
-		
+	PrintSupportNode[] psna = fPSNA;
+	
+	if (psna.length < 1)
+		return;
+				
 	PrintEvent pe = PrintEvent.getEvent(printChannel, printFlags, source, sourceName, dest, msg);
 
 	for (int i = 0; (i < psna.length) && !pe.isConsumed(); i++)
@@ -115,11 +140,11 @@ public void fireEvent(int printChannel, int printFlags, Object source, String so
 			}		
 		}
 		
-	PrintEvent.releaseEvent(pe);
+	pe.recycle();
 	}
 /**
  * Fire a PrintEvent off to whatever listeners have registered to receive
- * messages on its particular channel.
+ * messages on its particular channel - NOT threadsafe.
  *
  * @param printChannel one of the PrintEvent.PRINT_* constants.
  * @param printFlags probably one of the Engine.PRINT_* constants.
@@ -133,31 +158,26 @@ public void fireEvent(int printChannel, int printFlags, Object source, String so
  */
 public void fireLocalizedEvent(int printChannel, int printFlags, Object source, String sourceName, Object dest, String basename, String key, Object[] args) 
 	{
-	PrintSupportNode[] psna = null;
-	Locale[] la = null;
+	PrintSupportNode[] psna;
+	Locale[] myLocales;
 	
-	// make a snapshot of the list of listeners and locales
-	synchronized(this)
+	// grab references to the lists of listeners and locales
+	synchronized (this)
 		{
-		int count = fListeners.size();
-		if (count < 1)
-			return; // bail if no listeners at all
-			
-		psna = new PrintSupportNode[count];
-		fListeners.copyInto(psna);
-
-		count = fLocales.size();
-		la = new Locale[count];
-		fLocales.copyInto(la);
+		psna = fPSNA;
+		myLocales = fLocales;
 		}
-		
+
+	if (psna.length < 1)
+		return; // bail if no listeners at all
+			
 	// borrow a PrintEvent object
 	PrintEvent pe = PrintEvent.getEvent(printChannel, printFlags, source, sourceName, dest, null);
 	
 	// iterate through all the locales
-	for (int i = 0; (i < la.length) && !pe.isConsumed(); i++)
+	for (int i = 0; (i < myLocales.length) && !pe.isConsumed(); i++)
 		{
-		Locale loc = la[i];
+		Locale loc = myLocales[i];
 		String msg = null;
 		
 		// iterate through the listeners
@@ -204,23 +224,34 @@ public void fireLocalizedEvent(int printChannel, int printFlags, Object source, 
 		}
 
 	// give back what we borrowed
-	PrintEvent.releaseEvent(pe);	
+	pe.recycle();	
 	}
 /**
- * Remove all instances of a print listener.
+ * Remove all instances of a print listener - threadsafe to support
+ * gamelets like the telnet server.
+ *
  * @param pl q2java.core.event.PrintListener
  * @param channels int
  */
 public synchronized void removePrintListener(PrintListener pl)
 	{
-	int n = fListeners.size();
-	for (int i = 0; i < n; i++)
+	for (int i = 0; i < fPSNA.length; i++)
 		{
-		PrintSupportNode psn = (PrintSupportNode) fListeners.elementAt(i);
+		PrintSupportNode psn = fPSNA[i];
 		if (psn.fListener == pl)
 			{
-			// found the listener we were looking for
-			fListeners.removeElementAt(i);
+			// found the listener we were looking for, make a new
+			// array and copy everything except what we're removing
+			PrintSupportNode[] psna = new PrintSupportNode[fPSNA.length-1];
+			int k = 0;
+			for (int j = 0; j < fPSNA.length; j++)
+				{
+				if (fPSNA[j].fListener != pl)
+					psna[k++] = fPSNA[j];
+				}
+				
+			// start using the new array
+			fPSNA = psna;
 			
 			// see if it was the last of its locale
 			Locale loc = psn.fLocale;
@@ -229,18 +260,25 @@ public synchronized void removePrintListener(PrintListener pl)
 			if (loc == null)
 				return;
 
-			// iterate through the listeners again, looking
+			// iterate through the remaining listeners, looking
 			// to see if any of them used the same locale
-			n--;  // fListeners is one element shorter now
-			for (int j = 0; j < n; j++)
+			for (int j = 0; j < fPSNA.length; j++)
 				{
-				psn = (PrintSupportNode) fListeners.elementAt(j);
+				psn = fPSNA[j];
 				if (loc.equals(psn.fLocale))
 					return;  // there is..another!  we're done
 				}
 
-			// no others with the same locale
-			fLocales.removeElement(loc);
+			// no others with the same locale, make a new Locale
+			// array omitting the locale no longer being used
+			k = 0;
+			Locale[] la = new Locale[fLocales.length - 1];
+			for (int j = 0; j < fLocales.length; j++)
+				{
+				if (fLocales[j] != loc)
+					la[k++] = fLocales[j];
+				}
+			fLocales = la;
 			return;
 			}
 		}

@@ -1,57 +1,51 @@
 package q2java.baseq2.event;
 
-import java.beans.PropertyVetoException;
 import java.lang.reflect.*;
-import java.util.Enumeration;
-import java.util.Vector;
-import q2java.Engine;
-import q2java.core.event.EventPack;
-import q2java.baseq2.GameObject;
-import q2java.baseq2.Player;
-
+import q2java.core.event.*;
+import q2java.baseq2.*;
 
 /**
  * Support class for delegating player state change events.
  *
  * @author Peter Donald 25/1/99
  */
-final public class PlayerStateSupport
-{
-  private static Method gInvokeMethod = null;
-  private Vector fListeners = new Vector();
-
-  static
+public final class PlayerStateSupport extends GenericEventSupport
 	{
-	  try
+	// all PlayerStateSupport objects will use the same invoke method
+	// so we only need to do this once, when the class is loaded
+	// instead of everytime an instance is created.
+	private static Method gInvokeMethod;
+	
+	static
+		{
+	  	try
+			{
+	  		gInvokeMethod = PlayerStateListener.class.
+	    	   getMethod("playerStateChanged", new Class[] { PlayerStateEvent.class } );	
+			}
+	  	catch (NoSuchMethodException nsme) 
+	  		{
+	  		nsme.printStackTrace();
+	  		}
+		}	
+	
+public void addPlayerStateListener(PlayerStateListener listener)
 	{
-	  gInvokeMethod = PlayerStateListener.class.
-	    getMethod("playerStateChanged", new Class[] { PlayerStateEvent.class } );	
-	}
-	  catch(NoSuchMethodException nsme) {}
-	}
-
-  public PlayerStateSupport()
+	addListener(listener);
+	}	
+public void fireEvent( Player p, int stateChanged, GameObject source )
 	{
-	}
-  public void addPlayerStateListener(PlayerStateListener l)
-	{
-	  if( !fListeners.contains(l) ) fListeners.addElement(l);
-	}
-  public void fireEvent( Player p, int stateChanged, GameObject source )
-	{
-	if (fListeners.size() == 0)
+	// make sure there are some listeners before going
+	// the the bother of getting a hold of a PlayerStateEvent
+	if (fListeners.length == 0)
 		return;
 		
-	  PlayerStateEvent e =
-	PlayerStateEvent.getEvent( p, stateChanged, source );
-	  
-	  try { EventPack.fireEvent( e, gInvokeMethod, fListeners ); }
-	  catch(PropertyVetoException pve) {}
-
-	  PlayerStateEvent.releaseEvent(e); 
+	PlayerStateEvent pse = PlayerStateEvent.getEvent(p, stateChanged, source);
+	fireEvent(pse, gInvokeMethod);
+	pse.recycle();
 	}
-  public void removePlayerStateListener(PlayerStateListener l)
+public void removePlayerStateListener(PlayerStateListener listener)
 	{
-	  fListeners.removeElement(l);
+	removeListener(listener);
 	}
 }

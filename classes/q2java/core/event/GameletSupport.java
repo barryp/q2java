@@ -3,7 +3,6 @@ package q2java.core.event;
 import java.beans.PropertyVetoException;
 import java.lang.reflect.*;
 import java.util.Enumeration;
-import java.util.Vector;
 
 import org.w3c.dom.Document;
 
@@ -14,10 +13,9 @@ import q2java.core.Gamelet;
 /**
  * Support class for delegation of Gamelet event.
  */
-final public class GameletSupport
+public final class GameletSupport extends GenericEventSupport
 	{
 	private static Method gInvokeMethod = null;
-	private Vector fListeners = new Vector();
 
 	static
 		{
@@ -31,33 +29,25 @@ final public class GameletSupport
 			}
 		}
 	
-public void addGameletListener(GameletListener l)
+public void addGameletListener(GameletListener gl)
 	{
-	if( !fListeners.contains(l) ) 
-		fListeners.addElement(l);
+	addListener(gl);
 	}
 public void fireEvent(int state, Gamelet g, Document d) throws PropertyVetoException
 	{
-	GameletEvent e = GameletEvent.getEvent(state, g, d);
+	GameletEvent ge = GameletEvent.getEvent(state, g, d);
 
 	try 
-		{ 
-		EventPack.fireEvent( e, gInvokeMethod, fListeners ); 
-		}
-	catch(PropertyVetoException pve) 
 		{
-		throw pve;
-		}
-	catch (Throwable t)
-		{
+		firePropertyEvent(ge, gInvokeMethod);
 		}
 	finally
 		{
-		GameletEvent.releaseEvent(e);
+		ge.recycle();
 		}
 	}
-  public void removeGameletListener(GameletListener l)
+public void removeGameletListener(GameletListener gl)
 	{
-	  fListeners.removeElement(l);
+	removeListener(gl);
 	}
 }

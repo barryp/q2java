@@ -41,11 +41,11 @@ public class PlayerMoveEvent extends PlayerEvent
 	  return event; 
 	}
   public PlayerCmd getMove() { return fMove; }    
-  public final static void releaseEvent(PlayerMoveEvent event)
+public final void recycle()
 	{
-	  gCachedEvent = event;
-	  event.fPlayer = null;
-	  event.source = null;
-	  event.fMove = null;
+	source = null;
+	fPlayer = null;
+	fMove = null;
+	gCachedEvent = this;
 	}
 }

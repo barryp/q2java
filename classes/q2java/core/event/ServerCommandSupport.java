@@ -11,40 +11,45 @@ import q2java.Engine;
  *
  * @author Peter Donald
  */
-final public class ServerCommandSupport
-{
-  private static Method gInvokeMethod = null;
-  private Vector fListeners = new Vector();
-
-  static
+public final class ServerCommandSupport extends GenericEventSupport
 	{
-	  try
+	private static Method gInvokeMethod;
+  
+  	static
+		{
+	  	try
+			{
+	  		gInvokeMethod = ServerCommandListener.class.
+	    	  getMethod("serverCommandIssued", new Class[] { ServerCommandEvent.class } );	
+			}
+	 	catch (NoSuchMethodException nsme) {}
+		}
+	
+public void addServerCommandListener(ServerCommandListener scl)
 	{
-	  gInvokeMethod = ServerCommandListener.class.
-	    getMethod("serverCommandIssued", new Class[] { ServerCommandEvent.class } );	
+	addListener(scl);
 	}
-	  catch(NoSuchMethodException nsme) {}
-	}
-
-  public void addServerCommandListener(ServerCommandListener l)
+/**
+ * Fire a ServerCommandEvent
+ *
+ * @return true if the event was consumed, false if not
+ */
+public boolean fireEvent( String command, String args[] )
 	{
-	  if( !fListeners.contains(l) ) fListeners.addElement(l);
+	ServerCommandEvent sce = ServerCommandEvent.getEvent( command, args );
+
+	fireEvent(sce, gInvokeMethod);
+	
+	boolean isConsumed = sce.isConsumed();	
+	sce.recycle(); 
+
+	// return the event, so the caller can check if it was consumed
+  	// nb: e is not guarenteed to be valid when returned
+  	// if multiple threads are accessing ServerCommandSupport
+	return isConsumed;
 	}
-  public ServerCommandEvent fireEvent( String command, String args[] )
+public void removeServerCommandListener(ServerCommandListener scl)
 	{
-	  ServerCommandEvent e = ServerCommandEvent.getEvent( command, args );
-
-	  try { EventPack.fireEvent( e, gInvokeMethod, fListeners ); }
-	  catch(PropertyVetoException pve) {}
-
-	  ServerCommandEvent.releaseEvent(e); 
-
-	  // nb: e is not guarenteed to be valid when returned
-	  // if multiple threads are accessing ServerCommandSupport
-	  return e;
-	}
-  public void removeServerCommandListener(ServerCommandListener l)
-	{
-	  fListeners.removeElement(l);
+	removeListener(scl);
 	}
 }

@@ -49,12 +49,12 @@ public class InventoryEvent extends PlayerEvent
    */
   public final GenericItem getItem() { return fItem; }    
   public final boolean isPickingUp() { return fIsPickingUp; }    
-  public final static void releaseEvent(InventoryEvent event)
+public final void recycle()
 	{
-	  gCachedEvent = event;
-	  event.fPlayer = null;
-	  event.source = null;
-	  event.fItem = null;
+	source = null;
+	fPlayer = null;
+	fItem = null;
+	gCachedEvent = this;
 	}
   public final void setItem(GenericItem item) { fItem = item; }    
 }

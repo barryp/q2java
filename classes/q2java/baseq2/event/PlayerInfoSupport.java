@@ -2,9 +2,7 @@ package q2java.baseq2.event;
 
 import java.beans.PropertyVetoException;
 import java.lang.reflect.*;
-import java.util.Enumeration;
-import java.util.Vector;
-import q2java.core.event.EventPack;
+import q2java.core.event.*;
 import q2java.baseq2.Player;
 
 /**
@@ -12,43 +10,44 @@ import q2java.baseq2.Player;
  *
  * @author Peter Donald
  */
-final public class PlayerInfoSupport
-{
-  private static Method gInvokeMethod = null;
-  private Vector fListeners = new Vector();
+public final class PlayerInfoSupport extends GenericEventSupport
+	{
+  	private static Method gInvokeMethod = null;
 
-  static
+  	static
+		{
+	  	try
+			{
+	  		gInvokeMethod = PlayerInfoListener.class.
+	    		getMethod("infoChanged", new Class[] { PlayerInfoEvent.class } );	
+			}
+	  	catch(NoSuchMethodException nsme) {}
+		}
+	
+public void addPlayerInfoListener(PlayerInfoListener pil)
 	{
-	  try
-	{
-	  gInvokeMethod = PlayerInfoListener.class.
-	    getMethod("infoChanged", new Class[] { PlayerInfoEvent.class } );	
+	addListener(pil);
 	}
-	  catch(NoSuchMethodException nsme) {}
-	}
-
-  public PlayerInfoSupport()
-	{
-	}
-  public void addPlayerInfoListener(PlayerInfoListener l)
-	{
-	  if( !fListeners.contains(l) ) fListeners.addElement(l);
-	}
-  public void fireEvent(Player p, String key, String newValue, String oldValue )
+public void fireEvent(Player p, String key, String newValue, String oldValue )
 	throws PropertyVetoException
 	{
-	if (fListeners.size() == 0)
+	if (fListeners.length == 0)
 		return;
 		
-	  PlayerInfoEvent e =
-	PlayerInfoEvent.getEvent( key, newValue, oldValue );
-	  e.setPlayer( p ); 
-	  e.setSource( p ); 
-	  EventPack.fireEvent( e, gInvokeMethod, fListeners );
-	  PlayerInfoEvent.releaseEvent(e); 
+	PlayerInfoEvent pie = PlayerInfoEvent.getEvent( key, newValue, oldValue );
+  	pie.setPlayer( p ); 
+	pie.setSource( p );
+	try
+		{
+		firePropertyEvent(pie, gInvokeMethod);
+		}
+	finally
+		{
+	  	pie.recycle();
+	  	}
 	}
-  public void removePlayerInfoListener(PlayerInfoListener l)
+public void removePlayerInfoListener(PlayerInfoListener pil)
 	{
-	  fListeners.removeElement(l);
+	removeListener(pil);
 	}
 }

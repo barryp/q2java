@@ -77,13 +77,14 @@ public class DeathScoreEvent extends ScoreEvent
 	{
 	  return fScoreChange;
 	}
-  public final static void releaseEvent(DeathScoreEvent event)
+public final void recycle()
 	{
-	  gCachedEvent = event;
-	  event.fVictim = null;
-	  event.fKiller = null;
-	  event.fObitKey = null;
-	  event.fInflictor = null;
+	fVictim = null;
+	fKiller = null;
+	fObitKey = null;
+	fInflictor = null;
+	  
+  	gCachedEvent = this;
 	}
   public void setScoreChange(int score)
 	{

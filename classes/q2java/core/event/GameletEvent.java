@@ -61,10 +61,10 @@ public final int getState()
 /**
  * Releases an event and may put it in cache to be re-used.
  */
-public final static void releaseEvent(GameletEvent event)
+public final void recycle()
 	{
-	event.fGamelet = null;
-	event.fGameletInfo = null;
-	gRecycler.putObject(event);
+	fGamelet = null;
+	fGameletInfo = null;
+	gRecycler.putObject(this);
 	}
 }

@@ -71,7 +71,7 @@ final public class PlayerCvarSupport implements PlayerCommandListener
 	  fListeners.removeElementAt(0);
 	  fCvars.removeElementAt(0);
 	  
-	  PlayerCvarEvent.releaseEvent(ce);
+	  ce.recycle();
 
 	  if( fListeners.size() == 0 && fIsCommandListening )
 	{

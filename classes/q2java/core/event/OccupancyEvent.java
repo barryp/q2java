@@ -53,12 +53,12 @@ public final NativeEntity getPlayerEntity()
 	return fPlayerEntity; 
 	}
   public final int getState() { return fState; }      
-  /**
-   * Releases an event any may put it in cache to be re-used.
-   */
-  public final static void releaseEvent(OccupancyEvent event)
+/**
+ * Releases an event any may put it in cache to be re-used.
+ */
+public final void recycle()
 	{
-	gCachedEvent = event;
-	event.source = null;
+	source = null;
+	gCachedEvent = this;
 	}
 }

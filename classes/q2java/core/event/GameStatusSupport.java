@@ -1,8 +1,6 @@
 package q2java.core.event;
 
-import java.beans.PropertyVetoException;
 import java.lang.reflect.*;
-import java.util.Enumeration;
 import java.util.Vector;
 import q2java.Engine;
 
@@ -11,10 +9,9 @@ import q2java.Engine;
  *
  * @author Peter Donald 25/1/99
  */
-final public class GameStatusSupport
+public final class GameStatusSupport extends GenericEventSupport
 	{
-	private static Method gInvokeMethod = null;
-	private Vector fListeners = new Vector();
+	private static Method gInvokeMethod;
 	private Vector fEventStack = new Vector();
 	
 	static
@@ -27,14 +24,11 @@ final public class GameStatusSupport
 			{
 			}
 		}
-
 	
 public void addGameStatusListener(GameStatusListener gsl)
 	{
-	if (!fListeners.contains(gsl))
+	if (addListener(gsl))
 		{
-		fListeners.addElement(gsl);
-
 		// if we're adding a listener right in the middle of firing off
 		// an event, let the new listener in on the action
 		int nEvents = fEventStack.size();
@@ -58,20 +52,14 @@ public void fireEvent(int state, String filename, String entString, String spawn
 	{
 	GameStatusEvent gse = GameStatusEvent.getEvent(state, filename, entString, spawnpoint);
 	fEventStack.addElement(gse);
-	
-	try 
-		{ 
-		EventPack.fireEvent(gse, gInvokeMethod, fListeners); 
-		}
-	catch(PropertyVetoException pve) 
-		{
-		}
+
+	fireEvent(gse, gInvokeMethod);
 
 	fEventStack.removeElement(gse);
-	GameStatusEvent.releaseEvent(gse);
+	gse.recycle();
 	}
 public void removeGameStatusListener(GameStatusListener gsl)
 	{
-	fListeners.removeElement(gsl);
+	removeListener(gsl);
 	}
 }

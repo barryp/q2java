@@ -44,12 +44,12 @@ public class PlayerCommandEvent extends PlayerEvent implements Consumable
 	  return event; 
 	}
   public final boolean isConsumed() { return fConsumed; }    
-  public final static void releaseEvent(PlayerCommandEvent event)
+public final void recycle()
 	{
-	  gCachedEvent = event;
-	  event.fPlayer = null;
-	  event.source = null;
-	  event.fArgs = null;
+	source = null;
+	fPlayer = null;
+	fArgs = null;
+	gCachedEvent = this;
 	}
   public final void setConsumed(boolean consumed) { fConsumed = consumed; }    
 }
