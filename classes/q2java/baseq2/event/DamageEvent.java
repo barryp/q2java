@@ -51,7 +51,7 @@ public class DamageEvent extends GenericEvent
   public final int getDamageFlags() { return fDamageFlags; }      
   public final Vector3f getDamageNormal() { return fNormal; }      
   public final Point3f getDamagePoint() { return fPoint; }      
-  public static final DamageEvent getEvent( Object inflictor, 
+  public static final DamageEvent getEvent( GameObject inflictor, 
 						  GameObject attacker,
 						  GameObject victim,
 						  Vector3f dir,
@@ -85,7 +85,7 @@ public class DamageEvent extends GenericEvent
 	  
 	  return event; 
 	}
-  public final Object getInflictor() { return getSource(); }      
+  public final GameObject getInflictor() { return (GameObject) getSource(); }        
   public final int getKnockback() { return fKnockback; }      
   public final String getObitKey() { return fObitKey; }      
   public final int getPowerArmorSave() { return fPowerArmorSave; }      
