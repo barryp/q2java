@@ -126,7 +126,7 @@ public void damage(GameObject inflictor, GameObject attacker,
 	Vector3f dir, Point3f point, Vector3f normal, 
 	int damage, int knockback, int dflags, int tempEvent) 
 	{
-	super.damage(inflictor, attacker, dir, point, normal, damage, knockback, dflags, tempEvent);
+	super.damage(inflictor, attacker, dir, point, normal, damage, knockback, dflags, tempEvent, null);
 
 	if (fMaxHealth != 0)
 		{

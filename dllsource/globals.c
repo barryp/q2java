@@ -1,6 +1,6 @@
 #include "globals.h"
 
-#define DLL_VERSION "v0.5"
+#define DLL_VERSION "v0.5.5"
 
 game_import_t   gi;
 game_export_t   ge;

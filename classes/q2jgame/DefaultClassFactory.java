@@ -1,6 +1,7 @@
 
 package q2jgame;
 
+
 import java.util.*;
 
 /**
@@ -14,22 +15,23 @@ import java.util.*;
  * functionality of this class, but in a transparent way so that existing mods need not
  * be altered.
  * <P>
- * So far this is untested, so there may be runtime problems, treat it gently...!
- *
- * @version 	0.1 
+ * Note that after removing itself as GameClassFactory should ensure that the
+ * system is in a stable state by calling Game.setClassFactory(new DefaultClassFactory())
+ * @version 	0.2
  * @author 	Leigh Dodds
  */
-class DefaultClassFactory extends GameClassFactory 
+public class DefaultClassFactory extends GameClassFactory 
 	{
 	protected Vector gModList;
 	protected Hashtable gClassHash;
 	
-	/**
-	 * Constructor
-	 */
-	public DefaultClassFactory() {
-		gModList = new Vector();
-		gClassHash = new Hashtable();
+/**
+ * Constructor
+ */
+public DefaultClassFactory() 
+	{
+	gModList = new Vector();
+	gClassHash = new Hashtable();
 	}
 /**
  * Adds a package to the running game.
@@ -59,36 +61,43 @@ public void addModule(String packageName, String alias)
 		// looked at when looking up classes
 		gClassHash.clear(); 
 
-		//Withnails 04/22/98
-		Game.notifyModuleAdded(gm);
+		//Withnails 05/16/98
+		//Game.notifyModuleAdded(gm);
+		//notify the module has been added
+		super.notify(gm, 1);
 		} 
+	catch (java.lang.reflect.InvocationTargetException ite)
+		{
+		ite.getTargetException().printStackTrace();
+		}
 	catch (Exception e) 
 		{
 		e.printStackTrace();
 		}
 	}
-	/**
-	 * Lookup a loaded package, based on its name.
-	 * @return q2jgame.LoadedPackage, null if not found.
-	 * @param alias java.lang.String
-	 */
-	public GameModule getModule(String alias) 
+/**
+ * Lookup a loaded package, based on its name.
+ * @return q2jgame.GameModule, null if not found.
+ * @param alias java.lang.String
+ */
+public GameModule getModule(String alias) 
+	{
+	for (int i = 0; i < gModList.size(); i++)
 		{
-		for (int i = 0; i < gModList.size(); i++)
-			{
-			GameModule gm = (GameModule) gModList.elementAt(i);
-			if (gm.getModuleName().equalsIgnoreCase(alias))
-				return gm;
-			}
-		
-		return null;
+		GameModule gm = (GameModule) gModList.elementAt(i);
+		if (gm.getModuleName().equalsIgnoreCase(alias))
+			return gm;
 		}
-	/**
-	 * Get an Enumeration of all loaded packages. The enumeration will be
-	 * of LoadedPackage objects
-	 */
-	public Enumeration getModules() {
-		return gModList.elements();
+		
+	return null;
+	}
+/**
+ * Get an Enumeration of all loaded packages. The enumeration will be
+ * of LoadedPackage objects
+ */
+public Enumeration getModules() 
+	{
+	return gModList.elements();
 	}
 /**
  * Looks up a class in loaded packages, or attempts to load the 
@@ -127,68 +136,60 @@ public Class lookupClass(String classSuffix) throws ClassNotFoundException
 
 	throw new ClassNotFoundException("No match for [" + classSuffix + "]");
 	}
-	/**
-	 * Returns the number of loaded packages
-	 */
-	public int numModules() {
-		return gModList.size();
+/**
+ * Returns the number of loaded packages
+ */
+public int numModules() 
+	{
+	return gModList.size();
 	}
-	/**
-	 * Removes a package from a running game.
-	 */
-	public void removeModule(String alias)  
+/**
+ * Removes a module from a running game.
+ */
+public void removeModule(String alias)  
+	{
+	int i;
+	for (i = 0; i < gModList.size(); i++)
 		{
-		int i;
-		for (i = 0; i < gModList.size(); i++)
+		GameModule gm = (GameModule) gModList.elementAt(i);
+		if (gm.getModuleName().equalsIgnoreCase(alias))
 			{
-			GameModule gm = (GameModule) gModList.elementAt(i);
-			if (gm.getModuleName().equalsIgnoreCase(alias))
-				{
-				gModList.removeElementAt(i);
-				// clear the cache so the old package won't be 
-				// looked at when looking up classes
-				gClassHash.clear();
-				try
-					{
-					gm.unload();
-					}
-				catch (Exception e)
-					{
-					e.printStackTrace();
-					}	
-				Game.notifyModuleRemoved(gm);
-				return;
-				}
+			removeModule(gm);
+			return;
 			}
-		Game.dprint("[" + alias + "] is not loaded\n");
 		}
-	/**
-	 * Removes a package from a running game.
-	 */
-	public void removeModule(GameModule mod)  
+
+	Game.dprint("[" + alias + "] is not loaded\n");
+	}
+/**
+ * Removes a module from a running game.
+ */
+public void removeModule(GameModule mod)  
+	{
+	int i;
+	for (i = 0; i < gModList.size(); i++)
 		{
-		int i;
-		for (i = 0; i < gModList.size(); i++)
+		GameModule gm = (GameModule) gModList.elementAt(i);
+		if (gm == mod)
 			{
-			GameModule gm = (GameModule) gModList.elementAt(i);
-			if (gm == mod)
+			gModList.removeElementAt(i);
+			// clear the cache so the old package won't be 
+			// looked at when looking up classes
+			gClassHash.clear();
+			try
 				{
-				gModList.removeElementAt(i);
-				// clear the cache so the old package won't be 
-				// looked at when looking up classes
-				gClassHash.clear();
-				try
-					{
-					gm.unload();
-					}
-				catch (Exception e)
-					{
-					e.printStackTrace();
-					}	
-				Game.notifyModuleRemoved(gm);
-				return;
+				gm.unload();
 				}
+			catch (Exception e)
+				{
+				e.printStackTrace();
+				}	
+			//Withnails 16/05/98
+			//Game.notifyModuleRemoved(gm);
+			super.notify(gm, 0);
+			return;
 			}
-		Game.dprint("GameModule: " + mod + "wasn't loaded\n");
 		}
+	Game.dprint("GameModule: " + mod + "wasn't loaded\n");
+	}
 }

@@ -18,6 +18,7 @@ public abstract class GenericGrenade extends GameObject implements FrameListener
 	protected float      fRadiusDamage;
 	protected GameObject fOwner;
 	protected Vector3f   fAvelocity;
+	protected int 	   fMask;
 	
 /*
 ==================
@@ -62,7 +63,7 @@ protected GenericGrenade(GameObject owner, Point3f start, Vector3f aimdir, int d
 	fExpires = (float)Game.getGameTime() + timer; // explode after a while
 	fDamage = damage;
 	fRadiusDamage = radiusDamage;
-
+	fMask = Engine.MASK_SOLID;
 	fEntity.linkEntity();
 
 	if (timer <= 0.0)
@@ -162,15 +163,15 @@ protected void explode( TraceResults tr )
 			effect = Engine.TE_ROCKET_EXPLOSION_WATER;
 		}
 
-	MiscUtil.radiusDamage(this, fOwner, fDamage, victim, fRadiusDamage);
-
 	if ( tr != null )
 		{
 		//TODO: move victim caused by impact...
 		victim = (GameObject)tr.fEntity.getReference();
 		if ( victim != null )
-			victim.damage(this, fOwner, fEntity.getVelocity(), fEntity.getOrigin(), tr.fPlaneNormal, fDamage, 0, 0, effect);
+			victim.damage(this, fOwner, fEntity.getVelocity(), fEntity.getOrigin(), tr.fPlaneNormal, fDamage, 0, 0, effect, "grenade");
 		}
+
+	MiscUtil.radiusDamage(this, fOwner, fDamage, victim, fRadiusDamage, "g_splash");
 
 	Engine.writeByte(Engine.SVC_TEMP_ENTITY);
 	Engine.writeByte(effect);
@@ -195,7 +196,8 @@ public void runFrame(int phase)
 	checkVelocity();
 	applyGravity();
 
-	TraceResults tr = fEntity.traceMove(Engine.MASK_SOLID, 1.0F); // was MASK_SHOT
+	TraceResults tr = fEntity.traceMove(fMask, 1.0F); // was MASK_SOLID
+	fMask = Engine.MASK_SHOT;
 	
 	if (tr.fFraction == 1)
 		{

@@ -14,7 +14,7 @@
 // handles to fields in a C entity
 // (same constants as in NativeEntity.java)
 #define BYTE_CLIENT_PS_PMOVE_PMFLAGS 100
-#define BYTE_CLIENT_PS_PMOVE_TELEPORTTIME 101
+#define BYTE_CLIENT_PS_PMOVE_PMTIME 101
 
 #define SHORT_CLIENT_PS_PMOVE_GRAVITY 100
 
@@ -259,7 +259,7 @@ static jbyte *lookupByte(int index, int fieldNum)
     switch (fieldNum)
         {
         case BYTE_CLIENT_PS_PMOVE_PMFLAGS: return (jbyte *) &(ent->client->ps.pmove.pm_flags);
-        case BYTE_CLIENT_PS_PMOVE_TELEPORTTIME: return (jbyte *) &(ent->client->ps.pmove.teleport_time);
+        case BYTE_CLIENT_PS_PMOVE_PMTIME: return (jbyte *) &(ent->client->ps.pmove.pm_time);
         default: return NULL; // ---FIX--- should record an error somewhere
         }
     }
@@ -979,6 +979,8 @@ static jobject JNICALL Java_q2java_NativeEntity_traceMove0(JNIEnv *env, jclass c
     // set the origin of the entity to its new position
     for (i = 0; i < 3; i++)
             ent->s.origin[i] = result.endpos[i];
+    
+    gi.linkentity(ent);
 
     return newTraceResults(result);
     }
@@ -1095,9 +1097,9 @@ static void JNICALL Java_q2java_NativeEntity_copySettings0(JNIEnv *env, jclass c
     int i;
 
     // sanity check
-    if ((sourceIndex < 0) || (sourceIndex > global_maxClients))
+    if ((sourceIndex < 0) || (sourceIndex >= ge.max_edicts))
         return;
-    if ((destIndex < 0) || (destIndex > global_maxClients))
+    if ((destIndex < 0) || (destIndex >= ge.max_edicts))
         return;
 
     source = ge.edicts + sourceIndex;

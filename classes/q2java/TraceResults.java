@@ -47,4 +47,45 @@ private TraceResults (boolean allSolid, boolean startSolid, float fraction,
 	fContents = contents;
 	fEntity = ent;
 	}
+/**
+ * String representation of TraceResults, useful for debugging.
+ * @return java.lang.String
+ */
+public String toString() 
+	{
+	StringBuffer sb = new StringBuffer();
+	
+	sb.append("AllSolid: ");
+	sb.append(fAllSolid);
+	sb.append(" StartSolid: ");
+	sb.append(fStartSolid);
+	sb.append(" Fraction: ");
+	sb.append(fFraction);	
+
+	sb.append("\nEndPos: ");
+	sb.append(fEndPos);
+
+	sb.append("\nPlane Normal: ");
+	sb.append(fPlaneNormal);
+	sb.append(" Dist: ");
+	sb.append(fPlaneDist);
+	sb.append(" Type: ");
+	sb.append(fPlaneType);
+	sb.append(" SignBits: ");
+	sb.append(fPlaneSignbits);
+		
+	sb.append("\nSurface Name: ");
+	sb.append(fSurfaceName);
+	sb.append(" Flags: ");
+	sb.append(fSurfaceFlags);
+	sb.append(" Value: ");
+	sb.append(fSurfaceValue);		
+		
+	sb.append("\nContents: ");
+	sb.append(fContents);		
+	sb.append(" Entity: ");
+	sb.append(fEntity);
+	
+	return sb.toString();
+	}
 }

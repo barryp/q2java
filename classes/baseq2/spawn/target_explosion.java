@@ -34,7 +34,7 @@ protected void explode()
 	Engine.writePosition(origin);
 	Engine.multicast(origin, Engine.MULTICAST_PHS );
 
-	MiscUtil.radiusDamage( this, fActivator, fDmg, null, fDmg+40 );
+	MiscUtil.radiusDamage( this, fActivator, fDmg, null, fDmg+40, "explosive" );
 
 	save = fDelay;
 	fDelay = 0;

@@ -10,6 +10,7 @@ public abstract class GenericBlaster extends GenericWeapon
 	{
 	protected Vector3f fBlasterOffset;
 	protected int fEffect;  // the hyperblaster changes this as it fires
+	protected String fObitKey;
 	protected int fDamage;
 	protected int fMuzzleFlash;
 	
@@ -23,11 +24,12 @@ public GenericBlaster(String[] spawnArgs) throws GameException
 /**
  * This method was created by a SmartGuide.
  */
-public GenericBlaster(int blasterEffect, int blasterDamage, int blasterMuzzleFlash)
+public GenericBlaster(int blasterEffect, int blasterDamage, int blasterMuzzleFlash, String obitKey)
 	{
 	super();
 
 	fEffect = blasterEffect;
+	fObitKey = obitKey;
 	fDamage = blasterDamage;
 	fMuzzleFlash = blasterMuzzleFlash;	
 	fBlasterOffset = new Vector3f();
@@ -55,7 +57,7 @@ public void fire()
 
 	try
 		{
-		new BlasterBolt(fPlayer, start, forward, fDamage, 1000, fEffect);
+		new BlasterBolt(fPlayer, start, forward, fDamage, 1000, fEffect, fObitKey);
 		}
 	catch (GameException e)
 		{

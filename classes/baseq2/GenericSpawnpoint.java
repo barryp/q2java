@@ -18,6 +18,7 @@ public abstract class GenericSpawnpoint extends GameObject
 	{
 	protected Point3f fOrigin;
 	protected Angle3f fAngles;	
+	protected String fTargetName;
 	
 public GenericSpawnpoint(String[] spawnArgs) throws GameException
 	{
@@ -40,6 +41,10 @@ public GenericSpawnpoint(String[] spawnArgs) throws GameException
 		
 	if (fAngles == null)
 		fAngles = new Angle3f();
+		
+	fTargetName = Game.getSpawnArg(spawnArgs, "targetname", null);
+	if (fTargetName != null)
+		fTargetGroup = Game.addLevelRegistry("target-" + fTargetName, this);				
 	}
 /**
  * Fetch a copy of the spawnpoint's orientation.
@@ -66,6 +71,8 @@ public String toString()
 	StringBuffer sb = new StringBuffer();
 
 	sb.append(getClass().getName());
+	sb.append(" TargetName: ");
+	sb.append(fTargetName);
 	sb.append(" Origin: ");
 	sb.append(fOrigin);
 	sb.append(" Angles: ");

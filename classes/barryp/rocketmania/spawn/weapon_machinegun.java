@@ -90,7 +90,7 @@ public void fire()
 	angles.add(fPlayer.fKickAngles);
 	angles.getVectors(forward, right, null);
 	start = fPlayer.projectSource(offset, forward, right);
-	MiscUtil.fireLead(fPlayer, start, forward, damage, kick, Engine.TE_GUNSHOT, DEFAULT_BULLET_HSPREAD, DEFAULT_BULLET_VSPREAD);
+	MiscUtil.fireLead(fPlayer, start, forward, damage, kick, Engine.TE_GUNSHOT, DEFAULT_BULLET_HSPREAD, DEFAULT_BULLET_VSPREAD, "machinegun");
 
 	// throw a rocket occasionally
 	if ((MiscUtil.randomInt() & 0x07) == 0)

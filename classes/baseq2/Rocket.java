@@ -16,6 +16,7 @@ public class Rocket extends GameObject implements FrameListener
 	protected int fRadiusDamage;
 	protected float fDamageRadius;
 	protected GameObject fOwner;
+	protected int fMask;
 	
 /**
  * BlasterBolt constructor comment.
@@ -40,6 +41,7 @@ public Rocket(GameObject owner, Point3f start, Vector3f dir, int damage, int spe
 	fDamage = damage;
 	fRadiusDamage = radiusDamage;
 	fDamageRadius = damageRadius;
+	fMask = Engine.MASK_SOLID;  // start off with MASK_SOLID, will switch to MASK_SHOT next frame.
 	fEntity.linkEntity();
 
 	// register to be called every server frame
@@ -65,8 +67,9 @@ public void runFrame(int phase)
 		return;
 		}
 
-	TraceResults tr = fEntity.traceMove(Engine.MASK_SOLID, 1.0F); // was MASK_SHOT
-	
+	TraceResults tr = fEntity.traceMove(fMask, 1.0F); // was MASK_SOLID
+	fMask = Engine.MASK_SHOT;	
+
 	if (tr.fFraction == 1)
 		return;		// moved the entire distance
 
@@ -88,11 +91,11 @@ public void runFrame(int phase)
 	if (tr.fEntity.getReference() instanceof GameObject)
 		{
 		GameObject victim = (GameObject) tr.fEntity.getReference();
-		victim.damage(this, fOwner, fEntity.getVelocity(), fEntity.getOrigin(), tr.fPlaneNormal, fDamage, 0, 0, effect);
-		MiscUtil.radiusDamage(this, fOwner, fRadiusDamage, victim, fDamageRadius);
+		victim.damage(this, fOwner, fEntity.getVelocity(), fEntity.getOrigin(), tr.fPlaneNormal, fDamage, 0, 0, effect, "rocket");
+		MiscUtil.radiusDamage(this, fOwner, fRadiusDamage, victim, fDamageRadius, "r_splash");
 		}
 	else
-		MiscUtil.radiusDamage(this, fOwner, fRadiusDamage, null, fDamageRadius);		
+		MiscUtil.radiusDamage(this, fOwner, fRadiusDamage, null, fDamageRadius, "r_splash");		
 	
 	dispose();
 	}

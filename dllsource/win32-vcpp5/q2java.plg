@@ -3,7 +3,7 @@ Begining build with project "C:\Quake2\q2java\dllsource\win32-vcpp5\q2java.dsp",
 Active configuration is Win32 (x86) Dynamic-Link Library (based on Win32 (x86) Dynamic-Link Library)
 
 Project's tools are:
-			"32-bit C/C++ Compiler for 80x86" with flags "/nologo /G5 /ML /W4 /GX /Zd /O2 /I "c:\jdk\include" /I "c:\jdk\include\win32" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /FR".\Release/" /Fp".\Release/q2java.pch" /YX /Fo".\Release/" /Fd".\Release/" /FD /c "
+			"32-bit C/C++ Compiler for 80x86" with flags "/nologo /G5 /ML /W3 /GX /Zd /O2 /I "c:\jdk\include" /I "c:\jdk\include\win32" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /FR".\Release/" /Fp".\Release/q2java.pch" /YX /Fo".\Release/" /Fd".\Release/" /FD /c "
 			"OLE Type Library Maker" with flags "/nologo /D "NDEBUG" /mktyplib203 /win32 "
 			"Win32 Resource Compiler" with flags "/l 0x409 /d "NDEBUG" "
 			"Browser Database Maker" with flags "/nologo /o".\Release/q2java.bsc" "
@@ -11,7 +11,7 @@ Project's tools are:
 			"Custom Build" with flags ""
 			"<Component 0xa>" with flags ""
 
-Creating temp file "c:\temp\RSP18.tmp" with contents </nologo /G5 /ML /W4 /GX /Zd /O2 /I "c:\jdk\include" /I "c:\jdk\include\win32" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /FR".\Release/" /Fp".\Release/q2java.pch" /YX /Fo".\Release/" /Fd".\Release/" /FD /c 
+Creating temp file "c:\temp\RSP8.tmp" with contents </nologo /G5 /ML /W3 /GX /Zd /O2 /I "c:\jdk\include" /I "c:\jdk\include\win32" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /FR".\Release/" /Fp".\Release/q2java.pch" /YX /Fo".\Release/" /Fd".\Release/" /FD /c 
 "C:\Quake2\q2java\dllsource\game.c"
 "C:\Quake2\q2java\dllsource\globals.c"
 "C:\Quake2\q2java\dllsource\javalink_win32.c"
@@ -22,8 +22,8 @@ Creating temp file "c:\temp\RSP18.tmp" with contents </nologo /G5 /ML /W4 /GX /Z
 "C:\Quake2\q2java\dllsource\q2java_Engine.c"
 "C:\Quake2\q2java\dllsource\q2java_NativeEntity.c"
 >
-Creating command line "cl.exe @c:\temp\RSP18.tmp" 
-Creating temp file "c:\temp\RSP19.tmp" with contents <kernel32.lib user32.lib gdi32.lib winmm.lib /nologo /base:"0x20000000" /subsystem:windows /dll /incremental:no /pdb:".\Release/gamex86.pdb" /machine:I386 /def:"..\win32dll.def" /out:"..\..\gamex86.dll" /implib:".\Release/gamex86.lib" 
+Creating command line "cl.exe @c:\temp\RSP8.tmp" 
+Creating temp file "c:\temp\RSP9.tmp" with contents <kernel32.lib user32.lib gdi32.lib winmm.lib /nologo /base:"0x20000000" /subsystem:windows /dll /incremental:no /pdb:".\Release/gamex86.pdb" /machine:I386 /def:"..\win32dll.def" /out:"..\..\gamex86.dll" /implib:".\Release/gamex86.lib" 
 ".\Release\game.obj"
 ".\Release\globals.obj"
 ".\Release\javalink_win32.obj"
@@ -33,289 +33,22 @@ Creating temp file "c:\temp\RSP19.tmp" with contents <kernel32.lib user32.lib gd
 ".\Release\q2java_CVar.obj"
 ".\Release\q2java_Engine.obj"
 ".\Release\q2java_NativeEntity.obj">
-Creating command line "link.exe @c:\temp\RSP19.tmp" 
+Creating command line "link.exe @c:\temp\RSP9.tmp" 
 Compiling...
 game.c
 globals.c
 javalink_win32.c
-D:\Program Files\DevStudio\VC\INCLUDE\winnt.h(199) : warning C4201: nonstandard extension used : nameless struct/union
-D:\Program Files\DevStudio\VC\INCLUDE\winnt.h(218) : warning C4201: nonstandard extension used : nameless struct/union
-D:\Program Files\DevStudio\VC\INCLUDE\winnt.h(1431) : warning C4214: nonstandard extension used : bit field types other than int
-D:\Program Files\DevStudio\VC\INCLUDE\winnt.h(1432) : warning C4214: nonstandard extension used : bit field types other than int
-D:\Program Files\DevStudio\VC\INCLUDE\winnt.h(1433) : warning C4214: nonstandard extension used : bit field types other than int
-D:\Program Files\DevStudio\VC\INCLUDE\winnt.h(1434) : warning C4214: nonstandard extension used : bit field types other than int
-D:\Program Files\DevStudio\VC\INCLUDE\winnt.h(1435) : warning C4214: nonstandard extension used : bit field types other than int
-D:\Program Files\DevStudio\VC\INCLUDE\winnt.h(1436) : warning C4214: nonstandard extension used : bit field types other than int
-D:\Program Files\DevStudio\VC\INCLUDE\winnt.h(1437) : warning C4214: nonstandard extension used : bit field types other than int
-D:\Program Files\DevStudio\VC\INCLUDE\winnt.h(1438) : warning C4214: nonstandard extension used : bit field types other than int
-D:\Program Files\DevStudio\VC\INCLUDE\winnt.h(1439) : warning C4214: nonstandard extension used : bit field types other than int
-D:\Program Files\DevStudio\VC\INCLUDE\winnt.h(1440) : warning C4214: nonstandard extension used : bit field types other than int
-D:\Program Files\DevStudio\VC\INCLUDE\winnt.h(2100) : warning C4201: nonstandard extension used : nameless struct/union
-D:\Program Files\DevStudio\VC\INCLUDE\winnt.h(3909) : warning C4201: nonstandard extension used : nameless struct/union
-D:\Program Files\DevStudio\VC\INCLUDE\winnt.h(4125) : warning C4201: nonstandard extension used : nameless struct/union
-D:\Program Files\DevStudio\VC\INCLUDE\winnt.h(4225) : warning C4214: nonstandard extension used : bit field types other than int
-D:\Program Files\DevStudio\VC\INCLUDE\winnt.h(4226) : warning C4214: nonstandard extension used : bit field types other than int
-D:\Program Files\DevStudio\VC\INCLUDE\winnt.h(4227) : warning C4201: nonstandard extension used : nameless struct/union
-D:\Program Files\DevStudio\VC\INCLUDE\winnt.h(4230) : warning C4201: nonstandard extension used : nameless struct/union
-D:\Program Files\DevStudio\VC\INCLUDE\winnt.h(4234) : warning C4214: nonstandard extension used : bit field types other than int
-D:\Program Files\DevStudio\VC\INCLUDE\winnt.h(4235) : warning C4214: nonstandard extension used : bit field types other than int
-D:\Program Files\DevStudio\VC\INCLUDE\winnt.h(4236) : warning C4201: nonstandard extension used : nameless struct/union
-D:\Program Files\DevStudio\VC\INCLUDE\winnt.h(4237) : warning C4201: nonstandard extension used : nameless struct/union
-D:\Program Files\DevStudio\VC\INCLUDE\winnt.h(4362) : warning C4214: nonstandard extension used : bit field types other than int
-D:\Program Files\DevStudio\VC\INCLUDE\winnt.h(4363) : warning C4214: nonstandard extension used : bit field types other than int
-D:\Program Files\DevStudio\VC\INCLUDE\winnt.h(4364) : warning C4214: nonstandard extension used : bit field types other than int
-D:\Program Files\DevStudio\VC\INCLUDE\winnt.h(4365) : warning C4214: nonstandard extension used : bit field types other than int
-D:\Program Files\DevStudio\VC\INCLUDE\winnt.h(4366) : warning C4214: nonstandard extension used : bit field types other than int
-D:\Program Files\DevStudio\VC\INCLUDE\winnt.h(4367) : warning C4214: nonstandard extension used : bit field types other than int
-D:\Program Files\DevStudio\VC\INCLUDE\winbase.h(396) : warning C4214: nonstandard extension used : bit field types other than int
-D:\Program Files\DevStudio\VC\INCLUDE\winbase.h(397) : warning C4214: nonstandard extension used : bit field types other than int
-D:\Program Files\DevStudio\VC\INCLUDE\winbase.h(398) : warning C4214: nonstandard extension used : bit field types other than int
-D:\Program Files\DevStudio\VC\INCLUDE\winbase.h(399) : warning C4214: nonstandard extension used : bit field types other than int
-D:\Program Files\DevStudio\VC\INCLUDE\winbase.h(400) : warning C4214: nonstandard extension used : bit field types other than int
-D:\Program Files\DevStudio\VC\INCLUDE\winbase.h(401) : warning C4214: nonstandard extension used : bit field types other than int
-D:\Program Files\DevStudio\VC\INCLUDE\winbase.h(402) : warning C4214: nonstandard extension used : bit field types other than int
-D:\Program Files\DevStudio\VC\INCLUDE\winbase.h(403) : warning C4214: nonstandard extension used : bit field types other than int
-D:\Program Files\DevStudio\VC\INCLUDE\winbase.h(426) : warning C4214: nonstandard extension used : bit field types other than int
-D:\Program Files\DevStudio\VC\INCLUDE\winbase.h(427) : warning C4214: nonstandard extension used : bit field types other than int
-D:\Program Files\DevStudio\VC\INCLUDE\winbase.h(428) : warning C4214: nonstandard extension used : bit field types other than int
-D:\Program Files\DevStudio\VC\INCLUDE\winbase.h(429) : warning C4214: nonstandard extension used : bit field types other than int
-D:\Program Files\DevStudio\VC\INCLUDE\winbase.h(430) : warning C4214: nonstandard extension used : bit field types other than int
-D:\Program Files\DevStudio\VC\INCLUDE\winbase.h(431) : warning C4214: nonstandard extension used : bit field types other than int
-D:\Program Files\DevStudio\VC\INCLUDE\winbase.h(432) : warning C4214: nonstandard extension used : bit field types other than int
-D:\Program Files\DevStudio\VC\INCLUDE\winbase.h(433) : warning C4214: nonstandard extension used : bit field types other than int
-D:\Program Files\DevStudio\VC\INCLUDE\winbase.h(434) : warning C4214: nonstandard extension used : bit field types other than int
-D:\Program Files\DevStudio\VC\INCLUDE\winbase.h(435) : warning C4214: nonstandard extension used : bit field types other than int
-D:\Program Files\DevStudio\VC\INCLUDE\winbase.h(436) : warning C4214: nonstandard extension used : bit field types other than int
-D:\Program Files\DevStudio\VC\INCLUDE\winbase.h(437) : warning C4214: nonstandard extension used : bit field types other than int
-D:\Program Files\DevStudio\VC\INCLUDE\winbase.h(438) : warning C4214: nonstandard extension used : bit field types other than int
-D:\Program Files\DevStudio\VC\INCLUDE\winbase.h(439) : warning C4214: nonstandard extension used : bit field types other than int
-D:\Program Files\DevStudio\VC\INCLUDE\winbase.h(481) : warning C4201: nonstandard extension used : nameless struct/union
-D:\Program Files\DevStudio\VC\INCLUDE\winbase.h(482) : warning C4201: nonstandard extension used : nameless struct/union
-D:\Program Files\DevStudio\VC\INCLUDE\winbase.h(1456) : warning C4201: nonstandard extension used : nameless struct/union
-D:\Program Files\DevStudio\VC\INCLUDE\dde.h(47) : warning C4214: nonstandard extension used : bit field types other than int
-D:\Program Files\DevStudio\VC\INCLUDE\dde.h(48) : warning C4214: nonstandard extension used : bit field types other than int
-D:\Program Files\DevStudio\VC\INCLUDE\dde.h(49) : warning C4214: nonstandard extension used : bit field types other than int
-D:\Program Files\DevStudio\VC\INCLUDE\dde.h(50) : warning C4214: nonstandard extension used : bit field types other than int
-D:\Program Files\DevStudio\VC\INCLUDE\dde.h(62) : warning C4214: nonstandard extension used : bit field types other than int
-D:\Program Files\DevStudio\VC\INCLUDE\dde.h(63) : warning C4214: nonstandard extension used : bit field types other than int
-D:\Program Files\DevStudio\VC\INCLUDE\dde.h(64) : warning C4214: nonstandard extension used : bit field types other than int
-D:\Program Files\DevStudio\VC\INCLUDE\dde.h(79) : warning C4214: nonstandard extension used : bit field types other than int
-D:\Program Files\DevStudio\VC\INCLUDE\dde.h(80) : warning C4214: nonstandard extension used : bit field types other than int
-D:\Program Files\DevStudio\VC\INCLUDE\dde.h(81) : warning C4214: nonstandard extension used : bit field types other than int
-D:\Program Files\DevStudio\VC\INCLUDE\dde.h(82) : warning C4214: nonstandard extension used : bit field types other than int
-D:\Program Files\DevStudio\VC\INCLUDE\dde.h(83) : warning C4214: nonstandard extension used : bit field types other than int
-D:\Program Files\DevStudio\VC\INCLUDE\dde.h(99) : warning C4214: nonstandard extension used : bit field types other than int
-D:\Program Files\DevStudio\VC\INCLUDE\dde.h(101) : warning C4214: nonstandard extension used : bit field types other than int
-D:\Program Files\DevStudio\VC\INCLUDE\dde.h(102) : warning C4214: nonstandard extension used : bit field types other than int
-D:\Program Files\DevStudio\VC\INCLUDE\dde.h(120) : warning C4214: nonstandard extension used : bit field types other than int
-D:\Program Files\DevStudio\VC\INCLUDE\dde.h(121) : warning C4214: nonstandard extension used : bit field types other than int
-D:\Program Files\DevStudio\VC\INCLUDE\dde.h(122) : warning C4214: nonstandard extension used : bit field types other than int
-D:\Program Files\DevStudio\VC\INCLUDE\dde.h(123) : warning C4214: nonstandard extension used : bit field types other than int
-D:\Program Files\DevStudio\VC\INCLUDE\dde.h(128) : warning C4214: nonstandard extension used : bit field types other than int
-D:\Program Files\DevStudio\VC\INCLUDE\dde.h(129) : warning C4214: nonstandard extension used : bit field types other than int
-D:\Program Files\DevStudio\VC\INCLUDE\dde.h(130) : warning C4214: nonstandard extension used : bit field types other than int
-D:\Program Files\DevStudio\VC\INCLUDE\dde.h(131) : warning C4214: nonstandard extension used : bit field types other than int
-D:\Program Files\DevStudio\VC\INCLUDE\dde.h(132) : warning C4214: nonstandard extension used : bit field types other than int
-D:\Program Files\DevStudio\VC\INCLUDE\mmsystem.h(1623) : warning C4201: nonstandard extension used : nameless struct/union
-D:\Program Files\DevStudio\VC\INCLUDE\mmsystem.h(1627) : warning C4201: nonstandard extension used : nameless struct/union
-D:\Program Files\DevStudio\VC\INCLUDE\mmsystem.h(1648) : warning C4201: nonstandard extension used : nameless struct/union
-D:\Program Files\DevStudio\VC\INCLUDE\mmsystem.h(1652) : warning C4201: nonstandard extension used : nameless struct/union
-D:\Program Files\DevStudio\VC\INCLUDE\mmsystem.h(1788) : warning C4201: nonstandard extension used : nameless struct/union
-D:\Program Files\DevStudio\VC\INCLUDE\mmsystem.h(1799) : warning C4201: nonstandard extension used : nameless struct/union
-D:\Program Files\DevStudio\VC\INCLUDE\mmsystem.h(1858) : warning C4201: nonstandard extension used : nameless struct/union
-D:\Program Files\DevStudio\VC\INCLUDE\prsht.h(99) : warning C4201: nonstandard extension used : nameless struct/union
-D:\Program Files\DevStudio\VC\INCLUDE\prsht.h(103) : warning C4201: nonstandard extension used : nameless struct/union
-D:\Program Files\DevStudio\VC\INCLUDE\prsht.h(123) : warning C4201: nonstandard extension used : nameless struct/union
-D:\Program Files\DevStudio\VC\INCLUDE\prsht.h(127) : warning C4201: nonstandard extension used : nameless struct/union
-D:\Program Files\DevStudio\VC\INCLUDE\prsht.h(170) : warning C4201: nonstandard extension used : nameless struct/union
-D:\Program Files\DevStudio\VC\INCLUDE\prsht.h(178) : warning C4201: nonstandard extension used : nameless struct/union
-D:\Program Files\DevStudio\VC\INCLUDE\prsht.h(182) : warning C4201: nonstandard extension used : nameless struct/union
-D:\Program Files\DevStudio\VC\INCLUDE\prsht.h(195) : warning C4201: nonstandard extension used : nameless struct/union
-D:\Program Files\DevStudio\VC\INCLUDE\prsht.h(203) : warning C4201: nonstandard extension used : nameless struct/union
-D:\Program Files\DevStudio\VC\INCLUDE\prsht.h(207) : warning C4201: nonstandard extension used : nameless struct/union
-D:\Program Files\DevStudio\VC\INCLUDE\rpcndr.h(2204) : warning C4115: 'IRpcStubBuffer' : named type definition in parentheses
-D:\Program Files\DevStudio\VC\INCLUDE\wtypes.h(1039) : warning C4201: nonstandard extension used : nameless struct/union
-D:\Program Files\DevStudio\VC\INCLUDE\wtypes.h(1064) : warning C4201: nonstandard extension used : nameless struct/union
-D:\Program Files\DevStudio\VC\INCLUDE\wtypes.h(1066) : warning C4201: nonstandard extension used : nameless struct/union
-D:\Program Files\DevStudio\VC\INCLUDE\wtypes.h(1077) : warning C4201: nonstandard extension used : nameless struct/union
-D:\Program Files\DevStudio\VC\INCLUDE\wtypes.h(1079) : warning C4201: nonstandard extension used : nameless struct/union
-D:\Program Files\DevStudio\VC\INCLUDE\objidl.h(6028) : warning C4201: nonstandard extension used : nameless struct/union
-D:\Program Files\DevStudio\VC\INCLUDE\objidl.h(6060) : warning C4201: nonstandard extension used : nameless struct/union
-D:\Program Files\DevStudio\VC\INCLUDE\objidl.h(8252) : warning C4201: nonstandard extension used : nameless struct/union
-D:\Program Files\DevStudio\VC\INCLUDE\objidl.h(8307) : warning C4201: nonstandard extension used : nameless struct/union
-D:\Program Files\DevStudio\VC\INCLUDE\oaidl.h(393) : warning C4201: nonstandard extension used : nameless struct/union
-D:\Program Files\DevStudio\VC\INCLUDE\oaidl.h(394) : warning C4201: nonstandard extension used : nameless struct/union
-D:\Program Files\DevStudio\VC\INCLUDE\oaidl.h(396) : warning C4201: nonstandard extension used : nameless struct/union
-D:\Program Files\DevStudio\VC\INCLUDE\oaidl.h(487) : warning C4201: nonstandard extension used : nameless struct/union
-D:\Program Files\DevStudio\VC\INCLUDE\oaidl.h(560) : warning C4201: nonstandard extension used : nameless struct/union
-D:\Program Files\DevStudio\VC\INCLUDE\oaidl.h(697) : warning C4201: nonstandard extension used : nameless struct/union
-C:\Quake2\q2java\dllsource\javalink_win32.c(106) : warning C4100: 'f' : unreferenced formal parameter
 C:\Quake2\q2java\dllsource\javalink_win32.c(219) : warning C4113: 'int (__stdcall *)(void)' differs in parameter lists from 'long (__stdcall *)(void *)'
-C:\Quake2\q2java\dllsource\javalink_win32.c(219) : warning C4057: '=' : 'long (__stdcall *)(void *)' differs in indirection to slightly different base types from 'int (__stdcall *)(void)'
 C:\Quake2\q2java\dllsource\javalink_win32.c(220) : warning C4113: 'int (__stdcall *)(void)' differs in parameter lists from 'long (__stdcall *)(const struct JNIInvokeInterface_ ***  ,const struct JNINativeInterface_ ***  ,void *)'
-C:\Quake2\q2java\dllsource\javalink_win32.c(220) : warning C4057: '=' : 'long (__stdcall *)(const struct JNIInvokeInterface_ ***  ,const struct JNINativeInterface_ ***  ,void *)' differs in indirection to slightly different base types from 'int (__stdcall *)(void)'
-C:\Quake2\q2java\dllsource\javalink_win32.c(372) : warning C4514: 'Int64ShllMod32' : unreferenced inline function has been removed
-C:\Quake2\q2java\dllsource\javalink_win32.c(372) : warning C4514: 'Int64ShraMod32' : unreferenced inline function has been removed
-C:\Quake2\q2java\dllsource\javalink_win32.c(372) : warning C4514: 'Int64ShrlMod32' : unreferenced inline function has been removed
-C:\Quake2\q2java\dllsource\javalink_win32.c(372) : warning C4514: 'GetFiberData' : unreferenced inline function has been removed
-C:\Quake2\q2java\dllsource\javalink_win32.c(372) : warning C4514: 'GetCurrentFiber' : unreferenced inline function has been removed
 misc.c
-C:\Quake2\q2java\dllsource\misc.c(215) : warning C4100: 'linenum' : unreferenced formal parameter
-C:\Quake2\q2java\dllsource\misc.c(215) : warning C4100: 'filename' : unreferenced formal parameter
 player.c
 q2java_ConsoleOutputStream.c
-C:\Quake2\q2java\dllsource\q2java_ConsoleOutputStream.c(12) : warning C4152: nonstandard extension, function/data pointer conversion in expression
-C:\Quake2\q2java\dllsource\q2java_ConsoleOutputStream.c(13) : warning C4152: nonstandard extension, function/data pointer conversion in expression
-C:\Quake2\q2java\dllsource\q2java_ConsoleOutputStream.c(81) : warning C4100: 'obj' : unreferenced formal parameter
-C:\Quake2\q2java\dllsource\q2java_ConsoleOutputStream.c(81) : warning C4100: 'env' : unreferenced formal parameter
-C:\Quake2\q2java\dllsource\q2java_ConsoleOutputStream.c(131) : warning C4100: 'obj' : unreferenced formal parameter
 q2java_CVar.c
-C:\Quake2\q2java\dllsource\q2java_CVar.c(13) : warning C4152: nonstandard extension, function/data pointer conversion in expression
-C:\Quake2\q2java\dllsource\q2java_CVar.c(14) : warning C4152: nonstandard extension, function/data pointer conversion in expression
-C:\Quake2\q2java\dllsource\q2java_CVar.c(15) : warning C4152: nonstandard extension, function/data pointer conversion in expression
-C:\Quake2\q2java\dllsource\q2java_CVar.c(61) : warning C4100: 'cls' : unreferenced formal parameter
-C:\Quake2\q2java\dllsource\q2java_CVar.c(67) : warning C4100: 'cls' : unreferenced formal parameter
-C:\Quake2\q2java\dllsource\q2java_CVar.c(73) : warning C4100: 'cls' : unreferenced formal parameter
-C:\Quake2\q2java\dllsource\q2java_CVar.c(73) : warning C4100: 'env' : unreferenced formal parameter
 q2java_Engine.c
-C:\Quake2\q2java\dllsource\q2java_Engine.c(26) : warning C4152: nonstandard extension, function/data pointer conversion in expression
-C:\Quake2\q2java\dllsource\q2java_Engine.c(27) : warning C4152: nonstandard extension, function/data pointer conversion in expression
-C:\Quake2\q2java\dllsource\q2java_Engine.c(28) : warning C4152: nonstandard extension, function/data pointer conversion in expression
-C:\Quake2\q2java\dllsource\q2java_Engine.c(29) : warning C4152: nonstandard extension, function/data pointer conversion in expression
-C:\Quake2\q2java\dllsource\q2java_Engine.c(30) : warning C4152: nonstandard extension, function/data pointer conversion in expression
-C:\Quake2\q2java\dllsource\q2java_Engine.c(31) : warning C4152: nonstandard extension, function/data pointer conversion in expression
-C:\Quake2\q2java\dllsource\q2java_Engine.c(32) : warning C4152: nonstandard extension, function/data pointer conversion in expression
-C:\Quake2\q2java\dllsource\q2java_Engine.c(33) : warning C4152: nonstandard extension, function/data pointer conversion in expression
-C:\Quake2\q2java\dllsource\q2java_Engine.c(34) : warning C4152: nonstandard extension, function/data pointer conversion in expression
-C:\Quake2\q2java\dllsource\q2java_Engine.c(35) : warning C4152: nonstandard extension, function/data pointer conversion in expression
-C:\Quake2\q2java\dllsource\q2java_Engine.c(36) : warning C4152: nonstandard extension, function/data pointer conversion in expression
-C:\Quake2\q2java\dllsource\q2java_Engine.c(37) : warning C4152: nonstandard extension, function/data pointer conversion in expression
-C:\Quake2\q2java\dllsource\q2java_Engine.c(38) : warning C4152: nonstandard extension, function/data pointer conversion in expression
-C:\Quake2\q2java\dllsource\q2java_Engine.c(39) : warning C4152: nonstandard extension, function/data pointer conversion in expression
-C:\Quake2\q2java\dllsource\q2java_Engine.c(40) : warning C4152: nonstandard extension, function/data pointer conversion in expression
-C:\Quake2\q2java\dllsource\q2java_Engine.c(41) : warning C4152: nonstandard extension, function/data pointer conversion in expression
-C:\Quake2\q2java\dllsource\q2java_Engine.c(42) : warning C4152: nonstandard extension, function/data pointer conversion in expression
-C:\Quake2\q2java\dllsource\q2java_Engine.c(43) : warning C4152: nonstandard extension, function/data pointer conversion in expression
-C:\Quake2\q2java\dllsource\q2java_Engine.c(44) : warning C4152: nonstandard extension, function/data pointer conversion in expression
-C:\Quake2\q2java\dllsource\q2java_Engine.c(45) : warning C4152: nonstandard extension, function/data pointer conversion in expression
-C:\Quake2\q2java\dllsource\q2java_Engine.c(46) : warning C4152: nonstandard extension, function/data pointer conversion in expression
-C:\Quake2\q2java\dllsource\q2java_Engine.c(47) : warning C4152: nonstandard extension, function/data pointer conversion in expression
-C:\Quake2\q2java\dllsource\q2java_Engine.c(88) : warning C4100: 'cls' : unreferenced formal parameter
-C:\Quake2\q2java\dllsource\q2java_Engine.c(97) : warning C4100: 'cls' : unreferenced formal parameter
-C:\Quake2\q2java\dllsource\q2java_Engine.c(106) : warning C4100: 'cls' : unreferenced formal parameter
-C:\Quake2\q2java\dllsource\q2java_Engine.c(116) : warning C4100: 'cls' : unreferenced formal parameter
-C:\Quake2\q2java\dllsource\q2java_Engine.c(128) : warning C4100: 'cls' : unreferenced formal parameter
-C:\Quake2\q2java\dllsource\q2java_Engine.c(139) : warning C4100: 'cls' : unreferenced formal parameter
-C:\Quake2\q2java\dllsource\q2java_Engine.c(150) : warning C4100: 'cls' : unreferenced formal parameter
-C:\Quake2\q2java\dllsource\q2java_Engine.c(190) : warning C4100: 'cls' : unreferenced formal parameter
-C:\Quake2\q2java\dllsource\q2java_Engine.c(190) : warning C4100: 'env' : unreferenced formal parameter
-C:\Quake2\q2java\dllsource\q2java_Engine.c(202) : warning C4100: 'cls' : unreferenced formal parameter
-C:\Quake2\q2java\dllsource\q2java_Engine.c(202) : warning C4100: 'env' : unreferenced formal parameter
-C:\Quake2\q2java\dllsource\q2java_Engine.c(220) : warning C4100: 'cls' : unreferenced formal parameter
-C:\Quake2\q2java\dllsource\q2java_Engine.c(220) : warning C4100: 'env' : unreferenced formal parameter
-C:\Quake2\q2java\dllsource\q2java_Engine.c(226) : warning C4100: 'cls' : unreferenced formal parameter
-C:\Quake2\q2java\dllsource\q2java_Engine.c(226) : warning C4100: 'env' : unreferenced formal parameter
-C:\Quake2\q2java\dllsource\q2java_Engine.c(232) : warning C4100: 'cls' : unreferenced formal parameter
-C:\Quake2\q2java\dllsource\q2java_Engine.c(232) : warning C4100: 'env' : unreferenced formal parameter
-C:\Quake2\q2java\dllsource\q2java_Engine.c(259) : warning C4100: 'cls' : unreferenced formal parameter
-C:\Quake2\q2java\dllsource\q2java_Engine.c(259) : warning C4100: 'env' : unreferenced formal parameter
-C:\Quake2\q2java\dllsource\q2java_Engine.c(327) : warning C4100: 'cls' : unreferenced formal parameter
-C:\Quake2\q2java\dllsource\q2java_Engine.c(332) : warning C4100: 'cls' : unreferenced formal parameter
-C:\Quake2\q2java\dllsource\q2java_Engine.c(332) : warning C4100: 'env' : unreferenced formal parameter
-C:\Quake2\q2java\dllsource\q2java_Engine.c(337) : warning C4100: 'cls' : unreferenced formal parameter
-C:\Quake2\q2java\dllsource\q2java_Engine.c(342) : warning C4100: 'cls' : unreferenced formal parameter
-C:\Quake2\q2java\dllsource\q2java_Engine.c(351) : warning C4100: 'cls' : unreferenced formal parameter
-C:\Quake2\q2java\dllsource\q2java_Engine.c(356) : warning C4100: 'cls' : unreferenced formal parameter
-C:\Quake2\q2java\dllsource\q2java_Engine.c(356) : warning C4100: 'env' : unreferenced formal parameter
-C:\Quake2\q2java\dllsource\q2java_Engine.c(364) : warning C4100: 'cls' : unreferenced formal parameter
-C:\Quake2\q2java\dllsource\q2java_Engine.c(374) : warning C4100: 'cls' : unreferenced formal parameter
-C:\Quake2\q2java\dllsource\q2java_Engine.c(451) : warning C4100: 'cls' : unreferenced formal parameter
-C:\Quake2\q2java\dllsource\q2java_Engine.c(451) : warning C4100: 'env' : unreferenced formal parameter
 q2java_NativeEntity.c
-C:\Quake2\q2java\dllsource\q2java_NativeEntity.c(79) : warning C4152: nonstandard extension, function/data pointer conversion in expression
-C:\Quake2\q2java\dllsource\q2java_NativeEntity.c(80) : warning C4152: nonstandard extension, function/data pointer conversion in expression
-C:\Quake2\q2java\dllsource\q2java_NativeEntity.c(81) : warning C4152: nonstandard extension, function/data pointer conversion in expression
-C:\Quake2\q2java\dllsource\q2java_NativeEntity.c(82) : warning C4152: nonstandard extension, function/data pointer conversion in expression
-C:\Quake2\q2java\dllsource\q2java_NativeEntity.c(83) : warning C4152: nonstandard extension, function/data pointer conversion in expression
-C:\Quake2\q2java\dllsource\q2java_NativeEntity.c(84) : warning C4152: nonstandard extension, function/data pointer conversion in expression
-C:\Quake2\q2java\dllsource\q2java_NativeEntity.c(85) : warning C4152: nonstandard extension, function/data pointer conversion in expression
-C:\Quake2\q2java\dllsource\q2java_NativeEntity.c(86) : warning C4152: nonstandard extension, function/data pointer conversion in expression
-C:\Quake2\q2java\dllsource\q2java_NativeEntity.c(87) : warning C4152: nonstandard extension, function/data pointer conversion in expression
-C:\Quake2\q2java\dllsource\q2java_NativeEntity.c(88) : warning C4152: nonstandard extension, function/data pointer conversion in expression
-C:\Quake2\q2java\dllsource\q2java_NativeEntity.c(89) : warning C4152: nonstandard extension, function/data pointer conversion in expression
-C:\Quake2\q2java\dllsource\q2java_NativeEntity.c(90) : warning C4152: nonstandard extension, function/data pointer conversion in expression
-C:\Quake2\q2java\dllsource\q2java_NativeEntity.c(91) : warning C4152: nonstandard extension, function/data pointer conversion in expression
-C:\Quake2\q2java\dllsource\q2java_NativeEntity.c(92) : warning C4152: nonstandard extension, function/data pointer conversion in expression
-C:\Quake2\q2java\dllsource\q2java_NativeEntity.c(93) : warning C4152: nonstandard extension, function/data pointer conversion in expression
-C:\Quake2\q2java\dllsource\q2java_NativeEntity.c(94) : warning C4152: nonstandard extension, function/data pointer conversion in expression
-C:\Quake2\q2java\dllsource\q2java_NativeEntity.c(95) : warning C4152: nonstandard extension, function/data pointer conversion in expression
-C:\Quake2\q2java\dllsource\q2java_NativeEntity.c(96) : warning C4152: nonstandard extension, function/data pointer conversion in expression
-C:\Quake2\q2java\dllsource\q2java_NativeEntity.c(97) : warning C4152: nonstandard extension, function/data pointer conversion in expression
-C:\Quake2\q2java\dllsource\q2java_NativeEntity.c(98) : warning C4152: nonstandard extension, function/data pointer conversion in expression
-C:\Quake2\q2java\dllsource\q2java_NativeEntity.c(99) : warning C4152: nonstandard extension, function/data pointer conversion in expression
-C:\Quake2\q2java\dllsource\q2java_NativeEntity.c(100) : warning C4152: nonstandard extension, function/data pointer conversion in expression
-C:\Quake2\q2java\dllsource\q2java_NativeEntity.c(101) : warning C4152: nonstandard extension, function/data pointer conversion in expression
-C:\Quake2\q2java\dllsource\q2java_NativeEntity.c(102) : warning C4152: nonstandard extension, function/data pointer conversion in expression
-C:\Quake2\q2java\dllsource\q2java_NativeEntity.c(105) : warning C4152: nonstandard extension, function/data pointer conversion in expression
-C:\Quake2\q2java\dllsource\q2java_NativeEntity.c(106) : warning C4152: nonstandard extension, function/data pointer conversion in expression
-C:\Quake2\q2java\dllsource\q2java_NativeEntity.c(107) : warning C4152: nonstandard extension, function/data pointer conversion in expression
-C:\Quake2\q2java\dllsource\q2java_NativeEntity.c(108) : warning C4152: nonstandard extension, function/data pointer conversion in expression
-C:\Quake2\q2java\dllsource\q2java_NativeEntity.c(109) : warning C4152: nonstandard extension, function/data pointer conversion in expression
-C:\Quake2\q2java\dllsource\q2java_NativeEntity.c(566) : warning C4100: 'cls' : unreferenced formal parameter
-C:\Quake2\q2java\dllsource\q2java_NativeEntity.c(566) : warning C4100: 'env' : unreferenced formal parameter
-C:\Quake2\q2java\dllsource\q2java_NativeEntity.c(607) : warning C4100: 'cls' : unreferenced formal parameter
-C:\Quake2\q2java\dllsource\q2java_NativeEntity.c(607) : warning C4100: 'env' : unreferenced formal parameter
-C:\Quake2\q2java\dllsource\q2java_NativeEntity.c(617) : warning C4100: 'cls' : unreferenced formal parameter
-C:\Quake2\q2java\dllsource\q2java_NativeEntity.c(617) : warning C4100: 'env' : unreferenced formal parameter
-C:\Quake2\q2java\dllsource\q2java_NativeEntity.c(626) : warning C4100: 'cls' : unreferenced formal parameter
-C:\Quake2\q2java\dllsource\q2java_NativeEntity.c(626) : warning C4100: 'env' : unreferenced formal parameter
-C:\Quake2\q2java\dllsource\q2java_NativeEntity.c(636) : warning C4100: 'cls' : unreferenced formal parameter
-C:\Quake2\q2java\dllsource\q2java_NativeEntity.c(636) : warning C4100: 'env' : unreferenced formal parameter
-C:\Quake2\q2java\dllsource\q2java_NativeEntity.c(645) : warning C4100: 'cls' : unreferenced formal parameter
-C:\Quake2\q2java\dllsource\q2java_NativeEntity.c(645) : warning C4100: 'env' : unreferenced formal parameter
-C:\Quake2\q2java\dllsource\q2java_NativeEntity.c(655) : warning C4100: 'cls' : unreferenced formal parameter
-C:\Quake2\q2java\dllsource\q2java_NativeEntity.c(655) : warning C4100: 'env' : unreferenced formal parameter
-C:\Quake2\q2java\dllsource\q2java_NativeEntity.c(664) : warning C4100: 'cls' : unreferenced formal parameter
-C:\Quake2\q2java\dllsource\q2java_NativeEntity.c(664) : warning C4100: 'env' : unreferenced formal parameter
-C:\Quake2\q2java\dllsource\q2java_NativeEntity.c(671) : warning C4100: 'cls' : unreferenced formal parameter
-C:\Quake2\q2java\dllsource\q2java_NativeEntity.c(671) : warning C4100: 'env' : unreferenced formal parameter
-C:\Quake2\q2java\dllsource\q2java_NativeEntity.c(723) : warning C4100: 'cls' : unreferenced formal parameter
-C:\Quake2\q2java\dllsource\q2java_NativeEntity.c(723) : warning C4100: 'env' : unreferenced formal parameter
-C:\Quake2\q2java\dllsource\q2java_NativeEntity.c(733) : warning C4100: 'cls' : unreferenced formal parameter
-C:\Quake2\q2java\dllsource\q2java_NativeEntity.c(733) : warning C4100: 'env' : unreferenced formal parameter
-C:\Quake2\q2java\dllsource\q2java_NativeEntity.c(747) : warning C4100: 'cls' : unreferenced formal parameter
-C:\Quake2\q2java\dllsource\q2java_NativeEntity.c(747) : warning C4100: 'ent' : unreferenced formal parameter
-C:\Quake2\q2java\dllsource\q2java_NativeEntity.c(771) : warning C4100: 'cls' : unreferenced formal parameter
-C:\Quake2\q2java\dllsource\q2java_NativeEntity.c(771) : warning C4100: 'env' : unreferenced formal parameter
-C:\Quake2\q2java\dllsource\q2java_NativeEntity.c(788) : warning C4100: 'cls' : unreferenced formal parameter
-C:\Quake2\q2java\dllsource\q2java_NativeEntity.c(788) : warning C4100: 'env' : unreferenced formal parameter
-C:\Quake2\q2java\dllsource\q2java_NativeEntity.c(802) : warning C4100: 'cls' : unreferenced formal parameter
-C:\Quake2\q2java\dllsource\q2java_NativeEntity.c(811) : warning C4100: 'cls' : unreferenced formal parameter
-C:\Quake2\q2java\dllsource\q2java_NativeEntity.c(811) : warning C4100: 'env' : unreferenced formal parameter
-C:\Quake2\q2java\dllsource\q2java_NativeEntity.c(820) : warning C4100: 'cls' : unreferenced formal parameter
-C:\Quake2\q2java\dllsource\q2java_NativeEntity.c(820) : warning C4100: 'env' : unreferenced formal parameter
-C:\Quake2\q2java\dllsource\q2java_NativeEntity.c(887) : warning C4100: 'cls' : unreferenced formal parameter
-C:\Quake2\q2java\dllsource\q2java_NativeEntity.c(887) : warning C4100: 'env' : unreferenced formal parameter
-C:\Quake2\q2java\dllsource\q2java_NativeEntity.c(918) : warning C4100: 'cls' : unreferenced formal parameter
-C:\Quake2\q2java\dllsource\q2java_NativeEntity.c(918) : warning C4100: 'env' : unreferenced formal parameter
-C:\Quake2\q2java\dllsource\q2java_NativeEntity.c(930) : warning C4100: 'cls' : unreferenced formal parameter
-C:\Quake2\q2java\dllsource\q2java_NativeEntity.c(930) : warning C4100: 'env' : unreferenced formal parameter
-C:\Quake2\q2java\dllsource\q2java_NativeEntity.c(946) : warning C4100: 'cls' : unreferenced formal parameter
-C:\Quake2\q2java\dllsource\q2java_NativeEntity.c(963) : warning C4100: 'cls' : unreferenced formal parameter
-C:\Quake2\q2java\dllsource\q2java_NativeEntity.c(984) : warning C4100: 'cls' : unreferenced formal parameter
-C:\Quake2\q2java\dllsource\q2java_NativeEntity.c(984) : warning C4100: 'env' : unreferenced formal parameter
-C:\Quake2\q2java\dllsource\q2java_NativeEntity.c(1041) : warning C4100: 'cls' : unreferenced formal parameter
-C:\Quake2\q2java\dllsource\q2java_NativeEntity.c(1041) : warning C4100: 'env' : unreferenced formal parameter
-C:\Quake2\q2java\dllsource\q2java_NativeEntity.c(1061) : warning C4100: 'cls' : unreferenced formal parameter
-C:\Quake2\q2java\dllsource\q2java_NativeEntity.c(1071) : warning C4100: 'cls' : unreferenced formal parameter
-C:\Quake2\q2java\dllsource\q2java_NativeEntity.c(1071) : warning C4100: 'env' : unreferenced formal parameter
-C:\Quake2\q2java\dllsource\q2java_NativeEntity.c(1081) : warning C4100: 'cls' : unreferenced formal parameter
-C:\Quake2\q2java\dllsource\q2java_NativeEntity.c(1081) : warning C4100: 'env' : unreferenced formal parameter
-C:\Quake2\q2java\dllsource\q2java_NativeEntity.c(1123) : warning C4100: 'cls' : unreferenced formal parameter
-C:\Quake2\q2java\dllsource\q2java_NativeEntity.c(1123) : warning C4100: 'env' : unreferenced formal parameter
 Linking...
    Creating library .\Release/gamex86.lib and object .\Release/gamex86.exp
-Creating temp file "c:\temp\RSP1A.tmp" with contents </nologo /o".\Release/q2java.bsc" 
+Creating temp file "c:\temp\RSPA.tmp" with contents </nologo /o".\Release/q2java.bsc" 
 ".\Release\game.sbr"
 ".\Release\globals.sbr"
 ".\Release\javalink_win32.sbr"
@@ -325,9 +58,9 @@ Creating temp file "c:\temp\RSP1A.tmp" with contents </nologo /o".\Release/q2jav
 ".\Release\q2java_CVar.sbr"
 ".\Release\q2java_Engine.sbr"
 ".\Release\q2java_NativeEntity.sbr">
-Creating command line "bscmake.exe @c:\temp\RSP1A.tmp" 
+Creating command line "bscmake.exe @c:\temp\RSPA.tmp" 
 Creating browse info file...
 
 
 
-gamex86.dll - 0 error(s), 269 warning(s)
+gamex86.dll - 0 error(s), 2 warning(s)

@@ -46,7 +46,8 @@ public class Game implements GameListener
 	// Manage mod packages
 	//Withnails 04/22/98 - mods are now managed by GameClassFactory
 	protected static GameClassFactory gClassFactory;
-
+	protected static CVar gModules; // for persistant list of loaded modules
+	
 	// Allow objects to find each other
 	private static Hashtable gLevelRegistry;
 	
@@ -58,6 +59,7 @@ public class Game implements GameListener
 	private static int  gPerformanceFrames;
 	private static long gCPUTime;	
 	
+
 /**
  * Register an object that implements FrameListener to 
  * receive normal (FRAME_MIDDLE phase) frame events.
@@ -229,10 +231,14 @@ public static void dprint(String msg)
 private boolean externalServerCommand(String alias, String cmd, Class[] paramTypes, Object[] params) 
 	{
 	GameModule gm = gClassFactory.getModule(alias);
-	if (gm == null)
+	if (gm == null) 
+		{
+		// _Quinn:05/15/98
+		dprint( alias + " is not a loaded module.\n" );
 		return false;
-	else
-		return externalServerCommand(gm, cmd, paramTypes, params);
+		}
+
+	return externalServerCommand(gm, cmd, paramTypes, params);
 	}
 /**
  * This method was created by a SmartGuide.
@@ -250,6 +256,13 @@ private boolean externalServerCommand(GameModule gm, String cmd, Class[] paramTy
 		}
 	catch (NoSuchMethodException nsme)
 		{
+		// _Quinn:05/15/98
+//		dprint( gm.getModuleName() + " does not have the command \"" + cmd + "\".\n" );
+
+		// the above also would print if you issued an unqualified
+		// command like "sv scores" and baseq2 wasn't the first module
+		// (BBP)
+		
 		return false;
 		}
 	catch (java.lang.reflect.InvocationTargetException ite)		
@@ -262,6 +275,13 @@ private boolean externalServerCommand(GameModule gm, String cmd, Class[] paramTy
 		}		
 									
 	return true;
+	}
+/**
+ * complement to setClassFactory, used for prp.
+ */
+public static GameClassFactory getClassFactory() 
+	{
+	return gClassFactory;
 	}
 /**
  * Fetch the current gametime, measured as seconds since 
@@ -402,18 +422,37 @@ public void init()
 	gFrameCount = 0;
 	gGameTime = 0;				
 	
-	//Withnails 04/23/98 - get the packages cvar, defaulting to baseq2
+	//Withnails 04/23/98 - get the modules cvar, defaulting to baseq2
 	CVar packages = new CVar("q2jgame_packages", "baseq2", 0);
-
+	
+	// new command-line cvar, but use the old one as the default for
+	// backwards compatibility - will remove old one somewhere down the road
+	gModules = new CVar("q2jgame_modules", packages.getString(), 0);
+		
 	//Withnails 04/23/98 - parses out multiple packages on command line, separated by ;,/\\+
-	StringTokenizer st = new StringTokenizer(packages.getString(), ";,/\\+");
+	StringTokenizer st = new StringTokenizer(gModules.getString(), ";,/\\+");
 	Vector v = new Vector();
 	while (st.hasMoreTokens())
 		v.addElement(st.nextToken());
 
+	//Quinn 06/16/98: handle commandline / stored aliases.
 	//Withnails 04/23/98 - now load each package
-	for (int i = v.size()-1; i >= 0; i--)
-		addModule((String) v.elementAt(i), (String) v.elementAt(i));			
+	String temp = "";
+	int tidx = 0;
+	for (int i = v.size()-1; i >= 0; i--) 
+		{
+		temp = v.elementAt(i).toString();
+		tidx = temp.indexOf( "[" );
+		if ( tidx == -1 ) 
+			{
+			addModule( temp, temp );
+			} // end if not aliased.
+		else 
+			{
+			addModule( temp.substring( 0, tidx ), temp.substring( tidx + 1, temp.length() - 1 ) );
+			} // end if aliased.
+		} // end for loop.
+		
 	Engine.debugLog("Game.init() finished");
 	}
 /**
@@ -432,7 +471,7 @@ public static Class lookupClass(String classSuffix) throws ClassNotFoundExceptio
 /**
  * Notifies all package listeners that a package has been added
  */
-protected static void notifyModuleAdded(GameModule gm) 
+protected static void notifyModuleAdded(q2jgame.GameModule gm) 
 	{
 	Enumeration enum = gModuleListeners.elements();
 	while (enum.hasMoreElements())
@@ -445,11 +484,14 @@ protected static void notifyModuleAdded(GameModule gm)
 			{
 			}
 		}
+		
+	// save an updated list of modules in the CVar		
+	saveList();			
 	}
 /**
  * Notifies all package listeners that a package has been removed
  */
-protected static void notifyModuleRemoved(GameModule gm) 
+protected static void notifyModuleRemoved( q2jgame.GameModule gm) 
 	{
 	Enumeration enum = gModuleListeners.elements();
 	while (enum.hasMoreElements())
@@ -462,6 +504,9 @@ protected static void notifyModuleRemoved(GameModule gm)
 			{
 			}
 		}
+		
+	// save an updated list of modules in the CVar		
+	saveList();		
 	}
 /**
  * Called by the DLL when a new player connects. Throw an exception to reject the connection.
@@ -637,6 +682,26 @@ public void runFrame()
 	gPerformanceFrames++;	
 	}
 /**
+ * Save the list of loaded modules in a CVar.
+ */
+protected static void saveList() 
+	{
+	StringBuffer sb = new StringBuffer();
+	Enumeration enum = gClassFactory.getModules();
+	while (enum.hasMoreElements()) 
+		{
+		GameModule gm = (GameModule) enum.nextElement();
+		sb.append(gm.getPackageName());
+		sb.append('[');
+		sb.append(gm.getModuleName());
+		sb.append(']');
+		if (enum.hasMoreElements())
+			sb.append('+');
+		}	
+		
+	gModules.setValue(sb.toString());		
+	}
+/**
  * Called by the DLL when the DLL's ServerCommand() function is called.
  * The admin can type "sv xxx a b" at the console, this method
  * will use reflection to look for a method named svcmd_xxx and execute
@@ -676,8 +741,8 @@ public void serverCommand()
 	// run the command	
 	if (alias != null)
 		{
-		if (externalServerCommand(alias, cmd, paramTypes, params))
-			return;		
+		externalServerCommand(alias, cmd, paramTypes, params);
+		return;
 		}
 	else
 		{
@@ -868,18 +933,6 @@ private void spawnEntities(String entString)
  */
 public void startLevel(String mapname, String entString, String spawnPoint)
 	{
-	Enumeration enum = gLevelListeners.elements();
-	while (enum.hasMoreElements())
-		{
-		try
-			{
-			((LevelListener) enum.nextElement()).startLevel(mapname, entString, spawnPoint);
-			}
-		catch (Exception e)
-			{
-			}
-		}
-
 	// purge non-player NativeEntity objects from FrameListener lists
 	gFrameBeginning.purge();
 	gFrameMiddle.purge();
@@ -892,8 +945,21 @@ public void startLevel(String mapname, String entString, String spawnPoint)
 	// spawning all the new entities
 	System.gc();		
 
+	// let interested objects know that a new level is starting
+	Enumeration enum = gLevelListeners.elements();
+	while (enum.hasMoreElements())
+		{
+		try
+			{
+			((LevelListener) enum.nextElement()).startLevel(mapname, entString, spawnPoint);
+			}
+		catch (Exception e)
+			{
+			}
+		}
+
 	spawnEntities(entString);
-					
+						
 	// now, right before the game starts, is a good time to 
 	// force Java to do another garbage collection to tidy things up.
 	System.gc();	

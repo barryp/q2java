@@ -82,7 +82,7 @@ public void touch(Player touchedBy)
 	if (fTouchDamages && fIsRotating)
 		{
 		Vector3f zero = new Vector3f();
-		touchedBy.damage(this, this, zero, touchedBy.fEntity.getOrigin(), zero, fDmg, 1, 0, Engine.TE_NONE);
+		touchedBy.damage(this, this, zero, touchedBy.fEntity.getOrigin(), zero, fDmg, 1, 0, Engine.TE_NONE, "crush");
 		}
 	}
 /**

@@ -16,12 +16,13 @@ public class BlasterBolt extends GameObject implements FrameListener
 	protected float fExpires;	
 	protected int fDamage;
 	protected GameObject fOwner;
+	protected String fObitKey;
 	
 /**
  * Create a blaster bolt and send it on its way.
  * @exception q2java.GameException The exception description.
  */
-public BlasterBolt(GameObject owner, Point3f start, Vector3f dir, int damage, int speed, int effect) throws q2java.GameException 
+public BlasterBolt(GameObject owner, Point3f start, Vector3f dir, int damage, int speed, int effect, String obitKey) throws q2java.GameException 
 	{
 	fEntity = new NativeEntity();
 	fEntity.setReference(this);
@@ -39,6 +40,7 @@ public BlasterBolt(GameObject owner, Point3f start, Vector3f dir, int damage, in
 	fOwner = owner;
 	fExpires = (float)Game.getGameTime() + 2; // go away after 2 seconds
 	fDamage = damage;
+	fObitKey = obitKey;
 	fEntity.linkEntity();
 /*
 	tr = gi.trace (self->s.origin, NULL, NULL, bolt->s.origin, bolt, MASK_SHOT);
@@ -83,7 +85,7 @@ public void runFrame(int phase)
 
 	// we hit something other than the sky.  Damage it and remove the bolt.
 	if (tr.fEntity.getReference() instanceof GameObject)
-		((GameObject)tr.fEntity.getReference()).damage(this, fOwner, fEntity.getVelocity(), fEntity.getOrigin(), tr.fPlaneNormal, fDamage, 1, GameObject.DAMAGE_ENERGY, Engine.TE_BLASTER);
+		((GameObject)tr.fEntity.getReference()).damage(this, fOwner, fEntity.getVelocity(), fEntity.getOrigin(), tr.fPlaneNormal, fDamage, 1, GameObject.DAMAGE_ENERGY, Engine.TE_BLASTER, fObitKey);
 		
 	dispose();
 	}

@@ -54,6 +54,7 @@ public class GameModule extends q2jgame.GameModule implements GameStatusListener
 	private static double gIntermissionEndTime;
 	private static String gCurrentMap;
 	private static String gNextMap;
+	private static String gSpawnpoint;
 	
 
 	// ----------- Constants -------------------------
@@ -165,12 +166,20 @@ public static void copyCorpse(NativeEntity ent)
 	gCorpseQueue.copyCorpse(ent);
 	}
 /**
+ * Get the name of the spawnpoint we're supposed to use (single-player).
+ * @return java.lang.String
+ */
+public static String getSpawnpoint() 
+	{
+	return gSpawnpoint;
+	}
+/**
  * Describe this Game.
  * @return java.lang.String
  */
 public static String getVersion() 
 	{
-	return "Q2Java Base Game, v0.5.4";
+	return "Q2Java Base Game, v0.5.5";
 	}	
 /**
  * Check whether or not the Cheating option is on.
@@ -292,6 +301,11 @@ public void startIntermission()
 	}
 /**
  * Start a new level.
+ * @param mapname Name of map we're loading
+ * @param entString a -very- large string (many 10's of Kbytes) 
+ *     listing all the entities that should be spawned and their parameters.
+ * @param spawnPoint name of single-player spawnpoint we should use
+ *      (I'm guessing this is really the name of the last map we were on).
  */
 public void startLevel(String mapname, String entString, String spawnPoint)
 	{
@@ -301,6 +315,12 @@ public void startLevel(String mapname, String entString, String spawnPoint)
 	gInIntermission = false;
 	gCurrentMap = mapname;
 	gNextMap = mapname; // in case there isn't a target_changelevel entity in the entString
+	
+	if ((spawnPoint != null) && (spawnPoint.length() == 0))
+		gSpawnpoint = null;
+	else
+		gSpawnpoint = spawnPoint;
+	
 	gIsCheating = (gCheats.getFloat() == 1.0);
 
 	gCorpseQueue = new CorpseQueue();
@@ -437,8 +457,8 @@ public void svcmd_cheating(String[] args)
  */
 public void svcmd_help(String[] args) 
 	{
-	Game.dprint("Q2Java Base Quake2 game v0.4\n\n");
-	Game.dprint("    sv commands:\n");
+	Game.dprint(getVersion());
+	Game.dprint("\n\n    sv commands:\n");
 	Game.dprint("       cheating [on | off]\n");
 	Game.dprint("       scores\n");
 	Game.dprint("       vwep [on | off]\n");

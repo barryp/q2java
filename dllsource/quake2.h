@@ -170,7 +170,7 @@ typedef struct
     short       origin[3];      // 12.3
     short       velocity[3];    // 12.3
     byte        pm_flags;       // ducked, jump_held, etc
-    byte        teleport_time;
+	byte		pm_time;		// each unit = 8 ms
     short       gravity;
     short       delta_angles[3];    // add to command angles to get view direction
                                     // changed by spawns, rotating objects, and teleporters

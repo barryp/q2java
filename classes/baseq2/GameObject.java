@@ -136,7 +136,7 @@ protected float calcAttackerYaw(GameObject inflictor, GameObject attacker)
  */
 public void damage(GameObject inflictor, GameObject attacker, 
 	Vector3f dir, Point3f point, Vector3f normal, 
-	int damage, int knockback, int dflags, int tempEvent) 
+	int damage, int knockback, int dflags, int tempEvent, String obitKey) 
 	{
 	spawnDamage(tempEvent, point, normal, damage);
 	}
@@ -218,6 +218,14 @@ public int getSpawnFlags()
 	return fSpawnFlags;
 	}
 /**
+ * Get the group of targets this objects belongs to.
+ * @return java.util.Vector will be null if the object isn't a target.
+ */
+public Vector getTargetGroup() 
+	{
+	return fTargetGroup;
+	}
+/**
  * Get this object's targets.
  * @return java.util.Vector
  */
@@ -256,7 +264,7 @@ public boolean killBox()
 		// nail it
 		Object obj = tr.fEntity.getReference();
 		if (obj instanceof GameObject)
-			((GameObject) obj).damage(this, this, zerovec, origin, zerovec, 100000, 0, DAMAGE_NO_PROTECTION, Engine.TE_NONE /*, MOD_TELEFRAG*/);
+			((GameObject) obj).damage(this, this, zerovec, origin, zerovec, 100000, 0, DAMAGE_NO_PROTECTION, Engine.TE_NONE, "telefrag");
 
 		// if we didn't kill it, fail
 		if (tr.fEntity.getSolid() != 0)

@@ -19,6 +19,8 @@ import baseq2.spawn.*;
 
 public class Player extends GameObject implements FrameListener, PlayerListener, CrossLevel
 	{	
+	protected static ResourceBundle gObits = ResourceBundle.getBundle("baseq2.obit");
+	
 	// ---- Instance fields ------------------------
 	private int fScore;
 	protected float fStartTime;
@@ -304,7 +306,8 @@ public Player(NativeEntity ent, boolean loadgame) throws GameException
 	fRight = new Vector3f();
 	fForward = new Vector3f();
 	fUp = new Vector3f();
-	
+	fOldVelocity = new Vector3f();
+		
 	// Set default values
 	fCmdAngles  = new Angle3f();
 	fKickAngles = new Angle3f();
@@ -1081,7 +1084,7 @@ public void cmd_kill(String[] args)
 	if (fIsDead)
 		fEntity.cprint(Engine.PRINT_HIGH, "You're already dead\n");
 	else		
-		die(this, this, 0, fEntity.getOrigin());
+		die(this, this, 0, fEntity.getOrigin(), "suicide");
 	}
 /**
  * Put's away the any special screens that are currently displayed, e.g. scoreboard, inventory or help computer.
@@ -1370,7 +1373,7 @@ public static void connect(NativeEntity ent, boolean loadgame) throws GameExcept
  */
 public void damage(GameObject inflictor, GameObject attacker, 
 	Vector3f dir, Point3f point, Vector3f normal, 
-	int damage, int knockback, int dflags, int tempEvent) 
+	int damage, int knockback, int dflags, int tempEvent, String obitKey) 
 	{
 
 	int armorSave = 0;		// for calculating blends later (TSW)
@@ -1456,7 +1459,7 @@ public void damage(GameObject inflictor, GameObject attacker,
 	spawnDamage(Engine.TE_BLOOD, point, normal, damage);
 	setHealth(fHealth - damage);
 	if (fHealth < 0)
-		die(inflictor, attacker, damage, point);
+		die(inflictor, attacker, damage, point, obitKey);
 	
 	// These are used to determine the blend for this frame. (TSW)
 	fDamageBlood += takeDamage;
@@ -1590,7 +1593,7 @@ protected void decFrame()
 /**
  * This method was created by a SmartGuide.
  */
-protected void die(GameObject inflictor, GameObject attacker, int damage, Point3f point)
+protected void die(GameObject inflictor, GameObject attacker, int damage, Point3f point, String obitKey)
 	{
 	if (fIsDead)
 		return;	// already dead
@@ -1600,7 +1603,13 @@ protected void die(GameObject inflictor, GameObject attacker, int damage, Point3
 	fIsDead = true;
 	fRespawnTime = (float)(Game.getGameTime() + 1);  // the player can respawn after this time
 	
-	obituary(inflictor, attacker);
+	obituary(inflictor, attacker, obitKey);
+	
+	// either give the attacker a point or take one away from the deceased
+	if ((attacker != this) && (attacker instanceof Player))
+		((Player)attacker).fScore++;
+	else
+		fScore--;
 		
 	fEntity.setModelIndex2(0); // remove linked weapon model
 	fEntity.setSound(0);
@@ -1640,6 +1649,18 @@ protected void die(GameObject inflictor, GameObject attacker, int damage, Point3
 		}
 		
 	fEntity.linkEntity();
+	}
+/**
+ * Detach this Player object from the game, but this doesn't necessarily
+ * mean the player is disconnecting.  They may be switching Player classes
+ * so work quietly.
+ */
+public void dispose() 
+	{
+	Game.removeFrameListener(this, Game.FRAME_BEGINNING + Game.FRAME_END);	
+	fEntity.setReference(null);
+	fEntity.setPlayerListener(null);
+	fEntity = null;
 	}
 /**
  * Called for each player after all the entities have 
@@ -1759,7 +1780,7 @@ protected void fallingDamage()
 		damage = 1;
 
 	if (!GameModule.isDMFlagSet(GameModule.DF_NO_FALLING))
-		damage(null, null, new Vector3f(0, 0, 1), fEntity.getOrigin(), new Vector3f(0, 0, 0), (int) damage, 0, 0, Engine.TE_NONE);
+		damage(null, null, new Vector3f(0, 0, 1), fEntity.getOrigin(), new Vector3f(0, 0, 0), (int) damage, 0, 0, Engine.TE_NONE, "falling");
 	}
 /**
  * This method was created by a SmartGuide.
@@ -2016,8 +2037,9 @@ public void notifyPickup(String itemName, String iconName)
  * @param inflictor the thing that killed the player.
  * @param attacker the player responsible.
  */
-protected void obituary(GameObject inflictor, GameObject attacker) 
+protected void obituary(GameObject inflictor, GameObject attacker, String obitKey) 
 	{
+/*	
 	if (attacker == this)
 		{
 		Game.bprint(Engine.PRINT_MEDIUM, getName() + " killed " + (fIsFemale ? "her" : "him") + "self.\n");
@@ -2036,7 +2058,30 @@ protected void obituary(GameObject inflictor, GameObject attacker)
 		}
 
 	Game.bprint(Engine.PRINT_MEDIUM, getName() + " died.\n");
-	fScore--;
+*/
+
+	if (attacker == this)
+		obitKey = "self_" + obitKey;
+
+	String msg;
+	try
+		{
+		msg = gObits.getString(obitKey);			
+		}
+	catch (MissingResourceException mre)
+		{
+		try
+			{
+			msg = gObits.getString((attacker == this) ? "self_default" : "default");
+			}
+		catch (MissingResourceException mre2)
+			{
+			msg = "{0} died";
+			}
+		}
+		
+	Object[] args = {getName(), new Integer(isFemale() ? 1 : 0), (attacker instanceof Player ? ((Player)attacker).getName() : null)};
+	Game.bprint(Engine.PRINT_MEDIUM, java.text.MessageFormat.format(msg, args) + "\n");
 	}
 /**
  * Parse a userinfo string into a hashtable.
@@ -2130,7 +2175,6 @@ public void playerDisconnect()
 	Engine.debugLog("Player.disconnect()");
 	Game.bprint(Engine.PRINT_HIGH, getName() + " disconnected\n");
 
-	Game.removeFrameListener(this, Game.FRAME_BEGINNING + Game.FRAME_END);	
 	// send effect
 	Engine.writeByte(Engine.SVC_MUZZLEFLASH);
 	Engine.writeShort(fEntity.getEntityIndex());
@@ -2142,6 +2186,9 @@ public void playerDisconnect()
 	fEntity.linkEntity();
 
 	Engine.setConfigString(Engine.CS_PLAYERSKINS + fEntity.getPlayerNum(), "");	
+
+	// disassociate this object from the rest of the game
+	dispose();
 	}
 /**
  * Called by the DLL when the player's userinfo has changed.
@@ -2807,7 +2854,7 @@ protected void worldEffects()
 
 				fPainDebounceTime = Game.getGameTime();
 
-				damage(GameModule.gWorld, GameModule.gWorld, origin, fEntity.getOrigin(), origin, fDrownDamage, 0, DAMAGE_NO_ARMOR, Engine.TE_NONE);
+				damage(GameModule.gWorld, GameModule.gWorld, origin, fEntity.getOrigin(), origin, fDrownDamage, 0, DAMAGE_NO_ARMOR, Engine.TE_NONE, "water");
 				}
 			}
 		}
@@ -2839,7 +2886,7 @@ protected void worldEffects()
 //		if (envirosuit)	// take 1/3 damage with envirosuit
 //			T_Damage (current_player, world, world, vec3_origin, current_player->s.origin, vec3_origin, 1*waterlevel, 0, 0, MOD_LAVA);
 //		else
-			damage(GameModule.gWorld, GameModule.gWorld, origin, fEntity.getOrigin(), origin, 3* fWaterLevel, 0, 0, Engine.TE_NONE);
+			damage(GameModule.gWorld, GameModule.gWorld, origin, fEntity.getOrigin(), origin, 3* fWaterLevel, 0, 0, Engine.TE_NONE, "lava");
 		}
 
 
@@ -2847,7 +2894,7 @@ protected void worldEffects()
 		{
 //		if (!envirosuit)
 			{	// no damage from slime with envirosuit
-			damage(GameModule.gWorld, GameModule.gWorld, origin, fEntity.getOrigin(), origin, fWaterLevel, 0, 0, Engine.TE_NONE);
+			damage(GameModule.gWorld, GameModule.gWorld, origin, fEntity.getOrigin(), origin, fWaterLevel, 0, 0, Engine.TE_NONE, "slime");
 			}
 		}
 	}	

@@ -66,7 +66,7 @@ public static boolean equals(Tuple3f t, float x, float y, float z)
  * @param hSpread int
  * @param vSpread int
  */
-public static void fireLead(GameObject p, Point3f start, Vector3f aimDir, int damage, int kick, int teImpact, int hSpread, int vSpread) 
+public static void fireLead(GameObject p, Point3f start, Vector3f aimDir, int damage, int kick, int teImpact, int hSpread, int vSpread, String obitKey) 
 	{
 	TraceResults	tr;
 	Angle3f  dir;
@@ -159,7 +159,7 @@ public static void fireLead(GameObject p, Point3f start, Vector3f aimDir, int da
 		if ((tr.fFraction < 1.0) && (!tr.fSurfaceName.startsWith("sky")))
 			{
 			if (tr.fEntity.getReference() instanceof GameObject)
-				((GameObject)tr.fEntity.getReference()).damage(p, p, aimDir, tr.fEndPos, tr.fPlaneNormal, damage, kick, GameObject.DAMAGE_BULLET, teImpact); 
+				((GameObject)tr.fEntity.getReference()).damage(p, p, aimDir, tr.fEndPos, tr.fPlaneNormal, damage, kick, GameObject.DAMAGE_BULLET, teImpact, obitKey); 
 			}
 		}
 
@@ -226,7 +226,7 @@ public static void fireRail(GameObject p, Point3f start, Vector3f aimDir, int da
 */				ignore = null;
 
 			if ((tr.fEntity.getReference() != p) && (tr.fEntity.getReference() instanceof GameObject))
-				((GameObject)tr.fEntity.getReference()).damage(p, p, aimDir, tr.fEndPos, tr.fPlaneNormal, damage, kick, 0, Engine.TE_NONE); 
+				((GameObject)tr.fEntity.getReference()).damage(p, p, aimDir, tr.fEndPos, tr.fPlaneNormal, damage, kick, 0, Engine.TE_NONE, "railgun"); 
 			}
 
 		from.set(tr.fEndPos);
@@ -259,10 +259,10 @@ System.out.println("Second water effect");
  * @param hSpread int
  * @param vSpread int
  */
-public static void fireShotgun(GameObject p, Point3f start, Vector3f aimDir, int damage, int kick, int hSpread, int vSpread, int count) 
+public static void fireShotgun(GameObject p, Point3f start, Vector3f aimDir, int damage, int kick, int hSpread, int vSpread, int count, String obitKey) 
 	{
 	for (int i = 0; i < count; i++)
-		fireLead(p, start, aimDir, damage, kick, Engine.TE_SHOTGUN, hSpread, vSpread);
+		fireLead(p, start, aimDir, damage, kick, Engine.TE_SHOTGUN, hSpread, vSpread, obitKey);
 	}
 /**
  * Select the spawnpoint farthest from other players.
@@ -360,10 +360,35 @@ public static GenericSpawnpoint getSpawnpointRandom()
  */
 public static GenericSpawnpoint getSpawnpointSingle() 
 	{
-	Vector list = Game.getLevelRegistryList(baseq2.spawn.info_player_start.REGISTRY_KEY);
-	Enumeration enum = list.elements();
-	if (enum.hasMoreElements())
-		return (GenericSpawnpoint) enum.nextElement();
+	String target = GameModule.getSpawnpoint();
+
+	if (target == null)
+		{
+		// look for an info_player_start spawnpoint that's not a target
+		Vector list = Game.getLevelRegistryList(baseq2.spawn.info_player_start.REGISTRY_KEY);
+		Enumeration enum = list.elements();
+		while (enum.hasMoreElements())
+			{
+			GenericSpawnpoint sp = (GenericSpawnpoint) enum.nextElement();		
+			if (sp.getTargetGroup() == null)
+				return sp;
+			}
+			
+		// all info_player_starts are targets, so settle for any one of them
+		return (GenericSpawnpoint) list.elementAt(0);					
+		}
+	else
+		{
+		// look for an info_player_start object within the specified target group
+		Vector list = Game.getLevelRegistryList("target-" + target);
+		Enumeration enum = list.elements();
+		while (enum.hasMoreElements())
+			{
+			Object obj = enum.nextElement();
+			if (obj instanceof baseq2.spawn.info_player_start)
+				return (GenericSpawnpoint) obj;
+			}		
+		}
 		
 	return null;
 	}
@@ -434,7 +459,7 @@ public static Point3f parsePoint3f(String s)
  * @param ignore q2jgame.GameEntity
  * @param radius float
  */
-public static void radiusDamage(GameObject inflictor, GameObject attacker, float damage, GameObject ignore, float radius) 
+public static void radiusDamage(GameObject inflictor, GameObject attacker, float damage, GameObject ignore, float radius, String obitKey) 
 	{
 	Point3f inflictorOrigin = inflictor.fEntity.getOrigin();
 	float radiusSquared = radius * radius;  // square the radius for faster checking
@@ -466,7 +491,7 @@ public static void radiusDamage(GameObject inflictor, GameObject attacker, float
 			{
 			Vector3f d = new Vector3f();
 			d.sub(victimOrigin, inflictorOrigin);
-			p.damage(inflictor, attacker, d, inflictorOrigin, new Vector3f(0,0,0), damagePoints, damagePoints, GameObject.DAMAGE_RADIUS, Engine.TE_NONE);			
+			p.damage(inflictor, attacker, d, inflictorOrigin, new Vector3f(0,0,0), damagePoints, damagePoints, GameObject.DAMAGE_RADIUS, Engine.TE_NONE, obitKey);			
 			}
 		}	
 	}		

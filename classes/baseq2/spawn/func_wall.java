@@ -90,7 +90,7 @@ public boolean killBox(GameObject ent)
 		Player player = (Player)players.nextElement();
 		// nail it
 		Vector3f nullVec = new Vector3f(0,0,0);
-		player.damage(ent, ent, nullVec, ent.fEntity.getOrigin(), nullVec, 100000, 0, DAMAGE_NO_PROTECTION, 0 );//MOD_TELEFRAG);
+		player.damage(ent, ent, nullVec, ent.fEntity.getOrigin(), nullVec, 100000, 0, DAMAGE_NO_PROTECTION, 0, "telefrag");
 		// if we didn't kill it, fail
 		if ( player.fEntity.getSolid() != NativeEntity.SOLID_NOT )
 			return false;

@@ -12,6 +12,7 @@ import q2jgame.*;
   
 public class BfgBlast extends GameObject implements FrameListener
 	{
+	protected int fMask;
 	protected float fExpires;	
 	protected int fDamage;
 	protected int fRadiusDamage;
@@ -59,6 +60,7 @@ public BfgBlast(GameObject owner, Point3f start, Vector3f dir, int damage, int s
 	fRadiusDamage = damage;
 	fDamageRadius = damageRadius;
 	fState        = FLYING;
+	fMask = Engine.MASK_SOLID;
 	fEntity.linkEntity();
 /*
 	if (self->client)
@@ -119,7 +121,7 @@ protected void explode()
 				Engine.writePosition( fEntity.getOrigin() );
 				Engine.multicast( fEntity.getOrigin(), Engine.MULTICAST_PHS);
 				
-				victim.damage( this, fOwner, fEntity.getVelocity(), ent.getOrigin(), VECTOR_ORIGIN, (int)points, 0, DAMAGE_ENERGY, MOD_BFG_EFFECT);
+				victim.damage( this, fOwner, fEntity.getVelocity(), ent.getOrigin(), VECTOR_ORIGIN, (int)points, 0, DAMAGE_ENERGY, Engine.TE_NONE, "bfg_effect");
 				}
 			}
 		}
@@ -140,10 +142,10 @@ protected void prepareExplosion(TraceResults tr)
 	if ( tr.fEntity.getReference() instanceof GameObject)	// Should also be monster...
 		{
 		victim = (GameObject)tr.fEntity.getReference();
-		victim.damage(this, fOwner, fEntity.getVelocity(), fEntity.getOrigin(), tr.fPlaneNormal, 200, 0, 0, MOD_BFG_BLAST);
+		victim.damage(this, fOwner, fEntity.getVelocity(), fEntity.getOrigin(), tr.fPlaneNormal, 200, 0, 0, Engine.TE_NONE, "bfg_blast");
 		}
 
-	MiscUtil.radiusDamage(this, fOwner, 200, victim, 100);
+	MiscUtil.radiusDamage(this, fOwner, 200, victim, 100, "bfg_effect");
 
 	fEntity.sound(NativeEntity.CHAN_VOICE, Engine.getSoundIndex("weapons/bfg__x1b.wav"), 1, NativeEntity.ATTN_NORM, 0);
 	fEntity.setSolid(NativeEntity.SOLID_NOT);
@@ -177,7 +179,8 @@ public void runFrame(int phase)
 	if (fState == EXPLODING)
 		explode();
 
-	TraceResults tr = fEntity.traceMove(Engine.MASK_SOLID, 1.0F); // was MASK_SHOT
+	TraceResults tr = fEntity.traceMove(fMask, 1.0F); // was MASK_SHOT
+	fMask = Engine.MASK_SHOT;
 
 	if (tr.fFraction < 1)	// We have hit an object...let's explode..
 		{
@@ -250,7 +253,7 @@ public void runFrame(int phase)
 				// hurt it if we can
 				//if ((tr.ent->takedamage) && !(tr.ent->flags & FL_IMMUNE_LASER) && (tr.ent != self->owner))
 				if ( tr.fEntity != fEntity.getOwner() )
-					go.damage (this, fOwner, dir, tr.fEndPos, VECTOR_ORIGIN, fDamage, 1, DAMAGE_ENERGY, MOD_BFG_LASER);
+					go.damage (this, fOwner, dir, tr.fEndPos, VECTOR_ORIGIN, fDamage, 1, DAMAGE_ENERGY, Engine.TE_NONE, "bfg_laser");
 
 				}
 
