@@ -13,5 +13,5 @@ echo Writing a list of all .java files to "classes.list"
 dir /s/b classes\*.java >classes.list
 
 rem Compile the whole works
-echo Starting javac
+echo Starting javac, this may take several minutes, please be patient ...
 javac -Xdepend -classpath classes @classes.list
