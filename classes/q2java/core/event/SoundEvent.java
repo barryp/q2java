@@ -65,12 +65,20 @@ public final static SoundEvent getEvent(int soundType, NativeEntity source, int 
 	return result;
 	}
 /**
- * Get the channel for this sound.
- * @return int
+ * Get the channel for this sound 
+ * @return int will be 0 for sound types other than TYPE_PLAIN
  */
 public int getSoundChannel() 
 	{
 	return fSoundChannel;
+	}
+/**
+ * Get which sound is being played - valid for all 3 sound types.
+ * @return int
+ */
+public int getSoundIndex() 
+	{
+	return fSoundIndex;
 	}
 /**
  * Get which type of sound this event is describing.
