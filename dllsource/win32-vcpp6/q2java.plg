@@ -1,0 +1,58 @@
+<html>
+<body>
+<pre>
+<h1>Build Log</h1>
+<h3>
+--------------------Configuration: game - Win32 Release--------------------
+</h3>
+<h3>Command Lines</h3>
+Creating temporary file "h:\temp\RSP14.tmp" with contents
+[
+/nologo /G5 /ML /W3 /GX /Zd /O2 /I "e:\jdk1.2.2\include" /I "e:\jdk1.2.2\include\win32" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /FR".\Release/" /Fp".\Release/q2java.pch" /YX /Fo".\Release/" /Fd".\Release/" /FD /c 
+"F:\quake2\q2java\dllsource\globals.c"
+]
+Creating command line "cl.exe @h:\temp\RSP14.tmp" 
+Creating temporary file "h:\temp\RSP15.tmp" with contents
+[
+advapi32.lib kernel32.lib user32.lib gdi32.lib winmm.lib /nologo /base:"0x20000000" /subsystem:windows /dll /incremental:no /pdb:".\Release/gamex86.pdb" /machine:I386 /def:"..\win32dll.def" /out:"..\..\gamex86.dll" /implib:".\Release/gamex86.lib" 
+".\Release\game.obj"
+".\Release\globals.obj"
+".\Release\javalink_generic.obj"
+".\Release\misc.obj"
+".\Release\player.obj"
+".\Release\properties.obj"
+".\Release\q2java_CVar.obj"
+".\Release\q2java_Engine.obj"
+".\Release\q2java_NativeEntity.obj"
+".\Release\q2string.obj"
+]
+Creating command line "link.exe @h:\temp\RSP15.tmp"
+<h3>Output Window</h3>
+Compiling...
+globals.c
+Linking...
+   Creating library .\Release/gamex86.lib and object .\Release/gamex86.exp
+Creating temporary file "h:\temp\RSP19.tmp" with contents
+[
+/nologo /o".\Release/q2java.bsc" 
+".\Release\game.sbr"
+".\Release\globals.sbr"
+".\Release\javalink_generic.sbr"
+".\Release\misc.sbr"
+".\Release\player.sbr"
+".\Release\properties.sbr"
+".\Release\q2java_CVar.sbr"
+".\Release\q2java_Engine.sbr"
+".\Release\q2java_NativeEntity.sbr"
+".\Release\q2string.sbr"]
+Creating command line "bscmake.exe @h:\temp\RSP19.tmp"
+Creating browse info file...
+<h3>Output Window</h3>
+
+
+
+<h3>Results</h3>
+gamex86.dll - 0 error(s), 0 warning(s)
+</pre>
+</body>
+</html>
