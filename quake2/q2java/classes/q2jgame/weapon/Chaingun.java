@@ -10,7 +10,7 @@ public class Chaingun extends PlayerWeapon
 	private static int[] PAUSE_FRAMES = new int[] {38, 43, 51, 61, 0};
 	private static int[] FIRE_FRAMES = new int[] {5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 0};			
 	
-public Chaingun() throws GameException
+public Chaingun()
 	{
 	super("bullets", "models/weapons/v_chain/tris.md2",
 		4, 31, 61, 64, PAUSE_FRAMES, FIRE_FRAMES);
@@ -41,13 +41,13 @@ public void fire()
 	if (getWeaponFrame() == 5)
 		fOwner.sound(NativeEntity.CHAN_AUTO, Engine.soundIndex("weapons/chngnu1a.wav"), 1, NativeEntity.ATTN_IDLE, 0);
 
-	if ((getWeaponFrame() == 14) && ((fOwner.fButtons & Player.BUTTON_ATTACK) == 0))
+	if ((getWeaponFrame() == 14) && ((fOwner.fButtons & UserCmd.BUTTON_ATTACK) == 0))
 		{
 		setWeaponFrame(32);
 //		ent->client->weapon_sound = 0;
 		return;
 		}
-	else if ((getWeaponFrame() == 21) && ((fOwner.fButtons & Player.BUTTON_ATTACK) != 0)
+	else if ((getWeaponFrame() == 21) && ((fOwner.fButtons & UserCmd.BUTTON_ATTACK) != 0)
 		&& isEnoughAmmo())
 		{
 		setWeaponFrame(15);
@@ -73,7 +73,7 @@ public void fire()
 		{
 		if (getWeaponFrame() <= 14)
 			{
-			if ((fOwner.fButtons & Player.BUTTON_ATTACK) != 0)
+			if ((fOwner.fButtons & UserCmd.BUTTON_ATTACK) != 0)
 				shots = 2;
 			else
 				shots = 1;
@@ -108,13 +108,12 @@ public void fire()
 	for (i=0 ; i<shots ; i++)
 		{
 		// get start / end positions
-		fOwner.getViewAngles().angleVectors(forward, right, up);
+		fOwner.getPlayerViewAngles().angleVectors(forward, right, up);
 		r = (float)(7 + Game.cRandom() * 4);
 		u = (float)(Game.cRandom() * 4);
-//		start[2] += ent->viewheight-8;
 		offset = new Vec3(0, r, u + fOwner.fViewHeight - 8);
 		start = fOwner.projectSource(offset, forward, right);
-		fireLead(fOwner, start, forward, damage, kick, Engine.TE_GUNSHOT, DEFAULT_BULLET_HSPREAD, DEFAULT_BULLET_VSPREAD);
+		Game.fireLead(fOwner, start, forward, damage, kick, Engine.TE_GUNSHOT, DEFAULT_BULLET_HSPREAD, DEFAULT_BULLET_VSPREAD);
 		}
 
 	// send muzzle flash

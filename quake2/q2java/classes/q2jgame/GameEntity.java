@@ -115,13 +115,20 @@ public void runFrame()
  */
 public static void spawnDamage(int damageType, Vec3 origin, Vec3 normal, int damage ) 
 	{
-	if (damage > 255)
-		damage = 255;
-	Engine.writeByte(Engine.SVC_TEMP_ENTITY);
-	Engine.writeByte(damageType);
-	Engine.writePosition(origin);
-	Engine.writeDir(normal);
-	Engine.multicast(origin, Engine.MULTICAST_PVS);
+	if (damageType != Engine.TE_NONE)
+		{
+		if (damage > 255)
+			damage = 255;
+			
+		Engine.writeByte(Engine.SVC_TEMP_ENTITY);
+		Engine.writeByte(damageType);
+		Engine.writePosition(origin);
+		
+		if ((damageType != Engine.TE_ROCKET_EXPLOSION) && (damageType != Engine.TE_ROCKET_EXPLOSION_WATER))
+			Engine.writeDir(normal);
+			
+		Engine.multicast(origin, Engine.MULTICAST_PVS);
+		}
 	}
 public String toString()
 	{
@@ -149,7 +156,7 @@ public String toString()
  * This method was created by a SmartGuide.
  * @param touchedBy q2jgame.GameEntity
  */
-public void touch(GenericCharacter touchedBy) 
+public void touch(Player touchedBy) 
 	{
 	}
 /**

@@ -12,7 +12,7 @@ public class Machinegun extends PlayerWeapon
 		
 	private int fShotCount;
 	
-public Machinegun() throws GameException
+public Machinegun()
 	{
 	super("bullets", "models/weapons/v_machn/tris.md2",
 		3, 5, 45, 49, PAUSE_FRAMES, FIRE_FRAMES);
@@ -30,7 +30,7 @@ public void fire()
 	int kick = 2;
 	int damage = 8;
 	
-	if ((fOwner.fButtons & Player.BUTTON_ATTACK) == 0)
+	if ((fOwner.fButtons & UserCmd.BUTTON_ATTACK) == 0)
 		{
 		fShotCount = 0;
 		incWeaponFrame();
@@ -75,10 +75,10 @@ public void fire()
 		}
 
 	// get start / end positions
-	angles = new Vec3(fOwner.getViewAngles()).add(fOwner.fKickAngles);
+	angles = new Vec3(fOwner.getPlayerViewAngles()).add(fOwner.fKickAngles);
 	angles.angleVectors(forward, right, null);
 	start = fOwner.projectSource(offset, forward, right);
-	fireLead(fOwner, start, forward, damage, kick, Engine.TE_GUNSHOT, DEFAULT_BULLET_HSPREAD, DEFAULT_BULLET_VSPREAD);
+	Game.fireLead(fOwner, start, forward, damage, kick, Engine.TE_GUNSHOT, DEFAULT_BULLET_HSPREAD, DEFAULT_BULLET_VSPREAD);
 	
 	Engine.writeByte(Engine.SVC_MUZZLEFLASH);
 	Engine.writeShort(fOwner.getEntityIndex());

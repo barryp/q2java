@@ -3,20 +3,10 @@
 
 // handles to fields in a C entity
 // (same constants as in NativeEntity.java)
-#define VEC3_S_ORIGIN		0
-#define VEC3_S_ANGLES		1
-#define VEC3_S_OLD_ORIGIN	2
-#define VEC3_MINS			3
-#define VEC3_MAXS			4
-#define VEC3_ABSMIN			5
-#define VEC3_ABSMAX			6
-#define VEC3_SIZE			7
-#define VEC3_VELOCITY		8
-#define VEC3_CLIENT_PS_VIEWANGLES	100
-#define VEC3_CLIENT_PS_VIEWOFFSET	101
-#define VEC3_CLIENT_PS_KICKANGLES	102
-#define VEC3_CLIENT_PS_GUNANGLES	103
-#define VEC3_CLIENT_PS_GUNOFFSET	104
+#define	BYTE_CLIENT_PS_PMOVE_PMFLAGS 100
+#define BYTE_CLIENT_PS_PMOVE_TELEPORTTIME 101
+
+#define SHORT_CLIENT_PS_PMOVE_GRAVITY 100
 
 #define INT_S_MODELINDEX 1
 #define INT_S_MODELINDEX2 2
@@ -38,20 +28,28 @@
 #define INT_CLIENT_PS_PMOVE_PMTYPE 103
 #define INT_CLIENT_PING 104
 
-#define	BYTE_CLIENT_PS_PMOVE_PMFLAGS 100
-#define BYTE_CLIENT_PS_PMOVE_TELEPORTTIME 101
+#define FLOAT_CLIENT_PS_FOV		100
+#define FLOAT_CLIENT_PS_BLEND	101		
+
+#define VEC3_S_ORIGIN		0
+#define VEC3_S_ANGLES		1
+#define VEC3_S_OLD_ORIGIN	2
+#define VEC3_MINS			3
+#define VEC3_MAXS			4
+#define VEC3_ABSMIN			5
+#define VEC3_ABSMAX			6
+#define VEC3_SIZE			7
+#define VEC3_VELOCITY		8
+#define VEC3_CLIENT_PS_VIEWANGLES	100
+#define VEC3_CLIENT_PS_VIEWOFFSET	101
+#define VEC3_CLIENT_PS_KICKANGLES	102
+#define VEC3_CLIENT_PS_GUNANGLES	103
+#define VEC3_CLIENT_PS_GUNOFFSET	104
 
 #define CALL_SOUND 1
 #define CALL_POSITIONED_SOUND 2
 
-#define FLOAT_CLIENT_PS_FOV		100
-#define FLOAT_CLIENT_PS_BLEND	101		
-
-
-usercmd_t *thinkCmd;
-static cvar_t *cvar_gravity;
-
-// handles to the Entity class
+// handles to the NativeEntity class
 static jclass class_NativeEntity;
 static jfieldID  field_NativeEntity_fEntityIndex;
 static jfieldID  field_NativeEntity_fEntityArray;
@@ -64,8 +62,10 @@ static JNINativeMethod Entity_methods[] =
 	{"allocateEntity",	"(Z)I", 					Java_q2java_NativeEntity_allocateEntity},
 	{"freeEntity0",		"(I)V",						Java_q2java_NativeEntity_freeEntity0},
 	{"setByte",			"(IIB)V",					Java_q2java_NativeEntity_setByte},
+	{"setShort",		"(IIS)V",					Java_q2java_NativeEntity_setShort},
 	{"setInt",			"(III)V",					Java_q2java_NativeEntity_setInt},
 	{"getByte",			"(II)B",					Java_q2java_NativeEntity_getByte},	
+	{"getShort",		"(II)S",					Java_q2java_NativeEntity_getShort},	
 	{"getInt",			"(II)I",					Java_q2java_NativeEntity_getInt},
 	{"setVec3",			"(IIFFF)V",					Java_q2java_NativeEntity_setVec3},
 	{"getVec3",			"(II)Lq2java/Vec3;",		Java_q2java_NativeEntity_getVec3},
@@ -77,7 +77,7 @@ static JNINativeMethod Entity_methods[] =
 	{"traceMove0",		"(IIF)Lq2java/TraceResults;",Java_q2java_NativeEntity_traceMove0},
 
 	// methods for players only
-	{"pMove0",			"(I)Lq2java/PMoveResults;",	Java_q2java_NativeEntity_pMove0},
+	{"pMove0",			"(IBBSSSSSSBB)Lq2java/PMoveResults;",	Java_q2java_NativeEntity_pMove0},
 	{"setFloat0",		"(IIFFFF)V",				Java_q2java_NativeEntity_setFloat0},
 	{"setStat0",		"(IIS)V",					Java_q2java_NativeEntity_setStat0},
 	{"cprint0",			"(IILjava/lang/String;)V",	Java_q2java_NativeEntity_cprint0},
@@ -86,8 +86,6 @@ static JNINativeMethod Entity_methods[] =
 
 void Entity_javaInit()
 	{
-    cvar_gravity = gi.cvar("sv_gravity", "800", 0);
-
 	class_NativeEntity = (*java_env)->FindClass(java_env, "q2java/NativeEntity");
 	if(CHECK_EXCEPTION() || !class_NativeEntity)
 		{
@@ -106,7 +104,6 @@ void Entity_javaInit()
 	field_NativeEntity_fEntityArray = (*java_env)->GetStaticFieldID(java_env, class_NativeEntity, "fEntityArray", "[Lq2java/NativeEntity;");
 	field_NativeEntity_fNumEntities = (*java_env)->GetStaticFieldID(java_env, class_NativeEntity, "fNumEntities", "I");
 	field_NativeEntity_fMaxPlayers  = (*java_env)->GetStaticFieldID(java_env, class_NativeEntity, "fMaxPlayers", "I");
-//	method_NativeEntity_ctor = (*java_env)->GetMethodID(java_env, class_NativeEntity, "<init>", "(I)V");
 	if (CHECK_EXCEPTION())
 		{
 		java_error = "Couldn't get field handles for NativeEntity\n";
@@ -260,6 +257,30 @@ static int *lookupInt(int index, int fieldNum)
 		default: return NULL; // ---FIX--- should record an error somewhere
 		}
 	}
+
+
+static short *lookupShort(int index, int fieldNum)
+	{
+	edict_t *ent;
+
+	// sanity check
+	if ((index < 0) || (index >= ge.max_edicts))
+		return NULL;
+
+	ent = ge.edicts + index;
+
+	// check for attemt to access player field in a non-player entity
+	if ((fieldNum >= 100) && !(ent->client))
+		return NULL;
+
+	switch (fieldNum)
+		{
+		case SHORT_CLIENT_PS_PMOVE_GRAVITY: return &(ent->client->ps.pmove.gravity);
+		default: return NULL; // ---FIX--- should record an error somewhere
+		}
+	}
+
+
 
 
 jobject Entity_getEntity(int index)
@@ -451,6 +472,15 @@ static void JNICALL Java_q2java_NativeEntity_setByte(JNIEnv *env, jclass cls, ji
 	}
 
 
+static void JNICALL Java_q2java_NativeEntity_setShort(JNIEnv *env, jclass cls, jint index, jint fieldNum, jshort val)
+	{
+	short *sp = lookupShort(index, fieldNum);
+
+	if (sp)
+		*sp = val;
+	}
+
+
 static void JNICALL Java_q2java_NativeEntity_setInt(JNIEnv *env, jclass cls, jint index, jint fieldNum, jint val)
 	{
 	int *ip = lookupInt(index, fieldNum);
@@ -467,6 +497,16 @@ static jbyte JNICALL Java_q2java_NativeEntity_getByte(JNIEnv *env, jclass cls, j
 	else
 		return 0;	// ---FIXME-- should indicate an error somehow
 	}
+
+static jshort JNICALL Java_q2java_NativeEntity_getShort(JNIEnv *env, jclass cls, jint index , jint fieldNum)
+	{
+	short *sp = lookupShort(index, fieldNum);
+	if (sp)
+		return *sp;
+	else
+		return 0;	// ---FIXME-- should indicate an error somehow
+	}
+
 
 static jint JNICALL Java_q2java_NativeEntity_getInt(JNIEnv *env, jclass cls, jint index, jint fieldNum)
 	{
@@ -608,8 +648,7 @@ static trace_t	PM_trace(vec3_t start, vec3_t mins, vec3_t maxs, vec3_t end)
 //		return gi.trace (start, mins, maxs, end, pm_passent, MASK_DEADSOLID);
 	}
 
-
-static jobject JNICALL Java_q2java_NativeEntity_pMove0(JNIEnv *env, jclass cls, jint index)
+static jobject JNICALL Java_q2java_NativeEntity_pMove0(JNIEnv *env, jclass cls, jint index, jbyte msec, jbyte buttons, jshort angle0, jshort angle1, jshort angle2, jshort forward, jshort side, jshort up, jbyte impulse, jbyte lightlevel)
 	{
 	int i;
 	pmove_t pm;
@@ -623,25 +662,33 @@ static jobject JNICALL Java_q2java_NativeEntity_pMove0(JNIEnv *env, jclass cls, 
 	ent = ge.edicts + index;
 	client = ent->client;
 
-	client->ps.pmove.gravity = (int)(cvar_gravity->value);
-
 	memset (&pm, 0, sizeof(pm));
 
 	pm.s = client->ps.pmove;
-/*
+
 	if (memcmp(&client->old_pmove, &pm.s, sizeof(pm.s)))
 		pm.snapinitial = true;
-*/
-	pm.cmd = *thinkCmd;
+
+	pm.cmd.msec = msec;
+	pm.cmd.buttons = buttons;
+	pm.cmd.angles[0] = angle0;
+	pm.cmd.angles[1] = angle1;
+	pm.cmd.angles[2] = angle2;
+	pm.cmd.forwardmove = forward;
+	pm.cmd.sidemove = side;
+	pm.cmd.upmove = up;
+	pm.cmd.impulse = impulse;
+	pm.cmd.lightlevel = lightlevel;
 
 	pm.trace = PM_trace;	// adds default parms
 	pm.pointcontents = gi.pointcontents;
 	pm_passent = ent;
+
 	gi.Pmove(&pm);
 
 	// save results of pmove
 	client->ps.pmove = pm.s;
-//	client->old_pmove = pm.s;
+	client->old_pmove = pm.s;
 
 	for (i=0 ; i<3 ; i++)
 		{
@@ -751,3 +798,5 @@ static jobject JNICALL Java_q2java_NativeEntity_traceMove0(JNIEnv *env, jclass c
 
 	return newTraceResults(result);
 	}
+
+

@@ -10,11 +10,25 @@ import q2java.*;
 import q2jgame.spawn.*;
 import q2jgame.weapon.*;
 
-public class Player extends GenericCharacter implements NativePlayer
+public class Player extends GameEntity implements NativePlayer
 	{	
+	private String fName;
+	private int fScore;
+
+	private int fHealth;
+	private int fHealthMax;
+	private boolean fIsFemale;
+	private boolean fInIntermission;
+		
 	private Hashtable fUserInfo;
 	private Hashtable fInventory;
 	private Hashtable fAmmoBelt;
+	
+	// Armor 
+	private int fArmorCount;
+	private int fArmorMaxCount;				
+	private float fArmorProtection; 		// what fraction of normal damage the player's armor absorbs
+	private float fArmorEnergyProtection; 	// fraction of energy damage the player's armor absorbs	
 
 	private boolean fWeaponThunk; // have we given the current weapon a chance to think yet this frame?
 	private PlayerWeapon fWeapon;
@@ -32,6 +46,12 @@ public class Player extends GenericCharacter implements NativePlayer
 	private int fWaterLevel;
 	private int fOldWaterLevel;
 	private Vec3 fOldVelocity;
+	private boolean fIsDead;
+	private float fKillerYaw;
+	private float fStartTime;
+	private float fKillerPitch;
+	private float fKillerRoll;
+	
 	
 	// animation variables
 	private int fAnimationPriority;
@@ -54,11 +74,6 @@ public class Player extends GenericCharacter implements NativePlayer
 	public final static int LEFT_HANDED		= 1;
 	public final static int CENTER_HANDED	= 2;
 		
-	// button bits
-	public final static int BUTTON_ATTACK	= 1;
-	public final static int BUTTON_USE		= 2;
-	public final static int BUTTON_ANY		= 128; // any key whatsoever	
-	
 	public final static String DM_STATUSBAR = 
 		"yb	-24 " +
 
@@ -130,17 +145,8 @@ public class Player extends GenericCharacter implements NativePlayer
 	private final static int ANIM_ATTACK		= 4;
 	private final static int ANIM_DEATH		= 5;			
 	
-	private final static int[] fAnims = {
-		// special animations
-		ANIM_WAVE, 72, 83,		// flip
-		ANIM_WAVE, 84, 94,		// salute
-		ANIM_WAVE, 95, 111,	// taunt
-		ANIM_WAVE, 112, 122,	// wave
-		ANIM_WAVE, 123, 134,	// point
-		ANIM_JUMP, 66, 71,		// jump
-		ANIM_JUMP, 66, 67,		// flail around in the air
-		ANIM_WAVE, 68, 71,		// land on the ground
-		
+	private final static int[] fAnims = 
+		{		
 		// standing animations
 		ANIM_BASIC, 0, 39,		// stand
 		ANIM_BASIC, 40, 45	,	// run
@@ -150,7 +156,7 @@ public class Player extends GenericCharacter implements NativePlayer
 		ANIM_PAIN, 62, 65,		// pain3
 		ANIM_DEATH, 178, 183,	// death1
 		ANIM_DEATH, 184, 189,	// death2
-		ANIM_DEATH, 190, 197	// death3
+		ANIM_DEATH, 190, 197,	// death3
 		
 		// croutching animations
 		ANIM_BASIC, 135, 153,	// crstnd
@@ -162,29 +168,37 @@ public class Player extends GenericCharacter implements NativePlayer
 		ANIM_DEATH, 173, 177,	// crdeath
 		ANIM_DEATH, 173, 177,	// crdeath
 		ANIM_DEATH, 173, 177,	// crdeath
+		
+		// gesture animations
+		ANIM_WAVE, 72, 83,		// flip
+		ANIM_WAVE, 84, 94,		// salute
+		ANIM_WAVE, 95, 111,	// taunt
+		ANIM_WAVE, 112, 122,	// wave
+		ANIM_WAVE, 123, 134,	// point
+
+		// jumping animations
+		ANIM_JUMP, 66, 71,		// jump
+		ANIM_JUMP, 66, 67,		// flail around in the air
+		ANIM_WAVE, 68, 71		// land on the ground		
 		};
 
+	// basic animations
+	public final static int ANIMATE_NORMAL	= 0; // normal = stand, normal+1 = run
+	public final static int ANIMATE_ATTACK	= 2;
+	public final static int ANIMATE_PAIN		= 3;
+	public final static int ANIMATE_DEATH	= 6;
 		
-	public final static int ANIMATE_FLIPOFF	= 0;
-	public final static int ANIMATE_SALUTE	= 1;
-	public final static int ANIMATE_TAUNT	= 2;
-	public final static int ANIMATE_WAVE		= 3;
-	public final static int ANIMATE_POINT	= 4;
-	public final static int ANIMATE_JUMP		= 5;
-	public final static int ANIMATE_FLAIL	= 6;
-	public final static int ANIMATE_LAND		= 7;
+	// gesture animations
+	public final static int ANIMATE_FLIPOFF	= 18;
+	public final static int ANIMATE_SALUTE	= 19;
+	public final static int ANIMATE_TAUNT	= 20;
+	public final static int ANIMATE_WAVE		= 21;
+	public final static int ANIMATE_POINT	= 22;
 
-	public final static int ANIMATE_BASIC	= 8; // basic = stand, basic+1 = run
-	public final static int ANIMATE_ATTACK	= 10;
-	public final static int ANIMATE_PAIN		= 11;
-	public final static int ANIMATE_DEATH	= 14;
-/*
-	public final static int ANIMATE_CROUCH_STAND	= 16;
-	public final static int ANIMATE_CROUCH_WALK	= 17;
-	public final static int ANIMATE_CROUCH_ATTACK	= 18;
-	public final static int ANIMATE_CROUCH_PAIN	= 19;
-	public final static int ANIMATE_CROUCH_DEATH	= 22;
-*/	
+	// jumping animations
+	public final static int ANIMATE_JUMP		= 23;
+	public final static int ANIMATE_FLAIL	= 24;
+	public final static int ANIMATE_LAND		= 25;
 	
 /**
  * The DLL will call this constructor when a new player 
@@ -196,7 +210,7 @@ public class Player extends GenericCharacter implements NativePlayer
 public Player(String userinfo, boolean loadgame) throws GameException 
 	{
 	Engine.debugLog("new Player(\"" + userinfo + "\", " + loadgame + ")");
-	userinfoChanged(userinfo);
+	playerInfoChanged(userinfo);
 	
 	// create temporary vectors
 	fRight = new Vec3();
@@ -230,99 +244,68 @@ public void addAmmo(String ammoType, int count)
 /**
  * This method was created by a SmartGuide.
  * @param amount int
+ * @param maxAmount int
+ * @param protection float
+ * @param energyProtection float
+ */
+public boolean addArmor(int amount, int maxAmount, float protection, float energyProtection, int icon) 
+	{
+	// handle shards differently
+	if (maxAmount == 0) 
+		{
+		fArmorCount += amount;
+		setPlayerStat(STAT_ARMOR, (short)fArmorCount);
+		return true;
+		}
+
+	// is this an armor upgrade?
+	if (protection > fArmorProtection)
+		{ 
+		int salvage = (int)((fArmorProtection / protection) * fArmorCount);
+		fArmorCount = amount + salvage;
+		fArmorMaxCount = maxAmount;
+		fArmorProtection = protection;
+		fArmorEnergyProtection = energyProtection;		
+		setPlayerStat(STAT_ARMOR, (short)fArmorCount);
+		setPlayerStat(STAT_ARMOR_ICON, (short) icon);
+		return true;
+		}		
+
+	// is our armor not up to capacity?		
+	if (fArmorCount < fArmorMaxCount)		
+		{
+		fArmorCount = Math.min(fArmorMaxCount, fArmorCount + amount);
+		setPlayerStat(STAT_ARMOR, (short)fArmorCount);
+		return true;
+		}		
+
+	// guess we don't need this armor
+	return false;		
+	}
+/**
+ * This method was created by a SmartGuide.
+ * @param amount int
  */
 public void alterAmmoCount(int amount) 
 	{
 	if (fAmmo != null)
 		{
 		fAmmo.fAmount += amount;
-		setStat(STAT_AMMO, (short) fAmmo.fAmount);
+		setPlayerStat(STAT_AMMO, (short) fAmmo.fAmount);
 		}
-	}
-/**
- * This method was created by a SmartGuide.
- * @param loadgame boolean
- */
-public void begin(boolean loadgame) 
-	{
-	Engine.debugLog("Player.begin(" + loadgame + ")");
-	
-	fInventory = new Hashtable();
-	fAmmoBelt = new Hashtable();
-
-	
-	GameEntity spawnPoint = null;
-	java.util.Enumeration enum = enumerateEntities("q2jgame.spawn.info_player_start");
-	while (enum.hasMoreElements())
-		{
-		spawnPoint = (GameEntity) enum.nextElement();
-		if (spawnPoint.getSpawnArg("targetname") == null)
-			break;
-		}
-		
-	if (spawnPoint == null)
-		Engine.dprint("Didn't find info_player_start\n");
-	else
-		{							
-		Vec3 origin = spawnPoint.getOrigin();
-		origin.z += 9;
-		setOrigin(origin);
-		setAngles(spawnPoint.getAngles());
-		}
-
-	fViewHeight = 22;
-	setSolid(SOLID_BBOX);
-	setClipmask(Engine.MASK_PLAYERSOLID);
-	
-	// initialize the AmmoBelt
-	fAmmoBelt.put("shells", new AmmoPack(100, "a_shells"));
-	fAmmoBelt.put("bullets", new AmmoPack(200, "a_bullets"));
-	fAmmoBelt.put("grenades", new AmmoPack(50, "a_grenades"));
-	fAmmoBelt.put("rockets", new AmmoPack(50, "a_rockets"));
-	fAmmoBelt.put("cells", new AmmoPack(200, "a_cells"));
-	fAmmoBelt.put("slugs", new AmmoPack(50, "a_slugs"));
-
-	// bring up the initial weapon
-	try
-		{
-		// start off with a plain blaster
-		fWeapon = new Blaster();
-		putInventory("blaster", fWeapon);
-		fWeapon.setOwner(this);
-		fWeapon.activate();
-		
-/*		
-		// give the user other weapons too, for testing
-		putInventory("hyperblaster", new weapon_hyperblaster());
-		putInventory("machinegun", new weapon_machinegun());
-		putInventory("chaingun", new weapon_chaingun());
-		putInventory("shotgun", new weapon_shotgun());
-		putInventory("super shotgun", new weapon_supershotgun());
-		putInventory("railgun", new weapon_railgun());
-*/		
-		}
-	catch (GameException e)
-		{
-		Engine.dprint(e + "\n");
-		}		
-	
-	setEffects(0);
-	setSkinNum(getPlayerNum());
-	setModelIndex(255);	// will use the skin specified model
-	setModelIndex2(255);	// custom gun model	
-	setFrame(0);
-	setMins(-16, -16, 24);
-	setMaxs(16, 16, 32);
-	setStat(STAT_HEALTH_ICON, (short)worldspawn.fHealthPic);
-	setHealth(100);
-	setAnimation(ANIMATE_BASIC, true);
-	linkEntity();	
 	}
 /**
  * This method was created by a SmartGuide.
  */
 public void beginFrame() 
 	{
+	if (fIsDead && (fLatchedButtons != 0))
+		{
+		respawn();
+		fLatchedButtons = 0;
+		return;
+		}
+			
 	if (fWeaponThunk)
 		fWeaponThunk = false;
 	else		
@@ -330,7 +313,9 @@ public void beginFrame()
 		if (fWeapon != null)
 			fWeapon.weaponThink();
 		}			
-		
+	
+
+			
 	fLatchedButtons = 0;		
 	}
 /**
@@ -342,7 +327,7 @@ private void calcClientFrame()
 	if (ent->s.modelindex != 255)
 		return;		// not in the player model
 */
-	boolean isDucking = ((getPMFlags() & PMF_DUCKED) != 0);
+	boolean isDucking = ((getPlayerPMFlags() & PMF_DUCKED) != 0);
 	boolean isRunning = (fXYSpeed != 0);
 
 	// check for stand/duck and stop/go transitions
@@ -383,7 +368,36 @@ private void calcClientFrame()
 //		if (ent->s.frame != FRAME_jump2)
 //			ent->s.frame = FRAME_jump1;
 	else
-		setAnimation(ANIMATE_BASIC, true);	
+		setAnimation(ANIMATE_NORMAL, true);	
+	}
+/**
+ * This method was created by a SmartGuide.
+ * @param inflictor q2jgame.GameEntity
+ * @param attacker q2jgame.GameEntity
+ */
+private void calcKillerYaw(GameEntity inflictor, GameEntity attacker) 
+	{
+	Vec3	dir;
+
+	fKillerPitch = -15.0F;
+	fKillerRoll = 40.0F;
+	
+	if ((attacker != null) && (attacker != Game.fWorld) && (attacker != this))
+		{
+		dir = attacker.getOrigin().subtract(getOrigin());
+		}
+	else if ((inflictor != null) && (inflictor != Game.fWorld) && (inflictor != this))
+		{
+		dir = inflictor.getOrigin().subtract(getOrigin());
+		}
+	else
+		{
+		dir = getAngles();
+		fKillerYaw = dir.y;
+		return;
+		}
+
+	fKillerYaw = (float) ((180.0 / Math.PI) * Math.atan2(dir.y, dir.x));	
 	}
 /**
  * This method was created by a SmartGuide.
@@ -418,7 +432,7 @@ private void calcViewOffset()
 	Vec3 v = new Vec3(0, 0, fViewHeight);
 	float bobMove = 0.0F;
 
-	setKickAngles(fKickAngles);	
+	setPlayerKickAngles(fKickAngles);	
 	
 	// add fall height
 	// ---FIXME---
@@ -472,7 +486,7 @@ private void calcViewOffset()
 	else if (v.z > 30)
 		v.z = 30;
 		
-	setViewOffset(v);
+	setPlayerViewOffset(v);
 	}
 /**
  * This method was created by a SmartGuide.
@@ -489,50 +503,66 @@ public void changeWeapon()
 	}
 /**
  * This method was created by a SmartGuide.
+ * @param inflictor q2jgame.GameEntity
+ * @param attacker q2jgame.GameEntity
+ * @param dir q2java.Vec3
+ * @param point q2java.Vec3
+ * @param normal q2java.Vec3
+ * @param damage int
+ * @param knockback int
+ * @param dflags int
  */
-public void command() 
+public void damage(GameEntity inflictor, GameEntity attacker, 
+	Vec3 dir, Vec3 point, Vec3 normal, 
+	int damage, int knockback, int dflags, int tempEvent) 
 	{
-	Engine.debugLog("Player.command()");
-	Engine.dprint("Java Player.command()\n");
-	Engine.dprint("   Engine.args = [" + Engine.args() + "]\n");
-	Engine.dprint("   Engine.argc = " + Engine.argc() + "\n");
-	for (int i = 0; i < Engine.argc(); i++)
-		Engine.dprint("    " + i + ": [" + Engine.argv(i) + "]\n");
-		
-		
-	if (Engine.argc() > 1)
+	// decrease damage based on armor
+	if ((dflags & DAMAGE_NO_ARMOR) == 0)
 		{
-		if (Engine.argv(0).equals("use"))
-			{
-			String item = Engine.argv(1);
-			for (int i = 2; i < Engine.argc(); i++)
-				item = item + " " + Engine.argv(i);
-			use(item);
-			}
+		int save; // the amount of damage our armor protects us from
+		if ((dflags & DAMAGE_ENERGY) != 0)
+			save = (int) Math.ceil(damage * fArmorEnergyProtection);
+		else
+			save = (int) Math.ceil(damage * fArmorProtection);			
 			
-		if (Engine.argv(0).equals("wave"))
+		save = Math.min(save, fArmorCount);		
+
+		if (save > 0)
 			{
-			// ignore wave commands when crouched
-			if (fIsDucking)
-				return;
-				
-			switch(Integer.parseInt(Engine.argv(1)))
-				{
-				case 0: setAnimation(ANIMATE_FLIPOFF, false); break;
-				case 1: setAnimation(ANIMATE_SALUTE, false); break;
-				case 2: setAnimation(ANIMATE_TAUNT, false); break;
-				case 3: setAnimation(ANIMATE_WAVE, false); break;
-				case 4: setAnimation(ANIMATE_POINT, false); break;
-				default: ;
-				}			
-			}			
-		}		
+			damage -= save;
+			fArmorCount -= save;
+			setPlayerStat(STAT_ARMOR, (short)fArmorCount);
+			spawnDamage(Engine.TE_SPARKS, point, normal, save);
+			}	
+		}
+	
+	if (damage <= 0)
+		return;
+			
+	spawnDamage(Engine.TE_BLOOD, point, normal, damage);
+	setHealth(fHealth - damage);
+	if (fHealth < 0)
+		die(inflictor, attacker, damage, point);
 	}
 /**
  * This method was created by a SmartGuide.
  */
 public void die(GameEntity inflictor, GameEntity attacker, int damage, Vec3 point)
 	{
+	fIsDead = true;
+	
+	obituary(inflictor, attacker);
+		
+	setModelIndex2(0); // remove linked weapon model
+	setPlayerGunIndex(0);
+	fWeapon = null;
+	setSolid(SOLID_NOT);
+	setPlayerPMType(PM_DEAD);
+	calcKillerYaw(inflictor, attacker);
+	writeDeathmatchScoreboardMessage(attacker);
+	Engine.unicast(this, true);
+	setPlayerStat(STAT_LAYOUTS, (short)1);
+	
 	if (fHealth < -40)
 		{	// gib
 		sound(CHAN_BODY, Engine.soundIndex("misc/udeath.wav"), 1, ATTN_NORM, 0);
@@ -545,19 +575,8 @@ public void die(GameEntity inflictor, GameEntity attacker, int damage, Vec3 poin
 	else
 		{	// normal death
 		setAnimation(ANIMATE_DEATH, false);
-		sound(CHAN_VOICE, sexedSoundIndex("death"+((Game.randomInt() % 4)+1)), 1, ATTN_NORM, 0);
+		sound(CHAN_VOICE, sexedSoundIndex("death"+((Game.randomInt() & 0x03) + 1)), 1, ATTN_NORM, 0);
 		}
-	}
-/**
- * The player is disconnecting, clean things up and say goodbye.
- *
- * Be sure you drop all references to this player object.  
- */
-public void disconnect()
-	{
-	Engine.debugLog("Player.disconnect()");
-
-	Engine.configString(Engine.CS_PLAYERSKINS + getPlayerNum(), "");	
 	}
 /**
  * Called for each player after all the entities have 
@@ -570,7 +589,7 @@ public void endFrame()
 	// set model angles from view angles so other things in
 	// the world can tell which direction you are looking
 	//
-	Vec3 newAngles = getViewAngles();
+	Vec3 newAngles = getPlayerViewAngles();
 	newAngles.angleVectors(fForward, fRight, fUp);
 	if (newAngles.x > 180) 
 		newAngles.x = newAngles.x - 360;
@@ -684,6 +703,14 @@ public int getAmmoCount(String ammoName)
 /**
  * This method was created by a SmartGuide.
  * @return int
+ */
+public int getHealth() 
+	{
+	return fHealth;
+	}
+/**
+ * This method was created by a SmartGuide.
+ * @return int
  * @param itemname java.lang.String
  */
 public int getMaxAmmoCount(String ammoName) 
@@ -700,6 +727,14 @@ public int getMaxAmmoCount(String ammoName)
 	}
 /**
  * This method was created by a SmartGuide.
+ * @return int
+ */
+public int getScore() 
+	{
+	return fScore;
+	}
+/**
+ * This method was created by a SmartGuide.
  * @return java.lang.String
  * @param key java.lang.String
  */
@@ -708,6 +743,27 @@ public String getUserInfo(String key)
 	if (fUserInfo == null)
 		return null;
 	return (String) fUserInfo.get(key);		
+	}
+/**
+ * This method was created by a SmartGuide.
+ * @param amount int
+ */
+public boolean heal(int amount, boolean overrideMax) 
+	{
+	if (overrideMax)
+		{
+		setHealth(fHealth + amount);
+		return true;
+		}
+		
+	if (fHealth < fHealthMax)
+		{
+		setHealth(fHealth + Math.min(amount, fHealthMax - fHealth));
+		return true;
+		}
+
+	// we didn't need it		
+	return false;
 	}
 /**
  * This method was created by a SmartGuide.
@@ -761,6 +817,214 @@ private PlayerWeapon nextAvailableWeapon()
 	}
 /**
  * This method was created by a SmartGuide.
+ * @param inflictor q2jgame.GameEntity
+ * @param attacker q2jgame.GameEntity
+ */
+private void obituary(GameEntity inflictor, GameEntity attacker) 
+	{
+	if (attacker == this)
+		{
+		Engine.bprint(Engine.PRINT_MEDIUM, fName + " killed self.\n");
+		fScore--;
+//		self->enemy = NULL;
+		return;
+		}
+
+//	self->enemy = attacker;
+	if (attacker instanceof Player)
+		{
+		Player p = (Player) attacker;
+		Engine.bprint(Engine.PRINT_MEDIUM, fName + " was killed by " + p.fName + "\n");
+		p.fScore++;
+		return;
+		}
+
+	Engine.bprint(Engine.PRINT_MEDIUM, fName + " died.\n");
+	fScore--;
+	}
+/**
+ * This method was created by a SmartGuide.
+ * @param loadgame boolean
+ */
+public void playerBegin(boolean loadgame) 
+	{
+	Engine.debugLog("Player.begin(" + loadgame + ")");
+
+	
+	fStartTime = (float) Game.fGameTime;	
+	setPlayerStat(STAT_HEALTH_ICON, (short)worldspawn.fHealthPic);	
+	setPlayerGravity((short)Game.fGravity.getFloat());
+	spawn();	
+	
+	// send effect
+	Engine.writeByte(Engine.SVC_MUZZLEFLASH);
+	Engine.writeShort(getEntityIndex());
+	Engine.writeByte(Engine.MZ_LOGIN);
+	Engine.multicast(getOrigin(), Engine.MULTICAST_PVS);
+
+	Engine.bprint(Engine.PRINT_HIGH, fName + " entered the game\n");
+
+	// make sure all view stuff is valid
+	endFrame();	
+	}
+/**
+ * This method was created by a SmartGuide.
+ */
+public void playerCommand() 
+	{
+	Engine.debugLog("Player.command()");
+	Engine.dprint("Java Player.command()\n");
+	Engine.dprint("   Engine.args = [" + Engine.args() + "]\n");
+	Engine.dprint("   Engine.argc = " + Engine.argc() + "\n");
+	for (int i = 0; i < Engine.argc(); i++)
+		Engine.dprint("    " + i + ": [" + Engine.argv(i) + "]\n");
+		
+		
+	if (Engine.argc() > 1)
+		{
+		if (Engine.argv(0).equals("use"))
+			{
+			String item = Engine.argv(1);
+			for (int i = 2; i < Engine.argc(); i++)
+				item = item + " " + Engine.argv(i);
+			use(item);
+			}
+			
+		if (Engine.argv(0).equals("wave"))
+			{
+			switch(Integer.parseInt(Engine.argv(1)))
+				{
+				case 0: setAnimation(ANIMATE_FLIPOFF, false); break;
+				case 1: setAnimation(ANIMATE_SALUTE, false); break;
+				case 2: setAnimation(ANIMATE_TAUNT, false); break;
+				case 3: setAnimation(ANIMATE_WAVE, false); break;
+				case 4: setAnimation(ANIMATE_POINT, false); break;
+				default: ;
+				}			
+			}			
+		}		
+	}
+/**
+ * The player is disconnecting, clean things up and say goodbye.
+ *
+ * Be sure you drop all references to this player object.  
+ */
+public void playerDisconnect()
+	{
+	Engine.debugLog("Player.disconnect()");
+	Engine.bprint(Engine.PRINT_HIGH, fName + " disconnected\n");
+
+	// send effect
+	Engine.writeByte(Engine.SVC_MUZZLEFLASH);
+	Engine.writeShort(getEntityIndex());
+	Engine.writeByte(Engine.MZ_LOGOUT);
+	Engine.multicast(getOrigin(), Engine.MULTICAST_PVS);
+
+	setModelIndex(0);
+	setSolid(SOLID_NOT);
+	linkEntity();
+	freeEntity();
+
+//	level.players--;
+
+	Engine.configString(Engine.CS_PLAYERSKINS + getPlayerNum(), "");	
+	}
+public void playerInfoChanged(String userinfo)
+	{
+	Engine.debugLog("Player.userinfoChanged(\"" + userinfo +"\")");
+	// Break the userinfo string up and store the info in a hashtable
+	// The format of the string is:
+	//    \keyword\value\keyword\value\....\keyword\value
+	
+	fUserInfo = new Hashtable();
+	StringTokenizer st = new StringTokenizer(userinfo, "\\");
+	while (st.hasMoreTokens())
+		{
+		String key = st.nextToken();
+		if (st.hasMoreTokens())
+			fUserInfo.put(key, st.nextToken());
+		}
+		
+		
+	// change some settings based on what was in the userinfo string	
+	fName = getUserInfo("name");
+	String s = getUserInfo("skin");
+
+	Engine.configString(Engine.CS_PLAYERSKINS + getPlayerNum(), fName + "\\" + s);			
+	
+	fIsFemale = ((s != null) && (s.length() > 0) && ((s.charAt(0) == 'F') || (s.charAt(0) == 'f')));
+		
+	s = getUserInfo("hand");
+	if (s != null)
+		fHand = Integer.parseInt(s);			
+		
+	s = getUserInfo("fov");
+	if (s != null)
+		setPlayerFOV((new Float(s)).floatValue());			
+	}
+/**
+ * All player entities get a chance to think.  When
+ * a player entity thinks, it has to handle the 
+ * users movement commands by calling pMove();
+ */
+public void playerThink(UserCmd cmd)
+	{
+	if (fInIntermission)
+		return;
+		
+	fOldVelocity = getVelocity();
+	
+	PMoveResults pm = pMove(cmd);
+/*	
+	float speed = getVelocity().length();
+	Vec3 forward = new Vec3();
+	Vec3 right = new Vec3();
+	Vec3 up = new Vec3();
+	getPlayerViewAngles().angleVectors(forward, right, up);
+	setVelocity(getVelocity().scale(0.8F).add(forward.normalize().scale(pm.fCmdForwardMove / 10)));
+*/	
+	if (fIsGrounded && (pm.fGroundEntity == null) && (cmd.fUpMove >= 10) && (pm.fWaterLevel == 0))
+		sound(CHAN_VOICE, sexedSoundIndex("jump1"), 1, ATTN_NORM, 0);
+			
+	fViewHeight = pm.fViewHeight;	
+	fWaterType = pm.fWaterType;
+	fWaterLevel = pm.fWaterLevel;	
+	fIsGrounded = (pm.fGroundEntity != null);	
+
+	if (fIsDead)
+//		setPlayerViewAngles(-15, fKillerYaw++, 40);
+		setPlayerViewAngles(fKillerPitch+=2, fKillerYaw++, fKillerRoll += 3);
+		
+	linkEntity();	
+	
+	// notify all the triggers we're intersecting with
+	NativeEntity[] triggers = boxEntity(Engine.AREA_TRIGGERS);
+	if (triggers != null)
+		{
+		for (int i = 0; i < triggers.length; i++)
+			((GameEntity)triggers[i]).touch(this);
+		}
+	
+	// notify everything the player has collided with
+	if (pm.fTouched != null)
+		{
+		for (int i = 0; i < pm.fTouched.length; i++)
+			((GameEntity)pm.fTouched[i]).touch(this);
+		}
+
+	fOldButtons = fButtons;	
+	fButtons = cmd.fButtons;		
+	fLatchedButtons |= fButtons & ~fOldButtons;	
+	
+	// fire weapon from final position if needed
+	if (((fLatchedButtons & UserCmd.BUTTON_ATTACK) != 0) && (!fWeaponThunk))
+		{
+		fWeaponThunk = true;
+		fWeapon.weaponThink();
+		}
+	}
+/**
+ * This method was created by a SmartGuide.
  * @param foo q2java.Vec3
  */
 public Vec3 projectSource(Vec3 offset, Vec3 forward, Vec3 right) 
@@ -784,6 +1048,23 @@ public void putInventory(String itemName, Object ent)
 	fInventory.put(itemName, ent);
 	}
 /**
+ * Put a dead player back into the game
+ */
+private void respawn() 
+	{
+	// leave a corpse behind
+//	Game.copyToBodyQueue(this);
+	
+	// put a live body back into the game
+	spawn();
+	
+	// add a teleportation effect
+	setEvent(EV_PLAYER_TELEPORT);
+	
+	// hold in place briefly
+	setPlayerTeleportTime((byte)50);
+	}
+/**
  * This method was created by a SmartGuide.
  * @param ammoType java.lang.String
  */
@@ -792,13 +1073,13 @@ public void setAmmoType(String ammoType)
 	fAmmo = (ammoType == null ? null : (AmmoPack) fAmmoBelt.get(ammoType));	
 	if (fAmmo == null)
 		{
-		setStat(STAT_AMMO, (short) 0);
-		setStat(STAT_AMMO_ICON, (short) 0);
+		setPlayerStat(STAT_AMMO, (short) 0);
+		setPlayerStat(STAT_AMMO_ICON, (short) 0);
 		}
 	else
 		{
-		setStat(STAT_AMMO, (short) fAmmo.fAmount);
-		setStat(STAT_AMMO_ICON, (short) fAmmo.fIcon);
+		setPlayerStat(STAT_AMMO, (short) fAmmo.fAmount);
+		setPlayerStat(STAT_AMMO_ICON, (short) fAmmo.fIcon);
 		}	
 	}
 /**
@@ -807,8 +1088,14 @@ public void setAmmoType(String ammoType)
  */
 public void setAnimation(int animation, boolean ignorePriority) 
 	{
+	boolean ducking = ((getPlayerPMFlags() & PMF_DUCKED) != 0);
+	
+	// don't allow gestures when crouching
+	if (ducking && (animation >= ANIMATE_FLIPOFF) && (animation <= ANIMATE_POINT))
+		return;
+		
 	// if we're moving, then use a slightly different animation
-	if ((animation == ANIMATE_BASIC) && fIsRunning)
+	if ((animation == ANIMATE_NORMAL) && fIsRunning)
 		animation += 1;
 		
 	// pain and death can have 3 variations...pick one randomly
@@ -816,7 +1103,7 @@ public void setAnimation(int animation, boolean ignorePriority)
 		animation += Game.randomFloat() * 3;
 		
 	// use different animations when crouching		
-	if ((animation > ANIMATE_LAND) && ((getPMFlags() & PMF_DUCKED) != 0))
+	if ((animation > ANIMATE_LAND) && ducking)
 		animation += 9;
 		
 	int newPriority = fAnims[animation * 3];
@@ -842,65 +1129,92 @@ public void setFrame(int n)
  */
 public void setHealth(int val) 
 	{
-	super.setHealth(val);
-	setStat(STAT_HEALTH, (short)fHealth);
+	fHealth = val;
+	setPlayerStat(STAT_HEALTH, (short)fHealth);
 	}
 /**
  * This method was created by a SmartGuide.
  * @return int
  * @param base java.lang.String
  */
-public int sexedSoundIndex(String base) 
+private int sexedSoundIndex(String base) 
 	{
 	return Engine.soundIndex((fIsFemale ? "player/female/" : "player/male/") + base + ".wav");
 	}
 /**
- * All player entities get a chance to think.  When
- * a player entity thinks, it has to handle the 
- * users movement commands by calling pMove();
+ * spawn the player into the game.
  */
-public void think()
+private void spawn() 
+	{	
+	GameEntity spawnPoint = Game.getFarthestSpawnpoint();		
+	if (spawnPoint == null)
+		Engine.dprint("Couldn't pick spawnpoint\n");
+	else
+		{							
+		Vec3 origin = spawnPoint.getOrigin();
+		Vec3 ang = spawnPoint.getAngles();
+		origin.z += 9;
+		setOrigin(origin);
+		setAngles(ang);
+		setPlayerViewAngles(ang);
+		}
+	
+	// initialize the AmmoBelt
+	fAmmoBelt = new Hashtable();
+	fAmmoBelt.put("shells", new AmmoPack(100, "a_shells"));
+	fAmmoBelt.put("bullets", new AmmoPack(200, "a_bullets"));
+	fAmmoBelt.put("grenades", new AmmoPack(50, "a_grenades"));
+	fAmmoBelt.put("rockets", new AmmoPack(50, "a_rockets"));
+	fAmmoBelt.put("cells", new AmmoPack(200, "a_cells"));
+	fAmmoBelt.put("slugs", new AmmoPack(50, "a_slugs"));
+
+	// initialize the inventory with a Blaster
+	fInventory = new Hashtable();
+	fWeapon = new Blaster();
+	putInventory("blaster", fWeapon);
+	fWeapon.setOwner(this);
+	fWeapon.activate();
+
+	// initialize the armor settings (jacket_armor quality protection)
+	fArmorCount = 0;
+	fArmorMaxCount =  50;
+	fArmorProtection = 0.30F;
+	fArmorEnergyProtection = 0.0F;
+
+	fIsDead = false;		
+	fInIntermission = false;
+	fViewHeight = 22;
+	setSolid(SOLID_BBOX);
+	setPlayerPMType(PM_NORMAL);	
+	setClipmask(Engine.MASK_PLAYERSOLID);	
+	setEffects(0);
+	setSkinNum(getPlayerNum());
+	setModelIndex(255);	// will use the skin specified model
+	setModelIndex2(255);	// custom gun model	
+	setMins(-16, -16, 24);
+	setMaxs(16, 16, 32);
+	setHealth(100);
+	fHealthMax = 100;
+	setAnimation(ANIMATE_NORMAL, true);
+	setPlayerStat(STAT_LAYOUTS, (short) 0); // turn off any scoreboards		
+	linkEntity();		
+	}
+/**
+ * Switch the player into intermission mode.  Their view should be from
+ * a specified intermission spot, their movement should be frozen, and the 
+ * scoreboard displayed.
+ *
+ * @param intermissionSpot The spot the player should be moved do.
+ */
+public void startIntermission(GameEntity intermissionSpot) 
 	{
-	fOldVelocity = getVelocity();
-	
-	PMoveResults pm = pMove();
-	
-	if (fIsGrounded && (pm.fGroundEntity == null) && (pm.fCmdUpMove >= 10) && (pm.fWaterLevel == 0))
-		sound(CHAN_VOICE, sexedSoundIndex("jump1"), 1, ATTN_NORM, 0);
-		
-	
-	fViewHeight = pm.fViewHeight;	
-	fWaterType = pm.fWaterType;
-	fWaterLevel = pm.fWaterLevel;	
-	fIsGrounded = (pm.fGroundEntity != null);	
-
-	linkEntity();	
-	
-	// notify all the triggers we're intersecting with
-	NativeEntity[] triggers = boxEntity(Engine.AREA_TRIGGERS);
-	if (triggers != null)
-		{
-		for (int i = 0; i < triggers.length; i++)
-			((GameEntity)triggers[i]).touch(this);
-		}
-	
-	// notify everything the player has collided with
-	if (pm.fTouched != null)
-		{
-		for (int i = 0; i < pm.fTouched.length; i++)
-			((GameEntity)pm.fTouched[i]).touch(this);
-		}
-
-	fOldButtons = fButtons;	
-	fButtons = pm.fCmdButtons;		
-	fLatchedButtons |= fButtons & ~fOldButtons;	
-	
-	// fire weapon from final position if needed
-	if (((fLatchedButtons & BUTTON_ATTACK) != 0) && (!fWeaponThunk))
-		{
-		fWeaponThunk = true;
-		fWeapon.weaponThink();
-		}
+	setOrigin(intermissionSpot.getOrigin());
+	setPlayerViewAngles(intermissionSpot.getAngles());
+	setPlayerPMType(PM_FREEZE);
+	setPlayerGunIndex(0);	
+	writeDeathmatchScoreboardMessage(null);
+	Engine.unicast(this, true);
+	fInIntermission = true;
 	}
 /**
  * This method was created by a SmartGuide.
@@ -939,39 +1253,6 @@ public void use(String itemName)
 		}
 			
 //	ent.use(this);	---FIXME--
-	}
-public void userinfoChanged(String userinfo)
-	{
-	Engine.debugLog("Player.userinfoChanged(\"" + userinfo +"\")");
-	// Break the userinfo string up and store the info in a hashtable
-	// The format of the string is:
-	//    \keyword\value\keyword\value\....\keyword\value
-	
-	fUserInfo = new Hashtable();
-	StringTokenizer st = new StringTokenizer(userinfo, "\\");
-	while (st.hasMoreTokens())
-		{
-		String key = st.nextToken();
-		if (st.hasMoreTokens())
-			fUserInfo.put(key, st.nextToken());
-		}
-		
-		
-	// change some settings based on what was in the userinfo string	
-	String s = getUserInfo("name");
-	String skin = getUserInfo("skin");
-
-	Engine.configString(Engine.CS_PLAYERSKINS + getPlayerNum(), s + "\\" + skin);			
-	
-	fIsFemale = ((skin != null) && (skin.length() > 0) && ((skin.charAt(0) == 'F') || (skin.charAt(0) == 'f')));
-		
-	s = getUserInfo("hand");
-	if (s != null)
-		fHand = Integer.parseInt(s);			
-		
-	s = getUserInfo("fov");
-	if (s != null)
-		setFOV((new Float(s)).floatValue());				
 	}
 /**
  * This method was created by a SmartGuide.
@@ -1012,4 +1293,63 @@ private void worldEffects()
 	if ((fWaterLevel != 3) && (oldWaterLevel == 3))
 		sound(CHAN_VOICE, Engine.soundIndex("player/gasp2.wav"), 1, ATTN_NORM, 0);
 	}	
+/**
+ * This method was created by a SmartGuide.
+ * @param killer q2jgame.Player
+ */
+private void writeDeathmatchScoreboardMessage(GameEntity killer) 
+	{	
+	StringBuffer sb = new StringBuffer();
+	int i;
+
+	// generate a list of players sorted by score
+	Vector players = new Vector();
+	Enumeration enum = enumeratePlayers();
+	while (enum.hasMoreElements())
+		{
+		Player p = (Player) enum.nextElement();
+		boolean isInserted = false;
+		for (i = 0; i < players.size(); i++)
+			{
+			Player p2 = (Player) players.elementAt(i);
+			if (p.fScore > p2.fScore)
+				{
+				players.insertElementAt(p, i);
+				isInserted = true;
+				break;
+				}
+			}	
+		if (!isInserted)
+			players.addElement(p);				
+		}	
+
+	int playerCount = players.size();
+	if (playerCount > 12)
+		playerCount = 12;		
+		
+	for (i = 0; i < playerCount; i++)
+		{
+		int x = (i >= 6) ? 160 : 0;		// column
+		int y = (32 * (i % 6)) + 32;	// row
+		Player p = (Player) players.elementAt(i);
+		
+		// add a dogtag to the player and his killer
+		String s = null;
+		if (p == this)
+			s = "xv " + (x + 32) + " yv " + y + " picn tag1 ";
+		if (p == killer)
+			s = "xv " + (x + 32) + " yv " + y + " picn tag2 ";
+		if ((s != null) && ((sb.length() + s.length()) < 1024))
+			sb.append(s);
+
+		// add the layout
+		s = "client " + x + " " + y + " " + p.getPlayerNum() + " " + p.fScore + " " + p.getPlayerPing() + " " + (int)((Game.fGameTime - p.fStartTime) / 60) + " "; 
+		// the last 0 should really be the number of minutes the player's been in the game 		 			
+		if ((sb.length() + s.length()) < 1024)
+			sb.append(s);		
+		}
+				
+	Engine.writeByte(Engine.SVC_LAYOUT);
+	Engine.writeString(sb.toString());
+	}
 }

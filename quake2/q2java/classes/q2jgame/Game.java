@@ -15,8 +15,7 @@ public class Game implements NativeGame
 	private static int fFrameCount;
 	public static double fGameTime;
 	
-	// central place to check if this is a deathmatch game
-	public static boolean fIsDeathmatch;
+	private static boolean fInIntermission;
 
 	// handy random number generator
 	private static Random fRandom;
@@ -25,6 +24,10 @@ public class Game implements NativeGame
 	public static CVar fBobUp;	
 	public static CVar fRollAngle;
 	public static CVar fRollSpeed;
+	public static CVar fGravity;
+	
+	private static CVar fFragLimit;
+	private static CVar fTimeLimit;
 	
 	// reference to the world
 	public static GameEntity fWorld;
@@ -315,7 +318,7 @@ public static GameEntity getRandomSpawnpoint()
 	else
 		count -= 2;			
 
-	int selection = randomInt() % count;
+	int selection = (randomInt() & 0x0fff) % count;
 	spawnPoint = null;
 
 	enum = NativeEntity.enumerateEntities("q2jgame.spawn.info_player_deathmatch");
@@ -345,11 +348,17 @@ public void init()
 	// actually initialize the game
 	Engine.debugLog("Game.init()");
 	fRandom = new Random();
+	fFrameCount = 0;
+	fInIntermission = false;
 	
 	// load cvars
 	fBobUp = new CVar("bob_up", "0.005", 0);	
 	fRollAngle = new CVar("sv_rollangle", "2", 0);
 	fRollSpeed = new CVar("sv_rollspeed", "200", 0);	
+	fGravity = new CVar("sv_gravity", "800", 0);	
+	
+	fFragLimit = new CVar("fraglimit", "0", CVar.CVAR_SERVERINFO);
+	fTimeLimit = new CVar("timelimit", "0", CVar.CVAR_SERVERINFO);
 	}
 /**
  * Calculate how far the nearest player away is from a given entity
@@ -376,6 +385,50 @@ public static float nearestPlayerDistance(GameEntity ent)
 
 	return result;
 	}
+/**
+ * Inflict damage on all Players within a certain radius of the inflictor.
+ * This is different from the stock DLL which inflicts damage on all entities, not just players.
+ * @param inflictor q2jgame.GameEntity
+ * @param attacker q2jgame.GameEntity
+ * @param damage float
+ * @param ignore q2jgame.GameEntity
+ * @param radius float
+ */
+public static void radiusDamage(GameEntity inflictor, GameEntity attacker, float damage, GameEntity ignore, float radius) 
+	{
+	Enumeration enum = NativeEntity.enumeratePlayers();
+	Vec3 point = inflictor.getOrigin();
+	Vec3 v = new Vec3();
+	Vec3 dir;
+	Vec3 normal = new Vec3();
+	while (enum.hasMoreElements())
+		{		
+		Player p = (Player) enum.nextElement();
+
+		if (p == ignore)
+			continue;
+			
+		v.copyFrom(point);
+		v.subtract(p.getOrigin());
+		if (v.length() > radius)
+			continue;
+
+		// I don't claim to understand these next 4 lines....
+		v = p.getMins().add(p.getMaxs());
+		dir = p.getOrigin();
+		v = dir.vectorMA(0.5F, v).subtract(point);							
+		int damagePoints = (int)(damage - 0.5 * v.length());
+
+		if (p == attacker)
+			damagePoints = damagePoints / 2;
+			
+		if (damagePoints > 0)			
+			{
+			dir.subtract(point);
+			p.damage(inflictor, attacker, dir, point, normal, damagePoints, damagePoints, GameEntity.DAMAGE_RADIUS, Engine.TE_NONE);			
+			}
+		}	
+	}		
 /**
  * This method was created by a SmartGuide.
  * @return int
@@ -409,6 +462,9 @@ public void runFrame()
 	fFrameCount++;
 	fGameTime = fFrameCount * Engine.SECONDS_PER_FRAME;
 
+	if (fInIntermission)
+		return;
+
 	// notify all the players we're beginning a frame
 	enum = new PlayerEnumeration();
 	while (enum.hasMoreElements())
@@ -421,6 +477,12 @@ public void runFrame()
 		obj = enum.nextElement();
 		if (!(obj instanceof Player))
 			((GameEntity) obj).runFrame();
+		}
+
+	if (timeToQuit())
+		{
+		startIntermission();
+		return;
 		}
 
 	// notify all the players we're ending a frame
@@ -520,6 +582,81 @@ public void spawnEntities(String mapname, String entString, String spawnPoint)
 		Engine.dprint(e.getMessage() + "\n");
 		Engine.debugLog(e.getMessage());
 		}
+	}
+/**
+ * Pick an intermission spot, and notify each player.
+ */
+public void startIntermission() 
+	{
+	Enumeration enum;
+	Vector v = new Vector();
+	
+	// gather list of info_player_intermission entities
+	enum = NativeEntity.enumerateEntities("q2jgame.spawn.info_player_intermission");
+	while (enum.hasMoreElements())
+		v.addElement(enum.nextElement());
+
+	// if there weren't any intermission spots, try for info_player_start spots
+	if (v.size() < 1)
+		{
+		enum = NativeEntity.enumerateEntities("q2jgame.spawn.info_player_start");
+		while (enum.hasMoreElements())
+			v.addElement(enum.nextElement());		
+		}
+
+	// still no spots found? try for info_player_deathmatch
+	if (v.size() < 1)
+		{
+		enum = NativeEntity.enumerateEntities("q2jgame.spawn.info_player_deathmatch");
+		while (enum.hasMoreElements())
+			v.addElement(enum.nextElement());		
+		}
+
+	// randomly pick something from the list
+	int i = (randomInt() & 0x0fff) % v.size();
+	GameEntity spot = (GameEntity) v.elementAt(i);
+	
+	// notify each player
+	enum = NativeEntity.enumeratePlayers();
+	while (enum.hasMoreElements())
+		{
+		Player p = (Player) enum.nextElement();
+		p.startIntermission(spot);
+		}
+		
+	fInIntermission = true;		
+	}
+/**
+ * Check the timelimit and fraglimit values and decide
+ * whether to end the level or not.
+ * @return boolean true if it's time to end the level
+ */
+private static boolean timeToQuit() 
+	{
+	float quitTime = fTimeLimit.getFloat() * 60;
+
+	if ((quitTime > 0) && (fGameTime > quitTime))
+		{
+		Engine.bprint(Engine.PRINT_HIGH, "Timelimit hit.\n");		
+		return true;
+		}
+		
+	int fragLimit = (int) fFragLimit.getFloat();
+	if (fragLimit < 1)
+		return false;
+		
+	Enumeration enum = NativeEntity.enumeratePlayers();
+	while (enum.hasMoreElements())
+		{
+		Player p = (Player) enum.nextElement();
+		if (p.getScore() > fragLimit)
+			{
+			Engine.bprint(Engine.PRINT_HIGH, "Timelimit hit.\n");		
+			return true;
+			}
+		}		
+		
+	return false;		
 	}
 public void writeGame(String filename)
 	{

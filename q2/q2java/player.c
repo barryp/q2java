@@ -109,7 +109,6 @@ static void java_clientBegin(edict_t *ent, qboolean loadgame)
 	int index = ent - ge.edicts;
 
 	javaPlayer = Entity_getEntity(index);
-	debugLog("About to call playerBegin, player = %i\n", javaPlayer);
 
 	(*java_env)->CallVoidMethod(java_env, javaPlayer, method_player_begin, loadgame);	
 	CHECK_EXCEPTION();

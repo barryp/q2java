@@ -28,7 +28,7 @@ public void fire()
 	int		damage = 6;
 	int		kick = 12;
 
-	v = fOwner.getViewAngles();
+	v = fOwner.getPlayerViewAngles();
 	v.angleVectors(forward, right, null);
 
 	fOwner.fKickOrigin.copyFrom(forward).scale(-2);

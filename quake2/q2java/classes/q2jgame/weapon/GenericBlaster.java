@@ -35,7 +35,7 @@ public void fire()
 	if (is_quad)
 		damage *= 4;
 */		
-	fOwner.getViewAngles().angleVectors(forward, right, null);
+	fOwner.getPlayerViewAngles().angleVectors(forward, right, null);
 	offset.add(fBlasterOffset);
 	Vec3 start = fOwner.projectSource(offset, forward, right);
 	

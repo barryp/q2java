@@ -10,7 +10,7 @@ public class Hyperblaster extends GenericBlaster
 	private static int[] PAUSE_FRAMES = new int[] {0};
 	private static int[] FIRE_FRAMES = new int[] {6, 7, 8, 9, 10, 11, 0};		
 	
-public Hyperblaster() throws GameException
+public Hyperblaster()
 	{
 	super("cells", "models/weapons/v_hyperb/tris.md2",
 		5, 20, 49, 53, PAUSE_FRAMES, FIRE_FRAMES, 
@@ -24,23 +24,23 @@ public void fire()
 	float rotation;
 	int weaponSound = Engine.soundIndex("weapons/hyprbl1a.wav");
 
-	if ((fOwner.fButtons & Player.BUTTON_ATTACK) == 0)
+	if ((fOwner.fButtons & UserCmd.BUTTON_ATTACK) == 0)
 		incWeaponFrame();
 	else
 	
 		{
-/*
-		if (! ent->client->pers.inventory[ent->client->ammo_index] )
+
+		if (!isEnoughAmmo())
 			{
-			if (level.time >= ent->pain_debounce_time)
-				{
-				gi.sound(ent, CHAN_VOICE, gi.soundindex("weapons/noammo.wav"), 1, ATTN_NORM, 0);
-				ent->pain_debounce_time = level.time + 1;
-				}
-			NoAmmoWeaponChange (ent);
+//			if (level.time >= ent->pain_debounce_time)
+//				{
+//				gi.sound(ent, CHAN_VOICE, gi.soundindex("weapons/noammo.wav"), 1, ATTN_NORM, 0);
+//				ent->pain_debounce_time = level.time + 1;
+//				}
+			fOwner.changeWeapon();
 			}
 		else
-*/		
+		
 			{
 			rotation = (float)((getWeaponFrame() - 5) * (Math.PI / 3));
 			fBlasterOffset.x = (float)(-4 * Math.sin(rotation));
@@ -52,8 +52,8 @@ public void fire()
 			else
 				fEffect = 0;
 
-			super.fire();				
-//			ent->client->pers.inventory[ent->client->ammo_index] -= ent->client->pers.weapon->quantity;
+			super.fire();			
+			fOwner.alterAmmoCount(-1);				
 			}
 
 		incWeaponFrame();

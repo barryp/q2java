@@ -15,13 +15,13 @@ public light(String[] spawnArgs) throws GameException
 	String s = getSpawnArg("style");
 	if (s != null)	
 		style = Integer.parseInt(s);
-		
+/*		
 	if (style > 0)
 		Engine.debugLog("Styled Light: " + this + "\n");		
 		
 	if (fTargetName != null)
 		Engine.debugLog("Targeted Light: " + this + "\n");		
-		
+*/		
 /*		
 	// no targeted lights in deathmatch, because they cause global messages
 	// ---FIXME--- ? this "if" statement looks whacked...but that's what id wrote

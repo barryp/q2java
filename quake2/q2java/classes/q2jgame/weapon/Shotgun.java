@@ -33,7 +33,7 @@ public void fire()
 		return;
 		}
 
-	fOwner.getViewAngles().angleVectors(forward, right, null);
+	fOwner.getPlayerViewAngles().angleVectors(forward, right, null);
 	fOwner.fKickOrigin.copyFrom(forward).scale(-2);
 	fOwner.fKickAngles.x = -2;
 

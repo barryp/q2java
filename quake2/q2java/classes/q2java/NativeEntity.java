@@ -18,6 +18,8 @@ public abstract class NativeEntity
 	private static int fMaxPlayers; // set by DLL
 	private static NativeEntity[] fEntityArray;
 		
+	private static UserCmd fUserCmd = new UserCmd();			
+		
 	private int fEntityIndex;
 	private NativeEntity fOwner;
 	
@@ -174,7 +176,7 @@ public abstract class NativeEntity
 	private final static int INT_S_SKINNUM		= 9;
 	private final static int INT_S_EFFECTS		= 10;
 	private final static int INT_S_RENDERFX		= 11;
-//	private final static int INT_S_SOLID			= 12; // is set by linkentity()
+	private final static int INT_S_SOLID			= 12;
 	private final static int INT_S_SOUND			= 13;
 	private final static int INT_S_EVENT			= 14;
 	
@@ -187,6 +189,8 @@ public abstract class NativeEntity
 	
 	private final static int BYTE_CLIENT_PS_PMOVE_PMFLAGS		= 100;
 	private final static int BYTE_CLIENT_PS_PMOVE_TELEPORTTIME	= 101;
+	
+	private final static int SHORT_CLIENT_PS_PMOVE_GRAVITY		= 100;
 	
 	// private flags for setFloat0()
 	private final static int FLOAT_CLIENT_PS_FOV 		= 100;
@@ -341,10 +345,6 @@ public final int getEntityIndex()
 
 private native static int getInt(int index, int fieldNum);
 
-public Vec3 getKickAngles()
-	{
-	return getVec3(fEntityIndex, VEC3_CLIENT_PS_KICKANGLES);
-	}
 public Vec3 getMaxs()
 	{
 	return getVec3(fEntityIndex, VEC3_MAXS);
@@ -369,9 +369,9 @@ public NativeEntity getOwner()
 	// reference
 	return fOwner;
 	}
-public int getPing()
+public Vec3 getPlayerKickAngles()
 	{
-	return getInt(fEntityIndex, INT_CLIENT_PING);
+	return getVec3(fEntityIndex, VEC3_CLIENT_PS_KICKANGLES);
 	}
 /**
  * Player Only
@@ -383,10 +383,21 @@ public int getPlayerNum()
 	{
 	return getEntityIndex() - 1;
 	}
-public byte getPMFlags()
+public int getPlayerPing()
+	{
+	return getInt(fEntityIndex, INT_CLIENT_PING);
+	}
+public byte getPlayerPMFlags()
 	{
 	return getByte(fEntityIndex, BYTE_CLIENT_PS_PMOVE_PMFLAGS);
 	}
+public Vec3 getPlayerViewAngles()
+	{
+	return getVec3(fEntityIndex, VEC3_CLIENT_PS_VIEWANGLES);
+	}
+
+private native static short getShort(int index, int fieldNum);
+
 public Vec3 getSize()
 	{
 	return getVec3(fEntityIndex, VEC3_SIZE);
@@ -402,10 +413,6 @@ public Vec3 getVelocity()
 	{
 	return getVec3(fEntityIndex, VEC3_VELOCITY);
 	}
-public Vec3 getViewAngles()
-	{
-	return getVec3(fEntityIndex, VEC3_CLIENT_PS_VIEWANGLES);
-	}
 public void linkEntity()
 	{
 	linkEntity0(fEntityIndex);
@@ -416,15 +423,21 @@ private native static void linkEntity0(int index);
 /**
  * Player Only
  */
-public PMoveResults pMove() 
+public PMoveResults pMove(UserCmd cmd) 
 	{
-	return pMove0(getEntityIndex());
+	return pMove0(getEntityIndex(), cmd.fMsec, cmd.fButtons, 
+		cmd.fAngles0, cmd.fAngles1, cmd.fAngles2, 
+		cmd.fForwardMove, cmd.fSideMove, cmd.fUpMove,
+		cmd.fImpulse, cmd.fLightLevel);
 	}
 
 /**
  * Player Only
  */
-private static native PMoveResults pMove0(int index);
+private static native PMoveResults pMove0(int index, byte msec, byte buttons,
+	short angle0, short angle1, short angle2,
+	short forward, short side, short up,
+	byte impulse, byte lightlevel);
 
 public void positionedSound(Vec3 origin, int channel, int soundindex, float volume, float attenuation, float timeofs)
 	{   
@@ -437,17 +450,6 @@ public void setAngles(float pitch, float yaw, float roll)
 public void setAngles(Vec3 v)
 	{
 	setVec3(fEntityIndex, VEC3_S_ANGLES, v.x, v.y, v.z);
-	}
-/**
- * Player Only
- * @param r float
- * @param g float
- * @param b float
- * @param a float
- */
-public void setBlend(float r, float g, float b, float a) 
-	{
-	setFloat0(getEntityIndex(), FLOAT_CLIENT_PS_BLEND, r, g, b, a);
 	}
 
 //
@@ -474,48 +476,9 @@ public void setEvent(int val)
  */
 private native static void setFloat0(int index, int fieldNum, float r, float g, float b, float a);
 
-/**
- * Player Only
- * @param r float
- * @param g float
- * @param b float
- * @param a float
- */
-public void setFOV(float v) 
-	{
-	setFloat0(getEntityIndex(), FLOAT_CLIENT_PS_FOV, v, 0, 0, 0);
-	}
 public void setFrame(int val)
 	{
 	setInt(fEntityIndex, INT_S_FRAME, val);
-	}
-/**
- * Player Only
- */
-public void setGunAngles(Vec3 v)
-	{
-	setVec3(getEntityIndex(), VEC3_CLIENT_PS_GUNANGLES, v.x, v.y, v.z);
-	}
-/**
- * Player Only
- */
-public void setGunFrame(int val)
-	{
-	setInt(getEntityIndex(), INT_CLIENT_PS_GUNFRAME, val);
-	}
-/**
- * Player Only
- */
-public void setGunIndex(int val)
-	{
-	setInt(getEntityIndex(), INT_CLIENT_PS_GUNINDEX, val);
-	}
-/**
- * Player Only
- */
-public void setGunOffset(Vec3 v)
-	{
-	setVec3(getEntityIndex(), VEC3_CLIENT_PS_GUNOFFSET, v.x, v.y, v.z);
 	}
 
 //
@@ -524,13 +487,6 @@ public void setGunOffset(Vec3 v)
 //
 private native static void setInt(int index, int fieldNum, int val);
 
-/**
- * Player Only
- */
-public void setKickAngles(Vec3 v)
-	{
-	setVec3(getEntityIndex(), VEC3_CLIENT_PS_KICKANGLES, v.x, v.y, v.z);
-	}
 public void setMaxs(float x, float y, float z)
 	{
 	setVec3(fEntityIndex, VEC3_MAXS, x, y, z);
@@ -586,21 +542,123 @@ public void setOwner(NativeEntity ent)
 	// call to set it, rather than keep and return our own
 	// reference
 	}
-public void setPMType(int val)
+/**
+ * Player Only
+ * @param r float
+ * @param g float
+ * @param b float
+ * @param a float
+ */
+public void setPlayerBlend(float r, float g, float b, float a) 
+	{
+	setFloat0(getEntityIndex(), FLOAT_CLIENT_PS_BLEND, r, g, b, a);
+	}
+/**
+ * Player Only
+ * @param r float
+ * @param g float
+ * @param b float
+ * @param a float
+ */
+public void setPlayerFOV(float v) 
+	{
+	setFloat0(getEntityIndex(), FLOAT_CLIENT_PS_FOV, v, 0, 0, 0);
+	}
+public void setPlayerGravity(short val)
+	{
+	setShort(fEntityIndex, SHORT_CLIENT_PS_PMOVE_GRAVITY, val);
+	}
+/**
+ * Player Only
+ */
+public void setPlayerGunAngles(Vec3 v)
+	{
+	setVec3(getEntityIndex(), VEC3_CLIENT_PS_GUNANGLES, v.x, v.y, v.z);
+	}
+/**
+ * Player Only
+ */
+public void setPlayerGunFrame(int val)
+	{
+	setInt(getEntityIndex(), INT_CLIENT_PS_GUNFRAME, val);
+	}
+/**
+ * Player Only
+ */
+public void setPlayerGunIndex(int val)
+	{
+	setInt(getEntityIndex(), INT_CLIENT_PS_GUNINDEX, val);
+	}
+/**
+ * Player Only
+ */
+public void setPlayerGunOffset(Vec3 v)
+	{
+	setVec3(getEntityIndex(), VEC3_CLIENT_PS_GUNOFFSET, v.x, v.y, v.z);
+	}
+/**
+ * Player Only
+ */
+public void setPlayerKickAngles(Vec3 v)
+	{
+	setVec3(getEntityIndex(), VEC3_CLIENT_PS_KICKANGLES, v.x, v.y, v.z);
+	}
+public void setPlayerPMType(int val)
 	{
 	setInt(fEntityIndex, INT_CLIENT_PS_PMOVE_PMTYPE, val);
 	}
 /**
  * Player Only
  */
-public void setRDFlags(int val)
+public void setPlayerRDFlags(int val)
 	{
 	setInt(getEntityIndex(), INT_CLIENT_PS_RDFLAGS, val);
+	}
+/**
+ * Player Only
+ * @param fieldindex int
+ * @param value int
+ */
+public void setPlayerStat(int fieldindex, short value) 
+	{
+	setStat0(getEntityIndex(), fieldindex, value);
+	}
+public void setPlayerTeleportTime(byte val)
+	{
+	setByte(fEntityIndex, BYTE_CLIENT_PS_PMOVE_TELEPORTTIME, val);
+	}
+/**
+ * Player Only
+ */
+public void setPlayerViewAngles(float nx, float ny, float nz)
+	{
+	setVec3(getEntityIndex(), VEC3_CLIENT_PS_VIEWANGLES, nx, ny, nz);
+	}
+/**
+ * Player Only
+ */
+public void setPlayerViewAngles(Vec3 v)
+	{
+	setVec3(getEntityIndex(), VEC3_CLIENT_PS_VIEWANGLES, v.x, v.y, v.z);
+	}
+/**
+ * Player Only
+ */
+public void setPlayerViewOffset(Vec3 v)
+	{
+	setVec3(getEntityIndex(), VEC3_CLIENT_PS_VIEWOFFSET, v.x, v.y, v.z);
 	}
 public void setRenderFX(int val)
 	{
 	setInt(fEntityIndex, INT_S_RENDERFX, val);
 	}
+
+//
+// protected so that NativePlayer can call on it to set a few fields
+// in the client structures
+//
+private native static void setShort(int index, int fieldNum, short val);
+
 /**
  * Player Only
  */
@@ -616,15 +674,6 @@ public void setSound(int val)
 	{
 	setInt(fEntityIndex, INT_S_SOUND, val);
 	}
-/**
- * Player Only
- * @param fieldindex int
- * @param value int
- */
-public void setStat(int fieldindex, short value) 
-	{
-	setStat0(getEntityIndex(), fieldindex, value);
-	}
 
 /**
  * Player only
@@ -638,37 +687,12 @@ public void setSVFlags(int val)
 	{
 	setInt(fEntityIndex, INT_SVFLAGS, val);
 	}
-public void setTeleportTime(byte val)
-	{
-	setByte(fEntityIndex, BYTE_CLIENT_PS_PMOVE_TELEPORTTIME, val);
-	}
 
 private native static void setVec3(int index, int fieldNum, float x, float y, float z);
 
 public void setVelocity(Vec3 v)
 	{
 	setVec3(fEntityIndex, VEC3_VELOCITY, v.x, v.y, v.z);
-	}
-/**
- * Player Only
- */
-public void setViewAngles(float nx, float ny, float nz)
-	{
-	setVec3(getEntityIndex(), VEC3_CLIENT_PS_VIEWANGLES, nx, ny, nz);
-	}
-/**
- * Player Only
- */
-public void setViewAngles(Vec3 v)
-	{
-	setVec3(getEntityIndex(), VEC3_CLIENT_PS_VIEWANGLES, v.x, v.y, v.z);
-	}
-/**
- * Player Only
- */
-public void setViewOffset(Vec3 v)
-	{
-	setVec3(getEntityIndex(), VEC3_CLIENT_PS_VIEWOFFSET, v.x, v.y, v.z);
 	}
 public void sound(int channel, int soundindex, float volume, float attenuation, float timeofs)
 	{   
