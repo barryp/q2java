@@ -13,12 +13,12 @@ import q2java.core.event.*;
 import q2java.baseq2.*;
 
 /**
- * This class provides the framework for a Quake II Java game. 
- * All the fields are static, so that objects can refer
+ * This class provides the framework for a Q2Java game. 
+ * Most of the fields and methods are static, so that objects can refer
  * to them without having to keep a reference to the solitary
- * Game object that's instantiated.
+ * Game object that's instantiated.  The non-static methods are used by
+ * the underlying DLL and JVM - you'll generally want to leave those alone.
  *
- * Updated by leighd 04/11/99
  * @author Barry Pederson 
  */
 
@@ -46,12 +46,12 @@ public class Game implements GameListener, JavaConsoleListener
 	
 	// leighd 04/07/99
 	// Manage gamelets and game classes
-	protected static GameClassFactory gClassFactory = null;
-	protected static GameletManager gGameletManager = null;
+	private static GameClassFactory gClassFactory = null;
+	private static GameletManager gGameletManager = null;
   
 	// Track the current player class and the gamelet it came from
-	protected static Class	 gPlayerClass;
-	protected static Gamelet gPlayerGamelet;
+	private static Class	gPlayerClass;
+	private static Gamelet	gPlayerGamelet;
 
 	// Track a list of packages to search for partially specified classnames
 	private static Vector gPackagePath;
@@ -71,9 +71,6 @@ public class Game implements GameListener, JavaConsoleListener
 	// DOM Documents describing initial info for the current level
 	// and current game status
 	private static Hashtable gDocumentHashtable;
-//	private static Document gLevelDocument;
-//	private static Document gStatusDocument;
-//	private static Element gStatusDocumentRoot;
 
 	// remember the name of what we're playing.
 	private static String gCurrentMapName;
@@ -101,6 +98,32 @@ private Game()
 	{
 	}
 /**
+ * Add a new document to the Game.
+ * @param docName java.lang.String
+ * @param rootElementName java.lang.String
+ * @return The document that was created
+ * @see #getDocument
+ * @see #removeDocument
+ */
+public static Document addDocument(String docName, String rootElementName) 
+	{
+	Document doc = XMLTools.createXMLDocument(rootElementName);
+	gDocumentHashtable.put(docName, doc);
+	
+	return doc;
+	}
+/**
+ * Add an existing DOM document to the Game, under a given name.
+ * @param docName java.lang.String
+ * @param doc org.w3c.dom.Document
+ * @see #getDocument
+ * @see #removeDocument
+ */
+public static void addDocument(String docName, Document doc) 
+	{
+	gDocumentHashtable.put(docName, doc);
+	}
+/**
  * Add a game listener.
  * @param pl q2jgame.GameListener
  */
@@ -113,6 +136,7 @@ public static void addGameStatusListener(GameStatusListener gsl)
  * @param key Key to reference the Vector that the object is added to.
  * @param value Any object
  * @return the Vector that the object was added to.
+ * @see #getLevelRegistryList
  */
 public static Vector addLevelRegistry(Object key, Object value) 
 	{
@@ -215,7 +239,7 @@ public static void addServerFrameListener(ServerFrameListener f, int phase, floa
 		gFrameEnd.addServerFrameListener(f, delay, interval);
 	}
 /**
- * Handle broadcast print messages.
+ * Broadcast a print messages.
  * @param flags int
  * @param msg java.lang.String
  */
@@ -294,6 +318,8 @@ public static String getCurrentMapName()
  * Get one of the DOM documents the Game keeps internally.
  * @return org.w3c.dom.Document
  * @param documentKey Some known documents are "q2java.level" and "q2java.status"
+ * @see #addDocument
+ * @see #removeDocument
  */
 public static Document getDocument(String documentKey) 
 	{
@@ -320,6 +346,7 @@ public static float getGameTime()
  * Fetch a list of objects that were registered under a given key.
  * @return Vector containing registered objects
  * @param key java.lang.Object
+ * @see #addLevelRegistry
  */
 public static Vector getLevelRegistryList(Object key) 
 	{
@@ -461,8 +488,8 @@ public void init()
 	setClassFactory(new DefaultClassFactory());		
 
 	gDocumentHashtable = new Hashtable();
-	Document statusDoc = XMLTools.createXMLDocument("status");
-	gDocumentHashtable.put("q2java.status", statusDoc);
+	
+	Document statusDoc = addDocument("q2java.status", "status");
 	Element root = statusDoc.getDocumentElement();
 	root.setAttribute("game", "Quake2");
 	
@@ -534,7 +561,7 @@ public static boolean isResourceAvailable(String basename, String key)
 		}				
 	}
 /**
- * Relay stuff sent through System.out and System.err.
+ * Called by the JVM when output is sent to System.out and System.err.
  * @param s java.lang.String
  */
 public void javaConsoleOutput(String s) 
@@ -660,6 +687,17 @@ public void readGame(String filename)
 public void readLevel(String filename)
 	{
 	gGameStatusSupport.fireEvent( GameStatusEvent.GAME_READLEVEL, filename );
+	}
+/**
+ * Remove a document from the Game.
+ * @param docName java.lang.String
+ * @return the document that was removed, or null if not found.
+ * @see #addDocument
+ * @see #getDocument
+ */
+public static Document removeDocument(String docName) 
+	{
+	return (Document) gDocumentHashtable.remove(docName);
 	}
 /**
  * Remove a game listener.
@@ -1057,7 +1095,8 @@ public static void startIntermission()
 	gGameStatusSupport.fireEvent(GameStatusEvent.GAME_INTERMISSION);	
 	}
 /**
- * Spawn entities into the Quake II environment.
+ * Called by the DLL at the beginning of a level.  It should spawn 
+ * entities into the Quake II environment.
  * This methods parses the entString passed to it, and looks
  * for Java classnames equivalent to the classnames specified 
  * in the entString, and instantiates instances of them, with
@@ -1093,7 +1132,7 @@ public void startLevel(String mapname, String entString, String spawnPoint)
 	
 	// create the inital, mostly empty level document (don't pass the entString)
 	Document levelDoc = GameUtil.buildLevelDocument(mapname, null, spawnPoint);
-	gDocumentHashtable.put("q2java.level", levelDoc);
+	addDocument("q2java.level", levelDoc);
 		
 	// let interested objects know we're building a new level
 	// document, and they may add on to it.
