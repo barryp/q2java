@@ -301,9 +301,20 @@ Older gamelets
         create somthing that looks and mostly acts like a player, even though 
         nobody's actually controlling it though a Q2 client program.
 
-        You have to be running Quake2 in server mode (as opposed to         
-        single-player mode) in order to spawn bots.  Once the game is 
-        started, drop down the console and type something like:
+              -------------------------------------------
+              You have to be running Quake2 in server mode 
+              (as opposed to single-player mode) in order 
+              to spawn bots.  So be sure to add 
+
+                 +set deathmatch 1
+
+              to your startup commandline, otherwise a 
+              Java exception will be thrown when you try
+              to create a new testbot.
+              --------------------------------------------
+
+        Once the game is started, drop down the console and type 
+        something like:
 
             sv addgamelet barryp.testbot.GameModule fred             
             sv addgamelet barryp.testbot.GameModule barney
