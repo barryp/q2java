@@ -5,13 +5,14 @@ package q2java;
  * A subclass of java.io.OutputStream that writes data to the Quake2 
  * console.  Useful for calling the printStackTrace() method on exceptions.
  * 
+ * @author Barry Pederson 
  */
 
 import java.io.*;
 
 class ConsoleOutputStream extends java.io.OutputStream 
 	{
-	private static boolean fIsRedirected;
+	private static boolean gIsRedirected;
 	
 /**
  * Redirects the System.out and System.err printstreams to 
@@ -19,12 +20,12 @@ class ConsoleOutputStream extends java.io.OutputStream
  */
 private static void setConsole( ) 
 	{
-	if (!fIsRedirected)
+	if (!gIsRedirected)
 		{
 		PrintStream ps = new PrintStream(new ConsoleOutputStream());
 		System.setOut(ps);
 		System.setErr(ps);
-		fIsRedirected = true;
+		gIsRedirected = true;
 		}
 	}
 

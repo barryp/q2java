@@ -1,6 +1,11 @@
 
 package q2java;
 
+/**
+ * Enumerate through Game entities.
+ *
+ * @author Barry Pederson
+ */
 class EntityEnumeration implements java.util.Enumeration
 	{
 	private NativeEntity fNext;

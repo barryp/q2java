@@ -7,8 +7,8 @@ import q2jgame.*;
 public class SuperShotgun extends PlayerWeapon
 	{
 	// all shotgun objects will share these arrays
-	private static int[] PAUSE_FRAMES = new int[] {29, 42, 57, 0};
-	private static int[] FIRE_FRAMES = new int[] {7, 0};		
+	private final static int[] PAUSE_FRAMES = new int[] {29, 42, 57, 0};
+	private final static int[] FIRE_FRAMES = new int[] {7, 0};		
 	
 public SuperShotgun()
 	{
@@ -31,7 +31,7 @@ public void fire()
 	v = fOwner.getPlayerViewAngles();
 	v.angleVectors(forward, right, null);
 
-	fOwner.fKickOrigin.copyFrom(forward).scale(-2);
+	fOwner.fKickOrigin.set(forward).scale(-2);
 	fOwner.fKickAngles.x = -2;
 
 	offset = new Vec3(0, 8,  fOwner.fViewHeight - 8);

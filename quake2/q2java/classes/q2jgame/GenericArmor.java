@@ -1,10 +1,13 @@
 
-package q2jgame.spawn;
+package q2jgame;
 
 import q2java.*;
-import q2jgame.*;
-
-abstract class GenericArmor extends GenericItem
+/**
+ * Superclass for all armor entities lying around in the world.
+ *
+ * @author Barry Pederson
+ */
+public abstract class GenericArmor extends GenericItem
 	{
 	private int fCount;
 	private int fMaxCount;
@@ -19,7 +22,7 @@ public GenericArmor(String[] spawnArgs, String modelName, String pickupSound, St
 	if (Game.isDMFlagSet(Game.DF_NO_ARMOR))
 		{
 		freeEntity();
-		throw new GameException("armor items inhibited");
+		throw new InhibitedException("armor items inhibited");
 		}	
 	
 	setEffects(EF_ROTATE); // all armor rotates

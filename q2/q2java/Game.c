@@ -5,7 +5,7 @@
 static jclass class_Game;
 static jmethodID method_Game_init;
 static jmethodID method_Game_shutdown;
-static jmethodID method_Game_spawnEntities;
+static jmethodID method_Game_startLevel;
 static jmethodID method_Game_writeGame;
 static jmethodID method_Game_readGame;
 static jmethodID method_Game_writeLevel;
@@ -55,7 +55,7 @@ void Game_javaInit()
 
 	method_Game_init = (*java_env)->GetMethodID(java_env, class_Game, "init", "()V");
 	method_Game_shutdown = (*java_env)->GetMethodID(java_env, class_Game, "shutdown", "()V");
-	method_Game_spawnEntities = (*java_env)->GetMethodID(java_env, class_Game, "spawnEntities", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V");
+	method_Game_startLevel = (*java_env)->GetMethodID(java_env, class_Game, "startLevel", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V");
 	method_Game_writeGame = (*java_env)->GetMethodID(java_env, class_Game, "writeGame", "(Ljava/lang/String;)V");
 	method_Game_readGame = (*java_env)->GetMethodID(java_env, class_Game, "readGame", "(Ljava/lang/String;)V");
 	method_Game_writeLevel = (*java_env)->GetMethodID(java_env, class_Game, "writeLevel", "(Ljava/lang/String;)V");
@@ -106,7 +106,7 @@ static void java_shutdown(void)
 	}
 
 
-static void java_spawnEntities(char *mapname, char *entString, char *spawnpoint)
+static void java_startLevel(char *mapname, char *entString, char *spawnpoint)
 	{
 	jstring jmapname;
 	jstring jentString;
@@ -120,7 +120,7 @@ static void java_spawnEntities(char *mapname, char *entString, char *spawnpoint)
 	jentString = (*java_env)->NewStringUTF(java_env, entString);
 	jspawnpoint = (*java_env)->NewStringUTF(java_env, spawnpoint);
 
-	(*java_env)->CallVoidMethod(java_env, object_Game, method_Game_spawnEntities, jmapname, jentString, jspawnpoint);
+	(*java_env)->CallVoidMethod(java_env, object_Game, method_Game_startLevel, jmapname, jentString, jspawnpoint);
 	CHECK_EXCEPTION();
 
 	global_frameCount = 0;
@@ -201,7 +201,7 @@ void Game_gameInit()
 	{
 	ge.Init = java_init;
 	ge.Shutdown = java_shutdown;
-	ge.SpawnEntities = java_spawnEntities;
+	ge.SpawnEntities = java_startLevel;
 
 	ge.WriteGame = java_writeGame;
 	ge.ReadGame = java_readGame;

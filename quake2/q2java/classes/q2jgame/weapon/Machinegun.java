@@ -7,8 +7,8 @@ import q2jgame.*;
 public class Machinegun extends PlayerWeapon
 	{
 	// all machinegun objects will share these arrays
-	private static int[] PAUSE_FRAMES = new int[] {23, 45, 0};
-	private static int[] FIRE_FRAMES = new int[] {4, 5, 0};			
+	private final static int[] PAUSE_FRAMES = new int[] {23, 45, 0};
+	private final static int[] FIRE_FRAMES = new int[] {4, 5, 0};			
 		
 	private int fShotCount;
 	

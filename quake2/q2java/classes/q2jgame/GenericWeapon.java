@@ -1,11 +1,14 @@
 
-package q2jgame.spawn;
+package q2jgame;
 
 import q2java.*;
-import q2jgame.*;
-import q2jgame.weapon.*;
-
-abstract class GenericWeapon extends GenericItem
+/**
+ * Superclass for all weapons lying around in the world.
+ *
+ * @author Barry Pederson
+ */
+ 
+public abstract class GenericWeapon extends GenericItem
 	{
 	private String fClassName;
 	private String fWeaponName;

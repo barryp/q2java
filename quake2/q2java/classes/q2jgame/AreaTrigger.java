@@ -1,5 +1,5 @@
 
-package q2jgame.spawn;
+package q2jgame;
 
 import q2java.*;
 import q2jgame.*;
@@ -22,6 +22,6 @@ public AreaTrigger(GenericPusher target, Vec3 mins, Vec3 maxs) throws GameExcept
  */
 public void touch(Player touchedBy) 
 	{
-	((GenericPusher)getOwner()).use(touchedBy);
+	((AreaTriggerUser)getOwner()).areaTrigger(touchedBy);
 	}
 }

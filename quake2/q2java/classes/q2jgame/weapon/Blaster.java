@@ -6,8 +6,8 @@ import q2java.*;
 public class Blaster extends GenericBlaster
 	{
 	// all blaster objects will share these arrays
-	private static int[] PAUSE_FRAMES = new int[] {19, 32, 0};
-	private static int[] FIRE_FRAMES = new int[] {5, 0};	
+	private final static int[] PAUSE_FRAMES = new int[] {19, 32, 0};
+	private final static int[] FIRE_FRAMES = new int[] {5, 0};	
 	
 public Blaster()
 	{

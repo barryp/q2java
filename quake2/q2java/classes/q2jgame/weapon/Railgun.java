@@ -7,8 +7,8 @@ import q2jgame.*;
 public class Railgun extends PlayerWeapon
 	{
 	// all machinegun objects will share these arrays
-	private static int[] PAUSE_FRAMES = new int[] {56, 0};
-	private static int[] FIRE_FRAMES = new int[] {4, 0};			
+	private final static int[] PAUSE_FRAMES = new int[] {56, 0};
+	private final static int[] FIRE_FRAMES = new int[] {4, 0};			
 	
 public Railgun()
 	{
@@ -48,7 +48,7 @@ public void fire()
 */
 
 	fOwner.getPlayerViewAngles().angleVectors(forward, right, null);
-	fOwner.fKickOrigin.copyFrom(forward).scale(-3);
+	fOwner.fKickOrigin.set(forward).scale(-3);
 	fOwner.fKickAngles.x = -3;
 
 	offset = new Vec3(0, 7,  fOwner.fViewHeight - 8);

@@ -1,10 +1,13 @@
 
-package q2jgame.spawn;
+package q2jgame;
 
 import q2java.*;
-import q2jgame.*;
-
-abstract class GenericHealth extends GenericItem
+/**
+ * Superclass for all health entities lying around in the world.
+ *
+ * @author Barry Pederson
+ */
+public abstract class GenericHealth extends GenericItem
 	{
 	private int fHealthValue;
 	private boolean fOverrideMax;
@@ -16,7 +19,7 @@ public GenericHealth(String[] spawnArgs, String modelName, String pickupSound, i
 	if (Game.isDMFlagSet(Game.DF_NO_HEALTH))
 		{
 		freeEntity();
-		throw new GameException("health items inhibited");
+		throw new InhibitedException("health items inhibited");
 		}
 	
 	fHealthValue = healthValue;

@@ -1,10 +1,14 @@
 
-package q2jgame.spawn;
+package q2jgame;
 
 import q2java.*;
-import q2jgame.*;
-
-abstract class GenericItem extends q2jgame.GameEntity
+/**
+ * Superclass for all entities lying around 
+ * in the world waiting to be picked up.
+ *
+ * @author Barry Pederson
+ */
+public abstract class GenericItem extends GameEntity
 	{
 	private int fPickupSoundIndex;
 	private float fRespawnTime;
@@ -28,7 +32,7 @@ public GenericItem(String[] spawnArgs, String pickupSound) throws GameException
  */
 public void runFrame() 
 	{
-	if ((fRespawnTime > 0) && (Game.fGameTime > fRespawnTime))
+	if ((fRespawnTime > 0) && (Game.gGameTime > fRespawnTime))
 		{
 		setSVFlags(getSVFlags() & ~SVF_NOCLIENT);
 		setSolid(SOLID_TRIGGER);
@@ -43,7 +47,7 @@ public void runFrame()
  */
 public void setRespawn(float delay) 
 	{
-	fRespawnTime = (float)(Game.fGameTime + delay);
+	fRespawnTime = (float)(Game.gGameTime + delay);
 	}
 /**
  * This method was created by a SmartGuide.

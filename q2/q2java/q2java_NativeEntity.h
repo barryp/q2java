@@ -17,6 +17,14 @@ void JNICALL Java_q2java_NativeEntity_setVec3
 
 /*
  * Class:     q2java_NativeEntity
+ * Method:    centerprint0
+ * Signature: (ILjava/lang/String;)V
+ */
+void JNICALL Java_q2java_NativeEntity_centerprint0
+  (JNIEnv *, jclass, jint, jstring);
+
+/*
+ * Class:     q2java_NativeEntity
  * Method:    allocateEntity
  * Signature: (Z)I
  */
@@ -62,6 +70,14 @@ void JNICALL Java_q2java_NativeEntity_setFloat0
  */
 void JNICALL Java_q2java_NativeEntity_setEntity
   (JNIEnv *, jclass, jint, jint, jint);
+
+/*
+ * Class:     q2java_NativeEntity
+ * Method:    getPotentialPushed0
+ * Signature: (IFFFFFF)[Lq2java/NativeEntity;
+ */
+jobjectArray JNICALL Java_q2java_NativeEntity_getPotentialPushed0
+  (JNIEnv *, jclass, jint, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat);
 
 /*
  * Class:     q2java_NativeEntity
@@ -181,14 +197,6 @@ void JNICALL Java_q2java_NativeEntity_freeEntity0
  * Signature: (ILjava/lang/String;)V
  */
 void JNICALL Java_q2java_NativeEntity_setModel0
-  (JNIEnv *, jclass, jint, jstring);
-
-/*
- * Class:     q2java_NativeEntity
- * Method:    centerprint0
- * Signature: (ILjava/lang/String;)V
- */
-void JNICALL Java_q2java_NativeEntity_centerprint0
   (JNIEnv *, jclass, jint, jstring);
 
 #ifdef __cplusplus

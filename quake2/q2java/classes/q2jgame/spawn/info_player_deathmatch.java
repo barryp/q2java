@@ -10,6 +10,13 @@ public class info_player_deathmatch extends GameEntity
 public info_player_deathmatch(String[] spawnArgs) throws GameException
 	{
 	super(spawnArgs);
+			
+	if (!Game.gIsDeathmatch)
+		{
+		freeEntity();
+		throw new InhibitedException("Inhibited in non-deathmatch");
+		}			
+			
 	setModel("models/objects/dmspot/tris.md2");
 	setSolid(SOLID_BBOX);
 	setMins(-32, -32, -24);

@@ -2,6 +2,7 @@
 package q2jgame.spawn;
 
 import q2java.*;
+import q2jgame.*;
 
 public class weapon_rocketlauncher extends GenericWeapon
 	{

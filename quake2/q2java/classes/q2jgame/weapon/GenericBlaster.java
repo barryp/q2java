@@ -39,7 +39,7 @@ public void fire()
 	offset.add(fBlasterOffset);
 	Vec3 start = fOwner.projectSource(offset, forward, right);
 	
-	fOwner.fKickOrigin.copyFrom(forward).scale(-2);	
+	fOwner.fKickOrigin.set(forward).scale(-2);	
 	fOwner.fKickAngles.x = -1;
 
 	try

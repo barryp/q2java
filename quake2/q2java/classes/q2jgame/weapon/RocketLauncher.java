@@ -7,8 +7,8 @@ import q2jgame.*;
 public class RocketLauncher extends PlayerWeapon
 	{
 	// all rocketlauncher objects will share these arrays
-	private static int[] PAUSE_FRAMES = new int[] {25, 33, 42, 50, 0};
-	private static int[] FIRE_FRAMES = new int[] {5, 0};	
+	private final static int[] PAUSE_FRAMES = new int[] {25, 33, 42, 50, 0};
+	private final static int[] FIRE_FRAMES = new int[] {5, 0};	
 	
 public RocketLauncher()
 	{
@@ -36,7 +36,7 @@ public void fire()
 
 
 	fOwner.getPlayerViewAngles().angleVectors(forward, right, null);
-	fOwner.fKickOrigin.copyFrom(forward).scale(-2);
+	fOwner.fKickOrigin.set(forward).scale(-2);
 	fOwner.fKickAngles.x = -1;
 
 	offset = new Vec3(8, 8,  fOwner.fViewHeight-8);

@@ -1,16 +1,21 @@
 
 package q2jgame;
 
-
 import java.io.*;
 import java.util.Enumeration;
 import java.util.Vector;
 import q2java.*;
 
+/**
+ * GameEntity extends NativeEntity, and adds fields and methods
+ * that are necessary for the Java game, but the DLL and Quake II
+ * itself don't need to be aware of.
+ *
+ * @author Barry Pederson 
+ */
+
 public class GameEntity extends NativeEntity
 	{
-	public NativeEntity fGroundEntity;
-
 	protected int fSpawnFlags;		
 	protected Vector fGroup;
 	protected Vector fTargets;	
@@ -26,6 +31,13 @@ public class GameEntity extends NativeEntity
 	public final static int DAMAGE_BULLET		= 0x00000010; // damage is from a bullet (used for ricochets)
 	public final static int DAMAGE_NO_PROTECTION	= 0x00000020; // armor, shields, invulnerability, and godmode have no effect	
 	
+	// entity spawn flags.
+	public final static int SPAWNFLAG_NOT_EASY		= 0x00000100;
+	public final static int SPAWNFLAG_NOT_MEDIUM		= 0x00000200;
+	public final static int SPAWNFLAG_NOT_HARD		= 0x00000400;
+	public final static int SPAWNFLAG_NOT_DEATHMATCH	= 0x00000800;
+	public final static int SPAWNFLAG_NOT_COOP		= 0x00001000;	
+	
 public GameEntity() throws GameException
 	{
 	}
@@ -40,6 +52,44 @@ public GameEntity(String[] spawnArgs, boolean isWorld) throws GameException
 
 	// look for common spawn arguments
 
+	fSpawnFlags = getSpawnArg("spawnflags", 0);
+
+	// inhibit entities based on the spawnflags
+	if (Game.gIsDeathmatch)
+		{
+		if ((fSpawnFlags & SPAWNFLAG_NOT_DEATHMATCH) != 0)
+			{
+			freeEntity();
+			throw new InhibitedException("Inhibited in deathmatch");
+			}
+		}
+	else
+		{
+		int mask = 0;
+		switch (Game.gSkillLevel)
+			{
+			case 0:
+				mask = SPAWNFLAG_NOT_EASY;
+				break;
+
+			case 1:
+				mask = SPAWNFLAG_NOT_MEDIUM;
+				break;
+
+			case 2:
+			case 3:
+				mask = SPAWNFLAG_NOT_HARD;
+				break;
+			}
+			
+		if ((fSpawnFlags & mask) != 0)
+			{
+			freeEntity();
+			throw new InhibitedException("Inhibited because of skill");						
+			}
+		}
+		
+		
 	String s = getSpawnArg("origin", null);
 	if (s != null)
 		setOrigin(new Vec3(s));
@@ -54,9 +104,7 @@ public GameEntity(String[] spawnArgs, boolean isWorld) throws GameException
 		Float f = new Float(s);
 		setAngles(0, f.floatValue(), 0);
 		}
-		
-	fSpawnFlags = getSpawnArg("spawnflags", 0);
-		
+				
 	s = getSpawnArg("target", null);
 	if (s != null)
 		fTargets = Game.getTarget(s);		
@@ -91,6 +139,7 @@ public void damage(GameEntity inflictor, GameEntity attacker,
 	int damage, int knockback, int dflags, int tempEvent) 
 	{
 	spawnDamage(tempEvent, point, normal, damage);
+//	Engine.dprint("Damaged: " + this + "\n");
 	}
 /**
  * Clean a few things up before calling NativeEntity.freeEntity().
@@ -117,6 +166,19 @@ public void freeEntity()
 	fTargets = null;
 				
 	super.freeEntity();
+	}
+/**
+ * Randomly pick one of this entity's targets.
+ * @return one of the entries in the fTargets Vector, 
+ *     or null if there are no targets.
+ */
+public GameEntity getRandomTarget() 
+	{
+	if ((fTargets == null) || (fTargets.size() < 1))
+		return null;
+		
+	int choice = (Game.randomInt() & 0x0fff) % fTargets.size();
+	return (GameEntity) fTargets.elementAt(choice);
 	}
 /**
  * Lookup an float spawn argument.
@@ -245,5 +307,16 @@ public void touch(Player touchedBy)
  */
 public void use(Player p) 
 	{
+	}
+/**
+ * This method was created by a SmartGuide.
+ */
+public void useTargets() 
+	{
+	if (fTargets == null)
+		return;
+		
+	for (int i = 0; i < fTargets.size(); i++)
+		((GameEntity) fTargets.elementAt(i)).use(null);
 	}
 }

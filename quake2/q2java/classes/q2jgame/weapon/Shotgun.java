@@ -7,8 +7,8 @@ import q2jgame.*;
 public class Shotgun extends PlayerWeapon
 	{
 	// all shotgun objects will share these arrays
-	private static int[] PAUSE_FRAMES = new int[] {22, 28, 34, 0};
-	private static int[] FIRE_FRAMES = new int[] {8, 9, 0};	
+	private final static int[] PAUSE_FRAMES = new int[] {22, 28, 34, 0};
+	private final static int[] FIRE_FRAMES = new int[] {8, 9, 0};	
 	
 public Shotgun()
 	{
@@ -34,7 +34,7 @@ public void fire()
 		}
 
 	fOwner.getPlayerViewAngles().angleVectors(forward, right, null);
-	fOwner.fKickOrigin.copyFrom(forward).scale(-2);
+	fOwner.fKickOrigin.set(forward).scale(-2);
 	fOwner.fKickAngles.x = -2;
 
 	offset = new Vec3(0, 8,  fOwner.fViewHeight-8);

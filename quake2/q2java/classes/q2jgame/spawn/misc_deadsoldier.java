@@ -10,6 +10,13 @@ public class misc_deadsoldier extends GameEntity
 public misc_deadsoldier(String[] spawnArgs) throws GameException
 	{
 	super(spawnArgs);
+	
+	if (Game.gIsDeathmatch)
+		{
+		freeEntity();
+		throw new InhibitedException("misc_deadsoldier inhibited in deathmatch");
+		}
+		
 	setModel("models/deadbods/dude/tris.md2");
 	
 	// Defaults to frame 0

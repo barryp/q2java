@@ -1,10 +1,14 @@
 
-package q2jgame.spawn;
+package q2jgame;
 
 import q2java.*;
-import q2jgame.*;
 
-abstract class GenericAmmo extends GenericItem
+/**
+ * Superclass for all ammo entities lying around in the world.
+ *
+ * @author Barry Pederson
+ */
+public abstract class GenericAmmo extends GenericItem
 	{
 	String fAmmoType;
 	int fCount;

@@ -2,47 +2,61 @@
 package q2jgame;
 
 import java.io.*;
-import java.lang.reflect.Constructor;
-import java.util.Enumeration;
-import java.util.Hashtable;
-import java.util.Random;
-import java.util.Vector;
+import java.lang.reflect.*;
+import java.util.*;
 
 import q2java.*;
+
+/**
+ * This class implements a Quake II Java game. All the
+ * fields are static, so the GameEntities, can refer
+ * to them without having to keep a reference to the solitary
+ * Game object that's instantiated.
+ *
+ * @author Barry Pederson 
+ */
 
 public class Game implements NativeGame
 	{
 	// game clocks
-	private static int fFrameCount;
-	public static double fGameTime;
+	private static int gFrameCount;
+	public static float gGameTime;
 	
-	private static boolean fInIntermission;
-	private static double fIntermissionEndTime;
-	private static String fCurrentMap;
-	private static String fNextMap;
-
-	// handy random number generator
-	private static Random fRandom;
+	// handy reference to the world
+	public static GameEntity gWorld;
+		
+	// various CVars
+	public static CVar gBobUp;	
+	public static CVar gRollAngle;
+	public static CVar gRollSpeed;
+	public static CVar gGravity;
+	
+	// Game options
+	public static boolean gIsDeathmatch;
+	public static int gSkillLevel; // this probably isn't necessary since this is a DM-only mod, but wtf.
+	
+	// CVars only the Game object itself needs to worry about
+	private static CVar gFragLimit;
+	private static CVar gTimeLimit;
+	private static CVar gDMFlags;
 	
 	// used while spawnEntities() is running
-	// to help gather together groups
-	private static Hashtable fGroups;
-	private static Hashtable fTargets;
+	// to help gather together groups and targets
+	private static Hashtable gGroups;
+	private static Hashtable gTargets;
+
+	// handy random number generator
+	private static Random gRandom;
+
+	// track level changes	
+	private static boolean gInIntermission;
+	private static double gIntermissionEndTime;
+	private static String gCurrentMap;
+	private static String gNextMap;
+
+	// ----------- Constants -------------------------
 	
-	// various CVars
-	public static CVar fBobUp;	
-	public static CVar fRollAngle;
-	public static CVar fRollSpeed;
-	public static CVar fGravity;
-	
-	private static CVar fFragLimit;
-	private static CVar fTimeLimit;
-	private static CVar fDMFlags;
-	
-	// reference to the world
-	public static GameEntity fWorld;
-	
-	// dmflags->value flags
+	// deathmatch flags
 	public final static int DF_NO_HEALTH			= 1;
 	public final static int DF_NO_ITEMS			= 2;
 	public final static int DF_WEAPONS_STAY		= 4;
@@ -57,15 +71,14 @@ public class Game implements NativeGame
 	public final static int DF_NO_ARMOR			= 2048;
 	
 /**
- * This method was created by a SmartGuide.
- * @return double
+ * @return A random number between -1.0 and +1.0
  */
 public static double cRandom() 
 	{
-	return (fRandom.nextFloat() - 0.5) * 2.0;
+	return (gRandom.nextFloat() - 0.5) * 2.0;
 	}
 /**
- * This method was created by a SmartGuide.
+ * Fire a lead projectile.
  * @param p q2jgame.Player
  * @param start q2java.Vec3
  * @param aimDir q2java.Vec3
@@ -189,7 +202,7 @@ public static void fireLead(GameEntity p, Vec3 start, Vec3 aimDir, int damage, i
 		}
 	}
 /**
- * This method was created by a SmartGuide.
+ * Fire a railgun slug.
  * @param p q2jgame.Player
  * @param start q2java.Vec3
  * @param forward q2java.Vec3
@@ -230,7 +243,7 @@ public static void fireRail(GameEntity p, Vec3 start, Vec3 aimDir, int damage, i
 				((GameEntity)tr.fEntity).damage(p, p, aimDir, tr.fEndPos, tr.fPlaneNormal, damage, kick, 0, Engine.TE_NONE); 
 			}
 
-		tr.fEndPos.copyTo(from);
+		from.set(tr.fEndPos);
 		}
 
 	// send gun puff / flash
@@ -253,7 +266,7 @@ public static void fireRail(GameEntity p, Vec3 start, Vec3 aimDir, int damage, i
 //		PlayerNoise(self, tr.endpos, PNOISE_IMPACT);
 	}
 /**
- * This method was created by a SmartGuide.
+ * Fire a shotgun shell.
  * @param p q2jgame.Player
  * @param start q2java.Vec3
  * @param aimDir q2java.Vec3
@@ -269,10 +282,31 @@ public static void fireShotgun(GameEntity p, Vec3 start, Vec3 aimDir, int damage
 		fireLead(p, start, aimDir, damage, kick, Engine.TE_SHOTGUN, hSpread, vSpread);
 	}
 /**
+ * Lookup a group Vector, based on the name.
+ * Only good while Game.spawnEntities() is running, 
+ * once it's finished, this function will return null.
+ * Also will return null if groupName is null.
+ * @return Vector containing GameEntities belonging to the group.
+ * @param groupName Name of the group.
+ */
+public static Vector getGroup(String groupName) 
+	{
+	if ((gGroups == null) || (groupName == null))
+		return null;
+		
+	Vector v = (Vector)gGroups.get(groupName);
+	if (v == null)
+		{
+		v = new Vector();
+		gGroups.put(groupName, v);
+		}
+	return v;			
+	}
+/**
  * Select the spawnpoint farthest from other players.
  * @return q2jgame.GameEntity
  */
-public static GameEntity getFarthestSpawnpoint() 
+public static GameEntity getSpawnpointFarthest() 
 	{
 	GameEntity result = null;
 	float bestDistance = 0;
@@ -294,32 +328,11 @@ public static GameEntity getFarthestSpawnpoint()
 	return result;
 	}
 /**
- * Lookup a group Vector, based on the name.
- * Only good while Game.spawnEntities() is running, 
- * once it's finished, this function will return null.
- * Also will return null if groupName is null.
- * @return Vector containing GameEntities belonging to the group.
- * @param groupName Name of the group.
- */
-public static Vector getGroup(String groupName) 
-	{
-	if ((fGroups == null) || (groupName == null))
-		return null;
-		
-	Vector v = (Vector)fGroups.get(groupName);
-	if (v == null)
-		{
-		v = new Vector();
-		fGroups.put(groupName, v);
-		}
-	return v;			
-	}
-/**
  * Select a random spawnpoint, but exclude the two points closest
  * to other players.
  * @return q2jgame.GameEntity
  */
-public static GameEntity getRandomSpawnpoint() 
+public static GameEntity getSpawnpointRandom() 
 	{
 	GameEntity spawnPoint = null;
 	GameEntity spot1 = null;
@@ -380,6 +393,20 @@ public static GameEntity getRandomSpawnpoint()
 	return spawnPoint;
 	}
 /**
+ * Find a single-player spawnpoint. Kind of simplistic.
+ * @return q2jgame.GameEntity
+ */
+public static GameEntity getSpawnpointSingle() 
+	{
+	Enumeration enum;
+	
+	enum = NativeEntity.enumerateEntities("q2jgame.spawn.info_player_start");
+	if (enum.hasMoreElements())
+		return (GameEntity) enum.nextElement();
+		
+	return null;
+	}
+/**
  * Lookup a target Vector, based on the name.
  * Only good while Game.spawnEntities() is running, 
  * once it's finished, this function will return null.
@@ -389,14 +416,14 @@ public static GameEntity getRandomSpawnpoint()
  */
 public static Vector getTarget(String targetName) 
 	{
-	if ((fTargets == null) || (targetName == null))
+	if ((gTargets == null) || (targetName == null))
 		return null;
 		
-	Vector v = (Vector)fTargets.get(targetName);
+	Vector v = (Vector)gTargets.get(targetName);
 	if (v == null)
 		{
 		v = new Vector();
-		fTargets.put(targetName, v);
+		gTargets.put(targetName, v);
 		}
 	return v;			
 	}
@@ -408,28 +435,27 @@ public static String getVersion()
 	{
 	return "Quake2Java Test Game, v0.1";
 	}	
+/**
+ * Called by the DLL when Quake II calls the DLL's init() function.
+ */
 public void init()
 	{	
-/*	
-	// get setup so the debugLog() method has a place to write
-	File gameDir = new File(Engine.getGamePath());
-	File sandbox = new File(gameDir, "sandbox");
-	fLogFile = new File(sandbox, "game.log");
-	fLogFile.delete();
-*/		
 	// actually initialize the game
 	Engine.debugLog("Game.init()");
-	fRandom = new Random();
+	gRandom = new Random();
 	
 	// load cvars
-	fBobUp = new CVar("bob_up", "0.005", 0);	
-	fRollAngle = new CVar("sv_rollangle", "2", 0);
-	fRollSpeed = new CVar("sv_rollspeed", "200", 0);	
-	fGravity = new CVar("sv_gravity", "800", 0);	
+	gBobUp = new CVar("bob_up", "0.005", 0);	
+	gRollAngle = new CVar("sv_rollangle", "2", 0);
+	gRollSpeed = new CVar("sv_rollspeed", "200", 0);	
+	gGravity = new CVar("sv_gravity", "800", 0);	
 	
-	fFragLimit = new CVar("fraglimit", "0", CVar.CVAR_SERVERINFO);
-	fTimeLimit = new CVar("timelimit", "0", CVar.CVAR_SERVERINFO);
-	fDMFlags = new CVar("dmflags", "0", CVar.CVAR_SERVERINFO);
+	gFragLimit = new CVar("fraglimit", "0", CVar.CVAR_SERVERINFO);
+	gTimeLimit = new CVar("timelimit", "0", CVar.CVAR_SERVERINFO);
+	gDMFlags = new CVar("dmflags", "0", CVar.CVAR_SERVERINFO);
+
+	gIsDeathmatch = (new CVar("deathmatch", "0", CVar.CVAR_LATCH)).getFloat() == 1.0;
+	gSkillLevel = (int) ((new CVar("skill", "1", CVar.CVAR_LATCH)).getFloat());
 
 	Engine.debugLog("Game.init() finished");
 	}
@@ -439,7 +465,7 @@ public void init()
  */
 public static boolean isDMFlagSet(int flag) 
 	{
-	return (((int)fDMFlags.getFloat()) & flag) != 0;
+	return (((int)gDMFlags.getFloat()) & flag) != 0;
 	}
 /**
  * Calculate how far the nearest player away is from a given entity
@@ -458,7 +484,7 @@ public static float nearestPlayerDistance(GameEntity ent)
 		Player p = (Player) players.nextElement();
 		if (p.getHealth() < 0)
 			continue;
-		v.copyFrom(startPoint).subtract(p.getOrigin());						
+		v.set(startPoint).subtract(p.getOrigin());						
 		float f = v.length();
 		if (f < result)
 			result = f;
@@ -489,7 +515,7 @@ public static void radiusDamage(GameEntity inflictor, GameEntity attacker, float
 		if (p == ignore)
 			continue;
 			
-		v.copyFrom(point);
+		v.set(point);
 		v.subtract(p.getOrigin());
 		if (v.length() > radius)
 			continue;
@@ -511,44 +537,56 @@ public static void radiusDamage(GameEntity inflictor, GameEntity attacker, float
 		}	
 	}		
 /**
- * This method was created by a SmartGuide.
- * @return int
+ * @return A random number between 0.0 and 1.0
  */
 public static float randomFloat() 
 	{
-	return fRandom.nextFloat();
+	return gRandom.nextFloat();
 	}
 /**
- * This method was created by a SmartGuide.
- * @return int
+ * Get a random integer, values are distributed across 
+ * the full range of the signed 32-bit integer type.
+ * @return A random integer.
  */
 public static int randomInt() 
 	{
-	return fRandom.nextInt();
+	return gRandom.nextInt();
 	}
+/**
+ * Called by the DLL when the DLL's ReadGame() function is called.
+ */
 public void readGame(String filename)
 	{
 	Engine.debugLog("Game.readGame(\"" + filename + "\")");
 	}
+/**
+ * Called by the DLL when the DLL's ReadLevel() function is called.
+ */
 public void readLevel(String filename)
 	{
 	Engine.debugLog("Game.readLevel(\"" + filename + "\")");
 	}
+/**
+ * Called by the DLL when the DLL's RunFrame() function is called.
+ */
 public void runFrame()
 	{
 	Enumeration enum;
 	Object obj;
 	
 	// increment the clocks
-	fFrameCount++;
-	fGameTime = fFrameCount * Engine.SECONDS_PER_FRAME;
-
-	if (fInIntermission && (fGameTime > fIntermissionEndTime))
+	// if we just added Engine.SECONDS_PER_FRAME to fGameTime,
+	// the clock drifts due to rounding errors, so we
+	// have to keep a frame count and multiply.
+	gFrameCount++;
+	gGameTime = gFrameCount * Engine.SECONDS_PER_FRAME;
+	
+	if (gInIntermission && (gGameTime > gIntermissionEndTime))
 		{
 		if (isDMFlagSet(DF_SAME_LEVEL))
-			Engine.addCommandString("gamemap \"" + fCurrentMap + "\"");
+			Engine.addCommandString("gamemap \"" + gCurrentMap + "\"");
 		else
-			Engine.addCommandString("gamemap \"" + fNextMap + "\"");
+			Engine.addCommandString("gamemap \"" + gNextMap + "\"");
 		return;
 		}
 
@@ -584,7 +622,7 @@ public void runFrame()
 			}				
 		}
 
-	if (!fInIntermission && timeToQuit())
+	if (!gInIntermission && timeToQuit())
 		startIntermission();
 
 	// notify all the players we're ending a frame
@@ -602,40 +640,36 @@ public void runFrame()
 		}			
 	}
 /**
- * This method was created by a SmartGuide.
+ * Called by the DLL when the DLL's ServerCommand() function is called.
  */
 public void serverCommand() {
 	return;
 }
 /**
- * This method was created by a SmartGuide.
+ * Set what the next map will be.
  * @param mapname java.lang.String
  */
 public static void setNextMap(String mapname) 
 	{
 	if (mapname != null)
-		fNextMap = mapname;
+		gNextMap = mapname;
 	}
+/**
+ * Called by the DLL when the DLL's Shutdown() function is called.
+ */
 public void shutdown()
 	{
 	Engine.debugLog("Game.shutdown()");
 	}
-public void spawnEntities(String mapname, String entString, String spawnPoint)
+/**
+ * Spawn entities into the Quake II environment.
+ * This methods parses the entString passed to it, and looks
+ * for Java classnames equivalent to the classnames specified 
+ * in the entString, and instantiates instances of them, with
+ * the entity parameters passed as an array of Strings.
+ */
+private void spawnEntities(String entString)
 	{
-	Engine.debugLog("Game.spawnEntities(\"" + mapname + ", <entString>, \"" + spawnPoint + "\")");
-
-	fFrameCount = 0;
-	fInIntermission = false;
-	fCurrentMap = mapname;
-	fNextMap = mapname; // in case there isn't a target_changelevel entity in the entString
-
-	fGroups = new Hashtable();
-	fTargets = new Hashtable();
-
-	// force a gc, to clean things up from the last level, before
-	// spawning all the new entities
-	System.gc();		
-	
 	try
 		{
 		StringReader sr = new StringReader(entString);
@@ -651,9 +685,6 @@ public void spawnEntities(String mapname, String entString, String spawnPoint)
 		Class[] paramTypes = new Class[1];
 		String[] sa = new String[1];
 		paramTypes[0] = sa.getClass();
-
-		FileOutputStream fos = new FileOutputStream(Engine.getGamePath() + "\\sandbox\\entity.log");
-		PrintStream ps = new PrintStream(fos);		
 
 		while ((token = st.nextToken()) != StreamTokenizer.TT_EOF)
 			{
@@ -686,25 +717,23 @@ public void spawnEntities(String mapname, String entString, String spawnPoint)
 						Class entClass = Class.forName("q2jgame.spawn." + className.toLowerCase());
 						Constructor ctor = entClass.getConstructor(paramTypes);							
 						GameEntity ent = (GameEntity) ctor.newInstance(params);
-						ps.println(ent);
+						}
+					// this stinks..since we're using reflection to find the 
+					// constructor, the compiler can't tell what exceptions
+					// it'll throw - so we have to catch 'em all
+					// and sort out the ones we really want to deal with.
+					catch (InvocationTargetException ite)
+						{
+						Throwable te = ite.getTargetException();
+						if (!(te instanceof InhibitedException))
+							te.printStackTrace();						
+						}
+					catch (ClassNotFoundException cnfe)
+						{
 						}
 					catch (Exception e)
 						{
-						ps.print("---- " + className + "(");
-						if (sa != null)
-							{
-							String prefix = "";
-							for (int i = 0; i < sa.length; i+=2)
-								{
-								ps.print(prefix + sa[i] + "=\"" + sa[i+1] + "\"");
-								prefix = ", ";
-								}
-							}
-						ps.println(")");	
-						if (e instanceof java.lang.reflect.InvocationTargetException)
-							((java.lang.reflect.InvocationTargetException)e).getTargetException().printStackTrace(ps);
-						else						
-							e.printStackTrace(ps);
+						e.printStackTrace();
 						}
 
 					foundClassname = false;
@@ -712,24 +741,14 @@ public void spawnEntities(String mapname, String entString, String spawnPoint)
 					break;
 
 				default  : 
-					ps.println("Unknown entity-string token: [" + st.sval + "]\n");
 					foundClassname = false;				
 				}
 			}
-		ps.close();
 		}
 	catch (Exception e)
 		{
 		e.printStackTrace();
 		}
-
-	// no more need for hashtables, free them so they can be gc'ed
-	fGroups = null;
-	fTargets = null;
-		
-	// now, right before the game starts, is a good time to 
-	// force Java to do another garbage collection to tidy things up.
-	System.gc();		
 	}
 /**
  * Pick an intermission spot, and notify each player.
@@ -772,8 +791,152 @@ public void startIntermission()
 		p.startIntermission(spot);
 		}
 		
-	fInIntermission = true;	
-	fIntermissionEndTime = fGameTime + 5.0;	
+	gInIntermission = true;	
+	gIntermissionEndTime = gGameTime + 5.0;	
+	}
+/**
+ * Spawn entities into the Quake II environment.
+ * This methods parses the entString passed to it, and looks
+ * for Java classnames equivalent to the classnames specified 
+ * in the entString, and instantiates instances of them, with
+ * the entity parameters passed as an array of Strings.
+ */
+public void startLevel(String mapname, String entString, String spawnPoint)
+	{
+	Engine.debugLog("Game.spawnEntities(\"" + mapname + ", <entString>, \"" + spawnPoint + "\")");
+
+	gFrameCount = 0;
+	gGameTime = 0;
+	gInIntermission = false;
+	gCurrentMap = mapname;
+	gNextMap = mapname; // in case there isn't a target_changelevel entity in the entString
+
+	gGroups = new Hashtable();
+	gTargets = new Hashtable();
+
+	// force a gc, to clean things up from the last level, before
+	// spawning all the new entities
+	System.gc();		
+
+	spawnEntities(entString);
+
+	// no more need for hashtables, free them so they can be gc'ed
+	gGroups = null;
+	gTargets = null;
+		
+		
+	//
+	// cache some sounds
+	//
+		
+	Engine.soundIndex("player/fry.wav");	// standing in lava / slime
+	Engine.soundIndex("player/lava1.wav");
+	Engine.soundIndex("player/lava2.wav");
+
+	Engine.soundIndex("misc/pc_up.wav");
+	Engine.soundIndex("misc/talk1.wav");
+
+	Engine.soundIndex("misc/udeath.wav");
+
+	// gibs
+	Engine.soundIndex("items/respawn1.wav");
+
+	// sexed sounds
+	Engine.soundIndex("*death1.wav");
+	Engine.soundIndex("*death2.wav");
+	Engine.soundIndex("*death3.wav");
+	Engine.soundIndex("*death4.wav");
+	Engine.soundIndex("*fall1.wav");
+	Engine.soundIndex("*fall2.wav");	
+	Engine.soundIndex("*gurp1.wav");		// drowning damage
+	Engine.soundIndex("*gurp2.wav");	
+	Engine.soundIndex("*jump1.wav");		// player jump
+	Engine.soundIndex("*pain25_1.wav");
+	Engine.soundIndex("*pain25_2.wav");
+	Engine.soundIndex("*pain50_1.wav");
+	Engine.soundIndex("*pain50_2.wav");
+	Engine.soundIndex("*pain75_1.wav");
+	Engine.soundIndex("*pain75_2.wav");
+	Engine.soundIndex("*pain100_1.wav");
+	Engine.soundIndex("*pain100_2.wav");
+
+	//-------------------
+
+	Engine.soundIndex("player/gasp1.wav");		// gasping for air
+	Engine.soundIndex("player/gasp2.wav");		// head breaking surface, not gasping
+
+	Engine.soundIndex("player/watr_in.wav");	// feet hitting water
+	Engine.soundIndex("player/watr_out.wav");	// feet leaving water
+
+	Engine.soundIndex("player/watr_un.wav");	// head going underwater
+	
+	Engine.soundIndex("player/u_breath1.wav");
+	Engine.soundIndex("player/u_breath2.wav");
+
+	Engine.soundIndex("items/pkup.wav");		// bonus item pickup
+	Engine.soundIndex("world/land.wav");		// landing thud
+	Engine.soundIndex("misc/h2ohit1.wav");		// landing splash
+
+	Engine.soundIndex("items/damage.wav");
+	Engine.soundIndex("items/protect.wav");
+	Engine.soundIndex("items/protect4.wav");
+	Engine.soundIndex("weapons/noammo.wav");
+
+	Engine.soundIndex("infantry/inflies1.wav");
+	
+	// setup player status bar
+	Engine.configString (Engine.CS_STATUSBAR, Player.DM_STATUSBAR);	
+	
+	//
+	// Setup light animation tables. 'a' is total darkness, 'z' is doublebright.
+	//
+
+	// 0 normal
+	Engine.configString(Engine.CS_LIGHTS+0, "m");
+	
+	// 1 FLICKER (first variety)
+	Engine.configString(Engine.CS_LIGHTS+1, "mmnmmommommnonmmonqnmmo");
+	
+	// 2 SLOW STRONG PULSE
+	Engine.configString(Engine.CS_LIGHTS+2, "abcdefghijklmnopqrstuvwxyzyxwvutsrqponmlkjihgfedcba");
+	
+	// 3 CANDLE (first variety)
+	Engine.configString(Engine.CS_LIGHTS+3, "mmmmmaaaaammmmmaaaaaabcdefgabcdefg");
+	
+	// 4 FAST STROBE
+	Engine.configString(Engine.CS_LIGHTS+4, "mamamamamama");
+	
+	// 5 GENTLE PULSE 1
+	Engine.configString(Engine.CS_LIGHTS+5,"jklmnopqrstuvwxyzyxwvutsrqponmlkj");
+	
+	// 6 FLICKER (second variety)
+	Engine.configString(Engine.CS_LIGHTS+6, "nmonqnmomnmomomno");
+	
+	// 7 CANDLE (second variety)
+	Engine.configString(Engine.CS_LIGHTS+7, "mmmaaaabcdefgmmmmaaaammmaamm");
+	
+	// 8 CANDLE (third variety)
+	Engine.configString(Engine.CS_LIGHTS+8, "mmmaaammmaaammmabcdefaaaammmmabcdefmmmaaaa");
+	
+	// 9 SLOW STROBE (fourth variety)
+	Engine.configString(Engine.CS_LIGHTS+9, "aaaaaaaazzzzzzzz");
+	
+	// 10 FLUORESCENT FLICKER
+	Engine.configString(Engine.CS_LIGHTS+10, "mmamammmmammamamaaamammma");
+
+	// 11 SLOW PULSE NOT FADE TO BLACK
+	Engine.configString(Engine.CS_LIGHTS+11, "abcdefghijklmnopqrrqponmlkjihgfedcba");
+	
+	// styles 32-62 are assigned by the light program for switchable lights
+
+	// 63 testing
+	Engine.configString(Engine.CS_LIGHTS+63, "a");		
+		
+		
+		
+	// now, right before the game starts, is a good time to 
+	// force Java to do another garbage collection to tidy things up.
+	System.gc();		
 	}
 /**
  * Check the timelimit and fraglimit values and decide
@@ -782,15 +945,15 @@ public void startIntermission()
  */
 private static boolean timeToQuit() 
 	{
-	float quitTime = fTimeLimit.getFloat() * 60;
+	float quitTime = gTimeLimit.getFloat() * 60;
 
-	if ((quitTime > 0) && (fGameTime > quitTime))
+	if ((quitTime > 0) && (gGameTime > quitTime))
 		{
 		Engine.bprint(Engine.PRINT_HIGH, "Timelimit hit.\n");		
 		return true;
 		}
 		
-	int fragLimit = (int) fFragLimit.getFloat();
+	int fragLimit = (int) gFragLimit.getFloat();
 	if (fragLimit < 1)
 		return false;
 		
@@ -807,10 +970,16 @@ private static boolean timeToQuit()
 		
 	return false;		
 	}
+/**
+ * Called by the DLL when the DLL's WriteGame() function is called.
+ */
 public void writeGame(String filename)
 	{
 	Engine.debugLog("Game.writeGame(\"" + filename + "\")");		
 	}
+/**
+ * Called by the DLL when the DLL's WriteLevel() function is called.
+ */
 public void writeLevel(String filename)
 	{
 	Engine.debugLog("Game.writeLevel(\"" + filename + "\")");

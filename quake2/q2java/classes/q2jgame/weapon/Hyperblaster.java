@@ -7,8 +7,8 @@ import q2jgame.*;
 public class Hyperblaster extends GenericBlaster
 	{
 	// all hyperblaster objects will share these arrays
-	private static int[] PAUSE_FRAMES = new int[] {0};
-	private static int[] FIRE_FRAMES = new int[] {6, 7, 8, 9, 10, 11, 0};		
+	private final static int[] PAUSE_FRAMES = new int[] {0};
+	private final static int[] FIRE_FRAMES = new int[] {6, 7, 8, 9, 10, 11, 0};		
 	
 public Hyperblaster()
 	{

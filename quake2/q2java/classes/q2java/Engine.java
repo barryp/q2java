@@ -1,6 +1,14 @@
 
 package q2java;
 
+/**
+ * The Engine class provides access to several functions
+ * of the Quake II game engine, and holds quite a few
+ * of the game constants.
+ *
+ * @author Barry Pederson
+ */
+
 public class Engine
 	{   
 	public final static float SECONDS_PER_FRAME = 0.1F;
@@ -183,8 +191,7 @@ COLLISION DETECTION
 	public final static int AREA_SOLID			= 1;
 	public final static int AREA_TRIGGERS		= 2;		
 	
-	
-	
+	// private constants for communicating with the DLL	
 	private final static int CALL_MULTICAST 		= 0;
 	private final static int CALL_WRITEPOSITION	= 1;
 	private final static int CALL_WRITEDIR 		= 2;

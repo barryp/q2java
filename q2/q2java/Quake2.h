@@ -181,6 +181,7 @@ typedef struct edict_s
     // this point in the structure
 	int 		freetime;			// frame when the object was freed
 	vec3_t		velocity;
+	edict_t		*groundentity;
     } edict_t;
 
 

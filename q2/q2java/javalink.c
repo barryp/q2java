@@ -14,6 +14,7 @@ static cvar_t *q2java_DLLHandle;
 static cvar_t *q2java_VMPointer;
 static cvar_t *q2java_EnvPointer;
 
+static char initialSecurity[256];
 
 // for making our new Java classpath
 char java_gameDirName[1024];
@@ -92,15 +93,21 @@ void startJava()
 	int alreadyStarted = 0;
 	char buffer[64];
 	cvar_t *q2java_security;
+	cvar_t *q2java_gamepath;
 
 	setupPaths();
 
 	q2java_debugLog = gi.cvar("q2java_debugLog", "0", 0);
 	q2java_security = gi.cvar("q2java_security", "2", CVAR_NOSET);
+	q2java_gamepath  = gi.cvar("q2java_gamepath", "", CVAR_NOSET);
 
 	debugLog("in startJava()\n");
 
 	java_error = NULL;
+
+	// save the initial security settings in case the
+	// Java games tries to modify the cvar
+	strcpy(initialSecurity, q2java_security->string);
 
     q2java_DLLHandle = gi.cvar("q2java_DLLHandle", "0", CVAR_NOSET);
     q2java_VMPointer = gi.cvar("q2java_VMPointer", "0", CVAR_NOSET);
@@ -145,8 +152,21 @@ void startJava()
 		strcat(classpath, ";");
 		strcat(classpath, java_gameDirName);
 		strcat(classpath, "\\q2java.jar;");
-		strcat(classpath, java_gameDirName);
-		strcat(classpath, "\\classes;");
+
+		if (strlen(q2java_gamepath->string) == 0)
+			{
+			strcat(classpath, java_gameDirName);
+			strcat(classpath, "\\q2jgame.jar;");
+			strcat(classpath, java_gameDirName);
+			strcat(classpath, "\\classes;");
+			}
+		else
+			{
+			strcat(classpath, java_gameDirName);
+			strcat(classpath, "\\");
+			strcat(classpath, q2java_gamepath->string);
+			strcat(classpath, ";");
+			}
 
 		// set the new classpath
         vm_args.classpath = classpath;
@@ -212,6 +232,11 @@ void startJava()
 void stopJava()
     {
 debugLog("in stopJava()\n");
+
+	// restore the initial security setting, in case
+	// the java game modified the cvar.
+	gi.cvar_forceset("q2java_security", initialSecurity);
+
     if (!java_vm)
 		{
         debugLog("Can't destroy Java VM, pointer was null\n");

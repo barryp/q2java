@@ -47,6 +47,7 @@
 #define VEC3_CLIENT_PS_GUNOFFSET	104
 
 #define ENTITY_OWNER	1
+#define ENTITY_GROUND	2
 
 #define CALL_SOUND 1
 #define CALL_POSITIONED_SOUND 2
@@ -54,9 +55,9 @@
 // handles to the NativeEntity class
 static jclass class_NativeEntity;
 static jfieldID  field_NativeEntity_fEntityIndex;
-static jfieldID  field_NativeEntity_fEntityArray;
-static jfieldID  field_NativeEntity_fNumEntities;
-static jfieldID	 field_NativeEntity_fMaxPlayers;
+static jfieldID  field_NativeEntity_gEntityArray;
+static jfieldID  field_NativeEntity_gNumEntities;
+static jfieldID	 field_NativeEntity_gMaxPlayers;
 
 
 static JNINativeMethod Entity_methods[] = 
@@ -79,6 +80,7 @@ static JNINativeMethod Entity_methods[] =
 	{"linkEntity0",		"(I)V",						Java_q2java_NativeEntity_linkEntity0},
 	{"unlinkEntity0",	"(I)V",						Java_q2java_NativeEntity_unlinkEntity0},
 	{"traceMove0",		"(IIF)Lq2java/TraceResults;",Java_q2java_NativeEntity_traceMove0},
+	{"getPotentialPushed0", "(IFFFFFF)[Lq2java/NativeEntity;", Java_q2java_NativeEntity_getPotentialPushed0},
 
 	// methods for players only
 	{"pMove0",			"(IBBSSSSSSBB)Lq2java/PMoveResults;",	Java_q2java_NativeEntity_pMove0},
@@ -105,9 +107,9 @@ void Entity_javaInit()
 		}
 
 	field_NativeEntity_fEntityIndex = (*java_env)->GetFieldID(java_env, class_NativeEntity, "fEntityIndex", "I");
-	field_NativeEntity_fEntityArray = (*java_env)->GetStaticFieldID(java_env, class_NativeEntity, "fEntityArray", "[Lq2java/NativeEntity;");
-	field_NativeEntity_fNumEntities = (*java_env)->GetStaticFieldID(java_env, class_NativeEntity, "fNumEntities", "I");
-	field_NativeEntity_fMaxPlayers  = (*java_env)->GetStaticFieldID(java_env, class_NativeEntity, "fMaxPlayers", "I");
+	field_NativeEntity_gEntityArray = (*java_env)->GetStaticFieldID(java_env, class_NativeEntity, "gEntityArray", "[Lq2java/NativeEntity;");
+	field_NativeEntity_gNumEntities = (*java_env)->GetStaticFieldID(java_env, class_NativeEntity, "gNumEntities", "I");
+	field_NativeEntity_gMaxPlayers  = (*java_env)->GetStaticFieldID(java_env, class_NativeEntity, "gMaxPlayers", "I");
 	if (CHECK_EXCEPTION())
 		{
 		java_error = "Couldn't get field handles for NativeEntity\n";
@@ -130,7 +132,7 @@ void Entity_arrayInit()
 
 	// Create a Java NativeEntity array the same size
 	ja = (*java_env)->NewObjectArray(java_env, ge.max_edicts, class_NativeEntity, 0);
-	(*java_env)->SetStaticObjectField(java_env, class_NativeEntity, field_NativeEntity_fEntityArray, ja);
+	(*java_env)->SetStaticObjectField(java_env, class_NativeEntity, field_NativeEntity_gEntityArray, ja);
 	CHECK_EXCEPTION();
 
 	// make a C array for client info 
@@ -140,7 +142,7 @@ void Entity_arrayInit()
 	global_clients = gi.TagMalloc(global_maxClients * sizeof(gclient_t), TAG_GAME);
 
 	// let Java know how big it is
-	(*java_env)->SetStaticIntField(java_env, class_NativeEntity, field_NativeEntity_fMaxPlayers, global_maxClients);
+	(*java_env)->SetStaticIntField(java_env, class_NativeEntity, field_NativeEntity_gMaxPlayers, global_maxClients);
 	CHECK_EXCEPTION();
 
 	// link the two C arrays together
@@ -151,7 +153,7 @@ void Entity_arrayInit()
 	// note in C and Java how many entities are used so far
 	debugLog("setting counters\n");
 	ge.num_edicts = global_maxClients + 1; 
-	(*java_env)->SetStaticIntField(java_env, class_NativeEntity, field_NativeEntity_fNumEntities, ge.num_edicts);
+	(*java_env)->SetStaticIntField(java_env, class_NativeEntity, field_NativeEntity_gNumEntities, ge.num_edicts);
 	CHECK_EXCEPTION();
 
 	debugLog("Entity_arrayInit() finished\n");
@@ -166,7 +168,7 @@ void Entity_arrayReset()
 
 	debugLog("Clearing existing arrays\n");
 
-	ja = (*java_env)->GetStaticObjectField(java_env, class_NativeEntity, field_NativeEntity_fEntityArray);
+	ja = (*java_env)->GetStaticObjectField(java_env, class_NativeEntity, field_NativeEntity_gEntityArray);
 
 	// clear worldspawn entity
 	memset(ge.edicts, 0, sizeof (ge.edicts[0])); 
@@ -336,6 +338,7 @@ static edict_t **lookupEntity(int index, int fieldNum)
 	switch (fieldNum)
 		{
 		case ENTITY_OWNER: return &(ent->owner);
+		case ENTITY_GROUND: return &(ent->groundentity);
 		default: return NULL; // ---FIX--- should record an error somewhere
 		}
 	}
@@ -346,7 +349,7 @@ jobject Entity_getEntity(int index)
 	jobjectArray array;
 	jobject result;
 
-	array = (*java_env)->GetStaticObjectField(java_env, class_NativeEntity, field_NativeEntity_fEntityArray);
+	array = (*java_env)->GetStaticObjectField(java_env, class_NativeEntity, field_NativeEntity_gEntityArray);
 	result = (*java_env)->GetObjectArrayElement(java_env, array, index);
 	CHECK_EXCEPTION();
 	return result;
@@ -356,7 +359,7 @@ void Entity_setEntity(int index, jobject value)
 	{
 	jobjectArray array;
 
-	array = (*java_env)->GetStaticObjectField(java_env, class_NativeEntity, field_NativeEntity_fEntityArray);
+	array = (*java_env)->GetStaticObjectField(java_env, class_NativeEntity, field_NativeEntity_gEntityArray);
 	(*java_env)->SetObjectArrayElement(java_env, array, index, value);
 	CHECK_EXCEPTION();
 	}
@@ -479,7 +482,7 @@ static jint JNICALL Java_q2java_NativeEntity_allocateEntity(JNIEnv *env, jclass 
 	if (i == ge.num_edicts)
 		{
 		ge.num_edicts++;
-		(*java_env)->SetStaticIntField(java_env, class_NativeEntity, field_NativeEntity_fNumEntities, ge.num_edicts);
+		(*java_env)->SetStaticIntField(java_env, class_NativeEntity, field_NativeEntity_gNumEntities, ge.num_edicts);
 		}
 
 	ent->inuse = true;
@@ -891,3 +894,54 @@ static jobject JNICALL Java_q2java_NativeEntity_traceMove0(JNIEnv *env, jclass c
 	}
 
 
+static jobjectArray JNICALL Java_q2java_NativeEntity_getPotentialPushed0(JNIEnv *env, jclass cls, jint index, 
+	jfloat minx, jfloat miny, jfloat minz, 
+	jfloat maxx, jfloat maxy, jfloat maxz)
+	{
+	edict_t *hits[MAX_EDICTS];
+	edict_t *check;
+	edict_t *pusher;
+	trace_t trace;
+	int count;
+	int i;
+	int mask;
+
+	pusher = ge.edicts + index;
+
+	count = 0;
+	for (i = 1; i < ge.num_edicts; i++)
+		{
+		if (i == index)
+			continue;
+
+		check = ge.edicts + i;
+		
+		// if the entity is standing on the pusher, it will definitely be moved
+		if (check->groundentity != pusher)
+			{
+			// see if the ent needs to be tested
+			if ( check->absmin[0] >= maxx
+				|| check->absmin[1] >= maxy
+				|| check->absmin[2] >= maxz
+				|| check->absmax[0] <= minx
+				|| check->absmax[1] <= miny
+				|| check->absmax[2] <= minz )
+				continue;
+
+			// see if the ent's bbox is inside the pusher's final position
+			if (check->clipmask)
+				mask = check->clipmask;
+			else
+				mask = MASK_SOLID;
+
+			trace = gi.trace(check->s.origin, check->mins, check->maxs, check->s.origin, check, mask);
+
+			if (!trace.startsolid)
+				continue;
+			}
+
+		hits[count++] = check;
+		}
+
+	return Entity_createArray(hits, count);
+	}

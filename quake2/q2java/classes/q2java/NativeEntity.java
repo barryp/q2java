@@ -2,27 +2,35 @@
 package q2java;
 
 import java.io.*;
-import java.lang.reflect.Constructor;
 import java.util.Enumeration;
 import java.util.Vector;
 
-import q2jgame.Game; // for Game.debugLog()
+/**
+ * NativeEntity is equivalent to the C edict_t structure, and
+ * every instance of NativeEntity has an matching instance of edict_t
+ * that the DLL works with.
+ *
+ * @author Barry Pederson 
+ */
 
 public abstract class NativeEntity
 	{
+	// ------------------- Instance fields ---------------------
+	private int fEntityIndex;
+	private NativeEntity fGroundEntity;	
+		
+	// -------------------- Static fields ----------------------		
+		
 	// fNumEntities is modified by the DLL to reflect 
 	// the maximum number of entities potentially in use, 
 	// so we don't have to look at every one when enumerating
 	// through the array
-	private static int fNumEntities; 
-	private static int fMaxPlayers; // set by DLL
-	private static NativeEntity[] fEntityArray;
+	private static int gNumEntities; 
+	private static int gMaxPlayers; // set by DLL
+	private static NativeEntity[] gEntityArray;
 		
-	private static PlayerCmd fPlayerCmd = new PlayerCmd();			
+	// --------------------- Constants -------------------------
 		
-	private int fEntityIndex;
-	
-	
 	// sound channels
 	// channel 0 never willingly overrides
 	// other channels (1-7) allways override a playing sound on that channel
@@ -143,10 +151,8 @@ public abstract class NativeEntity
 	public final static int SVF_MONSTER			= 0x00000004;	// treat as CONTENTS_MONSTER for collision	
 
 
-	//
-	// handles to C entity fields
-	// (same as constants in Entity.c)
-	//
+	// --- Private constants for communicating with the DLL
+
 	private final static int VEC3_S_ORIGIN 			= 0;
 	private final static int VEC3_S_ANGLES 			= 1;
 	private final static int VEC3_S_OLD_ORIGIN 		= 2;
@@ -157,7 +163,6 @@ public abstract class NativeEntity
 	private final static int VEC3_SIZE 				= 7;
 	private final static int VEC3_VELOCITY 			= 8;
 
-	// ONLY use these in NativePlayer
 	private final static int VEC3_CLIENT_PS_VIEWANGLES	= 100;
 	private final static int VEC3_CLIENT_PS_VIEWOFFSET	= 101;
 	private final static int VEC3_CLIENT_PS_KICKANGLES	= 102;
@@ -180,8 +185,8 @@ public abstract class NativeEntity
 	private final static int INT_S_EVENT			= 14;
 	
 	private final static int ENTITY_OWNER		= 1;
+	private final static int ENTITY_GROUND		= 2;
 	
-	// ONLY use these in NativePlayer
 	private final static int INT_CLIENT_PS_GUNINDEX	= 100;
 	private final static int INT_CLIENT_PS_GUNFRAME	= 101;
 	private final static int INT_CLIENT_PS_RDFLAGS	= 102;
@@ -216,7 +221,7 @@ protected NativeEntity(boolean isWorld) throws GameException
 			throw new GameException("Can't allocate entity");
 		}
 					
-	fEntityArray[fEntityIndex] = this;
+	gEntityArray[fEntityIndex] = this;
 	}
 
 private native static int allocateEntity(boolean isWorld);
@@ -284,12 +289,12 @@ static NativeEntity findNext(NativeEntity start, Class targetClass)
 	NativeEntity result = null;
 	int index = (start == null ? 0 : start.fEntityIndex + 1);
 				
-	while ((result == null) && (index < fNumEntities))
+	while ((result == null) && (index < gNumEntities))
 		{
-		if (	(fEntityArray[index] != null) 
-		&& 	((targetClass == null) || (targetClass.isAssignableFrom(fEntityArray[index].getClass())))
+		if (	(gEntityArray[index] != null) 
+		&& 	((targetClass == null) || (targetClass.isAssignableFrom(gEntityArray[index].getClass())))
 		)
-			result = fEntityArray[index];
+			result = gEntityArray[index];
 		index++;
 		}
 		
@@ -300,10 +305,10 @@ static NativeEntity findNextPlayer(NativeEntity start)
 	NativeEntity result = null;
 	int index = (start == null ? 1 : start.fEntityIndex + 1);
 				
-	while ((result == null) && (index <= fMaxPlayers)) 
+	while ((result == null) && (index <= gMaxPlayers)) 
 		{
-		if (fEntityArray[index] != null) 
-			result = fEntityArray[index];
+		if (gEntityArray[index] != null) 
+			result = gEntityArray[index];
 		index++;
 		}
 		
@@ -318,7 +323,7 @@ public void freeEntity()
 	freeEntity0(fEntityIndex);	
 	
 	// remove from Java
-	fEntityArray[fEntityIndex] = null;
+	gEntityArray[fEntityIndex] = null;
 	fEntityIndex = -1;
 	}
 
@@ -353,6 +358,14 @@ private native static NativeEntity getEntity(int index, int fieldNum);
 public final int getEntityIndex() 
 	{
 	return fEntityIndex;
+	}
+/**
+ * This method was created by a SmartGuide.
+ * @param ent q2java.NativeEntity
+ */
+public NativeEntity getGroundEntity() 
+	{
+	return fGroundEntity;
 	}
 
 private native static int getInt(int index, int fieldNum);
@@ -403,6 +416,36 @@ public Vec3 getPlayerViewAngles()
 	{
 	return getVec3(fEntityIndex, VEC3_CLIENT_PS_VIEWANGLES);
 	}
+/**
+ * Get an array of entities that might need to be pushed.
+ *
+ * This method is needed to speed up things like elevators
+ * and trains...otherwise Java'd have to iterate through
+ * hundreds and hundreds of entities every server frame,
+ * trying to decide which ones to move.
+ * Java's not fast enough especially
+ * on levels such as "ware2" with 45-50 trains all running
+ * simultaneously.  Without this native support, a pure
+ * Java solution drags the game down to about 2fps on a
+ * PentiumPro 233. This method cuts the number of entities
+ * the Java code has to check down to just a handful, which
+ * it can do fairly well.
+ *
+ * @return An array of entities that either might intersect 
+ * this object, or have it as their ground entity.
+ */
+public NativeEntity[] getPotentialPushed(Vec3 mins, Vec3 maxs)
+	{
+	return getPotentialPushed0(fEntityIndex, mins.x, mins.y, mins.z, maxs.x, maxs.y, maxs.z);
+	}
+
+/**
+ * This method was created by a SmartGuide.
+ * @return q2java.NativeEntity[]
+ * @param index int
+ */
+private static native NativeEntity[] getPotentialPushed0(int index, float minx, float miny, float minz, float maxx, float maxy, float maxz);
+
 
 private native static short getShort(int index, int fieldNum);
 
@@ -494,6 +537,19 @@ private native static void setFloat0(int index, int fieldNum, float r, float g, 
 public void setFrame(int val)
 	{
 	setInt(fEntityIndex, INT_S_FRAME, val);
+	}
+/**
+ * This method was created by a SmartGuide.
+ * @param ent q2java.NativeEntity
+ */
+public void setGroundEntity(NativeEntity ent) 
+	{
+	fGroundEntity = ent;
+	
+	if (ent == null)
+		setEntity(fEntityIndex, ENTITY_GROUND, -1);
+	else		
+		setEntity(fEntityIndex, ENTITY_GROUND, ent.fEntityIndex);
 	}
 
 //

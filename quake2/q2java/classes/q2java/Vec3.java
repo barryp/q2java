@@ -5,6 +5,13 @@ import java.util.StringTokenizer;
 
 /**
  * Vec3 is an equivalent to Quake2's vec3_t structure.
+ *
+ * This class is also used for angle vectors, and in that
+ * case, the x component is the Pitch, y is Yaw, and z is Roll.
+ * I use the mnemonic "PYRO" to remember that the order
+ * is "Pitch Yaw ROll".
+ *
+ * @author Barry Pederson
  */
 
 public final class Vec3
@@ -45,20 +52,9 @@ public Vec3(String s) throws NumberFormatException
 	if (st.countTokens() != 3)
 		throw new NumberFormatException("Vec3 constructor called with [" + s + "]");
 
-	String t;
-	Float f;
-
-	t = st.nextToken();
-	f = Float.valueOf(t);
-	x = f.floatValue();
-
-	t = st.nextToken();
-	f = Float.valueOf(t);
-	y = f.floatValue();
-
-	t = st.nextToken();
-	f = Float.valueOf(t);
-	z = f.floatValue();
+	x = Float.valueOf(st.nextToken()).floatValue();
+	y = Float.valueOf(st.nextToken()).floatValue();
+	z = Float.valueOf(st.nextToken()).floatValue();
 	}
 /**
  * Construct a new vector, copying values from another vector.
@@ -82,7 +78,7 @@ public Vec3 abs()
 	return this;
 	}
 /**
- * This method was created by a SmartGuide.
+ * Add the specified components to this vector.
  * @return q2java.Vec3
  * @param x float
  * @param y float
@@ -96,8 +92,8 @@ public Vec3 add(float nx, float ny, float nz)
 	return this;
 	}
 /**
- * This method was created by a SmartGuide.
- * @return q2java.Vec3
+ * Add another vector to this vector.
+ * @return the original vector, with the other vector added.
  * @param v q2java.Vec3
  */
 public Vec3 add(Vec3 v) 
@@ -108,7 +104,7 @@ public Vec3 add(Vec3 v)
 	return this;
 	}
 /**
- * This method was created by a SmartGuide.
+ * Adjust the specified mins and maxs vectors so that they contain the specified point.
  * @param point q2java.Vec3
  * @param mins q2java.Vec3
  * @param maxs q2java.Vec3
@@ -183,36 +179,13 @@ public Vec3 clampEight()
 	return this;
 	}
 /**
- * This method was created by a SmartGuide.
+ * Set the components of this vector to zero.
  * @return q2java.Vec3
  */
 public Vec3 clear() 
 	{
 	x = y = z = 0.0F;
 	return this;
-	}
-/**
- * This method was created by a SmartGuide.
- * @return q2java.Vec3
- * @param v q2java.Vec3
- */
-public Vec3 copyFrom(Vec3 v) 
-	{
-	x = v.x;
-	y = v.y;
-	z = v.z;
-	return this;
-	}
-/**
- * This method was created by a SmartGuide.
- * @param v q2java.Vec3
- */
-public Vec3 copyTo(Vec3 v) 
-	{
-	v.x = x;
-	v.y = y;
-	v.z = z;
-	return v;
 	}
 /**
  * Calculate cross product of two vectors.
@@ -239,7 +212,7 @@ public static float dotProduct(Vec3 a, Vec3 b)
 	return (a.x*b.x) + (a.y*b.y) + (a.z*b.z);
 	}
 /**
- * This method was created by a SmartGuide.
+ * Compare this vector with a set of specified values.
  * @return boolean
  * @param v q2java.Vec3
  */
@@ -248,16 +221,19 @@ public boolean equals(float nx, float ny, float nz)
 	return (x == nx) && (y == ny) && (z == nz);
 	}
 /**
- * This method was created by a SmartGuide.
+ * Compare this vector with another.
  * @return boolean
  * @param v q2java.Vec3
  */
 public boolean equals(Vec3 v) 
 	{
-	return (x == v.x) && (y == v.y) && (z == v.z);
+	if (v == null)
+		return false;
+	else		
+		return (x == v.x) && (y == v.y) && (z == v.z);
 	}
 /**
- * This method was created by a SmartGuide.
+ * Find the magnitude of this vector.
  * @return float
  */
 public float length() 
@@ -314,7 +290,7 @@ public static Vec3 projectSource(Vec3 point, Vec3 distance, Vec3 forward, Vec3 r
 	return result;
 	}
 /**
- * This method was created by a SmartGuide.
+ * Change the magnitude of this vector.
  * @return q2java.Vec3
  * @param val float
  */
@@ -326,7 +302,7 @@ public Vec3 scale(float val)
 	return this;
 	}
 /**
- * This method was created by a SmartGuide.
+ * Set the value of this vector.
  * @return q2java.Vec3
  * @param nx float
  * @param ny float
@@ -340,7 +316,19 @@ public Vec3 set(double nx, double ny, double nz)
 	return this;
 	}
 /**
- * This method was created by a SmartGuide.
+ * Set the value of this vector, by copying from the parameter vector.
+ * @return q2java.Vec3
+ * @param v q2java.Vec3
+ */
+public Vec3 set(Vec3 v) 
+	{
+	x = v.x;
+	y = v.y;
+	z = v.z;
+	return this;
+	}
+/**
+ * Subtract from this vector.
  * @return q2java.Vec3
  * @param x float
  * @param y float
@@ -354,8 +342,8 @@ public Vec3 subtract(float nx, float ny, float nz)
 	return this;
 	}
 /**
- * This method was created by a SmartGuide.
- * @return q2java.Vec3
+ * Subtract the parameter vector from this vector.
+ * @return the original vector, with the value subtracted
  * @param v q2java.Vec3
  */
 public Vec3 subtract(Vec3 v) 
@@ -366,7 +354,8 @@ public Vec3 subtract(Vec3 v)
 	return this;
 	}
 /**
- * This method was created by a SmartGuide.
+ * Return a new angle vector pointing in the same direction as
+ * the original direction vector.
  * @return q2java.Vec3
  */
 public Vec3 toAngles() 
@@ -396,6 +385,11 @@ public Vec3 toAngles()
 
 	return new Vec3(-pitch, yaw, 0);
 	}
+/**
+ * Create a string representation of the vector.
+ *
+ * @return The vector represented as "x y z", for example: "0.0 1.4 3.554"
+ */
 public String toString()
 	{
 	return x + " " + y + " " + z;

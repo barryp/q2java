@@ -3,6 +3,8 @@ package q2java;
 
 /**
  * Console variable handling...a little bizarre I think...but that's the way Q2 works
+ *
+ * @author Barry Pederson
  */
 public class CVar
 	{
