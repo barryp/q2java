@@ -36,6 +36,22 @@ public class trigger_multiple extends GameObject implements ServerFrameListener,
 	protected final static int STATE_DISABLED = 0;
 	protected final static int STATE_ENABLED = 1;
 	protected final static int STATE_DISPOSING = 3;
+
+	private class Delay implements ServerFrameListener
+		{
+		private Object fActivator;
+
+		public Delay(Object activator, float delay)
+			{
+			fActivator = activator;
+			Game.addServerFrameListener(this, delay, -1);			
+			}
+			
+		public void runFrame(int phase)
+			{
+			trigger(fActivator);  
+			}
+		}
 	
 /**
  * This method was created by a SmartGuide.
@@ -182,15 +198,10 @@ public void use(Player touchedBy)
 			fLastFire = Game.getGameTime();
 			
 	        if( fDelay > 0 )
-				{
-				Game.addServerFrameListener( new TriggerDelayer(this, touchedBy), 
-						 fDelay,
-						 -1);
-				}
-			else
-				{
-				trigger( touchedBy );
-				}
+	        	new Delay(touchedBy, fDelay);
+	        else
+				trigger(touchedBy);
+				
 			break;			
 		}
 	}

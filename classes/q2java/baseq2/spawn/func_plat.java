@@ -40,7 +40,30 @@ public class func_plat extends GenericPusher
 	private final static int STATE_PLAT_RAISED		= 4;	
 	private final static int STATE_PLAT_RAISEDWAIT	= 5;	
 	
-	private final static int PLAT_LOW_TRIGGER	= 1;	
+	private final static int PLAT_LOW_TRIGGER	= 1;
+
+	// Trigger field that causes platforms to move when you 
+	// step on/in it
+	private class Trigger extends GameObject implements FixedObject
+		{
+		public Trigger(Tuple3f mins, Tuple3f maxs) throws GameException
+			{
+			fEntity = new NativeEntity();
+			fEntity.setReference(this);
+	
+			fEntity.setMins(mins);
+			fEntity.setMaxs(maxs);
+	
+			fEntity.setSolid(NativeEntity.SOLID_TRIGGER);
+			fEntity.linkEntity();						
+			}
+			
+		public void touch(Player touchedBy) 
+			{
+			if (isLowered())
+				raise();
+			}			
+		}	
 	
 public func_plat(Element spawnArgs) throws GameException
 	{
@@ -237,7 +260,7 @@ protected void spawnInsideTrigger()
 	
 	try
 		{
-		new PlatformTrigger(this, tmin, tmax);
+		new Trigger(tmin, tmax);
 		}
 	catch (GameException e)
 		{
