@@ -185,7 +185,7 @@ public static String getSpawnpoint()
  */
 public static String getVersion() 
 	{
-	return "Q2Java Base Game, v0.7";
+	return "Q2Java Base Game, v0.8.0";
 	}	
 /**
  * Check whether or not the Cheating option is on.

@@ -14,7 +14,7 @@ import q2jgame.*;
  * 
  * @author Barry Pederson
  */
-class TelnetServer extends Thread  implements PrintListener, LocaleListener, FrameListener, CrossLevel
+class TelnetServer extends Thread  implements PrintListener, LocaleListener, CrossLevel
 	{
 	private final static int SOCKET_TIMEOUT = 500; // milliseconds
 	private final static String GROUP_NAME = "Telnet Handlers";
@@ -22,7 +22,6 @@ class TelnetServer extends Thread  implements PrintListener, LocaleListener, Fra
 	private int fPort;
 	private ServerSocket fServerSocket;
 	private ThreadGroup fHandlers;
-	private Vector fCommandQueue;	
 	private boolean fIsRunning;
 	private String fPassword;
 	private boolean fNoCmd;
@@ -56,7 +55,6 @@ public TelnetServer(GameModule gm, int port, String password, boolean noCmd, boo
 		else
 			fHandlers = new ThreadGroup(mgr.getThreadGroup(), GROUP_NAME + " on " + fPort);
 			
-		fCommandQueue = new Vector();
 		fPassword = password;
 		fNoCmd = noCmd;
 		fNoChat = noChat;
@@ -65,10 +63,7 @@ public TelnetServer(GameModule gm, int port, String password, boolean noCmd, boo
 		Game.addPrintListener(this);	
 	
 		// call us with localized messages using the default locale
-		fResourceGroup = Game.addLocaleListener(this);
-	
-		// call us so we can pass chats and commands back to the game
-		Game.addFrameListener(this, Game.FRAME_BEGINNING, 0, 0);		
+		fResourceGroup = Game.addLocaleListener(this);	
 		}
 	catch (IOException e)
 		{
@@ -131,21 +126,6 @@ public void dprint(String msg)
 	output(msg);
 	}	
 /**
- * Get a String from the command queue.
- * @return The next string, or null if the queue is empty.
- */
-public String getCommand() 
-	{
-	if ((fCommandQueue == null) || (fCommandQueue.size() < 1))
-		return null;
-	else
-		{
-		String result = (String) fCommandQueue.elementAt(0);
-		fCommandQueue.removeElementAt(0);
-		return result;
-		}
-	}
-/**
  * This method was created by a SmartGuide.
  * @return int
  */
@@ -206,15 +186,6 @@ public boolean isRunning()
  * @param printLevel One of the Engine.PRINT_* constants
  * @param msg java.lang.String
  */
-public void localecast(int printLevel, String msg)	
-	{
-	output(msg);
-	}
-/**
- * Called when the listener receives a localized broadcast message.
- * @param printLevel One of the Engine.PRINT_* constants
- * @param msg java.lang.String
- */
 public void localecast(Locale loc, int printLevel, String msg)	
 	{
 	output(msg);
@@ -234,15 +205,6 @@ private void output(String s)
 	byte[] b = TelnetHandler.getBytes(s);
 
 	consoleOutput(b, 0, b.length);	
-	}
-/**
- * This method was created by a SmartGuide.
- * @param s java.lang.String
- */
-void pushCommand(String s) 
-	{
-	if (fCommandQueue != null)
-		fCommandQueue.addElement(s);
 	}
 /**
  * This method was created by a SmartGuide.
@@ -281,21 +243,6 @@ public void run()
 
 	Game.removeLocaleListener(this);
 	Game.removePrintListener(this);
-	Game.removeFrameListener(this, Game.FRAME_BEGINNING);	
-	}
-/**
- * Relay input from the telnet clients.
- */
-public void runFrame(int phase) 
-	{
-	String s;
-	while ((s = getCommand()) != null)
-		{
-		if ((s.length() > 0) && (s.charAt(0) == '/'))
-			Engine.addCommandString(s.substring(1) + "\n");
-		else
-			Game.bprint(Engine.PRINT_CHAT, s + "\n");
-		}
 	}
 /**
  * Change the server's locale.

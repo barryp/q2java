@@ -12,7 +12,7 @@ grant {
 
   /* allow operations on non-privledged sockets 
      uncomment this next line for the barryp.telnet module */  
-  /*  permission java.net.SocketPermission "localhost:1024-", "accept, connect, listen, resolve";  */
+  /*  permission java.net.SocketPermission "*:1024-", "accept, connect, listen, resolve";  */
 
 };
 

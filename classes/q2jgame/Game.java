@@ -18,7 +18,7 @@ import q2java.*;
  * @author Barry Pederson 
  */
 
-public class Game implements GameListener
+public class Game implements GameListener, JavaConsoleListener
 	{
 	// handy random number generator
 	private static Random gRandom = new Random();	
@@ -65,7 +65,7 @@ public class Game implements GameListener
 	private static int  gPerformanceFrames;
 	private static long gCPUTime;	
 	
-	private static Vector gResourceGroups;
+	private static Vector gResourceGroups;	
 	
 /**
  * Register an object that implements FrameListener to 
@@ -158,25 +158,7 @@ public static ResourceGroup addLocaleListener(LocaleListener obj)
  */
 public static ResourceGroup addLocaleListener(LocaleListener obj, String localeName) 
 	{
-	if (localeName.equalsIgnoreCase("default"))
-		return addLocaleListener(obj);
-
-	StringTokenizer st = new StringTokenizer(localeName, "_");
-	String lang = st.nextToken();
-	String country;
-			
-	if (st.hasMoreTokens())
-		country = st.nextToken();
-	else 
-		country = "";
-			
-	Locale loc;				
-	if (st.hasMoreTokens())
-		loc = new Locale(lang, country, st.nextToken());
-	else
-		loc = new Locale(lang, country);
-				
-	return addLocaleListener(obj, loc);
+	return addLocaleListener(obj, getLocale(localeName));
 	}
 /**
  * Add an object that wants to receive broadcasts that are localized.
@@ -236,24 +218,6 @@ public static void bprint(int flags, String msg)
 		try
 			{
 			((PrintListener) enum.nextElement()).bprint(flags, msg);
-			}
-		catch (Exception e)
-			{
-			}
-		}
-	}
-/**
- * Relay stuff sent to the console from outside the game.
- * @param s java.lang.String
- */
-public void consoleOutput(String s) 
-	{
-	Enumeration enum = gPrintListeners.elements();
-	while (enum.hasMoreElements())
-		{
-		try
-			{
-			((PrintListener) enum.nextElement()).consoleOutput(s);
 			}
 		catch (Exception e)
 			{
@@ -322,18 +286,14 @@ private boolean externalServerCommand(GameModule gm, String cmd, Class[] paramTy
 		}
 	catch (NoSuchMethodException nsme)
 		{
-		// _Quinn:05/15/98
-//		dprint( gm.getModuleName() + " does not have the command \"" + cmd + "\".\n" );
-
-		// the above also would print if you issued an unqualified
-		// command like "sv scores" and baseq2 wasn't the first module
-		// (BBP)
-		
 		return false;
 		}
 	catch (java.lang.reflect.InvocationTargetException ite)		
 		{
-		ite.getTargetException().printStackTrace();
+		Throwable t = ite.getTargetException();
+		if (t instanceof ExceptionInInitializerError)
+			t = ((ExceptionInInitializerError)t).getException();
+		t.printStackTrace();		
 		}
 	catch (Exception e)
 		{
@@ -373,6 +333,32 @@ public static Vector getLevelRegistryList(Object key)
 		}
 		
 	return result;
+	}
+/**
+ * Get a Locale object given a name.
+ * (no idea why the Locale class didn't do this itself)
+ *
+ * @return java.util.Locale
+ * @param localeName java.lang.String
+ */
+public static Locale getLocale(String localeName) 
+	{
+	if ((localeName == null) || localeName.equalsIgnoreCase("default"))
+		return Locale.getDefault();
+
+	StringTokenizer st = new StringTokenizer(localeName, "_");
+	String lang = st.nextToken();
+	String country;
+			
+	if (st.hasMoreTokens())
+		country = st.nextToken();
+	else 
+		country = "";
+			
+	if (st.hasMoreTokens())
+		return new Locale(lang, country, st.nextToken());
+	else
+		return new Locale(lang, country);
 	}
 /**
  * Lookup a loaded package, based on its name.
@@ -501,7 +487,7 @@ public void init()
 	{	
 	// actually initialize the game
 	Engine.debugLog("Game.init()");
-//System.out.println("java.compiler = [" + System.getProperty("java.compiler") + "]");	
+
 	// setup to manage FrameListeners
 	gFrameBeginning = new FrameList(64, 16);
 	gFrameMiddle = new FrameList(512, 128);
@@ -515,6 +501,7 @@ public void init()
 	
 	// setup to manage PrintListeners
 	gPrintListeners = new Vector();	
+	Engine.setJavaConsoleListener(this);
 	
 	// setup to manage PackageListeners
 	gModuleListeners = new Vector();
@@ -524,7 +511,7 @@ public void init()
 	
 	// setup hashtable to let objects find each other in a level
 	gLevelRegistry = new Hashtable();
-		
+
 	// setup to manage Game mods
 	//Withnails 04/22/98
 	//gModList = new Vector();
@@ -614,6 +601,24 @@ public static boolean isResourceAvailable(String basename, String key)
 		{
 		return false;
 		}				
+	}
+/**
+ * Relay stuff sent to the console from outside the game.
+ * @param s java.lang.String
+ */
+public void javaConsoleOutput(String s) 
+	{
+	Enumeration enum = gPrintListeners.elements();
+	while (enum.hasMoreElements())
+		{
+		try
+			{
+			((PrintListener) enum.nextElement()).consoleOutput(s);
+			}
+		catch (Exception e)
+			{
+			}
+		}
 	}
 /**
  * Broadcast a localized message to interested objects.
@@ -843,6 +848,23 @@ public static void removeLocaleListener(LocaleListener obj)
 		}
 	}
 /**
+ * Remove a broadcast listener from a specific locale.
+ * @param obj q2jgame.LocaleListener
+ */
+public static void removeLocaleListener(LocaleListener obj, String localeName) 
+	{
+	removeLocaleListener(obj, getLocale(localeName));
+	}
+/**
+ * Remove a broadcast listener from a specific locale.
+ * @param obj q2jgame.LocaleListener
+ */
+public static void removeLocaleListener(LocaleListener obj, Locale loc) 
+	{
+	ResourceGroup grp = getResourceGroup(loc);
+	grp.removeLocaleListener(obj);	
+	}
+/**
  * Remove a module from the game's package list
  * @param packageName java.lang.String
  */
@@ -889,10 +911,11 @@ public void runFrame()
 	gFrameCount++;
 	gGameTime = gFrameCount * Engine.SECONDS_PER_FRAME;
 
+	// call all the objects that registered to have runFrame() called
 	gFrameBeginning.runFrame(FRAME_BEGINNING, gGameTime);
 	gFrameMiddle.runFrame(FRAME_MIDDLE, gGameTime);
 	gFrameEnd.runFrame(FRAME_END, gGameTime);
-		
+
 	long endTime = Engine.getPerformanceCounter();
 	gCPUTime += (endTime - startTime);	
 	gPerformanceFrames++;	
@@ -957,8 +980,8 @@ public void serverCommand()
 	// run the command	
 	if (alias != null)
 		{
-		externalServerCommand(alias, cmd, paramTypes, params);
-		return;
+		if (externalServerCommand(alias, cmd, paramTypes, params))
+			return;
 		}
 	else
 		{
@@ -971,11 +994,18 @@ public void serverCommand()
 			}
 		catch (NoSuchMethodException nsme)
 			{
-			}
-		catch (java.lang.reflect.InvocationTargetException ite2)		
+			}			
+		catch (java.lang.reflect.InvocationTargetException ite)		
 			{
-			ite2.getTargetException().printStackTrace();
-			}		
+			Throwable t = ite.getTargetException();
+			if (t instanceof ExceptionInInitializerError)
+				t = ((ExceptionInInitializerError)t).getException();
+			t.printStackTrace();			
+			}
+		catch (ExceptionInInitializerError eiie)
+			{
+			eiie.getException().printStackTrace();
+			}
 		catch (Exception e2)
 			{
 			e2.printStackTrace();

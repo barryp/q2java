@@ -35,6 +35,7 @@ void CVar_javaDetach();
 void Engine_javaInit();
 void Engine_javaDetach();
 void Engine_startLevel();
+void Engine_runDeferred();
 // Engine method called by a NativeEntity method
 jobjectArray JNICALL Java_q2java_Engine_getRadiusEntities0
   (JNIEnv *, jclass, jfloat, jfloat, jfloat, jfloat, jint, jboolean, jboolean);
@@ -60,10 +61,6 @@ void Game_gameInit();
 void Game_javaInit();
 void Game_javaDetach();
 jclass Game_getPlayerClass();
-void Game_consoleOutput(const char *msg);
 int Game_playerConnect(jobject ent);
-
-void ConsoleOutputStream_javaInit();
-void ConsoleOutputStream_javaDetach();
 
 #endif

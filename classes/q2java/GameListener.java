@@ -9,11 +9,6 @@ public interface GameListener
 	{
 	
 /**
- * This method was created by a SmartGuide.
- * @param s java.lang.String
- */
-public void consoleOutput(String s);
-/**
  * Let the DLL know what class (descended from q2java.NativeEntity)
  * to use for new players.
  * @return java.lang.Class

@@ -22,34 +22,36 @@
 #define CALL_INPVS 11
 #define CALL_INPHS 12
 
+#define INDEX_IMAGE 9
+#define INDEX_MODEL 10
+#define INDEX_SOUND 11
 
 // handle to Engine class
 static jclass class_Engine;
 static jmethodID method_Engine_startLevel;
+static jmethodID method_Engine_runDeferred;
 
 
 static JNINativeMethod Engine_methods[] = 
     {
-    {"addCommandString","(Ljava/lang/String;)V",    Java_q2java_Engine_addCommandString},
-    {"bprint",      "(ILjava/lang/String;)V",       Java_q2java_Engine_bprint},
-    {"debugGraph",  "(FI)V",                        Java_q2java_Engine_debugGraph},
-    {"debugLog",    "(Ljava/lang/String;)V",        Java_q2java_Engine_debugLog},
-    {"dprint",      "(Ljava/lang/String;)V",        Java_q2java_Engine_dprint},
-    {"error",       "(Ljava/lang/String;)V",        Java_q2java_Engine_error},
-    {"getArgc",     "()I",                          Java_q2java_Engine_getArgc},
-    {"getArgv",     "(I)Ljava/lang/String;",        Java_q2java_Engine_getArgv},
-    {"getArgs",     "()Ljava/lang/String;",         Java_q2java_Engine_getArgs},
+    {"addCommandString0","(Ljava/lang/String;)V",    Java_q2java_Engine_addCommandString0},
+    {"bprint0",      "(ILjava/lang/String;)V",       Java_q2java_Engine_bprint0},
+    {"debugGraph0",  "(FI)V",                        Java_q2java_Engine_debugGraph0},
+    {"debugLog0",    "(Ljava/lang/String;)V",        Java_q2java_Engine_debugLog0},
+    {"dprint0",      "(Ljava/lang/String;)V",        Java_q2java_Engine_dprint0},
+    {"error0",       "(Ljava/lang/String;)V",        Java_q2java_Engine_error0},
+    {"getArgc0",     "()I",                          Java_q2java_Engine_getArgc0},
+    {"getArgv0",     "(I)Ljava/lang/String;",        Java_q2java_Engine_getArgv0},
+    {"getArgs0",     "()Ljava/lang/String;",         Java_q2java_Engine_getArgs0},
     {"getBoxEntities0", "(FFFFFFI)[Lq2java/NativeEntity;",  Java_q2java_Engine_getBoxEntities0},
     {"getGamePath",     "()Ljava/lang/String;",     Java_q2java_Engine_getGamePath},
-    {"getImageIndex",   "(Ljava/lang/String;)I",    Java_q2java_Engine_getImageIndex},
-    {"getModelIndex",   "(Ljava/lang/String;)I",    Java_q2java_Engine_getModelIndex},
     {"getPointContents0",   "(FFF)I",               Java_q2java_Engine_getPointContents0},
     {"getRadiusEntities0",  "(FFFFIZZ)[Lq2java/NativeEntity;", Java_q2java_Engine_getRadiusEntities0},
-    {"getSoundIndex",       "(Ljava/lang/String;)I",Java_q2java_Engine_getSoundIndex},
+    {"getIndex0",     "(ILjava/lang/String;)I",Java_q2java_Engine_getIndex0},
     {"inP0",                "(FFFFFFI)Z",           Java_q2java_Engine_inP0},
-    {"setAreaPortalState",  "(IZ)V",                Java_q2java_Engine_setAreaPortalState},
-    {"setConfigString",     "(ILjava/lang/String;)V",       Java_q2java_Engine_setConfigString},
-    {"areasConnected",      "(II)Z",                Java_q2java_Engine_areasConnected},
+    {"setAreaPortalState0",  "(IZ)V",                Java_q2java_Engine_setAreaPortalState0},
+    {"setConfigString0",     "(ILjava/lang/String;)V",       Java_q2java_Engine_setConfigString0},
+    {"areasConnected0",      "(II)Z",                Java_q2java_Engine_areasConnected0},
     {"trace0",      "(FFFFFFFFFFFFLq2java/NativeEntity;II)Lq2java/TraceResults;",   Java_q2java_Engine_trace0},
     {"write0",      "(Ljava/lang/Object;FFFII)V",   Java_q2java_Engine_write0},
     {"getPerformanceFrequency", "()J",              Java_q2java_Engine_getPerformanceFrequency},
@@ -82,6 +84,12 @@ void Engine_javaInit()
         return;
         }
 
+    method_Engine_runDeferred = (*java_env)->GetStaticMethodID(java_env, class_Engine, "runDeferred", "()V");
+    if (CHECK_EXCEPTION())
+        {
+        java_error = "Couldn't locate q2java.Engine.runDeferred()\n";
+        return;
+        }
 
     javalink_debug("Engine_javaInit() finished\n");
     }
@@ -96,7 +104,7 @@ void Engine_javaDetach()
     }
 
 
-static void JNICALL Java_q2java_Engine_dprint(JNIEnv *env, jclass cls, jstring js)
+static void JNICALL Java_q2java_Engine_dprint0(JNIEnv *env, jclass cls, jstring js)
     {
     char *str;
 
@@ -110,7 +118,7 @@ static void JNICALL Java_q2java_Engine_dprint(JNIEnv *env, jclass cls, jstring j
     }
 
 
-static void JNICALL Java_q2java_Engine_bprint(JNIEnv *env, jclass cls, jint printlevel, jstring js)
+static void JNICALL Java_q2java_Engine_bprint0(JNIEnv *env, jclass cls, jint printlevel, jstring js)
     {
     char *str;
 
@@ -123,7 +131,7 @@ static void JNICALL Java_q2java_Engine_bprint(JNIEnv *env, jclass cls, jint prin
     }
 
 
-static void JNICALL Java_q2java_Engine_setConfigString(JNIEnv *env, jclass cls, jint num, jstring js)
+static void JNICALL Java_q2java_Engine_setConfigString0(JNIEnv *env, jclass cls, jint num, jstring js)
     {
     char *s;
 
@@ -136,7 +144,7 @@ static void JNICALL Java_q2java_Engine_setConfigString(JNIEnv *env, jclass cls, 
     }
 
 
-static void JNICALL Java_q2java_Engine_error(JNIEnv *env, jclass cls, jstring js)
+static void JNICALL Java_q2java_Engine_error0(JNIEnv *env, jclass cls, jstring js)
     {
     char *s;
 
@@ -151,7 +159,7 @@ static void JNICALL Java_q2java_Engine_error(JNIEnv *env, jclass cls, jstring js
     }
 
 
-static jint JNICALL Java_q2java_Engine_getModelIndex(JNIEnv *env, jclass cls, jstring jname)
+static jint JNICALL Java_q2java_Engine_getIndex0(JNIEnv *env, jclass cls, jint indexType, jstring jname)
     {
     char *name;
     int result;
@@ -160,40 +168,30 @@ static jint JNICALL Java_q2java_Engine_getModelIndex(JNIEnv *env, jclass cls, js
         return 0;
 
     name = (char *)((*env)->GetStringUTFChars(env, jname, 0));
-    result = q2java_gi.modelindex(name);
+
+    switch (indexType)
+        {
+        case INDEX_MODEL:
+            result = q2java_gi.modelindex(name);
+            break;
+
+        case INDEX_IMAGE:
+            result = q2java_gi.imageindex(name);
+            break;
+
+        case INDEX_SOUND:
+            result = q2java_gi.soundindex(name);
+            break;
+
+        default:
+            result = 0;
+        }
+
     (*env)->ReleaseStringUTFChars(env, jname, name);
     return result;
     }
 
 
-static jint JNICALL Java_q2java_Engine_getSoundIndex(JNIEnv *env, jclass cls, jstring jname)
-    {
-    char *name;
-    int result;
-
-    if (jname == NULL)
-        return 0;
-
-    name = (char *)((*env)->GetStringUTFChars(env, jname, 0));
-    result = q2java_gi.soundindex(name);
-    (*env)->ReleaseStringUTFChars(env, jname, name);
-    return result;
-    }
-
-
-static jint JNICALL Java_q2java_Engine_getImageIndex(JNIEnv *env, jclass cls, jstring jname)
-    {
-    char *name;
-    int result;
-
-    if (jname == NULL)
-        return 0;
-
-    name = (char *)((*env)->GetStringUTFChars(env, jname, 0));
-    result = q2java_gi.imageindex(name);
-    (*env)->ReleaseStringUTFChars(env, jname, name);
-    return result;
-    }
 
 
 static jobject JNICALL Java_q2java_Engine_trace0(JNIEnv *env, jclass cls, 
@@ -267,13 +265,13 @@ static jboolean JNICALL Java_q2java_Engine_inP0(JNIEnv *env, jclass cls, jfloat 
     }
 
 
-static void JNICALL Java_q2java_Engine_setAreaPortalState(JNIEnv *env, jclass cls, jint portalnum, jboolean open)
+static void JNICALL Java_q2java_Engine_setAreaPortalState0(JNIEnv *env, jclass cls, jint portalnum, jboolean open)
     {
     q2java_gi.SetAreaPortalState(portalnum, open);
     }
 
 
-static jboolean JNICALL Java_q2java_Engine_areasConnected(JNIEnv *env, jclass cls, jint area1, jint area2)
+static jboolean JNICALL Java_q2java_Engine_areasConnected0(JNIEnv *env, jclass cls, jint area1, jint area2)
     {
     return (jboolean) q2java_gi.AreasConnected(area1, area2);
     }
@@ -374,25 +372,25 @@ static void JNICALL Java_q2java_Engine_write0(JNIEnv *env, jclass cls, jobject o
     }
 
 
-static jint JNICALL Java_q2java_Engine_getArgc(JNIEnv *env, jclass cls)
+static jint JNICALL Java_q2java_Engine_getArgc0(JNIEnv *env, jclass cls)
     {
     return q2java_gi.argc();   
     }
 
 
-static jstring JNICALL Java_q2java_Engine_getArgv(JNIEnv *env, jclass cls, jint n)
+static jstring JNICALL Java_q2java_Engine_getArgv0(JNIEnv *env, jclass cls, jint n)
     {
     return (*env)->NewStringUTF(env, q2java_gi.argv(n));
     }
 
 
-static jstring JNICALL Java_q2java_Engine_getArgs(JNIEnv *env, jclass cls)
+static jstring JNICALL Java_q2java_Engine_getArgs0(JNIEnv *env, jclass cls)
     {
     return (*env)->NewStringUTF(env, q2java_gi.args());
     }
 
 
-static void JNICALL Java_q2java_Engine_addCommandString(JNIEnv *env, jclass cls, jstring js)
+static void JNICALL Java_q2java_Engine_addCommandString0(JNIEnv *env, jclass cls, jstring js)
     {
     char *s;
 
@@ -405,7 +403,7 @@ static void JNICALL Java_q2java_Engine_addCommandString(JNIEnv *env, jclass cls,
     }
 
 
-static void JNICALL Java_q2java_Engine_debugGraph(JNIEnv *env, jclass cls, jfloat value, jint color)
+static void JNICALL Java_q2java_Engine_debugGraph0(JNIEnv *env, jclass cls, jfloat value, jint color)
     {
     q2java_gi.DebugGraph(value, color);
     }
@@ -419,7 +417,7 @@ static jstring JNICALL Java_q2java_Engine_getGamePath(JNIEnv *env, jclass cls)
     }
 
 
-static void JNICALL Java_q2java_Engine_debugLog(JNIEnv *env, jclass cls, jstring js)
+static void JNICALL Java_q2java_Engine_debugLog0(JNIEnv *env, jclass cls, jstring js)
     {
     char *s;
 
@@ -542,5 +540,14 @@ static jlong JNICALL Java_q2java_Engine_getPerformanceCounter(JNIEnv *env , jcla
 void Engine_startLevel()
     {
     (*java_env)->CallStaticVoidMethod(java_env, class_Engine, method_Engine_startLevel);
+    CHECK_EXCEPTION();
+    }
+
+/**
+ * Give the Engine a chance to think
+ */
+void Engine_runDeferred()
+    {
+    (*java_env)->CallStaticVoidMethod(java_env, class_Engine, method_Engine_runDeferred);
     CHECK_EXCEPTION();
     }

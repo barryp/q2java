@@ -36,6 +36,21 @@ class TelnetHandler extends Thread
 	
 	private byte[] fLineBuffer;
 	private int fLineBufferPtr;
+
+	private class DeferredChat implements Runnable
+		{
+		protected String fMessage;
+		
+		public DeferredChat(String msg) 
+			{
+			fMessage = msg;
+			}
+			
+		public void run() 
+			{
+			Game.bprint(Engine.PRINT_CHAT, fMessage + "\n");	
+			}			
+		}	
 	
 /**
  * TelnetHandler constructor comment.
@@ -57,7 +72,7 @@ TelnetHandler(ThreadGroup grp, TelnetServer srv, Socket s, String password, bool
  * Send a list of players and telnet clients.
  */
 public void doWho() throws IOException
-	{
+	{	
 	output("Players:\n");
 						
 	Enumeration enum = NativeEntity.enumeratePlayers();
@@ -291,7 +306,7 @@ public void run()
 		if ((fSocket == null) || (fNickname == null))
 			return; // logon must have failed
 
-		fServer.pushCommand("<Telnet>: " + fNickname + " connected");
+		Engine.invokeLater(new DeferredChat("<Telnet>: " + fNickname + " connected"));
 		
 		String clientAddr = fSocket.getInetAddress().getHostAddress() + ":" + fSocket.getLocalPort();
 		barryp.telnet.GameModule.addLog(clientAddr + " " + fNickname + " connected");			
@@ -312,9 +327,10 @@ public void run()
 					doWho();
 				else
 					{
-					// pass command up to the server if allowed.
+					// Have the game execute the command on the main thread
+					// if we don't have the nocmd flag set.
 					if (!fNoCmd)
-						fServer.pushCommand(s);
+						Engine.addCommandString(s.substring(1) + "\n");
 					}
 					
 				continue;
@@ -323,10 +339,10 @@ public void run()
 			// if it wasn't an IRC-style command, and we're not muzzled,
 			// then send our words of wisdom to the rest of the world.
 			if (!fNoChat)
-				fServer.pushCommand("<Telnet-" + fNickname + ">: " + s);
+				Engine.invokeLater(new TelnetHandler.DeferredChat("<Telnet-" + fNickname + ">: " + s));
 			}
 
-		fServer.pushCommand("<Telnet>: " + fNickname + " disconnected");
+		Engine.invokeLater(new DeferredChat("<Telnet>: " + fNickname + " disconnected"));
 		barryp.telnet.GameModule.addLog(clientAddr + " " + fNickname + " disconnected");			
 			
 		fOS.close();

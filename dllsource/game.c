@@ -20,7 +20,6 @@ static jmethodID method_GameListener_readLevel;
 static jmethodID method_GameListener_runFrame;
 static jmethodID method_GameListener_serverCommand;
 static jmethodID method_GameListener_getPlayerClass;
-static jmethodID method_GameListener_consoleOutput;
 static jmethodID method_GameListener_playerConnect;
 
 
@@ -89,7 +88,6 @@ void Game_javaInit()
     method_GameListener_runFrame = (*java_env)->GetMethodID(java_env, class_Game, "runFrame", "()V");
     method_GameListener_serverCommand = (*java_env)->GetMethodID(java_env, class_Game, "serverCommand", "()V");
     method_GameListener_getPlayerClass = (*java_env)->GetMethodID(java_env, class_Game, "getPlayerClass", "()Ljava/lang/Class;");
-    method_GameListener_consoleOutput = (*java_env)->GetMethodID(java_env, class_Game, "consoleOutput", "(Ljava/lang/String;)V");
     method_GameListener_playerConnect = (*java_env)->GetMethodID(java_env, class_Game, "playerConnect", "(Lq2java/NativeEntity;)V");
     method_GameListener_ctor = (*java_env)->GetMethodID(java_env, class_Game, "<init>", "()V");
     if (CHECK_EXCEPTION())
@@ -123,17 +121,6 @@ jclass Game_getPlayerClass()
         return NULL;
     else
         return result;
-    }
-
-void Game_consoleOutput(const char *msg)
-    {
-    jstring jmsg;
-
-    jmsg = (*java_env)->NewStringUTF(java_env, msg);
-    (*java_env)->CallVoidMethod(java_env, object_Game, method_GameListener_consoleOutput, jmsg);
-    CHECK_EXCEPTION();
-
-    (*java_env)->DeleteLocalRef(java_env, jmsg);
     }
 
 int Game_playerConnect(jobject ent)
@@ -276,6 +263,9 @@ static void java_runFrame(void)
 
     (*java_env)->CallVoidMethod(java_env, object_Game, method_GameListener_runFrame);
     CHECK_EXCEPTION();
+
+    // give the engine a chance to think about things
+    Engine_runDeferred();
 
 #ifdef _WIN32
     if (!QueryPerformanceCounter(&tock))

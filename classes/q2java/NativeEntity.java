@@ -560,6 +560,10 @@ public float getPlayerFOV()
 	{
 	return getFloat(fEntityIndex, FLOAT_CLIENT_PS_FOV);
 	}
+public short getPlayerGravity()
+	{
+	return getShort(fEntityIndex, SHORT_CLIENT_PS_PMOVE_GRAVITY);
+	}
 public int getPlayerGunFrame()
 	{
 	return getInt(fEntityIndex, INT_CLIENT_PS_GUNFRAME);

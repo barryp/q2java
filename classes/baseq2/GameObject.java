@@ -21,6 +21,7 @@ public class GameObject implements GameTarget, Serializable
 	protected Vector fGroup;
 	protected Vector fTargets;	
 	protected Vector fTargetGroup;
+	protected Vector3f fGravity = new Vector3f(0, 0, -1); // objects tend to fall down
 
 	protected String[] fSpawnArgs;
 	
@@ -94,8 +95,13 @@ public GameObject(String[] spawnArgs, int entityType) throws GameException
 public void applyGravity()
 	{
 	Vector3f v = fEntity.getVelocity();
-	//v.z -= getGravity() * GameModule.gGravity.getFloat() * Engine.SECONDS_PER_FRAME;
-	v.z -= 1 * GameModule.gGravity.getFloat() * Engine.SECONDS_PER_FRAME;
+	float f = GameModule.gGravity.getFloat() * Engine.SECONDS_PER_FRAME;
+
+	// we could have used the Tuple3f scaleAdd() here too.
+	v.x += fGravity.x * f;
+	v.y += fGravity.y * f;
+	v.z += fGravity.z * f;
+	
 	fEntity.setVelocity(v);
 	}
 /**
@@ -185,6 +191,14 @@ public void dispose()
 				
 	if (fEntity != null)				
 		fEntity.freeEntity();
+	}
+/**
+ * Get the gravity vector for this object.
+ * @return javax.vecmath.Vector3f
+ */
+public Vector3f getGravity() 
+	{
+	return new Vector3f(fGravity);
 	}
 /**
  * Randomly pick one of this entity's targets.
@@ -301,6 +315,26 @@ protected void registerKill(Player p)
 	{
 	// We're just a dumb object, tell the stupid player he killed himself
 	p.registerKill(null);
+	}
+/**
+ * Set the gravity vector for this object - (0, 0, -1) would be the normal value for "down".
+ * @param x float
+ * @param y float
+ * @param z float
+ */
+public void setGravity(float x, float y, float z) 
+	{
+	fGravity.x = x;
+	fGravity.y = y;
+	fGravity.z = z;
+	}
+/**
+ * Set the gravity vector for this object.
+ * @param g javax.vecmath.Vector3f (0, 0, -1) would be the traditional "down" value.
+ */
+public final void setGravity(Vector3f g) 
+	{
+	setGravity(g.x, g.y, g.z);
 	}
 /**
  * This method was created by a SmartGuide.

@@ -1114,6 +1114,9 @@ static jobjectArray JNICALL Java_q2java_NativeEntity_getPotentialPushed0(JNIEnv 
         if (!check->inuse)
             continue;
 
+		if (!check->area.prev)
+			continue;		// not linked in anywhere
+
         // if the entity is standing on the pusher, it will definitely be moved
         if (check->groundentity != pusher)
             {

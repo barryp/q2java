@@ -17,12 +17,19 @@ import java.io.Serializable;
  * A double precision, general, real, and dynamically resizeable 
  * two dimensional N x M matrix class. Row and column numbering 
  * begins with zero. The representation is row major. 
- * @version specification 1.1, implementation $Revision: 1.8 $, $Date: 1998/10/14 00:49:10 $
+ * @version specification 1.1, implementation $Revision: 1.10 $, $Date: 1998/10/22 01:41:07 $
  * @author Kenji hiranabe
  */
 public class GMatrix implements Serializable {
 /*
  * $Log: GMatrix.java,v $
+ * Revision 1.10  1998/10/22  01:41:07  hiranabe
+ * add(GMatrix, GMatrix) method bug reported by kaneta@elelab.nsc.co.jp
+ *
+ * Revision 1.9  1998/10/21  00:18:44  hiranabe
+ * GMatrix#mulTransposeRight bug
+ * thanks > kaneta@elelab.nsc.co.jp
+ *
  * Revision 1.8  1998/10/14  00:49:10  hiranabe
  * API1.1 Beta02
  *
@@ -149,7 +156,7 @@ public class GMatrix implements Serializable {
 	    throw new IllegalArgumentException("this:(" +nRow+"x"+nCol+") != m2:("+m2.nRow+"x"+m2.nCol+").");
 
 	for(int i = 0; i < nRow*nCol; i++)
-	    elementData[i] = m1.elementData[i] + m1.elementData[i];
+	    elementData[i] = m1.elementData[i] + m2.elementData[i];
 	}
 	/**
 	 * Copies a sub-matrix derived from this matrix into the target matrix.
@@ -712,7 +719,7 @@ public class GMatrix implements Serializable {
 	    for (int j = 0; j < nCol; j++) {
 		double sum = 0.0;
 		for (int k = 0; k < m1.nCol; k++)
-		    sum += m1.elementData[i*nCol + k]*m2.elementData[j*m2.nCol + k];
+		    sum += m1.elementData[i*m1.nCol + k]*m2.elementData[j*m2.nCol + k];
 		this.elementData[i*nCol + j] = sum;
 	    }
 	}

@@ -1,6 +1,8 @@
 package q2java;
 
-import java.util.Vector;
+import java.io.*;
+import java.lang.reflect.*;
+import java.util.*;
 import javax.vecmath.*;
 
 /**
@@ -13,9 +15,30 @@ import javax.vecmath.*;
 
 public class Engine
 	{
+	// grab the output streams
+	static
+		{
+		PrintStream ps = new PrintStream(new ConsoleOutputStream());
+		System.setOut(ps);
+		System.setErr(ps);
+		}
+		
 	// track VWep skin indexes
 	private static Vector gVWepList = new Vector();
-			
+
+	// queue for tasks from other threads that need to run on the main thread
+	private static ThreadUtility gRunnableQueue = new ThreadUtility();
+
+	// object (if any) that gets a copy of Java console output
+	private static JavaConsoleListener gJavaConsoleListener;
+	
+	// reference to the main game thread
+	private static Thread gGameThread = Thread.currentThread();
+
+	// --------------------------------
+	// Various Constants
+	// --------------------------------
+
 	public final static float SECONDS_PER_FRAME = 0.1F;
 	
 	public final static int PRINT_LOW		= 0;	// pickup messages
@@ -250,30 +273,518 @@ COLLISION DETECTION
 	private final static int CALL_UNICAST 		= 10;
 	private final static int CALL_INPVS 		= 11;
 	private final static int CALL_INPHS 		= 12;
+
+	// private constants for multithread-safe engine calls
+	protected final static int DEFER_JAVA_CONSOLE_OUTPUT	= 0;
+	protected final static int DEFER_ADD_COMMAND_STRING	= 1;
+	protected final static int DEFER_DEBUG_LOG			= 2;
+	protected final static int DEFER_BPRINT				= 3;
+	protected final static int DEFER_DPRINT				= 4;
+	protected final static int DEFER_DEBUG_GRAPH		= 5;
+	protected final static int DEFER_ERROR				= 6;
+	protected final static int DEFER_SET_CONFIG_STRING	= 7;
+	protected final static int DEFER_SET_AREAPORTAL_STATE	= 8;
+	protected final static int DEFER_GET_IMAGE_INDEX	= 9;
+	protected final static int DEFER_GET_MODEL_INDEX	= 10;
+	protected final static int DEFER_GET_SOUND_INDEX	= 11;
+	protected final static int DEFER_GET_ARGC			= 12;
+	protected final static int DEFER_GET_ARGS			= 13;
+	protected final static int DEFER_GET_ARGV			= 14;
+
+/*
+ * Multithreading code, most of it commented out
+ *
+	private static class DeferredAreasConnected implements Runnable
+		{
+		private int fArea1;
+		private int fArea2;
+		boolean fResult;
+
+		public DeferredAreasConnected(int area1, int area2)
+			{
+			fArea1 = area1;
+			fArea2 = area2;
+			}
+
+		public void run()
+			{
+			fResult = Engine.areasConnected0(fArea1, fArea2);
+			}
+		}
+
+	private static class DeferredGetBoxEntities implements Runnable
+		{
+		private Tuple3f fMins, fMaxs;
+		private int fAreaType;
+		NativeEntity[] fResult;
+		
+		public DeferredGetBoxEntities(Tuple3f mins, Tuple3f maxs, int areaType)
+			{
+			fMins = mins;
+			fMaxs = maxs;
+			fAreaType = areaType;
+			}
+
+		public void run()
+			{
+			fResult = Engine.getBoxEntities0(fMins.x, fMins.y, fMins.z, fMaxs.x, fMaxs.y, fMaxs.z, fAreaType);			
+			}
+		}
+
+	private static class DeferredGetPointContents implements Runnable
+		{
+		private Point3f fPoint;
+		int fResult;
+		
+		public DeferredGetPointContents(Point3f point)
+			{
+			fPoint = point;
+			}
+
+		public void run()
+			{
+			fResult = Engine.getPointContents0(fPoint.x, fPoint.y, fPoint.z);
+			}
+		}
+		
+
+	private static class DeferredGetRadiusEntities implements Runnable
+		{
+		private Point3f fPoint;
+		private float fRadius;
+		private boolean fOnlyPlayers, fSortResults;
+
+		NativeEntity[] fResult;
+
+		public DeferredGetRadiusEntities(Point3f point, float radius, boolean onlyPlayers, boolean sortResults)
+			{
+			fPoint = point;
+			fRadius = radius;
+			fOnlyPlayers = onlyPlayers;
+			fSortResults = sortResults;
+			}
+
+		public void run()
+			{
+			fResult = Engine.getRadiusEntities0(fPoint.x, fPoint.y, fPoint.z, fRadius, 0, fOnlyPlayers, fSortResults);
+			}
+		}
+		
+	private static class DeferredInP implements Runnable
+		{
+		private float fX1, fY1, fZ1, fX2, fY2, fZ2;
+		private int fCallType;
+		boolean fResult;
+
+		public DeferredInP(float x1, float y1, float z1, float x2, float y2, float z2, int callType)
+			{
+			fX1 = x1;
+			fY1 = y1;
+			fZ1 = z1;
+			fX2 = x2;
+			fY2 = y2;
+			fZ2 = z2;
+			fCallType = callType;
+			}
+
+		public void run()
+			{
+			fResult = Engine.inP0(fX1, fY1, fZ1, fX2, fY2, fZ2, fCallType);
+			}
+		}
+		
+
+	private static class DeferredTrace implements Runnable
+		{
+		private float fStartX, fStartY, fStartZ;
+		private float fMinsX, fMinsY, fMinsZ;
+		private float fMaxsX, fMaxsY, fMaxsZ;
+		private float fEndX, fEndY, fEndZ;
+		private NativeEntity fPassEnt;
+		private int fContentMask;
+		private int fUseMinMax;
+		
+		public TraceResults fResult;
+		
+		public DeferredTrace(float startx, float starty, float startz, 
+			float minsx, float minsy, float minsz, 
+			float maxsx, float maxsy, float maxsz,
+			float endx, float endy, float endz, 
+			NativeEntity passEnt, int contentMask, int useMinMax)
+			{
+			fStartX = startx;
+			fStartY = starty;
+			fStartZ = startz;
+			fMinsX = minsx;
+			fMinsY = minsy;
+			fMinsZ = minsz;
+			fMaxsX = maxsx;
+			fMaxsY = maxsy;
+			fMaxsZ = maxsz;
+			fEndX = endx;
+			fEndY = endy;
+			fEndZ = endz;
+			fPassEnt = passEnt;
+			fContentMask = contentMask;
+			fUseMinMax = useMinMax;
+			}
+
+		public void run()
+			{
+			fResult = Engine.trace0(fStartX, fStartY, fStartZ, 
+				fMinsX, fMinsY, fMinsZ, 
+				fMaxsX, fMaxsY, fMaxsZ,
+				fEndZ, fEndY, fEndZ, 
+				fPassEnt, fContentMask, fUseMinMax);
+			}
+		}
+
+		
+	private static class DeferredIntMethod implements Runnable
+		{
+		private int fMethodType;
+		private String fString;
+		int fResult;
+
+		public DeferredIntMethod(int methodType, String s)
+			{
+			fMethodType = methodType;
+			fString = s;
+			}
+			
+		public DeferredIntMethod(int methodType)
+			{
+			fMethodType = methodType;
+			}
+			
+		public void run()
+			{
+			switch (fMethodType)
+				{
+				case DEFER_GET_IMAGE_INDEX:
+				case DEFER_GET_MODEL_INDEX:
+				case DEFER_GET_SOUND_INDEX:
+					fResult = Engine.getIndex0(fMethodType, fString);
+					break;
+
+				case DEFER_GET_ARGC:
+					fResult = Engine.getArgc0();
+					break;
+				}
+			}
+		}
+
+	private static class DeferredStringMethod implements Runnable
+		{
+		private int fMethodType;
+		private int fInteger;
+		String fResult;
+
+		public DeferredStringMethod(int methodType, int val)
+			{
+			fMethodType = methodType;
+			fInteger = val;
+			}
+			
+		public DeferredStringMethod(int methodType)
+			{
+			fMethodType = methodType;
+			}
+			
+		public void run()
+			{
+			switch (fMethodType)
+				{
+				case DEFER_GET_ARGS:
+					fResult = Engine.getArgs0();
+					break;
+
+				case DEFER_GET_ARGV:
+					fResult = Engine.getArgv0(fInteger);
+					break;
+				}
+			}
+		}		
+		
+*/
+
+	private static class DeferredVoidMethod implements Runnable 
+		{
+		private int fMethodType;
+		private String fString;
+		private int fInteger;
+		private float fFloat;
+		private boolean fBoolean;
+
+		public DeferredVoidMethod(int methodType, String s) 
+			{
+			fMethodType = methodType;
+			fString = s;
+			}
+			
+		public DeferredVoidMethod(int methodType, int intval, String s) 
+			{
+			fMethodType = methodType;
+			fInteger = intval;
+			fString = s;
+			}
+			
+		public DeferredVoidMethod(int methodType, float floatval, int intval) 
+			{
+			fMethodType = methodType;
+			fFloat = floatval;
+			fInteger = intval;
+			}
+			
+		public DeferredVoidMethod(int methodType, int intval, boolean bool) 
+			{
+			fMethodType = methodType;
+			fInteger = intval;
+			fBoolean = bool;
+			}
+
+		public void run() 
+			{
+			switch (fMethodType)
+				{
+				case Engine.DEFER_JAVA_CONSOLE_OUTPUT:				
+					Engine.javaConsoleOutput(fString);
+					break;
+
+				case Engine.DEFER_ADD_COMMAND_STRING:					
+					Engine.addCommandString0(fString);
+					break;
+					
+				case Engine.DEFER_DEBUG_LOG:
+					Engine.debugLog0(fString);
+					break;
+
+				case Engine.DEFER_BPRINT:					
+					Engine.bprint0(fInteger, fString);
+					break;
+					
+				case Engine.DEFER_DPRINT:					
+					Engine.dprint0(fString);
+					break;					
+
+				case Engine.DEFER_DEBUG_GRAPH:					
+					Engine.debugGraph0(fFloat, fInteger);
+					break;
+
+				case Engine.DEFER_ERROR:					
+					Engine.error0(fString);
+					break;
+
+				case Engine.DEFER_SET_CONFIG_STRING:
+					Engine.setConfigString0(fInteger, fString);
+					break;
+
+				case Engine.DEFER_SET_AREAPORTAL_STATE:
+					Engine.setAreaPortalState0(fInteger, fBoolean);
+					break;
+				}
+			}			
+		}
+		
 	
-public native static void addCommandString(String s);
-public native static boolean areasConnected(int area1, int area2);
+/**
+ * Cause the Engine to run a command (multithread-safe)
+ *
+ * @params s the Command to run, should end with a '\n'.
+ */
+public static void addCommandString(String s)
+	{
+	// if this call is being made on a thread other than
+	// the main game thread, queue it up to be run
+	// by the main thread
+	if (Thread.currentThread() == gGameThread)
+		addCommandString0(s);
+	else
+		Engine.invokeLater(new Engine.DeferredVoidMethod(DEFER_ADD_COMMAND_STRING, s));
+	}
+private native static void addCommandString0(String s);
+public static boolean areasConnected(int area1, int area2)
+	{
+	// if this call is being made on a thread other than
+	// the main game thread, queue it up to be run
+	// by the main thread
+//	if (Thread.currentThread() == gGameThread)
+		return areasConnected0(area1, area2);
+/*		
+	else
+		{
+		Engine.DeferredAreasConnected def = new Engine.DeferredAreasConnected(area1, area2);
+		try
+			{
+			Engine.invokeAndWait(def);
+			}
+		catch (Exception e)
+			{
+			}
+		return def.fResult;
+		}
+*/		
+	}
+private native static boolean areasConnected0(int area1, int area2);
 /**
  * Broadcast a message to all players
  *
  * @param printLevel One of the PRINT_* constants.
  * @param s The message to send
  */
-public native static void bprint(int printLevel, String s);
-public native static void debugGraph(float value, int color);
+public static void bprint(int printLevel, String s)
+	{
+	// if this call is being made on a thread other than
+	// the main game thread, queue it up to be run
+	// by the main thread
+//	if (Thread.currentThread() == gGameThread)
+		bprint0(printLevel, s);
+//	else
+//		Engine.invokeLater(new Engine.DeferredVoidMethod(DEFER_BPRINT, printLevel, s));	
+	}
+/**
+ * Broadcast a message to all players
+ *
+ * @param printLevel One of the PRINT_* constants.
+ * @param s The message to send
+ */
+private native static void bprint0(int printLevel, String s);
+/**
+ * Update the Q2 debugging graph? (multithread-safe)
+ */
+public static void debugGraph(float value, int color)
+	{
+	// if this call is being made on a thread other than
+	// the main game thread, queue it up to be run
+	// by the main thread
+	if (Thread.currentThread() == gGameThread)
+		debugGraph0(value, color);
+	else
+		Engine.invokeLater(new Engine.DeferredVoidMethod(DEFER_DEBUG_GRAPH, value, color));	
+	}
+private native static void debugGraph0(float value, int color);
+/**
+ * Send a message to Q2Java's debugLog (multithread-safe)
+ * @param s message to log.
+ */
+public static void debugLog(String s)
+	{
+	// if this call is being made on a thread other than
+	// the main game thread, queue it up to be run
+	// by the main thread
+	if (Thread.currentThread() == gGameThread)
+		debugLog0(s);
+	else
+		Engine.invokeLater(new Engine.DeferredVoidMethod(DEFER_DEBUG_LOG, s));	
+	}
 /**
  * Send a message to Q2Java's debugLog.
  * @param s message to log.
  */
-public native static void debugLog(String s);
+private native static void debugLog0(String s);
+/**
+ * Print a message to the server console (multithread-safe)
+ */
+public static void dprint(String s)
+	{
+	// if this call is being made on a thread other than
+	// the main game thread, queue it up to be run
+	// by the main thread
+//	if (Thread.currentThread() == gGameThread)
+		dprint0(s);
+//	else
+//		Engine.invokeLater(new Engine.DeferredVoidMethod(DEFER_DPRINT, s));	
+	}
 /**
  * Print a message to the server console.
  */
-public native static void dprint(String s);
-public native static void error(String s);
-public native static int getArgc();
-public native static String getArgs();
-public native static String getArgv(int n);
+private native static void dprint0(String s);
+/**
+ * Exit the game with an error?
+ */
+public static void error(String s)
+	{
+	// if this call is being made on a thread other than
+	// the main game thread, queue it up to be run
+	// by the main thread
+	if (Thread.currentThread() == gGameThread)
+		error0(s);
+	else
+		Engine.invokeLater(new Engine.DeferredVoidMethod(DEFER_ERROR, s));	
+	}
+/**
+ * Exit the game with an error?
+ */
+private native static void error0(String s);
+public static int getArgc()
+	{
+	// if this call is being made on a thread other than
+	// the main game thread, queue it up to be run
+	// by the main thread
+//	if (Thread.currentThread() == gGameThread)
+		return getArgc0();
+/*		
+	else
+		{
+		Engine.DeferredIntMethod def = new Engine.DeferredIntMethod(DEFER_GET_ARGC);
+		try
+			{
+			Engine.invokeAndWait(def);
+			}
+		catch (Exception e)
+			{
+			}
+		return def.fResult;
+		}
+*/		
+	}
+private native static int getArgc0();
+public static String getArgs()
+	{
+	// if this call is being made on a thread other than
+	// the main game thread, queue it up to be run
+	// by the main thread
+//	if (Thread.currentThread() == gGameThread)
+		return getArgs0();
+/*		
+	else
+		{
+		Engine.DeferredStringMethod def = new Engine.DeferredStringMethod(DEFER_GET_ARGS);
+		try
+			{
+			Engine.invokeAndWait(def);
+			}
+		catch (Exception e)
+			{
+			}
+		return def.fResult;
+		}
+*/		
+	}
+private native static String getArgs0();
+public static String getArgv(int n)
+	{
+	// if this call is being made on a thread other than
+	// the main game thread, queue it up to be run
+	// by the main thread
+//	if (Thread.currentThread() == gGameThread)
+		return getArgv0(n);
+/*		
+	else
+		{
+		Engine.DeferredStringMethod def = new Engine.DeferredStringMethod(DEFER_GET_ARGV, n);
+		try
+			{
+			Engine.invokeAndWait(def);
+			}
+		catch (Exception e)
+			{
+			}
+		return def.fResult;
+		}
+*/		
+	}
+private native static String getArgv0(int n);
 /**
  * This method was created by a SmartGuide.
  * @return NativeEntity[]
@@ -284,7 +795,25 @@ public native static String getArgv(int n);
  */
 public static NativeEntity[] getBoxEntities(Tuple3f mins, Tuple3f maxs, int areaType) 
 	{
-	return getBoxEntities0(mins.x, mins.y, mins.z, maxs.x, maxs.y, maxs.z, areaType);
+	// if this call is being made on a thread other than
+	// the main game thread, queue it up to be run
+	// by the main thread
+//	if (Thread.currentThread() == gGameThread)
+		return getBoxEntities0(mins.x, mins.y, mins.z, maxs.x, maxs.y, maxs.z, areaType);
+/*		
+	else
+		{
+		Engine.DeferredGetBoxEntities def = new Engine.DeferredGetBoxEntities(mins, maxs, areaType);
+		try
+			{
+			Engine.invokeAndWait(def);
+			}
+		catch (Exception e)
+			{
+			}
+		return def.fResult;
+		}
+*/		
 	}
 /**
  * This method was created by a SmartGuide.
@@ -302,8 +831,45 @@ private native static NativeEntity[] getBoxEntities0(float minsx, float minsy, f
  * @return A path such as "c:\\quake2\\q2java".
  */
 public native static String getGamePath();
-public native static int getImageIndex(String name);
-public native static int getModelIndex(String name);
+/**
+ * Get a reference to the main game thread.
+ * @return java.lang.Thread
+ */
+public static Thread getGameThread() 
+	{
+	return gGameThread;
+	}
+public static int getImageIndex(String name)
+	{
+	return getIndex(DEFER_GET_IMAGE_INDEX, name);
+	}
+private static int getIndex(int indexType, String name)
+	{
+	// if this call is being made on a thread other than
+	// the main game thread, queue it up to be run
+	// by the main thread
+//	if (Thread.currentThread() == gGameThread)
+		return getIndex0(indexType, name);
+/*		
+	else
+		{
+		Engine.DeferredIntMethod def = new Engine.DeferredIntMethod(indexType, name);
+		try
+			{
+			Engine.invokeAndWait(def);
+			}
+		catch (Exception e)
+			{
+			}
+		return def.fResult;
+		}
+*/		
+	}
+private native static int getIndex0(int indexType, String name);
+public static int getModelIndex(String name)
+	{
+	return getIndex(DEFER_GET_MODEL_INDEX, name);
+	}
 /**
  * Get a value indicating elapsed time in some number of ticks.
  * Use getPerformanceFrequency to find out how many ticks per second
@@ -319,11 +885,30 @@ public native static long getPerformanceCounter();
 public native static long getPerformanceFrequency();
 public static int getPointContents(Point3f point)
 	{
-	return getPointContents0(point.x, point.y, point.z);
+	// if this call is being made on a thread other than
+	// the main game thread, queue it up to be run
+	// by the main thread
+//	if (Thread.currentThread() == gGameThread)
+		return getPointContents0(point.x, point.y, point.z);
+/*		
+	else
+		{
+		Engine.DeferredGetPointContents def = new Engine.DeferredGetPointContents(point);
+		try
+			{
+			Engine.invokeAndWait(def);
+			}
+		catch (Exception e)
+			{
+			}
+		return def.fResult;
+		}
+*/		
 	}
 private native static int getPointContents0(float x, float y, float z);
 /**
- * Get a list of entities who have their origin within a certain radius of the given point.
+ * Get a list of entities who have their origin within 
+ * a certain radius of the given point.
  * @return NativeEntity[]
  * @param point 
  * @param radius
@@ -332,7 +917,25 @@ private native static int getPointContents0(float x, float y, float z);
  */
 public static NativeEntity[] getRadiusEntities(Point3f point, float radius, boolean onlyPlayers, boolean sortResults) 
 	{
-	return getRadiusEntities0(point.x, point.y, point.z, radius, 0, onlyPlayers, sortResults);
+	// if this call is being made on a thread other than
+	// the main game thread, queue it up to be run
+	// by the main thread
+//	if (Thread.currentThread() == gGameThread)
+		return getRadiusEntities0(point.x, point.y, point.z, radius, 0, onlyPlayers, sortResults);
+/*		
+	else
+		{
+		Engine.DeferredGetRadiusEntities def = new Engine.DeferredGetRadiusEntities(point, radius, onlyPlayers, sortResults);
+		try
+			{
+			Engine.invokeAndWait(def);
+			}
+		catch (Exception e)
+			{
+			}
+		return def.fResult;
+		}
+*/		
 	}
 /**
  * This method was created by a SmartGuide.
@@ -344,7 +947,10 @@ public static NativeEntity[] getRadiusEntities(Point3f point, float radius, bool
  */
 private native static NativeEntity[] getRadiusEntities0(float x, float y, float z,
 	float radius, int ignoreIndex, boolean onlyPlayers, boolean sortResults);
-public native static int getSoundIndex(String name);
+public static int getSoundIndex(String name)
+	{
+	return getIndex(DEFER_GET_SOUND_INDEX, name);
+	}
 /**
  * Get the index of the VWep skin for a given weapon.
  * Similar to the other get*Index() methods, but this 
@@ -359,35 +965,157 @@ public native static int getSoundIndex(String name);
  */
 public static int getVWepIndex(String weaponIconName) 
 	{
-	int nEntries = gVWepList.size();
-	
-	// look for pre-existing entries.
-	for (int i = 0; i < nEntries; i++)
+//	synchronized (gVWepList)
 		{
-		if (((String) gVWepList.elementAt(i)).equals(weaponIconName))
-			return i+1;
-		}
+		int nEntries = gVWepList.size();
+	
+		// look for pre-existing entries.
+		for (int i = 0; i < nEntries; i++)
+			{
+			if (((String) gVWepList.elementAt(i)).equals(weaponIconName))
+				return i+1;
+			}
 		
-	// wasn't in the list, so add it and return the new entry's index.		
-	getModelIndex("#" + weaponIconName + ".md2");
-	gVWepList.addElement(weaponIconName);
-	return nEntries + 1;		
+		// wasn't in the list, so add it and return the new entry's index.		
+		getModelIndex("#" + weaponIconName + ".md2");
+		gVWepList.addElement(weaponIconName);
+		return nEntries + 1;
+		}
 	}
 private native static boolean inP0(float x1, float y1, float z1, float x2, float y2, float z2, int calltype);
+
+/** 
+ * Method for multithreading the inPHS and inPVS methods - but not currently used.
+  
+private static boolean inP1(float x1, float y1, float z1, float x2, float y2, float z2, int callType)
+	{
+	// if this call is being made on a thread other than
+	// the main game thread, queue it up to be run
+	// by the main thread	
+	if (Thread.currentThread() == gGameThread)
+		return inP1(x1, y1, z1, x2, y2, z2, callType);
+	else
+		{
+		Engine.DeferredInP def = new Engine.DeferredInP(x1, y1, z1, x2, y2, z2, callType);
+		try
+			{
+			Engine.invokeAndWait(def);
+			}
+		catch (Exception e)
+			{
+			}
+		return def.fResult;
+		}
+		
+	}
+*/
 public static boolean inPHS(Point3f p1, Point3f p2)
 	{
-	return inP0(p1.x, p1.y, p1.z, p2.z, p2.y, p2.z, CALL_INPHS);
+//	return inP1(p1.x, p1.y, p1.z, p2.z, p2.y, p2.z, CALL_INPHS);
+	return inP0(p1.x, p1.y, p1.z, p2.z, p2.y, p2.z, CALL_INPHS);	
 	}
 public static boolean inPVS(Point3f p1, Point3f p2)
 	{
+//	return inP1(p1.x, p1.y, p1.z, p2.z, p2.y, p2.z, CALL_INPVS);
 	return inP0(p1.x, p1.y, p1.z, p2.z, p2.y, p2.z, CALL_INPVS);
+	}
+/**
+ * Causes doRun.run() to be executed synchronously on the main game thread.
+ *
+ * This is basically the same technique Java Swing uses to allow threads to
+ * run code on the main thread.
+ *
+ * @param doRun An object that implements java.lang.Runnable
+ *
+ * @exception  InterruptedException If we're interrupted while waiting for
+ *             the event dispatching thread to finish excecuting <i>doRun.run()</i>
+ * @exception  InvocationTargetException  If <i>doRun.run()</i> throws
+ *
+ * @see #invokeLater 
+ */
+public static void invokeAndWait(Runnable doRun) throws InterruptedException, InvocationTargetException
+	{
+	gRunnableQueue.invokeAndWait(doRun);
+	}
+
+	
+/**
+ * Causes doRun.run() to be executed asynchronously on the main game thread.
+ *
+ * This is basically the same technique Java Swing uses to allow threads to
+ * run code on the main thread.
+ *
+ * Any exceptions thrown on the main thread are quietly ignored.
+ *
+ * @param doRun An object that implements java.lang.Runnable
+ */
+public static void invokeLater(Runnable doRun)
+	{
+	gRunnableQueue.invokeLater(doRun);
+	}
+/**
+ * Called when the JVM has console output.
+ * @param s java.lang.String
+ */
+static void javaConsoleOutput(String s) 
+	{
+	// if this call is being made on a thread other than
+	// the main game thread, queue it up to be run
+	// by the main thread
+	if (!(Thread.currentThread().equals(gGameThread)))
+		{
+		Engine.invokeLater(new Engine.DeferredVoidMethod(DEFER_JAVA_CONSOLE_OUTPUT, s));
+		return;
+		}
+
+	// send the string down to the Q2 console		
+	Engine.dprint(s);
+
+	// send the string out to any interested Java code
+	if (gJavaConsoleListener != null)
+		gJavaConsoleListener.javaConsoleOutput(s);
 	}
 public static void multicast(Point3f origin, int to)
 	{
 	write0(null, origin.x, origin.y, origin.z, to, CALL_MULTICAST);
 	}
-public native static void setAreaPortalState(int portalnum, boolean open);
-public native static void setConfigString(int num, String s);
+/**
+ * Called by the DLL at regular intervals.
+ */
+private static void runDeferred() 
+	{
+	gRunnableQueue.run();	
+	}	
+public static void setAreaPortalState(int portalNum, boolean open)
+	{
+	// if this call is being made on a thread other than
+	// the main game thread, queue it up to be run
+	// by the main thread
+//	if (Thread.currentThread() == gGameThread)
+		setAreaPortalState0(portalNum, open);
+//	else
+//		Engine.invokeLater(new Engine.DeferredVoidMethod(DEFER_SET_AREAPORTAL_STATE, portalNum, open));		
+	}
+private native static void setAreaPortalState0(int portalnum, boolean open);
+public static void setConfigString(int num, String s)
+	{
+	// if this call is being made on a thread other than
+	// the main game thread, queue it up to be run
+	// by the main thread
+//	if (Thread.currentThread() == gGameThread)
+		setConfigString0(num, s);
+//	else
+//		Engine.invokeLater(new Engine.DeferredVoidMethod(DEFER_SET_CONFIG_STRING, num, s));		
+	}
+private native static void setConfigString0(int num, String s);
+/**
+ * Set an object to be called when the JVM has output.
+ * @param jcl q2java.JavaConsoleListener
+ */
+public static void setJavaConsoleListener(JavaConsoleListener jcl)
+	{
+	gJavaConsoleListener = jcl;
+	}
 /**
  * Called by the DLL to let the Engine know that a new level 
  * is starting.
@@ -407,6 +1135,7 @@ private static void startLevel()
  */
 public static TraceResults trace(Point3f start, Point3f end, NativeEntity passEnt, int contentMask) 
 	{
+//	return trace1(start.x, start.y, start.z, 0, 0, 0, 0, 0, 0, end.x, end.y, end.z, passEnt, contentMask, 0);
 	return trace0(start.x, start.y, start.z, 0, 0, 0, 0, 0, 0, end.x, end.y, end.z, passEnt, contentMask, 0);
 	}
 /**
@@ -421,6 +1150,7 @@ public static TraceResults trace(Point3f start, Point3f end, NativeEntity passEn
  */
 public static TraceResults trace(Point3f start, Tuple3f mins, Tuple3f maxs, Point3f end, NativeEntity passEnt, int contentMask) 
 	{
+//	return trace1(start.x, start.y, start.z, mins.x, mins.y, mins.z, maxs.x, maxs.y, maxs.z, end.x, end.y, end.z, passEnt, contentMask, 1);
 	return trace0(start.x, start.y, start.z, mins.x, mins.y, mins.z, maxs.x, maxs.y, maxs.z, end.x, end.y, end.z, passEnt, contentMask, 1);
 	}
 /**
@@ -438,6 +1168,46 @@ private native static TraceResults trace0(float startx, float starty, float star
 	float maxsx, float maxsy, float maxsz,
 	float endx, float endy, float endz,
 	NativeEntity passEnt, int contentMask, int useMinMax);
+
+/**
+ * Method to help with multithreaded trace calls - not currently used.
+ * @return TraceResults
+ * @param start Vec3
+ * @param mins Vec3
+ * @param maxs Vec3
+ * @param end Vec3
+ * @param passEnt NativeEntity
+ * @param contentMask int
+ 
+private static TraceResults trace1(float startx, float starty, float startz,
+	float minsx, float minsy, float minsz, 
+	float maxsx, float maxsy, float maxsz,
+	float endx, float endy, float endz,
+	NativeEntity passEnt, int contentMask, int useMinMax)
+	{
+	// if this call is being made on a thread other than
+	// the main game thread, queue it up to be run
+	// by the main thread
+	if (Thread.currentThread() == gGameThread)
+		return trace0(startx, starty, startz, minsx, minsy, minsz, maxsx, maxsy, maxsz,
+			endx, endy, endz, passEnt, contentMask, useMinMax);
+	else
+		{
+		Engine.DeferredTrace def = new Engine.DeferredTrace(startx, starty, startz, 
+			minsx, minsy, minsz, maxsx, maxsy, maxsz,
+			endx, endy, endz, passEnt, contentMask, useMinMax);
+		try
+			{
+			Engine.invokeAndWait(def);
+			}
+		catch (Exception e)
+			{
+			}
+		return def.fResult;
+		}	
+	}
+
+*/	
 /**
  * Send a packet to a particular client?
  */

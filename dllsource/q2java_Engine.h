@@ -9,10 +9,10 @@ extern "C" {
 #endif
 /*
  * Class:     q2java_Engine
- * Method:    bprint
+ * Method:    bprint0
  * Signature: (ILjava/lang/String;)V
  */
-static void JNICALL Java_q2java_Engine_bprint
+static void JNICALL Java_q2java_Engine_bprint0
   (JNIEnv *, jclass, jint, jstring);
 
 /*
@@ -25,10 +25,10 @@ static void JNICALL Java_q2java_Engine_write0
 
 /*
  * Class:     q2java_Engine
- * Method:    getArgs
+ * Method:    getArgs0
  * Signature: ()Ljava/lang/String;
  */
-static jstring JNICALL Java_q2java_Engine_getArgs
+static jstring JNICALL Java_q2java_Engine_getArgs0
   (JNIEnv *, jclass);
 
 /*
@@ -44,15 +44,15 @@ static jstring JNICALL Java_q2java_Engine_getGamePath
  * Method:    setConfigString
  * Signature: (ILjava/lang/String;)V
  */
-static void JNICALL Java_q2java_Engine_setConfigString
+static void JNICALL Java_q2java_Engine_setConfigString0
   (JNIEnv *, jclass, jint, jstring);
 
 /*
  * Class:     q2java_Engine
- * Method:    debugLog
+ * Method:    debugLog0
  * Signature: (Ljava/lang/String;)V
  */
-static void JNICALL Java_q2java_Engine_debugLog
+static void JNICALL Java_q2java_Engine_debugLog0
   (JNIEnv *, jclass, jstring);
 
 /*
@@ -65,19 +65,19 @@ static jobjectArray JNICALL Java_q2java_Engine_getBoxEntities0
 
 /*
  * Class:     q2java_Engine
- * Method:    addCommandString
+ * Method:    addCommandString0
  * Signature: (Ljava/lang/String;)V
  */
-static void JNICALL Java_q2java_Engine_addCommandString
+static void JNICALL Java_q2java_Engine_addCommandString0
   (JNIEnv *, jclass, jstring);
 
 /*
  * Class:     q2java_Engine
- * Method:    getSoundIndex
- * Signature: (Ljava/lang/String;)I
+ * Method:    getIndex0
+ * Signature: (ILjava/lang/String;)I
  */
-static jint JNICALL Java_q2java_Engine_getSoundIndex
-  (JNIEnv *, jclass, jstring);
+static jint JNICALL Java_q2java_Engine_getIndex0
+  (JNIEnv *, jclass, jint, jstring);
 
 /*
  * Class:     q2java_Engine
@@ -89,26 +89,26 @@ static jint JNICALL Java_q2java_Engine_getPointContents0
 
 /*
  * Class:     q2java_Engine
- * Method:    areasConnected
+ * Method:    areasConnected0
  * Signature: (II)Z
  */
-static jboolean JNICALL Java_q2java_Engine_areasConnected
+static jboolean JNICALL Java_q2java_Engine_areasConnected0
   (JNIEnv *, jclass, jint, jint);
 
 /*
  * Class:     q2java_Engine
- * Method:    error
+ * Method:    error0
  * Signature: (Ljava/lang/String;)V
  */
-static void JNICALL Java_q2java_Engine_error
+static void JNICALL Java_q2java_Engine_error0
   (JNIEnv *, jclass, jstring);
 
 /*
  * Class:     q2java_Engine
- * Method:    debugGraph
+ * Method:    debugGraph0
  * Signature: (FI)V
  */
-static void JNICALL Java_q2java_Engine_debugGraph
+static void JNICALL Java_q2java_Engine_debugGraph0
   (JNIEnv *, jclass, jfloat, jint);
 
 /*
@@ -118,14 +118,6 @@ static void JNICALL Java_q2java_Engine_debugGraph
  */
 static jobject JNICALL Java_q2java_Engine_trace0
   (JNIEnv *, jclass, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jobject, jint, jint);
-
-/*
- * Class:     q2java_Engine
- * Method:    getImageIndex
- * Signature: (Ljava/lang/String;)I
- */
-static jint JNICALL Java_q2java_Engine_getImageIndex
-  (JNIEnv *, jclass, jstring);
 
 /*
  * Class:     q2java_Engine
@@ -153,18 +145,18 @@ static jlong JNICALL Java_q2java_Engine_getPerformanceFrequency
 
 /*
  * Class:     q2java_Engine
- * Method:    getArgv
+ * Method:    getArgv0
  * Signature: (I)Ljava/lang/String;
  */
-static jstring JNICALL Java_q2java_Engine_getArgv
+static jstring JNICALL Java_q2java_Engine_getArgv0
   (JNIEnv *, jclass, jint);
 
 /*
  * Class:     q2java_Engine
- * Method:    getArgc
+ * Method:    getArgc0
  * Signature: ()I
  */
-static jint JNICALL Java_q2java_Engine_getArgc
+static jint JNICALL Java_q2java_Engine_getArgc0
   (JNIEnv *, jclass);
 
 /*
@@ -172,15 +164,15 @@ static jint JNICALL Java_q2java_Engine_getArgc
  * Method:    setAreaPortalState
  * Signature: (IZ)V
  */
-static void JNICALL Java_q2java_Engine_setAreaPortalState
+static void JNICALL Java_q2java_Engine_setAreaPortalState0
   (JNIEnv *, jclass, jint, jboolean);
 
 /*
  * Class:     q2java_Engine
- * Method:    dprint
+ * Method:    dprint0
  * Signature: (Ljava/lang/String;)V
  */
-static void JNICALL Java_q2java_Engine_dprint
+static void JNICALL Java_q2java_Engine_dprint0
   (JNIEnv *, jclass, jstring);
 
 /*
@@ -190,14 +182,6 @@ static void JNICALL Java_q2java_Engine_dprint
  */
 static jboolean JNICALL Java_q2java_Engine_inP0
   (JNIEnv *, jclass, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jint);
-
-/*
- * Class:     q2java_Engine
- * Method:    getModelIndex
- * Signature: (Ljava/lang/String;)I
- */
-static jint JNICALL Java_q2java_Engine_getModelIndex
-  (JNIEnv *, jclass, jstring);
 
 #ifdef __cplusplus
 }

@@ -48,7 +48,11 @@
     jint (JNICALL *p_JNI_GetDefaultJavaVMInitArgs)(void *);
     jint (JNICALL *p_JNI_CreateJavaVM)(JavaVM **, void **, void *);
 #else // assume Unix
-    char *javalink_version = "Unix Version";
+    #ifdef KAFFE
+        char *javalink_version = "Unix (Kaffe) Version";
+    #else
+        char *javalink_version = "Unix Version";
+    #endif
     static char *file_separator = "/";
     static char *path_separator = ":";
 #endif
@@ -419,7 +423,12 @@ static jint CreateJavaVM(JavaVM **java_vm, void **java_env, void *vm_args)
  */
 static jint createVM_JNI_11(char **properties, JavaVM **java_vm)
     {
+#ifdef KAFFE
+    JavaVMInitArgs vm_args;
+#else
     JDK1_1InitArgs vm_args;
+#endif
+
     char **prop;
     char *p;
     char *classpath;
@@ -487,6 +496,11 @@ static jint createVM_JNI_11(char **properties, JavaVM **java_vm)
 
     // hook up the output function (this could be omitted with no problem)
     vm_args.vfprintf = &jvfprintf;
+
+
+#ifdef KAFFE
+    vm_args.libraryhome = getenv("LD_LIBRARY_PATH");
+#endif
 
     //
     // Let's kick the tires and light the fires!  
@@ -828,13 +842,6 @@ void javalink_start()
     if (!java_error)
         Misc_javaInit();
 
-    // initialize the ConsoleOutputStream module next, so that
-    // when the Misc module prints exception stack traces,
-    // the output goes to the Quake2 console instead
-    // of disappearing into the void.
-    if (!java_error)
-        ConsoleOutputStream_javaInit();
-
     // Initialize the rest
 
     if (!java_error)
@@ -893,7 +900,6 @@ void javalink_stop()
     CVar_javaDetach();
     Game_javaDetach();
     Engine_javaDetach();
-    ConsoleOutputStream_javaDetach();
     Misc_javaDetach();
 
     //

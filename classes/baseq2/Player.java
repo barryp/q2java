@@ -2564,7 +2564,8 @@ public void playerBegin()
 	
 	// restore key entity settings - needs to be done each level change.
 	fEntity.setPlayerStat(NativeEntity.STAT_HEALTH_ICON, (short) Engine.getImageIndex("i_health"));	
-	fEntity.setPlayerGravity((short)GameModule.gGravity.getFloat());
+//	fEntity.setPlayerGravity((short)GameModule.gGravity.getFloat());
+	setGravity(0, 0, -1);
 	Engine.setConfigString(Engine.CS_PLAYERSKINS + fEntity.getPlayerNum(), getName() + "\\" + getPlayerInfo("skin"));			
 		
 	// things that need to be reset on map changes
@@ -3190,6 +3191,19 @@ public void setFrame(int n) 	// Should this be renamed to setAnimationFrame()? (
 public void setFrameAlpha(float f) 
 	{
 	fFrameAlpha = f;
+	}
+/**
+ * Override baseq2.GameObject.setGravity() to do extra player stuff.
+ * @param x float
+ * @param y float
+ * @param z float
+ */
+public void setGravity(float x, float y, float z) 
+	{
+	// Q2 only deals with player gravity along the Z axis
+	super.setGravity(0, 0, z);
+	
+	fEntity.setPlayerGravity((short)(GameModule.gGravity.getFloat() * -fGravity.z));
 	}
 /**
  * This method was created by a SmartGuide.

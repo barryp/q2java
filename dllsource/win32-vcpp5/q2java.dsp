@@ -252,21 +252,6 @@ SOURCE=..\properties.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\q2java_ConsoleOutputStream.c
-
-!IF  "$(CFG)" == "game - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "game - Win32 Debug"
-
-!ELSEIF  "$(CFG)" == "game - Win32 Debug Alpha"
-
-!ELSEIF  "$(CFG)" == "game - Win32 Release Alpha"
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
 SOURCE=..\q2java_CVar.c
 
 !IF  "$(CFG)" == "game - Win32 Release"
@@ -344,10 +329,6 @@ SOURCE=..\javalink.h
 # Begin Source File
 
 SOURCE=..\properties.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\q2java_ConsoleOutputStream.h
 # End Source File
 # Begin Source File
 

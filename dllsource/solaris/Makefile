@@ -1,4 +1,4 @@
-SRCS = game.c globals.c misc.c player.c properties.c q2string.c javalink_generic.c q2java_ConsoleOutputStream.c q2java_CVar.c q2java_Engine.c q2java_NativeEntity.c
+SRCS = game.c globals.c misc.c player.c properties.c q2string.c javalink_generic.c q2java_CVar.c q2java_Engine.c q2java_NativeEntity.c
 
 OBJS = $(SRCS:.c=.o)
 LIB = gamesparc.so
