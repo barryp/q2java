@@ -275,7 +275,7 @@ public synchronized void removePrintListener(PrintListener pl)
 			Locale[] la = new Locale[fLocales.length - 1];
 			for (int j = 0; j < fLocales.length; j++)
 				{
-				if (fLocales[j] != loc)
+				if (!fLocales[j].equals(loc))
 					la[k++] = fLocales[j];
 				}
 			fLocales = la;
