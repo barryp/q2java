@@ -28,10 +28,7 @@ public class Paranoia extends q2java.core.Gamelet implements GameStatusListener
  */
 public Paranoia(String moduleName) 
 	{
-	super(moduleName);
-
-	// ask to be called on level changes
-	Game.addGameStatusListener(this);	
+	super(moduleName);	
 	}
 /**
  * Add a player to the open contract list.
@@ -101,6 +98,14 @@ public String[] getGameletDependencies()
 public Class getPlayerClass() 
 	{
 	return ParanoiaPlayer.class;
+	}
+/**
+ * Fire up the Gamelet.
+ */
+public void init() 
+	{
+	// ask to be called on level changes
+	Game.addGameStatusListener(this);	
 	}
 /**
  * Since we have our own player class, wait for level changes to load/unload.

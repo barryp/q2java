@@ -1,0 +1,106 @@
+CHANGES from v0.9.1 to v0.9.2
+
+---------------------------------------------------------------------------
+This file will just list changes in the core packages 
+Add-ons will have to list their own changes.
+---------------------------------------------------------------------------
+
+DLL CHANGES ===============================================================
+
+    The DLL now sets the Java system property "q2java.home" to the 
+    game's home directory.  Having this in a system property is 
+    very handy for JDK 1.2 security, since you can now replace installation
+    and os-dependant lines like:
+  
+      permission java.io.FilePermission "c:\\quake2\\q2java\\sandbox\\-", "read, write, delete";
+        
+    with
+      
+      permission java.io.FilePermission "${q2java.home}${/}sandbox${/}-", "read, write, delete";
+    
+    
+JAVA CHANGES ==============================================================
+
+q2java.CVar
+
+    Added:   getName() for the sake of completeness.
+    
+    
+q2java.GameException
+
+    Changed: Exception is now a subclass of java.lang.RuntimeException so it
+             doesn't need to be declared in "throws" clauses.    
+    
+
+q2java.baseq2.BaseQ2
+
+    Changed: Now gets map name and spawnpoint info from DOM document.       
+    
+    
+q2java.core.DefaultLevelDocumentFactory
+
+    New class that somewhat replaces the old q2java.core.DefaultSpawnManager
+    basically it's responsible for parsing the entString passed up from the 
+    Engine and turning the info into a DOM document.
+                   
+                   
+q2java.core.Game
+
+    Added:   getLevelDocument() - gets the DOM document describing the current level
+             
+             {get|set}LevelDocumentFactory() - replaces {get|set}SpawnManager()
+             
+    Changed: addGamelet() now returns the Gamelet that was added.
+    
+             startLevel() fires a new event: GameStatusEvent.GAME_ENDLEVEL when
+             a map is finished, and before the Game starts working on the next map.
+             Also, it creates a calls the current LevelDocumentFactory to create
+             a DOM document describing the current level, before the GAME_PRESPAWN
+             event is fired.
+    
+             shutdown() also fires the GAME_ENDLEVEL event
+             
+             
+q2java.core.LevelDocumentFactory
+
+    New interface that somewhat replaces q2java.core.SpawnManager    
+    
+    
+q2java.core.XMLFactory
+
+    New interface describing classes that provide XML/DOM services.
+
+    
+q2java.core.XMLTools
+
+    New class with static methods: createXMLDocument(), readXMLDocument(), 
+    and writeXMLDocument() to call basic XML/DOM functions.  
+
+    It checks the Java system property "q2java.xmlfactory" to find
+    out what class (implementing XMLFactory) will -really- handle XML/DOM work.  
+    The default class is q2java.core.OpenXMLFactory, but it could be easily 
+    replaced to use other DOM/XML implementations such as IBM's XML4Java or 
+    Sun's ProjectX.
+                                                             
+    
+q2java.core.OpenXMLFactory
+    
+    New class that implements the XMLFactory interface, and calls on
+    OpenXML to do the work.  Other classes might do the same thing with
+    IBM's XML4Java, or Sun's ProjectX.
+    
+                
+q2java.core.event.GameStatusEvent            
+
+    Removed: getEntityString(), getMapname(), and getSpawnPoint() since that 
+             info is available from the level's DOM document.
+             
+q2java.core.event.GameStatusSupport  
+
+    Changed: addGameStatusListener() modified so that if a listener is added
+             while an event is in the middle of being fired - the new listener
+             is immediately called with the current event (so it doesn't have to
+             wait until the next level is loaded before it is called with that
+             type of event)           
+             
+----------- End of List -------------------------------------------------------             

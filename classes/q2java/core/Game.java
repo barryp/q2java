@@ -1,8 +1,11 @@
 package q2java.core;
 
 import java.lang.reflect.*;
+import java.io.*;
 import java.util.*;
 import javax.vecmath.*;
+
+import org.w3c.dom.*;
 
 import q2java.*;
 import q2java.core.event.*;
@@ -55,11 +58,15 @@ public class Game implements GameListener, JavaConsoleListener
 	private static Hashtable gLevelRegistry;
 
 	// Handle spawning entities
-	private static SpawnManager gSpawnManager;
+	private static LevelDocumentFactory gLevelDocumentFactory;
+
+	// DOM Document describing initial info for the current level
+	private static Document gLevelDocument;
 	
 	// game clocks
 	private static int gFrameCount;
 	private static float gGameTime;
+	private boolean gLevelStarted;
 	
 	// performance clocks
 	private static int  gPerformanceFrames;
@@ -109,33 +116,35 @@ public static void addFrameListener(FrameListener f, int phase, float delay, flo
  * @param packageName java.lang.String
  * @param alias short name that the gamelet will be referred to as.
  */
-public static void addGamelet(String className, String alias) throws ClassNotFoundException
+public static Gamelet addGamelet(String className, String alias) throws ClassNotFoundException
 	{
 	gNewGameletList = new Vector();
 	gNewGameletsShouldInit = true;
 
 	// actually add the gamelet and any others it depends on
-	addGamelet0(className, alias, null);
+	Gamelet g = addGamelet0(className, alias, null);
 	
 	if (gNewGameletsShouldInit)
 		{
 		Enumeration enum = gNewGameletList.elements();
 		while (enum.hasMoreElements())
 			{
-			Gamelet g = (Gamelet) enum.nextElement();
-			g.markInitialized();
-			g.init();
+			Gamelet g2 = (Gamelet) enum.nextElement();
+			g2.markInitialized();
+			g2.init();
 			}			
 		}
 		
 	saveGameletList();
+
+	return g;
 	}
 /**
  * This method was created in VisualAge.
  * @param className java.lang.String
  * @param alias java.lang.String
  */
-private static void addGamelet0(String className, String alias, Gamelet higherGamelet) throws ClassNotFoundException
+private static Gamelet addGamelet0(String className, String alias, Gamelet higherGamelet) throws ClassNotFoundException
 	{
 	if (alias == null)
 		{
@@ -182,6 +191,8 @@ private static void addGamelet0(String className, String alias, Gamelet higherGa
 				}
 			}
 		}
+		
+	return g;
 	}
 /**
  * Other packages or mods may wish to be notified when a package is added to 
@@ -430,6 +441,26 @@ public static float getGameTime()
 	return gGameTime;
 	}
 /**
+ * Get the DOM document describing the current level.
+ * @return org.w3c.dom.Document
+ */
+public static Document getLevelDocument() 
+	{
+	return gLevelDocument;
+	}
+/**
+ * Get which object the Game is using to generate level DOM Documents
+ * when a new map starts.
+ * @return q2java.core.LevelDocumentFactory - will never be null.
+ */
+public static LevelDocumentFactory getLevelDocumentFactory() 
+	{
+	if (gLevelDocumentFactory == null)
+		gLevelDocumentFactory = new DefaultLevelDocumentFactory();
+		
+	return gLevelDocumentFactory;
+	}
+/**
  * Fetch a list of objects that were registered under a given key.
  * @return Vector containing registered objects
  * @param key java.lang.Object
@@ -475,18 +506,6 @@ public static ResourceGroup getResourceGroup(Locale loc)
 	return grp;
 	}
 /**
- * Get which object the Game is using to handle spawning entities
- * when a new map starts.
- * @return q2java.core.SpawnManager - will never be null.
- */
-public static SpawnManager getSpawnManager() 
-	{
-	if (gSpawnManager == null)
-		gSpawnManager = new DefaultSpawnManager();
-		
-	return gSpawnManager;
-	}
-/**
  * Called by the DLL when Quake II calls the DLL's init() function.
  */
 public void init()
@@ -524,9 +543,8 @@ public void init()
 	// Game clocks;
 	gFrameCount = 0;
 	gGameTime = 0;				
-	
-	// new command-line cvar, but use the old one as the default for
-	// backwards compatibility - will remove old one somewhere down the road
+
+	// look for gamelets specified on the command line	
 	gModules = new CVar("gamelets", "", 0);
 	String modules = gModules.getString();
 
@@ -599,7 +617,7 @@ public void init()
 		}
 
 	// Added for delegation event model
-	gGameStatusSupport.fireEvent( GameStatusEvent.GAME_INIT, null );
+	gGameStatusSupport.fireEvent(GameStatusEvent.GAME_INIT);
 			
 	Engine.debugLog("Game.init() finished");
 	}
@@ -1124,18 +1142,23 @@ public static void setClassFactory(GameClassFactory gcf)
  * @param sm q2java.core.SpawnManager may be null, which will cause the Game
  *  to create and set itself to use a DefaultSpawnManager.
  */
-public static void setSpawnManager(SpawnManager sm) 
+public static void setLevelDocumentFactory(LevelDocumentFactory ldf) 
 	{
-	gSpawnManager = sm;
+	gLevelDocumentFactory = ldf;
 	}
 /**
  * Called by the DLL when the DLL's Shutdown() function is called.
  */
 public void shutdown()
 	{
-	gGameStatusSupport.fireEvent( GameStatusEvent.GAME_SHUTDOWN, null );
+	// let interested objects know the last map is done
+	if (gLevelStarted)
+		gGameStatusSupport.fireEvent(GameStatusEvent.GAME_ENDLEVEL);
 
-	// unload the packages
+	// tell everyone we're on our way out		
+	gGameStatusSupport.fireEvent(GameStatusEvent.GAME_SHUTDOWN);
+
+	// unload the gamelets
 	Enumeration enum = gClassFactory.getGamelets();
 	while (enum.hasMoreElements()) 
 		{
@@ -1154,6 +1177,67 @@ public void shutdown()
 	Engine.debugLog("Game.shutdown()");
 	}
 /**
+ * Read the current level DOM document and spawn the map's entities.
+ */
+private static void spawnEntities() 
+	{
+	Object[] ctorParams = new Object[1];
+	Class[] oldCtorParamTypes = new Class[1];
+	Class[] newCtorParamTypes = new Class[1];
+	String[] sa = new String[1];
+	oldCtorParamTypes[0] = sa.getClass();
+	newCtorParamTypes[0] = Element.class;
+	
+	// look for <entity>..</entity> sections
+	NodeList nl = gLevelDocument.getElementsByTagName("entity");
+	for (int i = 0; i < nl.getLength(); i++)
+		{
+		Node n = nl.item(i);
+		if (!(n instanceof Element))
+			continue;
+
+		Element e = (Element) n;
+		String className = e.getAttribute("class");
+
+		try
+			{
+			Class entClass = Game.lookupClass(".spawn." + className.toLowerCase());
+			Constructor ctor;
+			
+			// get a constructor - look first for the new-style that takes a DOM element
+			// and if that fails, go for the old-style that takes an array of strings
+			try
+				{
+				ctor = entClass.getConstructor(newCtorParamTypes);
+				ctorParams[0] = e;
+				}
+			catch (NoSuchMethodException nsme)
+				{			
+				ctor = entClass.getConstructor(oldCtorParamTypes);
+				ctorParams[0] = DefaultLevelDocumentFactory.getParamPairs(e);			
+				}
+
+			// we must had found an constructor, so create the object
+			ctor.newInstance(ctorParams);
+			}
+		catch (ClassNotFoundException cnfe)
+			{
+			Engine.debugLog("Couldn't find class to handle: " + className);
+			}
+		catch (InhibitedException ie)
+			{
+			}
+		catch (InvocationTargetException ite)
+			{
+			ite.getTargetException().printStackTrace();
+			}
+		catch (Throwable t)
+			{
+			t.printStackTrace();
+			}
+		}	
+	}
+/**
  * Spawn entities into the Quake II environment.
  * This methods parses the entString passed to it, and looks
  * for Java classnames equivalent to the classnames specified 
@@ -1163,6 +1247,12 @@ public void shutdown()
 public void startLevel(String mapname, String entString, String spawnPoint)
 	{
 	Engine.debugLog("Game.startLevel(\"" + mapname + "\", <entString>, \"" + spawnPoint + "\")");
+
+	// let interested objects know the last map is done
+	if (gLevelStarted)
+		gGameStatusSupport.fireEvent(GameStatusEvent.GAME_ENDLEVEL);
+
+	gLevelStarted = false;
 	
 	// purge non-player NativeEntity objects from FrameListener lists
 	gFrameBeginning.purge();
@@ -1193,31 +1283,32 @@ public void startLevel(String mapname, String entString, String spawnPoint)
 		g.init();	
 		}
 	
+	// Build up a DOM document representing the contents of the new map
+	gLevelDocument = getLevelDocumentFactory().createLevelDocument(mapname, entString, spawnPoint);
+
+	// let interested objects know we're starting a new map
+	gGameStatusSupport.fireEvent(GameStatusEvent.GAME_PRESPAWN);	
+
 	// ponder whether or not we need to change player classes
 	rethinkPlayerClass();
 	
 	// force a gc, to clean things up from the last level, before
 	// spawning all the new entities
 	System.gc();		
+	
+	// read through the document and actually create the entities
+	spawnEntities();
 
-	gGameStatusSupport.fireEvent( GameStatusEvent.GAME_PRESPAWN, 
-				      mapname,
-				      entString,
-				      spawnPoint );	
-
-	getSpawnManager().spawnEntities(mapname, entString, spawnPoint);
-
-	gGameStatusSupport.fireEvent( GameStatusEvent.GAME_POSTSPAWN, 
-				      mapname,
-				      entString,
-				      spawnPoint );	
+	// let interested objects know that map entities have been spawned.
+	gGameStatusSupport.fireEvent(GameStatusEvent.GAME_POSTSPAWN);	
 						
 	// now, right before the game starts, is a good time to 
 	// force Java to do another garbage collection to tidy things up.
 	System.gc();	
 
 	gPerformanceFrames = 0;
-	gCPUTime = 0;		
+	gCPUTime = 0;
+	gLevelStarted = true;
 	}
 /**
  * Let the user add a game module.

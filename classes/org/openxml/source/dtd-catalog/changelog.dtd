@@ -1,0 +1,31 @@
+<!--
+    This is the ChangeLog DTD. It defines a format for change logs that is
+    compatible with the OpenXML change log processor.
+
+    The FPI for the ChangeLog DTD is:
+
+       "-//DTD OpenXML ChangeLog//EN"
+
+    The current URI is:
+
+       "http://www.openxml.org/dtd/changelog.dtd"
+  -->
+
+<!--
+    A change log consists of a release history (releases) with a given name.
+    Any number of releases (release) can exist underneath, and in any order.
+    Each release specifies a date (GMT field) and version number (free form).
+    Each release includes an optional title followed by any number of
+    textual descriptions for new features (new), bug fixes (fix), changes and
+    updates (change) and obsolete features (dead).
+  -->
+
+<!ELEMENT new #PCDATA>
+<!ELEMENT fix #PCDATA>
+<!ELEMENT change #PCDATA>
+<!ELEMENT dead #PCDATA>
+<!ELEMENT title #PCDATA>
+<!ELEMENT release title? (new | fix | change | dead)*>
+<!ATTLIST release date CDATA #REQUIRED version CDATA #REQUIRED>
+<!ELEMENT releases (release)*>
+<!ATTLIST releases name CDATA #REQUIRED>

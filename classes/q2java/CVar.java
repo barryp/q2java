@@ -184,6 +184,14 @@ public float getFloat()
 	}
 private native static float getFloat0(int ptr);
 /**
+ * Get the name of this CVar.
+ * @return java.lang.String
+ */
+public String getName() 
+	{
+	return fName;
+	}
+/**
  * Fetch the String value of a CVar.
  * @return the value as a String
  */

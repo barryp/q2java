@@ -19,6 +19,76 @@ or in some cases while the game is running with a console command like:
     
 The <class>'s are:
 
+
+-------------
+New XML/DOM Stuff
+-------------
+
+    barryp.map.NoBFG
+    
+        Removes BFGs from map.  Simple example of altering the level's 
+        DOM Document before items are spawnned.
+        
+    barryp.map.RandomWeapons
+    
+        Randomly changes the class of each weapon on a map.  The weapons
+        appear in the same spots.  For example: where you'd expect a 
+        RocketLauncher to appear, you may now find a BFG instead.        
+        
+    barryp.map.XMLMaps
+    
+        When a new level starts, tries to read a file named maps/<mapname>.xml
+        for a description of the entities that will appear on the map.  If
+        one is not found, it uses the information normally contained in map
+        and creates a new file named sandbox/<mapname>.xml, which an admin
+        can then move to the "maps" directory and alter as they see fit.
+        
+    barryp.map.MapCVars (only useful if XMLMaps or similar Gamelet is also loaded)
+    
+        Looks for tags of the form: 
+        
+            <cvar name="xxx" value="yyy"/>
+           
+        For each one it finds, it sets the named cvar to the specified value
+        before a level starts, and restores it to its original value when
+        the map ends.  Handy for things like setting "fraglimit" and 
+        "timelimit" to a specific value for a given map (but not limited to
+        those cvars)
+    
+
+    barryp.map.MapGamelets (only useful if XMLMaps or similar Gamelet is also loaded)
+    
+        Looks for tags of the form:                     
+        
+            <gamelet class="xxx" alias="yyy"/>
+            
+        For each one it finds, it loads and initializes the gamelet before
+        the map starts, and unloads it when the map is finished.   Great
+        for associating a gamelet like "barryp.flashgrenade.FlashGrenades"
+        or "q2java.ctf.CTF" with certain maps.
+        
+-----------------------
+Gamelets by Pete Donald 
+-----------------------
+
+    donaldp.fixedskin.GameModule
+    
+        Prevents players from changing skins
+
+    
+    donaldp.gibstat.GameModule
+    
+        Generate Gibstats from a running game
+        
+        
+    donaldp.ipban.GameModule
+    
+        Implements IP/Name banning to keep obnoxious pukes out.      
+        
+--------------
+Older gamelets
+--------------
+
     barryp.autoload.GameModule
 
         Simple gamelet that automatically exec's a file named "autoload.cfg" 
@@ -205,7 +275,7 @@ The <class>'s are:
         feel free to create your own.            
         
         To cause the bot to speak, injure it
-        
+
 ------------------------------------        
 
 Enjoy

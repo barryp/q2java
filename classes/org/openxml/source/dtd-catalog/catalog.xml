@@ -1,0 +1,100 @@
+<?xml version="1.0" standalone="yes"?>
+
+<!--
+    The DTD is not specified externally; doing so would require
+    fetching the DTD from an external source, since there is no
+    mapping for local DTDs yet.
+
+    The DTD can be found at http://www.openxml.org/dtd/xcatalog.dtd
+  -->
+
+<!DOCTYPE xcatalog [
+  <!ELEMENT map  EMPTY>
+  <!ATTLIST map  public CDATA #REQUIRED  href CDATA #REQUIRED>
+  <!ELEMENT remap  EMPTY>
+  <!ATTLIST remap  system CDATA #REQUIRED  href CDATA #REQUIRED>
+  <!ELEMENT delegate  EMPTY>
+  <!ATTLIST delegate  public CDATA #REQUIRED  href CDATA #REQUIRED>
+  <!ELEMENT extend  EMPTY>
+  <!ATTLIST extend  href CDATA #REQUIRED>
+  <!ELEMENT base  EMPTY>
+  <!ATTLIST base  href CDATA #REQUIRED>
+  <!ELEMENT xcatalog  (map | remap | delegate | extend | base)*>
+  <!ATTLIST xcatalog  title CDATA>
+]>
+
+<!--
+    The following catalog declared mapping between known DTDs
+    and local copies held in the parser/dtd-cache package.
+    The HTML 4.0 DTDs as well as the XCatalog DTD itself are
+    defined here.
+  -->
+
+<xcatalog title="-- Catalog for cached DTDs in package org.openxml.parser.dtd-cache --">
+
+    <!-- Mapping for HTML strict and frameset DTD -->
+
+    <map public="-//W3C//DTD HTML 4.0//EN"
+        href="http://www.w3.org/TR/WD-html-in-xml/DTD/xhtml1-strict.dtd"/>
+    <map public="-//W3C//DTD XHTML 1.0 Strict//EN"
+        href="http://www.w3.org/TR/WD-html-in-xml/DTD/xhtml1-strict.dtd"/>
+    <remap system="http://www.w3.org/TR/WD-html-in-xml/DTD/xhtml1-strict.dtd"
+        href="res:/org/openxml/source/dtd-catalog/Strict.dtd"/>
+
+    <map public="-//w3c//dtd html 4.0 transitional//en"
+        href="http://www.w3.org/TR/WD-html-in-xml/DTD/xhtml1-transitional.dtd"/>
+    <map public="-//W3C//DTD XHTML 1.0 Transitional//EN"
+        href="http://www.w3.org/TR/WD-html-in-xml/DTD/xhtml1-transitional.dtd"/>
+    <remap system="http://www.w3.org/TR/REC-html40/loose.dtd"
+        href="res:/org/openxml/source/dtd-catalog/Loose.dtd"/>
+
+    <map public="-//W3C//DTD HTML 4.0 Frameset//EN"
+        href="http://www.w3.org/TR/WD-html-in-xml/DTD/xhtml1-frameset.dtd"/>
+    <map public="-//W3C//DTD XHTML 1.0 Frameset//EN"
+        href="http://www.w3.org/TR/WD-html-in-xml/DTD/xhtml1-frameset.dtd"/>
+    <remap system="http://www.w3.org/TR/REC-html40/frameset.dtd"
+        href="res:/org/openxml/source/dtd-catalog/Frameset.dtd"/>
+
+    <!-- Mapping for HTML entities (from XHTML 1.0) -->
+
+    <map public="-//W3C//ENTITIES Latin1//EN//HTML"
+        href="http://www.w3.org/TR/WD-html-in-xml/DTD/HTMLlat1x.ent"/>
+    <remap system="http://www.w3.org/TR/WD-html-in-xml/DTD/HTMLlat1x.ent"
+        href="res:/org/openxml/source/dtd-catalog/HTMLlat1x.ent"/>
+
+    <map public="-//W3C//ENTITIES Symbols//EN//HTML"
+        href="http://www.w3.org/TR/WD-html-in-xml/DTD/HTMLsymbolx.ent"/>
+    <map public="-//W3C//ENTITIES Symbolic//EN//HTML"
+        href="http://www.w3.org/TR/WD-html-in-xml/DTD/HTMLsymbolx.ent"/>
+    <remap system="http://www.w3.org/TR/WD-html-in-xml/DTD/HTMLsymbolx.ent"
+        href="res:/org/openxml/source/dtd-catalog/HTMLsymbolx.ent"/>
+
+    <map public="-//W3C//ENTITIES Special//EN//HTML"
+        href="http://www.w3.org/TR/WD-html-in-xml/DTD/HTMLspecialx.ent"/>
+    <remap system="http://www.w3.org/TR/WD-html-in-xml/DTD/HTMLspecialx.ent"
+        href="res:/org/openxml/source/dtd-catalog/HTMLspecialx.ent"/>
+
+
+    <!-- Mapping for XCatalog DTD -->
+
+    <map public="-//DTD XCatalog//EN"
+        href="www.openxml.org/dtd/xcatalog.dtd"/>
+    <remap system="www.openxml.org/dtd/xcatalog.dtd"
+        href="res:/org/openxml/source/dtd-catalog/xcatalog.dtd"/>
+
+    <!-- Mapping for XSA DTD -->
+
+    <map public="-//LM Garshol//DTD XML Software Autoupdate 1.0//EN//XML"
+        href="http://birk105.studby.uio.no/www_work/xsa/xsa.dtd"/>
+    <remap system="http://birk105.studby.uio.no/www_work/xsa/xsa.dtd"
+        href="res:/org/openxml/source/dtd-catalog/xsa.dtd"/>
+
+    <!-- Mapping for ChangeLog DTD -->
+
+    <map public="-//OpenXML//DTD ChangeLog 0.2//EN//XML"
+        href="http://www.openxml.org/dtd/changelog.dtd"/>
+    <remap system="http://www.openxml.org/dtd/changelog.dtd"
+        href="res:/org/openxml/source/dtd-catalog/changelog.dtd"/>
+
+
+</xcatalog>

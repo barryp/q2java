@@ -5,7 +5,7 @@ package q2java;
  *
  * @author Barry Pederson
  */ 
-public class GameException extends Exception
+public class GameException extends RuntimeException
 	{
 
 	

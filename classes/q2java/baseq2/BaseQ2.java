@@ -6,6 +6,8 @@ import java.text.*;
 import java.util.*;
 import javax.vecmath.*;
 
+import org.w3c.dom.*;
+
 import q2java.*;
 import q2java.core.*;
 import q2java.core.event.*;
@@ -182,8 +184,9 @@ public void gameStatusChanged(GameStatusEvent e)
 
 	Engine.debugLog("BaseQ2 intitialising");
 
-	String mapname = e.getMapname();
-	String spawnPoint = e.getSpawnPoint();
+	Element root = (Element) Game.getLevelDocument().getFirstChild();
+	String mapname = root.getAttribute("name");
+	String spawnPoint = root.getAttribute("spawnpoint");
 
 	gLevelStartTime = Game.getGameTime();
 	gInIntermission = false;
@@ -331,7 +334,7 @@ public static String getSpawnpoint()
  */
 public static String getVersion() 
 	{
-	return "Q2Java Base Game, v0.9.1";
+	return "Q2Java Base Game, v0.9.2";
 	}
 /**
  * Initialize this gamelet.

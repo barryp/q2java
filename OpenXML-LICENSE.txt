@@ -1,0 +1,39 @@
+Copyright Notice and Disclaimer
+-------------------------------
+
+Portions of this software and documentation provided by OpenXML and are
+subject to the OpenXML Public License and may only be used in compliance
+with this license. Portions created by OpenXML.org are Copyright (C) 1998,
+1999. All Rights Reserved. You may obtain a copy of the license at
+http://www.openxml.org/license/.
+
+Portions of this software and documentation provided by the World Wide Web
+Consortium. Copyright © World Wide Web Consortium, (Massachusetts Institute
+of Technology, Institut National de Recherche en Informatique et en
+Automatique, Keio University). All Rights Reserved. You may obtain a copy
+of the license at http://www.w3.org/Consortium/Legal/.
+
+Portions of this software and documentation provided by the the membership
+of the XML-DEV mailing. You may obtain a copy of the SAX copyright status
+at http://www.megginson.com/SAX/.
+
+THIS SOFTWARE AND DOCUMENTATION IS PROVIDED ON AN "AS IS" BASIS WITHOUT
+WARRANTY OF ANY KIND EITHER EXPRESSED OR IMPLIED, INCLUDING AND WITHOUT
+LIMITATION, WARRANTIES THAT THE SOFTWARE AND DOCUMENTATION IS FREE OF
+DEFECTS, MERCHANTABLE, FIT FOR A PARTICULAR PURPOSE OR NON-INFRINGING. THE
+ENTIRE RISK AS TO THE QUALITY AND PERFORMANCE OF THE SOFTWARE AND
+DOCUMENTATION IS WITH YOU.
+
+UNDER NO CIRCUMSTANCES AND UNDER NO LEGAL THEORY, WHETHER TORT (INCLUDING
+NEGLIGENCE), CONTRACT, OR OTHERWISE, SHALL THE INITIAL DEVELOPER, ANY OTHER
+CONTRIBUTOR, OR ANY DISTRIBUTOR OF OF THIS SOFTWARE AND DOCUMENTATION, OR
+ANY SUPPLIER OF ANY OF SUCH PARTIES, BE LIABLE TO YOU OR ANY OTHER PERSON
+FOR ANY INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES OF ANY
+CHARACTER INCLUDING, WITHOUT LIMITATION, DAMAGES FOR LOSS OF GOODWILL, WORK
+STOPPAGE, COMPUTER FAILURE OR MALFUNCTION, OR ANY AND ALL OTHER COMMERCIAL
+DAMAGES OR LOSSES, EVEN IF SUCH PARTY SHALL HAVE BEEN INFORMED OF THE
+POSSIBILITY OF SUCH DAMAGES.
+
+The full terms of the licenses and disclaimers under which this software
+and documentation is provided as well as the most recent distribution is
+available at http://www.openxml.org.

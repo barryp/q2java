@@ -2,7 +2,7 @@
 
 game_import_t   q2java_gi;
 game_export_t   q2java_ge;
-char *q2java_version = "0.9.1";
+char *q2java_version = "0.9.2";
 
 // to help with entity management
 int global_frameCount;

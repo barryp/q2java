@@ -140,6 +140,12 @@ char **readProperties(const char *filename, int padding)
     // allocate memory to read lines into
     buffer = q2java_gi.TagMalloc(PROPERTY_LINEBUFFER_SIZE, TAG_GAME);
 
+    // fill in the q2java.home directory property
+    properties[propertyCount] = q2java_gi.TagMalloc(strlen(javalink_gameDirName) + 13 + padding, TAG_GAME);
+    strcpy(properties[propertyCount], "q2java.home=");
+    strcat(properties[propertyCount], javalink_gameDirName);
+    propertyCount++;
+
     // read the primary file (it may "include" others)
     readProperties0(filename, padding);
 

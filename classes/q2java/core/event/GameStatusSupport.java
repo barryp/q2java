@@ -12,39 +12,56 @@ import q2java.Engine;
  * @author Peter Donald 25/1/99
  */
 final public class GameStatusSupport
-{
-  private static Method gInvokeMethod = null;
-  private Vector fListeners = new Vector();
+	{
+	private static Method gInvokeMethod = null;
+	private Vector fListeners = new Vector();
+	private GameStatusEvent fCurrentEvent;
+	
+	static
+		{
+		try
+			{
+			gInvokeMethod = GameStatusListener.class.getMethod("gameStatusChanged", new Class[] { GameStatusEvent.class } );	
+			}
+		catch(NoSuchMethodException nsme) 
+			{
+			}
+		}
 
-  static
+	
+public void addGameStatusListener(GameStatusListener gsl)
 	{
-	  try
-	{
-	  gInvokeMethod = GameStatusListener.class.
-	    getMethod("gameStatusChanged", new Class[] { GameStatusEvent.class } );	
-	}
-	  catch(NoSuchMethodException nsme) {}
-	}
+	if (!fListeners.contains(gsl))
+		{
+		fListeners.addElement(gsl);
 
-  public void addGameStatusListener(GameStatusListener l)
-	{
-	  if( !fListeners.contains(l) ) fListeners.addElement(l);
+		// if we're adding a listener right in the middle of firing off
+		// an event, let the new listener in on the action
+		if (fCurrentEvent != null)
+			gsl.gameStatusChanged(fCurrentEvent);
+		}
 	}
-  public void fireEvent(int state, String filename)
+public void fireEvent(int state)
 	{
-	  fireEvent( state, filename, null, null );
+	fireEvent(state, null);
 	}
-  public void fireEvent(int state, String filename, String entString, String spawnPoint)
+public void fireEvent(int state, String filename)
 	{
-	  GameStatusEvent e = GameStatusEvent.getEvent( state, filename, entString, spawnPoint );
+	fCurrentEvent = GameStatusEvent.getEvent(state, filename);
+	
+	try 
+		{ 
+		EventPack.fireEvent(fCurrentEvent, gInvokeMethod, fListeners); 
+		}
+	catch(PropertyVetoException pve) 
+		{
+		}
 
-	  try { EventPack.fireEvent( e, gInvokeMethod, fListeners ); }
-	  catch(PropertyVetoException pve) {}
-
-	  GameStatusEvent.releaseEvent(e); 
+	GameStatusEvent.releaseEvent(fCurrentEvent);
+	fCurrentEvent = null;
 	}
-  public void removeGameStatusListener(GameStatusListener l)
+public void removeGameStatusListener(GameStatusListener gsl)
 	{
-	  fListeners.removeElement(l);
+	fListeners.removeElement(gsl);
 	}
 }
