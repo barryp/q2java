@@ -87,6 +87,131 @@ public Vec3 add(Vec3 v)
 	z += v.z;
 	return this;
 	}
+/**
+ * This method was created by a SmartGuide.
+ * @param angles q2java.Vec3
+ */
+public void angleVectors(Vec3 forward, Vec3 right, Vec3 up) 
+	{
+	double		angle;
+	double		sr, sp, sy, cr, cp, cy;
+
+	angle = y * (Math.PI*2 / 360);
+	sy = Math.sin(angle);
+	cy = Math.cos(angle);
+	
+	angle = x * (Math.PI*2 / 360);
+	sp = Math.sin(angle);
+	cp = Math.cos(angle);
+	
+	angle = z * (Math.PI*2 / 360);
+	sr = Math.sin(angle);
+	cr = Math.cos(angle);
+
+	if (forward != null)
+		{
+		forward.x = (float) (cp*cy);
+		forward.y = (float) (cp*sy);
+		forward.z = (float) -sp;
+		}
+		
+	if (right != null)
+		{
+		right.x = (float) (-1*sr*sp*cy+-1*cr*-sy);
+		right.y = (float) (-1*sr*sp*sy+-1*cr*cy);
+		right.z = (float) (-1*sr*cp);
+		}
+		
+	if (up != null)
+		{
+		up.x = (float) (cr*sp*cy+-sr*-sy);
+		up.y = (float) (cr*sp*sy+-sr*cy);
+		up.z = (float) (cr*cp);
+		}
+	}
+/**
+ * This method was created by a SmartGuide.
+ * @return q2java.Vec3
+ */
+public Vec3 clear() 
+	{
+	x = y = z = 0.0F;
+	return this;
+	}
+/**
+ * Scale into a unit vector, and return the updated object
+ * @return q2java.Vec3
+ */
+public Vec3 normalize() 
+	{
+	double length = Math.sqrt((x*x) + (y*y) + (z*z));
+
+	if (length != 0.0)
+		{
+		double ilength = 1 / length;
+		x *= ilength;
+		y *= ilength;
+		z *= ilength;
+		}
+		
+	return this;
+	}
+/**
+ * This method was created by a SmartGuide.
+ */
+public static Vec3 projectSource(Vec3 point, Vec3 distance, Vec3 forward, Vec3 right) 
+	{
+	Vec3 result = new Vec3();
+
+	result.x = point.x + forward.x * distance.x + right.x * distance.y;
+	result.y = point.y + forward.y * distance.x + right.y * distance.y;
+	result.z = point.z + forward.z * distance.x + right.z * distance.y + distance.z;
+	
+	return result;
+	}
+/**
+ * This method was created by a SmartGuide.
+ * @return q2java.Vec3
+ * @param val float
+ */
+public Vec3 scale(float val) 
+	{
+	x *= val;
+	y *= val;
+	z *= val;
+	return this;
+	}
+/**
+ * This method was created by a SmartGuide.
+ * @return q2java.Vec3
+ */
+public Vec3 toAngles() 
+	{
+	double forward;
+	float yaw, pitch;
+	
+	if (y == 0 && x == 0)
+		{
+		yaw = 0;
+		if (z > 0)
+			pitch = 90;
+		else
+			pitch = 270;
+		}
+	else
+		{
+		yaw = (int) (Math.atan2(y, x) * 180 / Math.PI);
+		if (yaw < 0)
+			yaw += 360;
+
+		forward = Math.sqrt((x*x) + (y*y));
+		pitch = (int) (Math.atan2(z, forward) * 180 / Math.PI);
+		if (pitch < 0)
+			pitch += 360;
+		}
+
+	return new Vec3(-pitch, yaw, 0);
+	}
 public String toString()
 	{
 	return x + " " + y + " " + z;

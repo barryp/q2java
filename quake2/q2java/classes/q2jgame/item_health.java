@@ -10,6 +10,8 @@ public item_health(String[] spawnArgs) throws GameException
 	{
 	super(spawnArgs);
 	setModel("models/items/healing/medium/tris.md2");
+	fHealthValue = 10;
+	fPickupSoundIndex = Engine.soundIndex("items/n_health.wav");		
 	linkEntity();
 	}
 }

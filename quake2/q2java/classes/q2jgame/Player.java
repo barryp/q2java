@@ -8,12 +8,22 @@ package q2jgame;
 import java.util.*;
 import q2java.*;
 
-class Player extends GenericMobile implements NativePlayer
+class Player extends GenericCharacter implements NativePlayer
 	{	
 	private Hashtable fUserInfo;
-	private String fSoundDir;
 	private int fHand;
-	private boolean fGrounded;
+	private boolean fIsGrounded;
+	private float fBobTime;
+	protected float fViewHeight;
+	private int fWaterType;
+	private int fWaterLevel;
+	private int fOldWaterLevel;
+	private Vec3 fOldVelocity;
+	
+	// handedness values
+	public final static int RIGHT_HANDED		= 0;
+	public final static int LEFT_HANDED		= 1;
+	public final static int CENTER_HANDED	= 2;
 	
 	public final static String DM_STATUSBAR = 
 		"yb	-24 " +
@@ -118,11 +128,85 @@ public void begin(boolean loadgame)
 		setAngles(spawnPoint.getAngles());
 		}
 
-	setMins(new Vec3(-16, -16, 24));
-	setMaxs(new Vec3(16, 16, 32));
+	fViewHeight = 22;
+	setSolid(SOLID_BBOX);
+	setClipmask(MASK_PLAYERSOLID);
+	
+	try
+		{
+		fWeapon = new weapon_blaster(this);
+		fWeapon.activate();
+		}
+	catch (GameException e)
+		{
+		Engine.dprint(e + "\n");
+		}		
+	
+	setEffects(0);
+	setSkinNum(getPlayerNum());
+	setModelIndex(255);	// will use the skin specified model
+	setModelIndex2(255);	// custom gun model	
+	setFrame(0);
+	setMins(-16, -16, 24);
+	setMaxs(16, 16, 32);
 	setStat(STAT_HEALTH_ICON, (short)worldspawn.fHealthPic);
 	linkEntity();
 	Game.debugLog("Player.begin() finished");
+	}
+/**
+ * This method was created by a SmartGuide.
+ */
+private void calcViewOffset() 
+	{
+	Vec3 v = new Vec3(0, 0, fViewHeight);
+	float bobMove = 0.0F;
+	
+	Vec3 velocity = getVelocity();
+	float xyspeed = (float)Math.sqrt((velocity.x*velocity.x) + (velocity.y*velocity.y));
+	
+	if (xyspeed < 5.0)
+		{
+		bobMove = 0;
+		fBobTime = 0;
+		}
+	else if (fIsGrounded)
+		{
+		if (xyspeed > 210)
+			bobMove = 0.25F;
+		else if (xyspeed > 100)
+			bobMove = 0.125F;
+		else
+			bobMove = 0.0625F;		
+		}		
+		
+	fBobTime += bobMove;
+	
+	float bobfracsin = (float) Math.abs(Math.sin(fBobTime*Math.PI));			
+	// add bob height
+	float bob = bobfracsin * xyspeed * Game.fBobUp.getFloat(); // *3 added to magnify effect
+	if (bob > 6)
+		bob = 6.0F;
+	v.z += bob;	
+	
+	// absolutely bound offsets
+	// so the view can never be outside the player box
+		
+	if (v.x < -14)
+		v.x = -14;
+	else if (v.x > 14)
+		v.x = 14;
+		
+	if (v.y < -14)
+		v.y = -14;
+	else if (v.y > 14)
+		v.y = 14;
+		
+	if (v.z < -22)
+		v.z = -22;
+	else if (v.z > 30)
+		v.z = 30;
+		
+	setViewOffset(v);
 	}
 /**
  * This method was created by a SmartGuide.
@@ -149,6 +233,94 @@ public void disconnect()
 	Engine.configString(Engine.CS_PLAYERSKINS + getPlayerNum(), "");	
 	}
 /**
+ * Called for each player after all the entities have 
+ * had a chance to runFrame()
+ */
+public void endFrame() 
+	{	
+	worldEffects();
+	fallingDamage();
+	calcViewOffset();	
+	}
+/**
+ * This method was created by a SmartGuide.
+ */
+private void fallingDamage() 
+	{
+	// no damage if you're airborne
+	if (!fIsGrounded)
+		return;
+
+	// never take falling damage if completely underwater
+	if (fWaterLevel == 3)
+		return;
+
+	Vec3 velocity = getVelocity();
+	float delta = velocity.z - fOldVelocity.z;
+	delta = (float) (delta * delta * 0.0001);
+
+	// decrease damage if you're landing in water		
+	if (fWaterLevel == 2)
+		delta *= 0.25;
+	if (fWaterLevel == 1)
+		delta *= 0.5;
+
+	// silent like a ninja
+	if (delta < 1)
+		return;
+
+	// land with a regular footstep noise
+	if (delta < 15)
+		{
+		setEvent(EV_FOOTSTEP);
+		return;
+		}
+		
+		
+/*
+	ent->client->fall_value = delta*0.5;
+	if (ent->client->fall_value > 40)
+		ent->client->fall_value = 40;
+	ent->client->fall_time = level.time + FALL_TIME;
+*/
+
+	// land a little heavier		
+	if (delta < 30)
+		{
+		setEvent(EV_FALLSHORT);
+		return;
+		}			
+
+	// land hard enough to damage and make more noise
+	if (fHealth > 0)
+		{
+		if (fIsFemale)
+			{
+			if (delta >= 55)
+				setEvent(EV_FEMALE_FALLFAR);
+			else
+				setEvent(EV_FEMALE_FALL);
+			}
+		else
+			{
+			if (delta >= 55)
+				setEvent(EV_MALE_FALLFAR);
+			else
+				setEvent(EV_MALE_FALL);
+			}
+		}
+/*			
+	ent->pain_debounce_time = level.time;	// no normal pain sound
+	damage = (delta-30)/2;
+	if (damage < 1)
+		damage = 1;
+	VectorSet (dir, 0, 0, 1);
+
+	if (!deathmatch->value || !((int)dmflags->value & DF_NO_FALLING) )
+		T_Damage (ent, world, world, dir, ent->s.origin, vec3_origin, damage, 0, 0);
+*/			
+	}
+/**
  * This method was created by a SmartGuide.
  * @return java.lang.String
  * @param key java.lang.String
@@ -161,28 +333,73 @@ public String getUserInfo(String key)
 	}
 /**
  * This method was created by a SmartGuide.
+ * @param foo q2java.Vec3
+ */
+public Vec3 projectSource(Vec3 offset, Vec3 forward, Vec3 right) 
+	{
+	Vec3 dist = new Vec3(offset);
+	
+	if (fHand == LEFT_HANDED)
+		dist.y *= -1;
+	else if (fHand == CENTER_HANDED)
+		dist.y = 0;
+		
+	return Vec3.projectSource(getOrigin(), dist, forward, right);
+	}
+/**
+ * This method was created by a SmartGuide.
+ * @param val int
+ */
+public void setHealth(int val) 
+	{
+	super.setHealth(val);
+	setStat(STAT_HEALTH, (short)fHealth);
+	}
+/**
+ * This method was created by a SmartGuide.
  * @return int
  * @param base java.lang.String
  */
 public int sexedSoundIndex(String base) 
 	{
-	return Engine.soundIndex(fSoundDir + "/" + base + ".wav");
+	return Engine.soundIndex((fIsFemale ? "player/female/" : "player/male/") + base + ".wav");
 	}
 /**
- * This method was created by a SmartGuide.
- * @param cmd q2java.UserCmd
+ * All player entities get a chance to think.  When
+ * a player entity thinks, it has to handle the 
+ * users movement commands by calling pMove();
  */
 public void think()
 	{
-	Game.debugLog("In Player.think()");
-	PMoveResults pm = pMove();
-	Game.debugLog("PMove: " + pm);
+	fOldVelocity = getVelocity();
 	
-	if (fGrounded && (pm.fGroundEntity == null) && (pm.fCmdUpMove >= 10) && (pm.fWaterLevel == 0))
+	PMoveResults pm = pMove();
+	
+	if (fIsGrounded && (pm.fGroundEntity == null) && (pm.fCmdUpMove >= 10) && (pm.fWaterLevel == 0))
 		sound(CHAN_VOICE, sexedSoundIndex("jump1"), 1, ATTN_NORM, 0);
 		
-	fGrounded = (pm.fGroundEntity != null);	
+	fViewHeight = pm.fViewHeight;	
+	fWaterType = pm.fWaterType;
+	fWaterLevel = pm.fWaterLevel;	
+	fIsGrounded = (pm.fGroundEntity != null);	
+
 	linkEntity();	
+	
+	// notify all the triggers we're intersecting with
+	NativeEntity[] triggers = boxEntity(AREA_TRIGGERS);
+	if (triggers != null)
+		{
+		for (int i = 0; i < triggers.length; i++)
+			((GameEntity)triggers[i]).touch(this);
+		}
+	
+	// notify everything the player has collided with
+	if (pm.fTouched != null)
+		{
+		for (int i = 0; i < pm.fTouched.length; i++)
+			((GameEntity)pm.fTouched[i]).touch(this);
+		}
+		
 	}
 public void userinfoChanged(String userinfo)
 	{
@@ -202,20 +419,58 @@ public void userinfoChanged(String userinfo)
 		
 		
 	// change some settings based on what was in the userinfo string	
+	String s = getUserInfo("name");
 	String skin = getUserInfo("skin");
-	String name = getUserInfo("name");
 
-	Engine.configString(Engine.CS_PLAYERSKINS + getPlayerNum(), name + "\\" + skin);			
+	Engine.configString(Engine.CS_PLAYERSKINS + getPlayerNum(), s + "\\" + skin);			
 	
-	if ((skin != null) && (skin.length() > 0) && ((skin.charAt(0) == 'F') || (skin.charAt(0) == 'f')))
-		fSoundDir = "player/female";
-	else
-		fSoundDir = "player/male";	
+	fIsFemale = ((skin != null) && (skin.length() > 0) && ((skin.charAt(0) == 'F') || (skin.charAt(0) == 'f')));
 		
-	String hand = getUserInfo("hand");
-	if (hand != null)
-		fHand = Integer.parseInt(hand);			
+	s = getUserInfo("hand");
+	if (s != null)
+		fHand = Integer.parseInt(s);			
 		
-	Game.debugLog("Player.userinfoChanged() finished");		
+	s = getUserInfo("fov");
+	if (s != null)
+		setFOV((new Float(s)).floatValue());				
 	}
+/**
+ * This method was created by a SmartGuide.
+ */
+private void worldEffects() 
+	{
+	int oldWaterLevel = fOldWaterLevel;
+	fOldWaterLevel = fWaterLevel;
+	
+	//
+	// if just entered a water volume, play a sound
+	//
+	if ((fWaterLevel != 0) && (oldWaterLevel == 0))
+		{
+		if ((fWaterType & CONTENTS_LAVA) != 0)
+			sound(CHAN_BODY, Engine.soundIndex("player/lava_in.wav"), 1, ATTN_NORM, 0);
+		else if ((fWaterType & CONTENTS_SLIME) != 0)
+			sound(CHAN_BODY, Engine.soundIndex("player/watr_in.wav"), 1, ATTN_NORM, 0);
+		else if ((fWaterType & CONTENTS_WATER) != 0)
+			sound(CHAN_BODY, Engine.soundIndex("player/watr_in.wav"), 1, ATTN_NORM, 0);			
+		}
+
+	//
+	// if just completely exited a water volume, play a sound
+	//
+	if ((fWaterLevel == 0) && (oldWaterLevel != 0))
+		sound(CHAN_BODY, Engine.soundIndex("player/watr_out.wav"), 1, ATTN_NORM, 0);
+
+	//
+	// check for head just going under water
+	//
+	if ((fWaterLevel == 3) && (oldWaterLevel != 3))
+		sound(CHAN_BODY, Engine.soundIndex("player/watr_un.wav"), 1, ATTN_NORM, 0);
+
+	//
+	// check for head just coming out of water
+	//
+	if ((fWaterLevel != 3) && (oldWaterLevel == 3))
+		sound(CHAN_VOICE, Engine.soundIndex("player/gasp2.wav"), 1, ATTN_NORM, 0);
+	}	
 }

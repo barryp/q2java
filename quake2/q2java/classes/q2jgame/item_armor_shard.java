@@ -19,10 +19,10 @@ public item_armor_shard(String[] spawnArgs) throws GameException
 /**
  * Have the shards bob up and down just as a test
  */
-public void runEntity() 
+public void runFrame() 
 	{
 	Vec3 temp = new Vec3(fOriginalOrigin);
-	temp.z = temp.z + (float)(Math.sin(Game.fFrameTime + fRandSeed) * 10);
+	temp.z = temp.z + (float)(Math.sin(Game.fGameTime + fRandSeed) * 10);
 	setOrigin(temp);
 	}
 }

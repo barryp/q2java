@@ -2,15 +2,15 @@
 #include "globals.h"
 #include "javalink.h"
 
+JNIEnv *java_env;
+char *java_error;
 
+static HINSTANCE hJavaDLL;
+static JavaVM *java_vm;
 
 static cvar_t *java_DLLHandle_cvar;
 static cvar_t *java_VMPointer_cvar;
 static cvar_t *java_EnvPointer_cvar;
-
-static HINSTANCE hJavaDLL;
-static JavaVM *java_vm;
-JNIEnv *java_env;
 
 // handle to the java.lang.Class class
 static jclass class_Class;
@@ -108,15 +108,18 @@ static void initClass()
 	CHECK_EXCEPTION();
 	if (!class_Class)
 		{			
-		debugLog("Couldn't get Java java.lang.Class class\n");
+		java_error = "Couldn't find java.lang.Class\n";
 		return;
 		}
 
 	method_Class_getName = (*java_env)->GetMethodID(java_env, class_Class, "getName", "()Ljava/lang/String;");		
 	CHECK_EXCEPTION();
 	if (!method_Class_getName)
-		debugLog("Couldn't get Class.getName() method handle\n");
-
+		{
+		java_error = "Couldn't find java.lang.Class.getName() method\n";
+		return;
+		}
+/*
 	method_Class_getClassLoader = (*java_env)->GetMethodID(java_env, class_Class, "getClassLoader", "()Ljava/lang/ClassLoader;");
 	CHECK_EXCEPTION();
 	if (!method_Class_getClassLoader)
@@ -126,8 +129,7 @@ static void initClass()
 	CHECK_EXCEPTION();
 	if (!object_ClassLoader)
 		debugLog("Couldn't get the default classloader\n");
-	
-	debugLog("Class initialization finished\n");
+*/	
 	}
 
 
@@ -136,14 +138,16 @@ static void initThrowable()
 	class_Throwable = (*java_env)->FindClass(java_env, "java/lang/Throwable");
 	if (!class_Throwable)
 		{			
-		debugLog("Couldn't get Java java.lang.Throwable class\n");
+		java_error = "Couldn't find java.lang.Throwable\n";
 		return;
 		}
 
 	method_Throwable_getMessage = (*java_env)->GetMethodID(java_env, class_Throwable, "getMessage", "()Ljava/lang/String;");		
 	if (!method_Throwable_getMessage)
-		debugLog("Couldn't get Throwable.getMessage() method handle\n");
-
+		{
+		java_error = "Couldn't find java.lang.Throwable.getMessage() method\n";
+		return;
+		}
 	}
 
 static void initVec3()
@@ -151,14 +155,22 @@ static void initVec3()
 	class_Vec3 = (*java_env)->FindClass(java_env, "q2java/Vec3");
 //	class_Vec3 = (*java_env)->DefineClass(java_env, "Vec3", object_ClassLoader, Vec3Class, sizeof(Vec3Class));
 	if (!class_Vec3)
-		debugLog("Couldn't get Java Vec3 class\n");
-	else
-		method_Vec3_ctor = (*java_env)->GetMethodID(java_env, class_Vec3, "<init>", "(FFF)V");		
+		{
+		java_error = "Couldn't find q2java.Vec3\n";
+		return;
+		}
+
+	method_Vec3_ctor = (*java_env)->GetMethodID(java_env, class_Vec3, "<init>", "(FFF)V");		
+	if (!method_Vec3_ctor)
+		{
+		java_error = "Couldn't find q2java.Vec3 constructor method\n";
+		return;
+		}
 	}
 
 
 
-int startJava()
+void startJava()
     {
     JDK1_1InitArgs vm_args;
     jint (JNICALL *p_JNI_GetDefaultJavaVMInitArgs)(void *);
@@ -168,21 +180,26 @@ int startJava()
 
 	debugLog("in startJava()\n");
 
+	java_error = NULL;
+
     java_DLLHandle_cvar = gi.cvar("java_DLLHandle", "0", 0);
     java_VMPointer_cvar = gi.cvar("java_VMPointer", "0", 0);
     java_EnvPointer_cvar = gi.cvar("java_EnvPointer", "0", 0);
 
     if (java_DLLHandle_cvar->value)
-        {
         hJavaDLL = (HINSTANCE) atoi(java_DLLHandle_cvar->string);
-        debugLog("Using Pure Java DLL Handle found in cvar\n");
-        }
     else
         {	
         hJavaDLL = LoadLibrary("javai.dll");
+		if (!hJavaDLL)
+			{
+			java_error = "Can't find javai.dll - perhaps you haven't installed a compatible Java on this machine?\n";
+			return;
+			}
+
+		// save the Java DLL handle in a CVAR so we can get it back if the DLL is reloaded
         sprintf(buffer, "%d", hJavaDLL);	
         gi.cvar_set("java_DLLHandle", buffer);
-        debugLog("Loaded the Java DLL\n");
         }
 
 	if (java_VMPointer_cvar->value)
@@ -190,7 +207,6 @@ int startJava()
         java_vm = (void *) atoi(java_VMPointer_cvar->string);
         java_env = (void *) atoi(java_EnvPointer_cvar->string);
 		alreadyStarted = 1;
-        debugLog("Using Java VM and ENV Pointers found in cvar\n");
         }
     else
         {	
@@ -211,10 +227,12 @@ int startJava()
 		// set the new classpath
         vm_args.classpath = classpath;
 	
-        debugLog("Java Classpath: [%s]\n", vm_args.classpath);
-
         (*p_JNI_CreateJavaVM)(&java_vm, &java_env, &vm_args);
-        debugLog("Created a new Java VM\n");
+		if (!java_vm)
+			{
+			java_error = "Couldn't create a Java Virtual Machine for some reason\n";
+			return;
+			}
 
 		// save some key pointers and handles in cvars, in case
 		// the DLL is reloaded and we need them back
@@ -228,21 +246,35 @@ int startJava()
 	// if Java's up and running, then get everything hooked up
     if (java_env)
 		{
-		initClass();
-		initThrowable();
-		initVec3();
+		if (!java_error)
+			initClass();
 
-		Engine_javaInit();
-		Game_javaInit();
-		CVar_javaInit();
-		Player_javaInit();
-		Entity_javaInit();
+		if (!java_error)
+			initThrowable();
+
+		if (!java_error)
+			initVec3();
+
+		if (!java_error)
+			Engine_javaInit();
+
+		if (!java_error)
+			Game_javaInit();
+
+		if (!java_error)
+			CVar_javaInit();
+
+		if (!java_error)
+			Player_javaInit();
+
+		if (!java_error)
+			Entity_javaInit();
 /*
 		if (!alreadyStarted)
 			setSecurity();	
 */
 		}
-	return 1;
+	return;
     }
 
 
@@ -294,8 +326,6 @@ int checkException(char *filename, int linenum)
 		return false;
 
 	(*java_env)->ExceptionClear(java_env);
-
-
 
 	exClass = (*java_env)->GetObjectClass(java_env, ex);
 	jsName = (*java_env)->CallObjectMethod(java_env, exClass, method_Class_getName);

@@ -24,12 +24,10 @@ void Game_javaInit()
 	char *p;
 	char buffer[128];
 
-	debugLog("Game_javaInit() started\n");
-
 	interface_nativeGame = (*java_env)->FindClass(java_env, "q2java/NativeGame");
-	if (!interface_nativeGame)
+	if (CHECK_EXCEPTION() || !interface_nativeGame)
 		{
-		debugLog("Can't find q2java.NativeGame interface\n");
+		java_error = "Can't find q2java.NativeGame interface\n";
 		return;
 		}
 
@@ -44,16 +42,15 @@ void Game_javaInit()
 			*p = '/';
 
 	class_Game = (*java_env)->FindClass(java_env, buffer);
-	CHECK_EXCEPTION();
-	if (!class_Game)
+	if (CHECK_EXCEPTION() || !class_Game)
 		{
-		debugLog("Couldn't get Java game class: [%s]\n", gameclass_cvar->string);
+		java_error = "Couldn't find the specified Game class\n";
 		return;
 		}
 
 	if (!((*java_env)->IsAssignableFrom(java_env, class_Game, interface_nativeGame)))
 		{
-		debugLog("The class %s doesn't implement q2java.NativeGame\n", gameclass_cvar->string);
+		java_error = "The specified game class doesn't implement q2java.NativeGame\n";
 		return;
 		}
 
@@ -66,10 +63,18 @@ void Game_javaInit()
 	method_Game_readLevel = (*java_env)->GetMethodID(java_env, class_Game, "readLevel", "(Ljava/lang/String;)V");
 	method_Game_runFrame = (*java_env)->GetMethodID(java_env, class_Game, "runFrame", "()V");
 	method_Game_ctor = (*java_env)->GetMethodID(java_env, class_Game, "<init>", "()V");
-	CHECK_EXCEPTION();
+	if (CHECK_EXCEPTION())
+		{
+		java_error = "Problem getting handle for one or more of the game methods\n";
+		return;
+		}
 
 	object_Game = (*java_env)->NewObject(java_env, class_Game, method_Game_ctor);
-	CHECK_EXCEPTION();
+	if(CHECK_EXCEPTION())
+		{
+		java_error = "Couldn't create instance of game object\n";
+		return;
+		}
 	}
 
 void Game_javaFinalize()
@@ -82,16 +87,6 @@ void Game_javaFinalize()
 static void java_init(void)
 	{
 	int i;
-
-	debugLog("In init()\n");
-
-	startJava();
-
-	if (!method_Game_init)
-		{
-		debugLog("Java init() method not available\n");
-		return;
-		}
 
 	(*java_env)->CallVoidMethod(java_env, object_Game, method_Game_init);
 	if (CHECK_EXCEPTION())
@@ -117,12 +112,6 @@ static void java_init(void)
 
 static void java_shutdown(void)
 	{
-	if (!method_Game_shutdown)
-		{
-		debugLog("Java shutdown() method not available\n");
-		return;
-		}
-
 	(*java_env)->CallVoidMethod(java_env, object_Game, method_Game_shutdown);
 	CHECK_EXCEPTION();
 
@@ -136,12 +125,6 @@ static void java_spawnEntities(char *mapname, char *entString, char *spawnpoint)
 	jstring jmapname;
 	jstring jentString;
 	jstring jspawnpoint;
-
-	if (!method_Game_spawnEntities)
-		{
-		debugLog("Java spawnEntities() method not available\n");
-		return;
-		}
 
 	jmapname = (*java_env)->NewStringUTF(java_env, mapname);
 	jentString = (*java_env)->NewStringUTF(java_env, entString);
@@ -159,12 +142,6 @@ static void java_writeGame(char *filename)
 	{
 	jstring jfilename;
 
-	if (!method_Game_writeGame)
-		{
-		debugLog("Java writeGame() method not available\n");
-		return;
-		}
-
 	jfilename = (*java_env)->NewStringUTF(java_env, filename);
 	(*java_env)->CallVoidMethod(java_env, object_Game, method_Game_writeGame, jfilename);
 	CHECK_EXCEPTION();
@@ -174,12 +151,6 @@ static void java_writeGame(char *filename)
 static void java_readGame(char *filename)
 	{
 	jstring jfilename;
-
-	if (!method_Game_readGame)
-		{
-		debugLog("Java readGame() method not available\n");
-		return;
-		}
 
 	jfilename = (*java_env)->NewStringUTF(java_env, filename);
 	(*java_env)->CallVoidMethod(java_env, object_Game, method_Game_readGame, jfilename);
@@ -191,12 +162,6 @@ static void java_writeLevel(char *filename)
 	{
 	jstring jfilename;
 
-	if (!method_Game_writeLevel)
-		{
-		debugLog("Java writeLevel() method not available\n");
-		return;
-		}
-
 	jfilename = (*java_env)->NewStringUTF(java_env, filename);
 	(*java_env)->CallVoidMethod(java_env, object_Game, method_Game_writeLevel, jfilename);
 	CHECK_EXCEPTION();
@@ -207,12 +172,6 @@ static void java_readLevel(char *filename)
 	{
 	jstring jfilename;
 
-	if (!method_Game_readLevel)
-		{
-		debugLog("Java readLevel() method not available\n");
-		return;
-		}
-
 	jfilename = (*java_env)->NewStringUTF(java_env, filename);
 	(*java_env)->CallVoidMethod(java_env, object_Game, method_Game_readLevel, jfilename);
 	CHECK_EXCEPTION();
@@ -220,12 +179,6 @@ static void java_readLevel(char *filename)
 
 static void java_runFrame(void)
 	{
-	if (!method_Game_runFrame)
-		{
-		debugLog("Java runFrame() method not available\n");
-		return;
-		}
-
 	// track the running time to help with entity management
 	global_frameCount++;
 	global_frameTime= global_frameCount*FRAMETIME;

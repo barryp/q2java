@@ -35,7 +35,7 @@
 #define INT_S_EVENT 14
 #define INT_CLIENT_PS_GUNINDEX 15
 #define INT_CLIENT_PS_GUNFRAME 16
-#define INT_CLIENT_PS_RDFLAGS 17		
+#define INT_CLIENT_PS_RDFLAGS 17
 
 #define CALL_SOUND 1
 #define CALL_POSITIONED_SOUND 2
@@ -246,8 +246,6 @@ jobjectArray Entity_createArray(edict_t **ents, int count)
 	int realCount;
 	jobjectArray result;
 
-debugLog("Entity_createArray(%x, %d)\n", ents, count);
-
 	// sanity check
 	if ((!ents) || (count < 1))
 		return 0;
@@ -258,17 +256,11 @@ debugLog("Entity_createArray(%x, %d)\n", ents, count);
 		{
 		// skip unused entities
 		if (!ents[i]->inuse)
-			{
-			debugLog("%d is not inuse\n", i);
 			continue;
-			}
 
 		// skip worldspawn
 		if (ents[i] == ge.edicts)
-			{
-			debugLog("%d is the world\n", i);
 			continue;
-			}
 
 		for (j = 0; j < i; j++)
 			{
@@ -278,11 +270,8 @@ debugLog("Entity_createArray(%x, %d)\n", ents, count);
 
 		if (j == i)
 			realCount++;
-		else
-			debugLog("%d is a duplicate of %d\n", i, j);
 		}
 
-debugLog("Entity_createArray() found %d entities\n");
 
 	// bail if it was just worldspawns
 	if (realCount < 1)
@@ -436,7 +425,6 @@ static void JNICALL Java_q2java_NativeEntity_setVec3(JNIEnv *env, jclass cls, ji
 
 	if ((ent->client) && (fieldNum == VEC3_VELOCITY))
 		{
-		ent = ge.edicts + index;
 		ent->client->ps.pmove.velocity[0] = (short)(x * 8);
 		ent->client->ps.pmove.velocity[1] = (short)(y * 8);
 		ent->client->ps.pmove.velocity[2] = (short)(z * 8);
@@ -508,16 +496,11 @@ static void JNICALL Java_q2java_NativeEntity_setModel0(JNIEnv *env, jclass cls, 
 
 static void JNICALL Java_q2java_NativeEntity_linkEntity0(JNIEnv *env, jclass cls, jint index)
 	{
-	edict_t *ent;
-
 	// sanity check
 	if ((index < 0) || (index >= ge.max_edicts))
 		return;
 	
-	ent = ge.edicts + index;
-debugLog("before gi.linkentity: entity %d absmin(%f, %f, %f) absmax(%f, %f, %f)\n", index, ent->absmin[0], ent->absmin[1], ent->absmin[2], ent->absmax[0], ent->absmax[1], ent->absmax[2]);
 	gi.linkentity(ge.edicts + index);
-debugLog(" after gi.linkentity:           absmin(%f, %f, %f) absmax(%f, %f, %f)\n", ent->absmin[0], ent->absmin[1], ent->absmin[2], ent->absmax[0], ent->absmax[1], ent->absmax[2]);
 	}
 
 static void JNICALL Java_q2java_NativeEntity_unlinkEntity0(JNIEnv *env, jclass cls, jint index)

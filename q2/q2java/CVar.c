@@ -19,15 +19,18 @@ static JNINativeMethod CVar_methods[] =
 void CVar_javaInit()
 	{
 	class_CVar = (*java_env)->FindClass(java_env, "q2java/CVar");
-	CHECK_EXCEPTION();
-	if (!class_CVar)
+	if (CHECK_EXCEPTION() || !class_CVar)
 		{
-		debugLog("Couldn't get Java CVar class\n");
+		java_error = "Couldn't find q2java.CVar\n";
 		return;
 		}
 
-	(*java_env)->RegisterNatives(java_env, class_CVar, CVar_methods, 3);
-	CHECK_EXCEPTION();
+	(*java_env)->RegisterNatives(java_env, class_CVar, CVar_methods, sizeof(CVar_methods)/sizeof(CVar_methods[0]));
+	if (CHECK_EXCEPTION())
+		{
+		java_error = "Couldn't register native methods for q2java.CVar\n";
+		return;
+		}
 	}
 
 void CVar_javaFinalize()

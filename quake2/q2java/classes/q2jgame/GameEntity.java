@@ -11,6 +11,7 @@ public class GameEntity extends NativeEntity
 	{
 	private String[] fSpawnArgs;
 	protected int fSpawnFlags;
+	protected float fThinkTime;
 	
 public GameEntity() throws GameException
 	{
@@ -45,7 +46,7 @@ public GameEntity(String[] spawnArgs, boolean isWorld) throws GameException
 	if (s != null)
 		{
 		Float f = new Float(s);
-		setAngle(f.floatValue());
+		setAngles(0, f.floatValue(), 0);
 		}
 		
 	s = getSpawnArg("spawnflags");
@@ -67,7 +68,7 @@ public String getSpawnArg(String keyword)
 /**
  * This method was created by a SmartGuide.
  */
-public void runEntity() 
+public void runFrame() 
 	{
 	}
 static void spawnEntities(String entString)
@@ -126,7 +127,17 @@ static void spawnEntities(String entString)
 						}
 					catch (Exception e)
 						{
-						ps.println("---- " + className + " [" + e + "]");
+						ps.print("---- " + className + "(");
+						if (sa != null)
+							{
+							String prefix = "";
+							for (int i = 0; i < sa.length; i+=2)
+								{
+								ps.print(prefix + sa[i] + "=\"" + sa[i+1] + "\"");
+								prefix = ", ";
+								}
+							}
+						ps.println(")");	
 						}
 
 					foundClassname = false;
@@ -167,5 +178,13 @@ public String toString()
 	sb.append(")");
 
 	return sb.toString();
+	}
+/**
+ * This method was created by a SmartGuide.
+ * @param touchedBy q2jgame.GameEntity
+ */
+public void touch(GenericCharacter touchedBy) 
+	{
+	return;
 	}
 }

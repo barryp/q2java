@@ -8,6 +8,11 @@ import java.util.Vector;
 
 public abstract class NativeEntity
 	{
+	private static NativeEntity[] fEntityArray;
+	private int fEntityIndex;
+	private NativeEntity fOwner;
+	
+	
 	// sound channels
 	// channel 0 never willingly overrides
 	// other channels (1-7) allways override a playing sound on that channel
@@ -137,6 +142,10 @@ COLLISION DETECTION
 	public final static int MASK_SHOT			= (CONTENTS_SOLID|CONTENTS_MONSTER|CONTENTS_WINDOW|CONTENTS_DEADMONSTER);
 	public final static int MASK_CURRENT			= (CONTENTS_CURRENT_0|CONTENTS_CURRENT_90|CONTENTS_CURRENT_180|CONTENTS_CURRENT_270|CONTENTS_CURRENT_UP|CONTENTS_CURRENT_DOWN);
 	
+	// boxEntity() can return a list of either solid or trigger entities
+	public final static int AREA_SOLID			= 1;
+	public final static int AREA_TRIGGERS		= 2;	
+	
 	// setStat() field indexes
 	public final static int STAT_HEALTH_ICON    = 0;
 	public final static int STAT_HEALTH         = 1;
@@ -205,9 +214,6 @@ COLLISION DETECTION
 		
 	private final static int CALL_SOUND = 1;
 	private final static int CALL_POSITIONED_SOUND = 2;
-
-	private static NativeEntity[] fEntityArray;
-	private int fEntityIndex;
 	
 /**
  * This method was created by a SmartGuide.
@@ -229,6 +235,26 @@ protected NativeEntity(boolean isWorld) throws GameException
 	}
 
 private native static int allocateEntity(boolean isWorld);
+
+/**
+ * This method was created by a SmartGuide.
+ * @return q2java.NativeEntity[]
+ * @param maxCount int
+ * @param areaType int
+ */
+public NativeEntity[] boxEntity(int areaType) 
+	{
+	return boxEntity0(fEntityIndex, areaType);
+	}
+
+/**
+ * This method was created by a SmartGuide.
+ * @return q2java.NativeEntity[]
+ * @param index int
+ * @param maxCount int
+ * @param areaType int
+ */
+private static native NativeEntity[] boxEntity0(int index, int areaType);
 
 /** 
  * Player Only
@@ -260,11 +286,19 @@ public void cprint(int printLevel, String s)
  */
 private native static void cprint0(int index, int printlevel, String msg);
 
+public static Enumeration enumerateEntities() 
+	{
+	return new EntityEnumeration();
+	}
 public static Enumeration enumerateEntities(String targetClassName) 
 	{
 	return new EntityEnumeration(targetClassName);
 	}
-public static NativeEntity findNext(NativeEntity start, Class targetClass)
+public static Enumeration enumeratePlayers() 
+	{
+	return new PlayerEnumeration();
+	}
+static NativeEntity findNext(NativeEntity start, Class targetClass)
 	{
 	NativeEntity result = null;
 	int index;
@@ -284,18 +318,31 @@ public static NativeEntity findNext(NativeEntity start, Class targetClass)
 		
 	return result;
 	}
+static NativeEntity findNextPlayer(NativeEntity start)
+	{
+	NativeEntity result = null;
+	int index;
+	if (start == null)
+		index = 1;
+	else 
+		index = start.fEntityIndex + 1;
+				
+	while ((result == null) && (index < 9)) //---FIXME---
+		{
+		if (NativeEntity.fEntityArray[index] != null) 
+			result = NativeEntity.fEntityArray[index];
+		index++;
+		}
+		
+	return result;
+	}
 /**
  * This method was created by a SmartGuide.
  */
-public void freeEntity() throws GameException
+public void freeEntity()
 	{
 	fEntityArray[fEntityIndex] = null;
 	freeEntity0(fEntityIndex);
-	
-	// using an entity after it's been freed will
-	// probably cause Quake II to go down in flames, 
-	// but at least it won't be a subtle bug 
-	// that you aren't aware of :)
 	
 	fEntityIndex = -1;
 	}
@@ -321,6 +368,10 @@ public final int getEntityIndex()
 
 private native static int getInt(int index, int fieldNum);
 
+public Vec3 getKickAngles()
+	{
+	return getVec3(fEntityIndex, VEC3_CLIENT_PS_KICKANGLES);
+	}
 public Vec3 getMaxs()
 	{
 	return getVec3(fEntityIndex, VEC3_MAXS);
@@ -332,6 +383,18 @@ public Vec3 getMins()
 public Vec3 getOrigin()
 	{
 	return getVec3(fEntityIndex, VEC3_S_ORIGIN);
+	}
+/**
+ * This method was created by a SmartGuide.
+ * @param ent q2java.NativeEntity
+ */
+public NativeEntity getOwner() 
+	{
+	// ---FIXME--- if it turns out the engine modifies
+	// the owner field, then we'll have to use a native
+	// call to get it, rather than keep and return our own
+	// reference
+	return fOwner;
 	}
 /**
  * Player Only
@@ -374,9 +437,9 @@ public void positionedSound(Vec3 origin, int channel, int soundindex, float volu
 	{   
 	sound0(origin.x, origin.y, origin.z, fEntityIndex, channel, soundindex, volume, attenuation, timeofs, CALL_POSITIONED_SOUND);
 	}
-public void setAngle(float f)
+public void setAngles(float pitch, float yaw, float roll)
 	{
-	setVec3(fEntityIndex, VEC3_S_ANGLES, 0, f, 0);
+	setVec3(fEntityIndex, VEC3_S_ANGLES, pitch, yaw, roll);
 	}
 public void setAngles(Vec3 v)
 	{
@@ -472,9 +535,17 @@ public static void setMaxEntities(int max)
 	{
 	fEntityArray = new NativeEntity[max];
 	}
+public void setMaxs(float x, float y, float z)
+	{
+	setVec3(fEntityIndex, VEC3_MAXS, x, y, z);
+	}
 public void setMaxs(Vec3 v)
 	{
 	setVec3(fEntityIndex, VEC3_MAXS, v.x, v.y, v.z);
+	}
+public void setMins(float x, float y, float z)
+	{
+	setVec3(fEntityIndex, VEC3_MINS, x, y, z);
 	}
 public void setMins(Vec3 v)
 	{
@@ -508,6 +579,18 @@ public void setOrigin(Vec3 v)
 	setVec3(fEntityIndex, VEC3_S_ORIGIN, v.x, v.y, v.z);
 	}
 /**
+ * This method was created by a SmartGuide.
+ * @param ent q2java.NativeEntity
+ */
+public void setOwner(NativeEntity ent) 
+	{
+	fOwner = ent;
+	// ---FIXME--- if it turns out the engine modifies
+	// the owner field, then we'll have to use a native
+	// call to set it, rather than keep and return our own
+	// reference
+	}
+/**
  * Player Only
  */
 public void setRDFlags(int val)
@@ -518,9 +601,20 @@ public void setRenderFX(int val)
 	{
 	setInt(fEntityIndex, INT_S_RENDERFX, val);
 	}
+/**
+ * Player Only
+ */
+public void setSkinNum(int val)
+	{
+	setInt(getEntityIndex(), INT_S_SKINNUM, val);
+	}
 public void setSolid(int val)
 	{
 	setInt(fEntityIndex, INT_SOLID, val);
+	}
+public void setSound(int val)
+	{
+	setInt(fEntityIndex, INT_S_SOUND, val);
 	}
 /**
  * Player Only

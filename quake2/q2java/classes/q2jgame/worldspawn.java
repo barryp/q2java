@@ -38,7 +38,7 @@ public worldspawn(String[] spawnArgs) throws GameException
 	fHealthPic = Engine.imageIndex("i_health");		
 	
 	// setup player status bar
-	Engine.configString (Engine.CS_STATUSBAR, player.DM_STATUSBAR);	
+	Engine.configString (Engine.CS_STATUSBAR, Player.DM_STATUSBAR);	
 	
 	//
 	// Setup light animation tables. 'a' is total darkness, 'z' is doublebright.

@@ -15,6 +15,17 @@
 #define	TAG_LEVEL	766		// clear when loading a new level
 #define	FRAMETIME	0.1F		// seconds per frame
 
+//
+// per-level limits
+//
+#define	MAX_CLIENTS			256		// absolute limit
+#define	MAX_EDICTS			1024	// must change protocol to increase more
+#define	MAX_LIGHTSTYLES		256
+#define	MAX_MODELS			256		// these are sent over the net as bytes
+#define	MAX_SOUNDS			256		// so they cannot be blindly increased
+#define	MAX_IMAGES			256
+#define	MAX_ITEMS			256
+
 /*
 ==============================================================
 
@@ -158,10 +169,16 @@ typedef struct edict_s
     int         clipmask;
     edict_t     *owner;
 
+
+	// DO NOT MODIFY ANYTHING ABOVE THIS, THE SERVER
+	// EXPECTS THE FIELDS IN THAT ORDER!
+
+	//================================
+	
+
     // the game dll can add anything it wants after
     // this point in the structure
-
-	float		freetime;
+	float		freetime;			// time when the object was freed
 	vec3_t		velocity;
     } edict_t;
 

@@ -5,6 +5,7 @@ import q2java.*;
 
 public class GenericMobile extends GameEntity
 	{
+	public int fHealth;
 	
 /**
  * Don't call this constructor, it's required for the DLL. But 

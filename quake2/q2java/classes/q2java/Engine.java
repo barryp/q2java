@@ -51,11 +51,11 @@ public class Engine
 	
 	
 	// protocol bytes that can be directly added to messages
-	public final static int SVC_MUZZLEFLASH = 1;
-	public final static int SVC_MUZZLEFLASH2    = 2;
-	public final static int SVC_TEMP_ENTITY = 3;
-	public final static int SVC_LAYOUT      = 4;
-	public final static int SVC_INVENTORY       = 5;
+	public final static int SVC_MUZZLEFLASH		= 1;
+	public final static int SVC_MUZZLEFLASH2		= 2;
+	public final static int SVC_TEMP_ENTITY		= 3;
+	public final static int SVC_LAYOUT			= 4;
+	public final static int SVC_INVENTORY		= 5;
 	
 	//
 	// muzzle flashes / player effects
@@ -78,8 +78,10 @@ public class Engine
 	public final static int MZ_ITEMRESPAWN  = 15;
 	public final static int MZ_SILENCED         = 128;      // bit flag ORed with one of the above numbers      
 
-
-
+	// boxEntity() can return a list of either solid or trigger entities
+	public final static int AREA_SOLID			= 1;
+	public final static int AREA_TRIGGERS		= 2;	
+	
 	private final static int CALL_MULTICAST 		= 0;
 	private final static int CALL_WRITEPOSITION	= 1;
 	private final static int CALL_WRITEDIR 		= 2;
@@ -117,9 +119,9 @@ public class Engine
  * @param maxCount int
  * @param areaType int
  */
-public static NativeEntity[] boxEntities(Vec3 mins, Vec3 maxs, int maxCount, int areaType) 
+public static NativeEntity[] boxEntities(Vec3 mins, Vec3 maxs, int areaType) 
 	{
-	return boxEntities0(mins.x, mins.y, mins.z, maxs.x, maxs.y, maxs.z, maxCount, areaType);
+	return boxEntities0(mins.x, mins.y, mins.z, maxs.x, maxs.y, maxs.z, areaType);
 	}
 
 /**
@@ -131,7 +133,7 @@ public static NativeEntity[] boxEntities(Vec3 mins, Vec3 maxs, int maxCount, int
  * @param areaType int
  */
 private native static NativeEntity[] boxEntities0(float minsx, float minsy, float minsz,
-	float maxsx, float maxsy, float maxsz, int maxCount, int areaType);
+	float maxsx, float maxsy, float maxsz, int areaType);
 
 
 	public native static void bprint(int printLevel, String s);

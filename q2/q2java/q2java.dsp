@@ -177,21 +177,6 @@ SOURCE=.\CVar.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\Engine.c
-
-!IF  "$(CFG)" == "game - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "game - Win32 Debug"
-
-!ELSEIF  "$(CFG)" == "game - Win32 Debug Alpha"
-
-!ELSEIF  "$(CFG)" == "game - Win32 Release Alpha"
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
 SOURCE=.\Game.c
 
 !IF  "$(CFG)" == "game - Win32 Release"
@@ -241,7 +226,7 @@ SOURCE=.\javalink.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\NativeEntity.c
+SOURCE=.\player.c
 
 !IF  "$(CFG)" == "game - Win32 Release"
 
@@ -256,7 +241,22 @@ SOURCE=.\NativeEntity.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\player.c
+SOURCE=.\q2java_Engine.c
+
+!IF  "$(CFG)" == "game - Win32 Release"
+
+!ELSEIF  "$(CFG)" == "game - Win32 Debug"
+
+!ELSEIF  "$(CFG)" == "game - Win32 Debug Alpha"
+
+!ELSEIF  "$(CFG)" == "game - Win32 Release Alpha"
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=.\q2java_NativeEntity.c
 
 !IF  "$(CFG)" == "game - Win32 Release"
 
@@ -279,10 +279,6 @@ SOURCE=.\CVar.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\Engine.h
-# End Source File
-# Begin Source File
-
 SOURCE=.\globals.h
 # End Source File
 # Begin Source File
@@ -291,7 +287,11 @@ SOURCE=.\javalink.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\NativeEntity.h
+SOURCE=.\q2java_Engine.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\q2java_NativeEntity.h
 # End Source File
 # Begin Source File
 

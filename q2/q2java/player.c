@@ -17,12 +17,10 @@ void Player_javaInit()
 	char *p;
 	char buffer[128];
 
-	debugLog("Player_javaInit() started\n");
-
 	interface_nativePlayer = (*java_env)->FindClass(java_env, "q2java/NativePlayer");
-	if (!interface_nativePlayer)
+	if (CHECK_EXCEPTION() || !interface_nativePlayer)
 		{
-		debugLog("Can't find q2java.NativePlayer interface\n");
+		java_error = "Can't find q2java.NativePlayer interface\n";
 		return;
 		}
 
@@ -37,16 +35,15 @@ void Player_javaInit()
 			*p = '/';
 
 	class_player = (*java_env)->FindClass(java_env, buffer);
-	CHECK_EXCEPTION();
-	if (!class_player)
+	if (CHECK_EXCEPTION() || !class_player)
 		{
-		debugLog("Couldn't get Java player class: [%s]\n", player_cvar->string);
+		java_error = "Couldn't find the specified player class\n";
 		return;
 		}
 
 	if (!((*java_env)->IsAssignableFrom(java_env, class_player, interface_nativePlayer)))
 		{
-		debugLog("The class %s doesn't implement q2java.NativePlayer\n", player_cvar->string);
+		java_error = "The class specified player class doesn't implement q2java.NativePlayer\n";
 		return;
 		}
 
@@ -56,8 +53,11 @@ void Player_javaInit()
 	method_player_command = (*java_env)->GetMethodID(java_env, class_player, "command", "()V");
 	method_player_think = (*java_env)->GetMethodID(java_env, class_player, "think", "()V");
 	method_player_disconnect = (*java_env)->GetMethodID(java_env, class_player, "disconnect", "()V");
-	CHECK_EXCEPTION();
-	debugLog("Player_javaInit() finished\n");
+	if (CHECK_EXCEPTION())
+		{
+		java_error = "Problem finding one or more of the player methods\n";
+		return;
+		}
 	}
 
 void Player_javaFinalize()
@@ -70,13 +70,6 @@ static qboolean java_clientConnect(edict_t *ent, char *userinfo, qboolean loadga
 	jstring juserinfo;
 	int index = ent - ge.edicts;
 
-	debugLog("In java_clientConnect()\n");
-	if (!method_player_ctor)
-		{
-		debugLog("Java player(String userinfo, boolean loadgame) constructor not available\n");
-		return false;
-		}
-	
 	juserinfo = (*java_env)->NewStringUTF(java_env, userinfo);
 
 	// create a new Java player object
@@ -104,6 +97,9 @@ static qboolean java_clientConnect(edict_t *ent, char *userinfo, qboolean loadga
 		return false;
 		}
 
+	ent->inuse = true;
+	ent->s.number = index;
+
 	return true;
 	}
 
@@ -112,12 +108,6 @@ static void java_clientBegin(edict_t *ent, qboolean loadgame)
 	{
 	jobject javaPlayer;
 	int index = ent - ge.edicts;
-
-	if (!method_player_begin)
-		{
-		debugLog("Java player.begin() method not available\n");
-		return;
-		}
 
 	javaPlayer = Entity_getEntity(index);
 	(*java_env)->CallVoidMethod(java_env, javaPlayer, method_player_begin, loadgame);	
@@ -136,12 +126,6 @@ static void java_clientUserinfoChanged(edict_t *ent, char *userinfo)
 	jstring juserinfo;
 	int index = ent - ge.edicts;
 
-	if (!method_player_userinfoChanged)
-		{
-		debugLog("Java player.userinfoChanged() method not available\n");
-		return;
-		}
-
 	javaPlayer = Entity_getEntity(index);
 	juserinfo = (*java_env)->NewStringUTF(java_env, userinfo);
 	(*java_env)->CallVoidMethod(java_env, javaPlayer, method_player_userinfoChanged, juserinfo);	
@@ -152,12 +136,6 @@ static void java_clientThink(edict_t *ent, usercmd_t *cmd)
 	{
 	jobject javaPlayer;
 	int index = ent - ge.edicts;
-
-	if (!method_player_think)
-		{
-		debugLog("Java player.think() method not available\n");
-		return;
-		}
 
 	thinkCmd = cmd;
 
@@ -172,12 +150,6 @@ static void java_clientCommand(edict_t *ent)
 	jobject javaPlayer;
 	int index = ent - ge.edicts;
 
-	if (!method_player_command)
-		{
-		debugLog("Java player.command() method not available\n");
-		return;
-		}
-
 	javaPlayer = Entity_getEntity(index);
 	(*java_env)->CallVoidMethod(java_env, javaPlayer, method_player_command);	
 	CHECK_EXCEPTION();
@@ -188,12 +160,6 @@ static void java_clientDisconnect(edict_t *ent)
 	{
 	jobject javaPlayer;
 	int index = ent - ge.edicts;
-
-	if (!method_player_disconnect)
-		{
-		debugLog("Java player.disconnect() method not available\n");
-		return;
-		}
 
 	javaPlayer = Entity_getEntity(index);
 	(*java_env)->CallVoidMethod(java_env, javaPlayer, method_player_disconnect);	
