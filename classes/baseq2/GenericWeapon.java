@@ -11,12 +11,9 @@ import q2java.*;
  
 public abstract class GenericWeapon extends GenericItem
 	{
-	protected String fWeaponName;
-	protected String fWeaponIconName;
 	protected String fAmmoName;
 	protected int    fAmmoCount;
 	protected String fViewModel;
-	protected String fEntityModel;
 	
 	// Player Weapon fields	
 	protected Player fPlayer;
@@ -61,10 +58,10 @@ public GenericWeapon()
 	}
 public GenericWeapon(String[] spawnArgs) throws GameException
 	{
-	super(spawnArgs, "misc/w_pkup.wav");
+	super(spawnArgs);
 	setFields();
 	
-	fEntity.setModel(fEntityModel);
+	fEntity.setModel(getModelName());
 	fEntity.setEffects(NativeEntity.EF_ROTATE); // all weapons rotate
 	fEntity.linkEntity();
 	}
@@ -108,12 +105,12 @@ public String getAmmoName()
 	return fAmmoName;
 	}
 /**
- * Get the name of the icon that represents this weapon.
+ * All weapons share the same pickup sound.
  * @return java.lang.String
  */
-public String getIconName() 
+public String getPickupSound() 
 	{
-	return fWeaponIconName;
+	return "misc/w_pkup.wav";
 	}
 /**
  * This method was created by a SmartGuide.
@@ -122,13 +119,6 @@ public String getIconName()
 public final int getWeaponFrame() 
 	{
 	return fGunFrame;
-	}
-/**
- * Get the name of this weapon.
- */
-public String getWeaponName() 
-	{
-	return fWeaponName;
 	}
 /**
  * This method was created by a SmartGuide.
@@ -186,8 +176,6 @@ public void touch(Player p)
 	{
 	if (p.addWeapon(getClass(), true))
 		{
-		p.fEntity.cprint(Engine.PRINT_HIGH, "You picked up a " + getWeaponName() + "\n");
-		
 		super.touch(p);
 	
 		// bring the weapon back in 30 seconds

@@ -80,15 +80,36 @@ public void fire()
 	fPlayer.setAnimation(Player.ANIMATE_VWEP_THROW);
 	}
 /**
+ * Get the name of this item's icon.
+ * @return java.lang.String
+ */
+public String getIconName() 
+	{
+	return "a_grenades";
+	}
+/**
+ * Get the name of this item.
+ * @return java.lang.String
+ */
+public String getItemName() 
+	{
+	return "Grenades";
+	}
+/**
+ * Get the name of this item's model.
+ * @return java.lang.String
+ */
+public String getModelName() 
+	{
+	return "models/items/ammo/grenades/medium/tris.md2";	
+	}
+/**
  * Fill in the info specific to this type of weapon.
  */
 protected void setFields() 
 	{
-	fWeaponName = "grenades";
-	fWeaponIconName = "a_grenades";
 	fAmmoName = "grenades";
-	fAmmoCount = 10;
-	fEntityModel = "models/items/ammo/grenades/medium/tris.md2";	
+	fAmmoCount = 5;
 	fViewModel = "models/weapons/v_handgr/tris.md2";
 	
 	// The frames of weapon_grenade are different of GenericWeapon..

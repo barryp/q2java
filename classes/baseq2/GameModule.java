@@ -1,6 +1,7 @@
 
 package baseq2;
 
+
 import java.io.*;
 import java.lang.reflect.*;
 import java.text.*;
@@ -26,7 +27,7 @@ public class GameModule extends q2jgame.GameModule implements GameStatusListener
 		
 	// keep some bodies lying around		
 	protected static CorpseQueue gCorpseQueue;
-						
+
 	// various CVars
 	public static CVar gBobUp;	
 	public static CVar gRollAngle;
@@ -78,6 +79,7 @@ public class GameModule extends q2jgame.GameModule implements GameStatusListener
 	public final static int SPAWNFLAG_NOT_DEATHMATCH	= 0x00000800;
 	public final static int SPAWNFLAG_NOT_COOP		= 0x00001000;		
 	
+
 /**
  * This method was created by a SmartGuide.
  */
@@ -103,7 +105,9 @@ public GameModule(String moduleName)
 	
 	gIsVWepOn = (new CVar("vwep", "0", CVar.CVAR_LATCH)).getFloat() == 1.0;
 	gIsDeathmatch = (new CVar("deathmatch", "0", CVar.CVAR_LATCH)).getFloat() == 1.0;
-	gSkillLevel = (int) ((new CVar("skill", "1", CVar.CVAR_LATCH)).getFloat());	
+	gSkillLevel = (int) ((new CVar("skill", "1", CVar.CVAR_LATCH)).getFloat());		
+	
+	InventoryList.setupList( 42, 84, 128, 172, 214, true);	
 	}
 /**
  * Check whether an entity should be inhibited because
@@ -166,7 +170,7 @@ public static void copyCorpse(NativeEntity ent)
  */
 public static String getVersion() 
 	{
-	return "Q2Java Base Game, v0.5.2";
+	return "Q2Java Base Game, v0.5.3";
 	}	
 /**
  * Check whether or not the Cheating option is on.
@@ -300,6 +304,8 @@ public void startLevel(String mapname, String entString, String spawnPoint)
 	gIsCheating = (gCheats.getFloat() == 1.0);
 
 	gCorpseQueue = new CorpseQueue();
+	
+	InventoryList.registerList();
 
 	//
 	// cache some sounds

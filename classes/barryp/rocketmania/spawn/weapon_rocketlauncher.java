@@ -12,11 +12,8 @@ import baseq2.*;
  * fires rockets that fly faster and do more damage
  */
 
-public class weapon_rocketlauncher extends GenericWeapon
+public class weapon_rocketlauncher extends baseq2.spawn.weapon_rocketlauncher
 	{
-	// all rocketlauncher objects will share these arrays
-	private final static int[] PAUSE_FRAMES = new int[] {25, 33, 42, 50, 0};
-	private final static int[] FIRE_FRAMES = new int[] {5, 0};		
 	
 /**
  * Construct a rocket launcher for a player to carry.
@@ -76,24 +73,5 @@ public void fire()
 	
 //	PlayerNoise(ent, start, PNOISE_WEAPON);
 	fPlayer.setAmmoCount(-1, false);
-	}
-/**
- * Fill in the info specific to this type of weapon.
- */
-protected void setFields() 
-	{
-	fWeaponName = "rocket launcher";
-	fAmmoName = "rockets";
-	fAmmoCount = 10;
-	fEntityModel = "models/weapons/g_rocket/tris.md2";	
-	fViewModel = "models/weapons/v_rocket/tris.md2";
-	
-	fFrameActivateLast		= 4;
-	fFrameFireLast 		= 12;
-	fFrameIdleLast 		= 50;
-	fFrameDeactivateLast 	= 54;
-
-	fPauseFrames = PAUSE_FRAMES;
-	fFireFrames = FIRE_FRAMES;					
 	}
 }

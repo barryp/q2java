@@ -14,9 +14,9 @@ public abstract class GenericHealth extends GenericItem
 	protected int fHealthValue;
 	protected boolean fOverrideMax;
 	
-public GenericHealth(String[] spawnArgs, String modelName, String pickupSound, int healthValue, boolean overrideMax) throws GameException
+public GenericHealth(String[] spawnArgs, int healthValue, boolean overrideMax) throws GameException
 	{
-	super(spawnArgs, pickupSound);
+	super(spawnArgs);
 	
 	if (GameModule.isDMFlagSet(GameModule.DF_NO_HEALTH))
 		{
@@ -26,8 +26,24 @@ public GenericHealth(String[] spawnArgs, String modelName, String pickupSound, i
 	
 	fHealthValue = healthValue;
 	fOverrideMax = overrideMax;
-	fEntity.setModel(modelName);
+	fEntity.setModel(getModelName());
 	fEntity.linkEntity();		
+	}
+/**
+ * All health items share the same icon.
+ * @return java.lang.String
+ */
+public String getIconName() 
+	{
+	return "i_health";
+	}
+/**
+ * Get the name of this item.
+ * @return java.lang.String
+ */
+public String getItemName() 
+	{
+	return "Health";
 	}
 /**
  * This method was created by a SmartGuide.

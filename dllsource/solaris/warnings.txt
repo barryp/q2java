@@ -1,0 +1,68 @@
+cc -xCC -I/int/pepin/3rd_party/java/jdk1.1.5/include -I/int/pepin/3rd_party/java/jdk1.1.5/include/solaris -L/int/pepin/3rd_party/java/jdk1.1.5/lib/sparc/green_threads -ljava  -c  game.c
+cc -xCC -I/int/pepin/3rd_party/java/jdk1.1.5/include -I/int/pepin/3rd_party/java/jdk1.1.5/include/solaris -L/int/pepin/3rd_party/java/jdk1.1.5/lib/sparc/green_threads -ljava  -c  globals.c
+"globals.c", line 1: warning: invalid white space character in directive
+"globals.c", line 3: warning: invalid white space character in directive
+cc -xCC -I/int/pepin/3rd_party/java/jdk1.1.5/include -I/int/pepin/3rd_party/java/jdk1.1.5/include/solaris -L/int/pepin/3rd_party/java/jdk1.1.5/lib/sparc/green_threads -ljava  -c  misc.c
+cc -xCC -I/int/pepin/3rd_party/java/jdk1.1.5/include -I/int/pepin/3rd_party/java/jdk1.1.5/include/solaris -L/int/pepin/3rd_party/java/jdk1.1.5/lib/sparc/green_threads -ljava  -c  player.c
+cc -xCC -I/int/pepin/3rd_party/java/jdk1.1.5/include -I/int/pepin/3rd_party/java/jdk1.1.5/include/solaris -L/int/pepin/3rd_party/java/jdk1.1.5/lib/sparc/green_threads -ljava  -c  javalink_Solaris.c
+cc -xCC -I/int/pepin/3rd_party/java/jdk1.1.5/include -I/int/pepin/3rd_party/java/jdk1.1.5/include/solaris -L/int/pepin/3rd_party/java/jdk1.1.5/lib/sparc/green_threads -ljava  -c  q2java_ConsoleOutputStream.c
+"q2java_ConsoleOutputStream.c", line 12: warning: initialization type mismatch
+"q2java_ConsoleOutputStream.c", line 13: warning: initialization type mismatch
+cc -xCC -I/int/pepin/3rd_party/java/jdk1.1.5/include -I/int/pepin/3rd_party/java/jdk1.1.5/include/solaris -L/int/pepin/3rd_party/java/jdk1.1.5/lib/sparc/green_threads -ljava  -c  q2java_CVar.c
+"q2java_CVar.c", line 13: warning: initialization type mismatch
+"q2java_CVar.c", line 14: warning: initialization type mismatch
+"q2java_CVar.c", line 15: warning: initialization type mismatch
+cc -xCC -I/int/pepin/3rd_party/java/jdk1.1.5/include -I/int/pepin/3rd_party/java/jdk1.1.5/include/solaris -L/int/pepin/3rd_party/java/jdk1.1.5/lib/sparc/green_threads -ljava  -c  q2java_Engine.c
+"q2java_Engine.c", line 26: warning: initialization type mismatch
+"q2java_Engine.c", line 27: warning: initialization type mismatch
+"q2java_Engine.c", line 28: warning: initialization type mismatch
+"q2java_Engine.c", line 29: warning: initialization type mismatch
+"q2java_Engine.c", line 30: warning: initialization type mismatch
+"q2java_Engine.c", line 31: warning: initialization type mismatch
+"q2java_Engine.c", line 32: warning: initialization type mismatch
+"q2java_Engine.c", line 33: warning: initialization type mismatch
+"q2java_Engine.c", line 34: warning: initialization type mismatch
+"q2java_Engine.c", line 35: warning: initialization type mismatch
+"q2java_Engine.c", line 36: warning: initialization type mismatch
+"q2java_Engine.c", line 37: warning: initialization type mismatch
+"q2java_Engine.c", line 38: warning: initialization type mismatch
+"q2java_Engine.c", line 39: warning: initialization type mismatch
+"q2java_Engine.c", line 40: warning: initialization type mismatch
+"q2java_Engine.c", line 41: warning: initialization type mismatch
+"q2java_Engine.c", line 42: warning: initialization type mismatch
+"q2java_Engine.c", line 43: warning: initialization type mismatch
+"q2java_Engine.c", line 44: warning: initialization type mismatch
+"q2java_Engine.c", line 45: warning: initialization type mismatch
+"q2java_Engine.c", line 46: warning: initialization type mismatch
+"q2java_Engine.c", line 47: warning: initialization type mismatch
+cc -xCC -I/int/pepin/3rd_party/java/jdk1.1.5/include -I/int/pepin/3rd_party/java/jdk1.1.5/include/solaris -L/int/pepin/3rd_party/java/jdk1.1.5/lib/sparc/green_threads -ljava  -c  q2java_NativeEntity.c
+"q2java_NativeEntity.c", line 79: warning: initialization type mismatch
+"q2java_NativeEntity.c", line 80: warning: initialization type mismatch
+"q2java_NativeEntity.c", line 81: warning: initialization type mismatch
+"q2java_NativeEntity.c", line 82: warning: initialization type mismatch
+"q2java_NativeEntity.c", line 83: warning: initialization type mismatch
+"q2java_NativeEntity.c", line 84: warning: initialization type mismatch
+"q2java_NativeEntity.c", line 85: warning: initialization type mismatch
+"q2java_NativeEntity.c", line 86: warning: initialization type mismatch
+"q2java_NativeEntity.c", line 87: warning: initialization type mismatch
+"q2java_NativeEntity.c", line 88: warning: initialization type mismatch
+"q2java_NativeEntity.c", line 89: warning: initialization type mismatch
+"q2java_NativeEntity.c", line 90: warning: initialization type mismatch
+"q2java_NativeEntity.c", line 91: warning: initialization type mismatch
+"q2java_NativeEntity.c", line 92: warning: initialization type mismatch
+"q2java_NativeEntity.c", line 93: warning: initialization type mismatch
+"q2java_NativeEntity.c", line 94: warning: initialization type mismatch
+"q2java_NativeEntity.c", line 95: warning: initialization type mismatch
+"q2java_NativeEntity.c", line 96: warning: initialization type mismatch
+"q2java_NativeEntity.c", line 97: warning: initialization type mismatch
+"q2java_NativeEntity.c", line 98: warning: initialization type mismatch
+"q2java_NativeEntity.c", line 99: warning: initialization type mismatch
+"q2java_NativeEntity.c", line 100: warning: initialization type mismatch
+"q2java_NativeEntity.c", line 101: warning: initialization type mismatch
+"q2java_NativeEntity.c", line 102: warning: initialization type mismatch
+"q2java_NativeEntity.c", line 105: warning: initialization type mismatch
+"q2java_NativeEntity.c", line 106: warning: initialization type mismatch
+"q2java_NativeEntity.c", line 107: warning: initialization type mismatch
+"q2java_NativeEntity.c", line 108: warning: initialization type mismatch
+"q2java_NativeEntity.c", line 109: warning: initialization type mismatch
+cc -xCC -I/int/pepin/3rd_party/java/jdk1.1.5/include -I/int/pepin/3rd_party/java/jdk1.1.5/include/solaris -L/int/pepin/3rd_party/java/jdk1.1.5/lib/sparc/green_threads -ljava  -G -o gamesparc.so game.o globals.o misc.o player.o javalink_Solaris.o q2java_ConsoleOutputStream.o q2java_CVar.o q2java_Engine.o q2java_NativeEntity.o

@@ -7,9 +7,12 @@ Q2Java v0.5 -  Quake II Game programming in Java
     Description: A DLL and Java classes that allow a QuakeII game
                  to be written in Java.
 
-    Requirements: Win95 or WinNT 4.0
-                  Quake II v 3.14 for Win32/Intel
+    Requirements: Win95, WinNT 4.0, or Solaris for SPARC
+                  Quake II v 3.14 for Win32/Intel or Solaris/SPARC
                   Sun Java JDK or JRE 1.1.4 or higher
+                  
+    (Beta versions of JDK 1.2 and Win98 seem to be flakey or non-functional 
+     when running Q2Java - that's why they're considered "beta")
 
 -------------------------------------
 
@@ -21,7 +24,22 @@ INSTALLING
     Secondly, Sun's Java JDK or JRE 1.1.4 or higher.  If you downloaded the 
     JDK, you can test to see if it's installed properly by typing "java -version" 
     at a command prompt.  If it's installed correctly, you'll see a usage message.
-    If you installed the JRE, test it by typing "jre -version"
+    If you installed the JRE, test it by typing "jre -version".  
+    
+    ====================
+    IMPORTANT NOTE FOR WINDOWS USERS
+    --------------------    
+    The JDK or JRE should have added its "bin" directory to your system's PATH
+    (that's the regular path, in Win95 it's set in the Autoexec.bat, in WinNT it's
+    under the properties of the "My Computer" icon in the "Environment" tab).  If
+    the directory that contains "javai.dll" is not listed in the path - the system
+    won't be able to find it when you try to run Q2Java and you'll get an error
+    message.
+    
+    Unfortunately, it sounds like the JRE install may not be adding the necessary
+    directory to the path, so be sure to check that if you have problems.
+    ====================
+      
 
     Make sure the contents of this zip file are extracted into a subdirectory
     of your Quake II directory (usually c:\quake2).

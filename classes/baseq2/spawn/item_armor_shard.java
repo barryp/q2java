@@ -10,8 +10,30 @@ public class item_armor_shard extends GenericArmor
 	
 public item_armor_shard(String[] spawnArgs) throws GameException
 	{
-	super(spawnArgs, "models/items/armor/shard/tris.md2", 
-		"misc/ar2_pkup.wav", "i_jacketarmor",
-		2, 0, 0, 0);
+	super(spawnArgs, 2, 0, 0, 0);
+	}
+/**
+ * Get the name of this item's icon.
+ * @return java.lang.String
+ */
+public String getIconName() 
+	{
+	return "i_jacketarmor";
+	}
+/**
+ * Get the name of this item.
+ * @return java.lang.String
+ */
+public String getItemName() 
+	{
+	return "Armor Shard";
+	}
+/**
+ * Get the name of this item's model.
+ * @return java.lang.String
+ */
+public String getModelName() 
+	{
+	return "models/items/armor/shard/tris.md2";
 	}
 }

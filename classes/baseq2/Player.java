@@ -31,11 +31,9 @@ public class Player extends GameObject implements FrameListener, PlayerListener,
 	private float fDamageMultiplier;
 		
 	protected Hashtable fUserInfo;
-	protected Hashtable fInventory;
-	protected Vector fWeaponList;
+	protected InventoryTracker fInventory;
 	protected Vector fWeaponOrder;
 	protected Vector fWeaponsExcluded;
-	protected Hashtable fAmmoBelt;
 
 	// Armor 
 	private int fArmorCount;
@@ -50,7 +48,7 @@ public class Player extends GameObject implements FrameListener, PlayerListener,
 	protected GenericWeapon fWeapon;
 	protected GenericWeapon fLastWeapon;
 	protected GenericWeapon fNextWeapon;	
-	protected AmmoPack fAmmo;
+	protected InventoryPack fAmmo;
 	
 	protected int fHand;
 	protected float fBobTime;
@@ -66,8 +64,15 @@ public class Player extends GameObject implements FrameListener, PlayerListener,
 	/** The mass of this Player. Use setMass(int) to set.*/
 	private int fMass;
 	
+	protected boolean fShowInventory;
 	protected boolean fShowScore;
 	protected float fShowScoreTime;
+	protected float fPickupMsgTime;
+	
+	// drowning and breathing
+	protected float fAirFinished;
+	protected float fNextDrownTime;	
+	protected int fDrownDamage;
 	
 	protected boolean fIsDead;
 	protected transient GameObject fKiller;
@@ -280,6 +285,7 @@ public class Player extends GameObject implements FrameListener, PlayerListener,
 
 
 
+
 /**
  * Create a new Player Game object, and associate it with a Player
  * native entity.
@@ -307,6 +313,8 @@ public Player(NativeEntity ent, boolean loadgame) throws GameException
 	fDamageBlend = new Color4f(0.0f, 0.0f, 0.0f, 0.0f);
 	setFrameAlpha(0.0f);
 	setMass(200);
+	
+	fInventory = new InventoryTracker();
 	
 	// Create weapon ordering vectors
 	fWeaponOrder = new Vector();
@@ -345,9 +353,14 @@ public boolean addAmmo(String ammoType, int count)
 	if (ammoType == null)
 		return false;
 		
-	AmmoPack pack = (AmmoPack) fAmmoBelt.get(ammoType);
+	InventoryPack pack = (InventoryPack) fInventory.getPack(ammoType);
 	if (pack == null)
-		fAmmoBelt.put(ammoType, new AmmoPack(Integer.MAX_VALUE, null));
+		{
+		pack = new InventoryPack();
+		pack.fAmount = count;
+		pack.fMaxAmount = Integer.MAX_VALUE;
+		fInventory.addPack(ammoType, pack);		
+		}
 	else
 		{
 		// make sure we don't overfill the ammo pack
@@ -360,7 +373,7 @@ public boolean addAmmo(String ammoType, int count)
 		if (pack == fAmmo)
 			setAmmoCount(count, false);  // will also update HUD
 		else			
-			pack.fAmount += count;		
+			pack.fAmount += count;
 		}
 		
 	return true;		
@@ -467,29 +480,29 @@ public boolean addWeapon(Class weaponClass, boolean allowSwitch)
 
 	boolean weaponStay = GameModule.isDMFlagSet(GameModule.DF_WEAPONS_STAY);
 
-	if (isCarrying(w.getWeaponName()))
+	if (fInventory.get(w.getItemName()) != null)
 		{
 		if (weaponStay)
 			return false;
-		else			
+		else
 			return addAmmo(w.getAmmoName(), w.getAmmoCount());
 		}
 	else
-		{		
-		putInventory(w.getWeaponName(), w);
-		fWeaponList.addElement(w);
-		if (!fWeaponOrder.contains(w.getWeaponName()))
-			fWeaponOrder.addElement(w.getWeaponName());
+		{
+		addAmmo(w.getAmmoName(), w.getAmmoCount());	
+		
+		putInventory(w.getItemName(), w);
+		if (!fWeaponOrder.contains(w.getItemName()))
+			fWeaponOrder.addElement(w.getItemName());
 		w.setOwner(this);
 			
 		// switch weapons if we're currently using the blaster
-		if (allowSwitch && (fWeapon == getInventory("blaster")))
+		if (allowSwitch && (fWeapon == fInventory.get("blaster")))
 			{
 			fNextWeapon = w;
 			fWeapon.deactivate();
 			}
-			
-		addAmmo(w.getAmmoName(), w.getAmmoCount());		
+				
 		return !weaponStay;
 		}		
 	}
@@ -859,24 +872,21 @@ protected void clearSettings( )
 	setDamageMultiplier(1.0F);
 	
 	// initialize the AmmoBelt
-	fAmmoBelt = new Hashtable();
-	fAmmoBelt.put("shells", new AmmoPack(100, "a_shells"));
-	fAmmoBelt.put("bullets", new AmmoPack(200, "a_bullets"));
-	fAmmoBelt.put("grenades", new AmmoPack(50, "a_grenades"));
-	fAmmoBelt.put("rockets", new AmmoPack(50, "a_rockets"));
-	fAmmoBelt.put("cells", new AmmoPack(200, "a_cells"));
-	fAmmoBelt.put("slugs", new AmmoPack(50, "a_slugs"));
+	fInventory.clear();
+	fInventory.addPack("shells", new InventoryPack(100, "a_shells"));
+	fInventory.addPack("bullets", new InventoryPack(200, "a_bullets"));
+	fInventory.addPack("grenades", new InventoryPack(50, "a_grenades"));
+	fInventory.addPack("rockets", new InventoryPack(50, "a_rockets"));
+	fInventory.addPack("cells", new InventoryPack(200, "a_cells"));
+	fInventory.addPack("slugs", new InventoryPack(50, "a_slugs"));
 
-	// initialize the inventory with a Blaster
-	fInventory = new Hashtable();
-	fWeaponList = new Vector();
+	
 	try
 		{
 		fWeapon = (GenericWeapon) Game.lookupClass(".spawn.weapon_blaster").newInstance();
 		putInventory("blaster", fWeapon);
-		fWeaponList.addElement(fWeapon);
-		if (!fWeaponOrder.contains(fWeapon.getWeaponName()))
-			fWeaponOrder.addElement(fWeapon.getWeaponName());
+		if (!fWeaponOrder.contains(fWeapon.getItemName()))
+			fWeaponOrder.addElement(fWeapon.getItemName());
 		fWeapon.setOwner(this);
 		fWeapon.activate();
 		}
@@ -901,6 +911,7 @@ protected void clearSettings( )
 		fInIntermission = false;
 		}
 
+	fWaterLevel = 0;
 	fOldWaterLevel = 0;
 	fOldButtons = 0;
 	fLatchedButtons = 0;
@@ -910,6 +921,15 @@ protected void clearSettings( )
 	fHealthMax = 100;
 	setAnimation(ANIMATE_NORMAL, true, 0);
 	fOldVelocity = new Vector3f();
+	}
+/**
+ * Closes any special screens
+ */
+protected void closeDisplay()
+	{
+	fEntity.setPlayerStat(NativeEntity.STAT_LAYOUTS, (short)0);
+	fShowScore = false;
+	fShowInventory = false;
 	}
 /**
  * This allows us to test different blend modes.
@@ -1020,6 +1040,38 @@ public void cmd_id(String[] args)
 		fEntity.centerprint(((Player)tr.fEntity.getPlayerListener()).getName());		
 	}
 /**
+ * displays the inventory
+ * @param args java.lang.String[] - not used.
+ */
+public void cmd_inven(String[] args)
+	{
+	StringBuffer sb = new StringBuffer();
+	
+	fShowScore = false;
+	
+	if (fShowInventory)
+	{
+		fEntity.setPlayerStat(NativeEntity.STAT_LAYOUTS, (short) 0);
+		fShowInventory = false;
+		return;
+	}
+	
+	fShowInventory = true;
+	
+	Engine.writeByte(Engine.SVC_INVENTORY);	
+	
+	for (int i=0; i<InventoryList.length(); i++)
+	{
+		int n = fInventory.getNumberOf(InventoryList.getItemAtIndex(i));
+		Engine.writeShort((short)n);
+	}
+
+	Engine.unicast(fEntity, true);
+	fEntity.setPlayerStat(NativeEntity.STAT_LAYOUTS, (short)2);
+	
+	return;
+	}
+/**
  * Suicide.
  * @param args java.lang.String[]
  */
@@ -1031,15 +1083,13 @@ public void cmd_kill(String[] args)
 		die(this, this, 0, fEntity.getOrigin());
 	}
 /**
- * Put's away the scorboard
- * when the scoreboard is displayed and the esc key is hit the cmd is called
- * when the help computer or inventory display is implemented this needs to shut those off also
+ * Put's away the any special screens that are currently displayed, e.g. scoreboard, inventory or help computer.
+ * when the special screen is displayed and the esc key is hit this cmd is called
  * @param args java.lang.String[]
  */
 public void cmd_putaway(String[] args)
 	{
-	fEntity.setPlayerStat(NativeEntity.STAT_LAYOUTS, (short)0);
-	fShowScore = false;
+		closeDisplay();
 	}
 /**
  * Send a chat message to all players.
@@ -1174,14 +1224,14 @@ public void cmd_weaplast(String[] args)
  */
 public void cmd_weapnext(String[] args) 
 	{
-	int i = (fWeaponOrder.indexOf(fWeapon.getWeaponName()) + 1) % fWeaponOrder.size();
+	int i = (fWeaponOrder.indexOf(fWeapon.getItemName()) + 1) % fWeaponOrder.size();
 	int crashguard = i; // used to keep infinite loops from occuring
 	
 	do
 		{
-		fNextWeapon = (GenericWeapon) getInventory((String) fWeaponOrder.elementAt(i));
+		fNextWeapon = (GenericWeapon) fInventory.get(((String) fWeaponOrder.elementAt(i)).toLowerCase());
 		i = (i+1) % fWeaponOrder.size();
-		} while (((fNextWeapon == null) || !fNextWeapon.isEnoughAmmo() || fWeaponsExcluded.contains(fNextWeapon.getWeaponName())) && (crashguard != i));
+		} while (((fNextWeapon == null) || !fNextWeapon.isEnoughAmmo() || fWeaponsExcluded.contains(fNextWeapon.getItemName().toLowerCase())) && (crashguard != i));
 		
 	if (fNextWeapon == fWeapon)
 		fNextWeapon = null;
@@ -1194,17 +1244,17 @@ public void cmd_weapnext(String[] args)
  */
 public void cmd_weapprev(String[] args) 
 	{
-	int i = fWeaponOrder.indexOf(fWeapon.getWeaponName()) - 1;
+	int i = fWeaponOrder.indexOf(fWeapon.getItemName()) - 1;
 	if (i < 0)
 		i = fWeaponOrder.size() - 1;
 		
 	int crashguard = i; // used to keep infinite loops from occuring
 		
 	do {
-		fNextWeapon = (GenericWeapon) getInventory((String) fWeaponOrder.elementAt(i));
+		fNextWeapon = (GenericWeapon) fInventory.get(((String) fWeaponOrder.elementAt(i)).toLowerCase());
 		if (--i < 0)
 			i = fWeaponOrder.size() - 1;
-	} while (((fNextWeapon == null) || !fNextWeapon.isEnoughAmmo() || fWeaponsExcluded.contains(fNextWeapon.getWeaponName())) && (i != crashguard));
+	} while (((fNextWeapon == null) || !fNextWeapon.isEnoughAmmo() || fWeaponsExcluded.contains(fNextWeapon.getItemName().toLowerCase())) && (i != crashguard));
 
 	if (fNextWeapon == fWeapon)
 		fNextWeapon = null;
@@ -1634,6 +1684,14 @@ protected void endServerFrame()
 		Engine.unicast(fEntity, false);
 		fShowScoreTime = Game.getGameTime() + 3; // refresh at 3 second intervals
 		}
+		
+	// disable pickup message		
+	if ((fPickupMsgTime > 0) && (Game.getGameTime() > fPickupMsgTime))		
+		{
+		fEntity.setPlayerStat(NativeEntity.STAT_PICKUP_ICON, (short) 0);
+		fEntity.setPlayerStat(NativeEntity.STAT_PICKUP_STRING, (short)0);		
+		fPickupMsgTime = 0;
+		}
 	}
 /**
  * This method was created by a SmartGuide.
@@ -1712,7 +1770,7 @@ public int getAmmoCount(String ammoName)
 	if (ammoName == null)
 		return 0;
 		
-	AmmoPack p = (AmmoPack) fAmmoBelt.get(ammoName);
+	InventoryPack p = fInventory.getPack(ammoName);
 	
 	if (p == null)
 		return 0;		
@@ -1781,7 +1839,7 @@ public int getHealthMax()
  */
 public Object getInventory(String itemName) 
 	{
-	return fInventory.get(itemName.toLowerCase());
+	return fInventory.get(itemName);
 	}
 /**
  * Returns the mass of the player (normally 200).
@@ -1801,7 +1859,7 @@ protected int getMaxAmmoCount(String ammoName)
 	if (ammoName == null)
 		return Integer.MAX_VALUE;
 		
-	AmmoPack p = (AmmoPack) fAmmoBelt.get(ammoName);
+	InventoryPack p = fInventory.getPack(ammoName);
 	
 	if (p == null)
 		return Integer.MAX_VALUE;		
@@ -1894,7 +1952,7 @@ protected void incFrame()
  */
 public boolean isCarrying(String itemName) 
 	{
-	return (fInventory.containsKey(itemName));
+	return fInventory.isCarrying(itemName);
 	}
 /** 
  * Is this guy really a chick?
@@ -1936,6 +1994,21 @@ protected GenericWeapon nextAvailableWeapon()
 		return w;
 
 	return (GenericWeapon) fInventory.get("blaster");
+	}
+/**
+ * Notify the player (on their HUD) that they picked something up.
+ * @param itemName java.lang.String
+ * @param iconName java.lang.String
+ */
+public void notifyPickup(String itemName, String iconName) 
+	{
+	// flash the Player's screen
+	setFrameAlpha(0.25f);
+	
+	// show icon and name on status bar
+	fEntity.setPlayerStat(NativeEntity.STAT_PICKUP_ICON, (short) Engine.getImageIndex(iconName));
+	fEntity.setPlayerStat(NativeEntity.STAT_PICKUP_STRING, (short)(Engine.CS_ITEMS + InventoryList.getIndexOf(itemName)));
+	fPickupMsgTime = Game.getGameTime() + 3;
 	}
 /**
  * Broadcast a message announcing the player's demise.
@@ -2166,7 +2239,25 @@ public Point3f projectSource(Vector3f offset, Vector3f forward, Vector3f right)
  */
 public void putInventory(String itemName, Object ent) 
 	{
-	fInventory.put(itemName, ent);
+	InventoryPack p = fInventory.getPack(itemName);
+	if (p == null)
+		fInventory.addPack(itemName, new InventoryPack(ent));
+	else
+		{
+		// put the item in the pack and make sure
+		// the count is at least one.
+		p.fItem = ent;				
+		if (p.fAmount == 0)
+			p.fAmount = 1;
+		}
+	}
+/**
+ * This method was created by a SmartGuide.
+ * @param name java.lang.String
+ */
+public void removeInventory(String name) 
+	{
+	fInventory.remove(name);
 	}
 /**
  * Put a dead player back into the game
@@ -2227,7 +2318,7 @@ public void setAmmoCount(int amount, boolean isAbsolute)
  */
 public void setAmmoType(String ammoType) 
 	{
-	fAmmo = (ammoType == null ? null : (AmmoPack) fAmmoBelt.get(ammoType));	
+	fAmmo = (ammoType == null ? null : fInventory.getPack(ammoType));	
 	if (fAmmo == null)
 		{
 		fEntity.setPlayerStat(NativeEntity.STAT_AMMO, (short) 0);
@@ -2490,8 +2581,8 @@ protected void spawn()
 	showVWep();
 	fEntity.setMins(-16, -16, 24);
 	fEntity.setMaxs(16, 16, 32);
-	fEntity.setPlayerStat(NativeEntity.STAT_LAYOUTS, (short) 0); // turn off any scoreboards		
-	fShowScore = false;
+	
+	closeDisplay();
 	fEntity.linkEntity();			
 	}
 /**
@@ -2665,6 +2756,99 @@ protected void worldEffects()
 	//
 	if ((fWaterLevel != 3) && (oldWaterLevel == 3))
 		fEntity.sound(NativeEntity.CHAN_VOICE, Engine.getSoundIndex("player/gasp2.wav"), 1, NativeEntity.ATTN_NORM, 0);
+
+	// FIXME --generate a zero vector for use in damage funcs	
+	// not terribly efficient to keep doing this
+	Vector3f origin = new Vector3f();
+
+	//
+	// check for drowning
+	//
+	if (fWaterLevel == 3)
+		{	
+		// breather or envirosuit give air
+/*
+		if (breather || envirosuit)
+			{
+			current_player->air_finished = level.time + 10;
+
+			if (((int)(current_client->breather_framenum - level.framenum) % 25) == 0)
+				{
+				if (!current_client->breather_sound)
+					gi.sound (current_player, CHAN_AUTO, gi.soundindex("player/u_breath1.wav"), 1, ATTN_NORM, 0);
+				else
+					gi.sound (current_player, CHAN_AUTO, gi.soundindex("player/u_breath2.wav"), 1, ATTN_NORM, 0);
+				current_client->breather_sound ^= 1;
+				PlayerNoise(current_player, current_player->s.origin, PNOISE_SELF);
+				//FIXME: release a bubble?
+				}
+			}
+*/
+		// if out of air, start drowning
+		if (fAirFinished < Game.getGameTime())
+			{	// drown!
+			if ((fNextDrownTime < Game.getGameTime()) && (fHealth > 0))
+				{
+				fNextDrownTime = Game.getGameTime() + 1;
+
+				// take more damage the longer underwater
+				fDrownDamage += 2;
+				if (fDrownDamage  > 15)
+					fDrownDamage = 15;
+
+				// play a gurp sound instead of a normal pain sound
+				if (fHealth <= fDrownDamage)
+					fEntity.sound(NativeEntity.CHAN_VOICE, Engine.getSoundIndex("player/drown1.wav"), 1, NativeEntity.ATTN_NORM, 0);
+				else if ((MiscUtil.randomInt() & 1) != 0)
+					fEntity.sound(NativeEntity.CHAN_VOICE, Engine.getSoundIndex("*gurp1.wav"), 1, NativeEntity.ATTN_NORM, 0);
+				else
+					fEntity.sound(NativeEntity.CHAN_VOICE, Engine.getSoundIndex("*gurp2.wav"), 1, NativeEntity.ATTN_NORM, 0);
+
+				fPainDebounceTime = Game.getGameTime();
+
+				damage(GameModule.gWorld, GameModule.gWorld, origin, fEntity.getOrigin(), origin, fDrownDamage, 0, DAMAGE_NO_ARMOR, Engine.TE_NONE);
+				}
+			}
+		}
+	else
+		{
+		// reset breath counter and restore normal drowning damage level
+		fAirFinished = Game.getGameTime() + 12;
+		fDrownDamage = 2;
+		}
+
+		
+	//
+	// check for sizzle damage
+	//
+	if ((fWaterLevel != 0) && ((fWaterType & Engine.CONTENTS_LAVA) != 0))
+		{
+		if (fHealth > 0
+			&& Game.getGameTime() > fPainDebounceTime 
+//			&& current_client->invincible_framenum < level.framenum
+			)
+			{
+			if ((MiscUtil.randomInt() & 1) != 0)
+				fEntity.sound(NativeEntity.CHAN_VOICE, Engine.getSoundIndex("player/burn1.wav"), 1, NativeEntity.ATTN_NORM, 0);
+			else
+				fEntity.sound(NativeEntity.CHAN_VOICE, Engine.getSoundIndex("player/burn2.wav"), 1, NativeEntity.ATTN_NORM, 0);
+			fPainDebounceTime = Game.getGameTime() + 1;
+			}
+
+//		if (envirosuit)	// take 1/3 damage with envirosuit
+//			T_Damage (current_player, world, world, vec3_origin, current_player->s.origin, vec3_origin, 1*waterlevel, 0, 0, MOD_LAVA);
+//		else
+			damage(GameModule.gWorld, GameModule.gWorld, origin, fEntity.getOrigin(), origin, 3* fWaterLevel, 0, 0, Engine.TE_NONE);
+		}
+
+
+	if ((fWaterLevel != 0) && ((fWaterType & Engine.CONTENTS_SLIME) != 0))
+		{
+//		if (!envirosuit)
+			{	// no damage from slime with envirosuit
+			damage(GameModule.gWorld, GameModule.gWorld, origin, fEntity.getOrigin(), origin, fWaterLevel, 0, 0, Engine.TE_NONE);
+			}
+		}
 	}	
 /**
  * This method was created by a SmartGuide.

@@ -10,6 +10,30 @@ public class ammo_cells extends GenericAmmo
 	
 public ammo_cells(String[] spawnArgs) throws GameException
 	{
-	super(spawnArgs, "cells", 50, "models/items/ammo/cells/medium/tris.md2");
+	super(spawnArgs, 50);
+	}
+/**
+ * Get the name of this item's icon.
+ * @return java.lang.String
+ */
+public String getIconName() 
+	{
+	return "a_cells";
+	}
+/**
+ * Get the name of this item.
+ * @return java.lang.String
+ */
+public String getItemName() 
+	{
+	return "Cells";
+	}
+/**
+ * Get the name of this item's model.
+ * @return java.lang.String
+ */
+public String getModelName() 
+	{
+	return "models/items/ammo/cells/medium/tris.md2";
 	}
 }

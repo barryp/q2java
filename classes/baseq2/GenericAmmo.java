@@ -10,16 +10,22 @@ import q2java.*;
  */
 public abstract class GenericAmmo extends GenericItem
 	{
-	String fAmmoType;
 	int fCount;
 	
-public GenericAmmo(String[] spawnArgs, String ammoType, int count, String modelName) throws GameException
+public GenericAmmo(String[] spawnArgs, int count) throws GameException
 	{
-	super(spawnArgs, "misc/am_pkup.wav");
-	fEntity.setModel(modelName);
-	fAmmoType = ammoType;
+	super(spawnArgs);
+	fEntity.setModel(getModelName());
 	fCount = count;
 	fEntity.linkEntity();
+	}
+/**
+ * All ammo shares the same pickup sound.
+ * @return java.lang.String
+ */
+public String getPickupSound() 
+	{
+	return "misc/am_pkup.wav";
 	}
 /**
  * This method was created by a SmartGuide.
@@ -27,7 +33,7 @@ public GenericAmmo(String[] spawnArgs, String ammoType, int count, String modelN
  */
 public void touch(Player p) 
 	{	
-	if (p.addAmmo(fAmmoType, fCount))
+	if (p.addAmmo(getItemName(), fCount))
 		{		
 		super.touch(p);
 

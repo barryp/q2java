@@ -12,13 +12,8 @@ import baseq2.*;
  * a very high-speed, but low-damage rocket
  */
 
-public class weapon_machinegun extends GenericWeapon
+public class weapon_machinegun extends baseq2.spawn.weapon_machinegun
 	{
-	// all machinegun objects will share these arrays
-	private final static int[] PAUSE_FRAMES = new int[] {23, 45, 0};
-	private final static int[] FIRE_FRAMES = new int[] {4, 5, 0};			
-	
-	private int fShotCount;	
 	
 /**
  * Create a machinegun for a player to carry.
@@ -117,24 +112,5 @@ public void fire()
 
 //	PlayerNoise(ent, start, PNOISE_WEAPON);
 	fPlayer.setAmmoCount(-1, false);
-	}
-/**
- * Fill in the info specific to this type of weapon.
- */
-protected void setFields() 
-	{
-	fWeaponName = "machinegun";
-	fAmmoName = "bullets";
-	fAmmoCount = 50;
-	fEntityModel = "models/weapons/g_machn/tris.md2";	
-	fViewModel = "models/weapons/v_machn/tris.md2";
-	
-	fFrameActivateLast		= 3;
-	fFrameFireLast 		= 5;
-	fFrameIdleLast 		= 45;
-	fFrameDeactivateLast 	= 49;
-
-	fPauseFrames = PAUSE_FRAMES;
-	fFireFrames = FIRE_FRAMES;		
 	}
 }

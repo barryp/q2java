@@ -5,7 +5,6 @@ import javax.vecmath.*;
 
 import q2java.*;
 import q2jgame.*;
-import baseq2.*;
 
 public abstract class GenericBlaster extends GenericWeapon
 	{

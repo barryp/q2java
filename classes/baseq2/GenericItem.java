@@ -15,15 +15,13 @@ import q2jgame.*;
  */
 public abstract class GenericItem extends GameObject implements FrameListener
 	{
-	protected int fPickupSoundIndex;
+	private int fPickupSoundIndex; // privately used by the touch method
 	protected float fRespawnTime;
 	
-	protected int fItemState;
-	
+	protected int fItemState;	
 	protected final static int STATE_DROPPED = 0;
 	protected final static int STATE_NORMAL = 1;
 	
-
 /**
  * This method was created by a SmartGuide.
  */
@@ -36,18 +34,7 @@ public GenericItem()
  * @param spawnArgs args passed from the map.
  * @exception q2java.GameException when there are no more entities available. 
  */
-public GenericItem (String[] spawnArgs) throws GameException
-	{
-	this(spawnArgs, "items/pkup.wav");
-	}
-/**
- * A Generic Item lying around in the Quake world.
- *
- * @param spawnArgs args passed from the map.
- * @param pickupSound sound to play when the item is picked up.
- * @exception q2java.GameException when there are no more entities available. 
- */
-public GenericItem(String[] spawnArgs, String pickupSound) throws GameException
+public GenericItem(String[] spawnArgs) throws GameException
 	{
 	super(spawnArgs);
 
@@ -56,12 +43,36 @@ public GenericItem(String[] spawnArgs, String pickupSound) throws GameException
 	
 	fEntity.setRenderFX(NativeEntity.RF_GLOW); // all items glow
 	fEntity.setSolid(NativeEntity.SOLID_TRIGGER);
-	fPickupSoundIndex = Engine.getSoundIndex(pickupSound);
+	fPickupSoundIndex = Engine.getSoundIndex(getPickupSound());
 	
 	// schedule a one-shot runFrame() call so we can 
 	// drop to the floor
 	fItemState = STATE_DROPPED;
 	Game.addFrameListener(this, 0, -1);
+	}
+/**
+ * Get the name of this item's icon.
+ * @return java.lang.String
+ */
+public abstract String getIconName(); 
+
+/**
+ * Get the name of this item.
+ * @return java.lang.String
+ */
+public abstract String getItemName();
+/**
+ * Get the name of this item's model.
+ * @return java.lang.String
+ */
+public abstract String getModelName();
+/**
+ * Get the name of the sound to play when this item is picked up.
+ * @return java.lang.String
+ */
+public String getPickupSound() 
+	{
+	return "items/pkup.wav";
 	}
 /**
  * Make the item visible again.
@@ -115,9 +126,8 @@ public void touch(Player p)
 	// play the pickup sound
 	fEntity.sound(NativeEntity.CHAN_ITEM, fPickupSoundIndex, 1, NativeEntity.ATTN_NORM, 0);
 
-	// flash the Player's screen
-	p.setFrameAlpha(0.25f);
-
+	p.notifyPickup(getItemName(), getIconName());
+	
 	// make the item disappear
 	fEntity.setSolid(NativeEntity.SOLID_NOT);
 	fEntity.setSVFlags(fEntity.getSVFlags() | NativeEntity.SVF_NOCLIENT);

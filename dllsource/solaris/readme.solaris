@@ -1,0 +1,38 @@
+This archive contains the following files:
+
+gamesparc.so		The Solaris shared library.
+Makefile		The Makefile used to compile and link the library
+javalink_Solaris.c	The Solaris-specific code for the shared library.
+warnings.txt		A list of warning generated at compile time.
+readme.solaris		This ever-so-informative-self-referenced file.
+
+The Makefile defines the following targets:
+
+clean:	 Removes the object files and the library.
+all:	 Compiles the source files (as needed) and links the library.
+install: Moves the shared library up one directory (where it needs
+	 to be in order to run the Solaris dedicated Q2 server).
+tar:	 Automate creation of the tar file.
+
+Questions on the port can be addressed to gorilla@pro-ns.net. If 
+someone has done or is doing a Linux port, contact me. With a small
+amount of effort, we can get this process to work seamlessly on both
+platforms.
+
+Changelog
+=========
+0.52
+ - Minor changes to the Makefile. No changes to C code.
+
+0.51 Initial port
+
+To Do
+=====
+ - Clean up warnings. See warnings.txt for a complete list. Minor
+   nitpick, but a good habit to acquire.
+ - Replace the C++ comments (//) with C-style comments (/* blah */).
+   The Solaris compiler has a flag to allow C++ comments in C code.
+   Does the Linux compiler (gcc) also allow this? If so, we don't
+   have to worry about it.
+ - Thoroughly test the Solaris server w/ q2java.
+

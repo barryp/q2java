@@ -15,11 +15,11 @@ public abstract class GenericArmor extends GenericItem
 	protected int fMaxCount;
 	protected float fProtection;
 	protected float fEnergyProtection;
-	protected int fIcon;
+//	protected int fIcon;
 	
-public GenericArmor(String[] spawnArgs, String modelName, String pickupSound, String icon, int count, int maxCount, float protection, float energyProtection) throws GameException
+public GenericArmor(String[] spawnArgs, int count, int maxCount, float protection, float energyProtection) throws GameException
 	{
-	super(spawnArgs, pickupSound);
+	super(spawnArgs);
 	
 	if (GameModule.isDMFlagSet(GameModule.DF_NO_ARMOR))
 		{
@@ -28,14 +28,24 @@ public GenericArmor(String[] spawnArgs, String modelName, String pickupSound, St
 		}	
 	
 	fEntity.setEffects(NativeEntity.EF_ROTATE); // all armor rotates
-	fEntity.setModel(modelName);
+	fEntity.setModel(getModelName());
 	fEntity.linkEntity();
 	
 	fCount = count;
 	fMaxCount = maxCount;
 	fProtection = protection;
 	fEnergyProtection = energyProtection;
-	fIcon = Engine.getImageIndex(icon);
+	}
+/**
+ * Heavier armor has a different sound from light armor.
+ * @return java.lang.String
+ */
+public String getPickupSound() 
+	{
+	if (fEnergyProtection > 1)
+		return "misc/ar1_pkup.wav";
+	else
+		return "misc/ar2_pkup.wav";
 	}
 /**
  * This method was created by a SmartGuide.
@@ -43,7 +53,7 @@ public GenericArmor(String[] spawnArgs, String modelName, String pickupSound, St
  */
 public void touch(Player p) 
 	{
-	if (p.addArmor(fCount, fMaxCount, fProtection, fEnergyProtection, fIcon))
+	if (p.addArmor(fCount, fMaxCount, fProtection, fEnergyProtection, Engine.getImageIndex(getIconName())))
 		{
 		super.touch(p);	
 		// bring the weapon back in 30 seconds
