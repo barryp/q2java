@@ -19,7 +19,6 @@ public GenericBlaster(String[] spawnArgs) throws GameException
  */
 public void fire() 
 	{
-Game.debugLog("In GenericBlaster.fire()");	
 	Player p = (Player) getOwner();
 	Vec3 forward = new Vec3();
 	Vec3 right = new Vec3();
@@ -28,7 +27,7 @@ Game.debugLog("In GenericBlaster.fire()");
 	if (is_quad)
 		damage *= 4;
 */		
-	p.getAngles().angleVectors(forward, right, null);
+	p.getViewAngles().angleVectors(forward, right, null);
 	offset.add(fBlasterOffset);
 	Vec3 start = p.projectSource(offset, forward, right);
 /*
@@ -46,7 +45,7 @@ Game.debugLog("In GenericBlaster.fire()");
 
 	// send muzzle flash
 	Engine.writeByte(Engine.SVC_MUZZLEFLASH);
-	Engine.writeShort(getEntityIndex());
+	Engine.writeShort(p.getEntityIndex());
 	Engine.writeByte(fMuzzleFlash);
 	Engine.multicast(p.getOrigin(), Engine.MULTICAST_PVS);
 

@@ -86,27 +86,11 @@ void Game_javaFinalize()
 
 static void java_init(void)
 	{
-	int i;
-
 	(*java_env)->CallVoidMethod(java_env, object_Game, method_Game_init);
 	if (CHECK_EXCEPTION())
 		return;
 
 	Entity_arrayInit();
-
-	global_maxClients = 9; // ---FIXME---
-	global_clients = gi.TagMalloc(global_maxClients * sizeof(gclient_t), TAG_GAME);
-
-	// link the two arrays together
-	for (i = 0; i < global_maxClients; i++)
-		{
-		ge.edicts[i+1].client = global_clients + i;
-
-		// a little tweak to get things going
-		global_clients[i].ps.fov = 90;
-		}
-
-	ge.num_edicts = global_maxClients + 1; 
 	}
 
 
@@ -134,7 +118,6 @@ static void java_spawnEntities(char *mapname, char *entString, char *spawnpoint)
 	CHECK_EXCEPTION();
 
 	global_frameCount = 0;
-	global_frameTime = 0.0;	
 	}
 
 
@@ -181,7 +164,6 @@ static void java_runFrame(void)
 	{
 	// track the running time to help with entity management
 	global_frameCount++;
-	global_frameTime= global_frameCount*FRAMETIME;
 
 	(*java_env)->CallVoidMethod(java_env, object_Game, method_Game_runFrame);
 	CHECK_EXCEPTION();

@@ -15,7 +15,6 @@ public class GameEntity extends NativeEntity
 	
 public GameEntity() throws GameException
 	{
-	Game.debugLog("Executing Entity() constructor");
 	}
 public GameEntity(String[] spawnArgs) throws GameException
 	{
@@ -154,7 +153,7 @@ static void spawnEntities(String entString)
 	catch (Exception e)
 		{
 		Engine.dprint(e.getMessage() + "\n");
-		Game.debugLog(e.getMessage());
+		Engine.debugLog(e.getMessage());
 		}
 	}
 public String toString()

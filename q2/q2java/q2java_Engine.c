@@ -44,9 +44,10 @@ static JNINativeMethod Engine_methods[] =
 	{"argc",		"()I", 							Java_q2java_Engine_argc},
 	{"argv",		"(I)Ljava/lang/String;",		Java_q2java_Engine_argv},
 	{"args",		"()Ljava/lang/String;",			Java_q2java_Engine_args},
-	{"addCommandString",	"(Ljava/lang/String;)V",Java_q2java_Engine_addCommandString},
-	{"debugGraph",			"(FI)V",				Java_q2java_Engine_debugGraph},
-	{"getGamePath",			"()Ljava/lang/String;",	Java_q2java_Engine_getGamePath}
+	{"addCommandString","(Ljava/lang/String;)V",	Java_q2java_Engine_addCommandString},
+	{"debugGraph",		"(FI)V",					Java_q2java_Engine_debugGraph},
+	{"getGamePath",		"()Ljava/lang/String;",		Java_q2java_Engine_getGamePath},
+	{"debugLog",		"(Ljava/lang/String;)V",	Java_q2java_Engine_debugLog}
 	};
 
 
@@ -399,3 +400,11 @@ static jstring JNICALL Java_q2java_Engine_getGamePath(JNIEnv *env, jclass cls)
 	}
 
 
+static void JNICALL Java_q2java_Engine_debugLog(JNIEnv *env, jclass cls, jstring js)
+	{
+	char *s;
+
+	s = (char *)((*env)->GetStringUTFChars(env, js, 0));
+	debugLog("%s\n", s);
+	(*env)->ReleaseStringUTFChars(env, js, s);
+	}

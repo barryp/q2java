@@ -9,7 +9,6 @@ game_export_t	ge;
 
 // to help with entity management
 int global_frameCount;
-float global_frameTime;
 int global_maxClients;
 gclient_t *global_clients;
 

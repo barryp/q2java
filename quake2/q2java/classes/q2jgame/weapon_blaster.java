@@ -5,6 +5,9 @@ import q2java.*;
 
 public class weapon_blaster extends GenericBlaster
 	{
+	// all blaster objects will share these arrays
+	private static int[] PAUSE_FRAMES = new int[] {19, 32, 0};
+	private static int[] FIRE_FRAMES = new int[] {5, 0};	
 	
 public weapon_blaster(GenericCharacter mob) throws GameException
 	{
@@ -13,12 +16,12 @@ public weapon_blaster(GenericCharacter mob) throws GameException
 	fFrameFireLast = 8;
 	fFrameIdleLast = 52;
 	fFrameDeactivateLast = 55;
-	fPauseFrames = new int[] {19, 32, 0};
-	fFireFrames = new int[] {5, 0};
+	fPauseFrames = PAUSE_FRAMES;
+	fFireFrames = FIRE_FRAMES;
 
 	fEffect = EF_BLASTER;
 	fDamage = 10;
-	fBlasterOffset = new Vec3();
+	fBlasterOffset = new Vec3(0, 0, 0);
 	fMuzzleFlash = Engine.MZ_BLASTER;
 	
 	setOwner(mob);

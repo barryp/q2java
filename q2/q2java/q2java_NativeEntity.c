@@ -13,11 +13,11 @@
 #define VEC3_ABSMAX			6
 #define VEC3_SIZE			7
 #define VEC3_VELOCITY		8
-#define VEC3_CLIENT_PS_VIEWANGLES	9
-#define VEC3_CLIENT_PS_VIEWOFFSET	10
-#define VEC3_CLIENT_PS_KICKANGLES	11
-#define VEC3_CLIENT_PS_GUNANGLES	12
-#define VEC3_CLIENT_PS_GUNOFFSET	13
+#define VEC3_CLIENT_PS_VIEWANGLES	100
+#define VEC3_CLIENT_PS_VIEWOFFSET	101
+#define VEC3_CLIENT_PS_KICKANGLES	102
+#define VEC3_CLIENT_PS_GUNANGLES	103
+#define VEC3_CLIENT_PS_GUNOFFSET	104
 
 #define INT_S_MODELINDEX 1
 #define INT_S_MODELINDEX2 2
@@ -33,15 +33,15 @@
 #define INT_S_SOLID 12
 #define INT_S_SOUND 13
 #define INT_S_EVENT 14
-#define INT_CLIENT_PS_GUNINDEX 15
-#define INT_CLIENT_PS_GUNFRAME 16
-#define INT_CLIENT_PS_RDFLAGS 17
+#define INT_CLIENT_PS_GUNINDEX 100
+#define INT_CLIENT_PS_GUNFRAME 101
+#define INT_CLIENT_PS_RDFLAGS 102
 
 #define CALL_SOUND 1
 #define CALL_POSITIONED_SOUND 2
 
-#define FLOAT_CLIENT_PS_FOV		0
-#define FLOAT_CLIENT_PS_BLEND	1		
+#define FLOAT_CLIENT_PS_FOV		100
+#define FLOAT_CLIENT_PS_BLEND	101		
 
 
 usercmd_t *thinkCmd;
@@ -51,6 +51,8 @@ static cvar_t *cvar_gravity;
 static jclass class_NativeEntity;
 static jfieldID  field_NativeEntity_fEntityIndex;
 static jfieldID  field_NativeEntity_fEntityArray;
+static jfieldID  field_NativeEntity_fNumEntities;
+static jfieldID	 field_NativeEntity_fMaxPlayers;
 
 // handle to PMoveResults class
 static jclass class_PMoveResults;
@@ -98,6 +100,8 @@ void Entity_javaInit()
 
 	field_NativeEntity_fEntityIndex = (*java_env)->GetFieldID(java_env, class_NativeEntity, "fEntityIndex", "I");
 	field_NativeEntity_fEntityArray = (*java_env)->GetStaticFieldID(java_env, class_NativeEntity, "fEntityArray", "[Lq2java/NativeEntity;");
+	field_NativeEntity_fNumEntities = (*java_env)->GetStaticFieldID(java_env, class_NativeEntity, "fNumEntities", "I");
+	field_NativeEntity_fMaxPlayers  = (*java_env)->GetStaticFieldID(java_env, class_NativeEntity, "fMaxPlayers", "I");
 //	method_NativeEntity_ctor = (*java_env)->GetMethodID(java_env, class_NativeEntity, "<init>", "(I)V");
 	if (CHECK_EXCEPTION())
 		{
@@ -122,10 +126,43 @@ void Entity_javaInit()
 
 void Entity_arrayInit()
 	{
-	// make the C entity array the same size as the Java Entity array
-	jobject array = (*java_env)->GetStaticObjectField(java_env, class_NativeEntity, field_NativeEntity_fEntityArray);
-	ge.max_edicts = (*java_env)->GetArrayLength(java_env, array);
+	jobjectArray ja;
+	cvar_t *cvar_maxclients;
+	cvar_t *cvar_maxentities;
+	int i;
+
+	// Create the C entity array
+	cvar_maxentities = gi.cvar("maxentities", "1024", CVAR_LATCH);
+	ge.max_edicts = (int)(cvar_maxentities->value);
 	ge.edicts = gi.TagMalloc(ge.max_edicts * sizeof(edict_t), TAG_GAME);
+
+	// Create a Java NativeEntity array the same size
+	ja = (*java_env)->NewObjectArray(java_env, ge.max_edicts, class_NativeEntity, 0);
+	(*java_env)->SetStaticObjectField(java_env, class_NativeEntity, field_NativeEntity_fEntityArray, ja);
+	CHECK_EXCEPTION();
+
+	// make a C array for client info 
+	cvar_maxclients = gi.cvar ("maxclients", "4", CVAR_SERVERINFO | CVAR_LATCH);
+	global_maxClients = (int) (cvar_maxclients->value);
+	global_clients = gi.TagMalloc(global_maxClients * sizeof(gclient_t), TAG_GAME);
+
+	// let Java know how big it is
+	(*java_env)->SetStaticIntField(java_env, class_NativeEntity, field_NativeEntity_fMaxPlayers, global_maxClients);
+	CHECK_EXCEPTION();
+
+	// link the two C arrays together
+	for (i = 0; i < global_maxClients; i++)
+		{
+		ge.edicts[i+1].client = global_clients + i;
+
+		// a little tweak to get things going
+//		global_clients[i].ps.fov = 90;
+		}
+
+	// note in C and Java how many entities are used so far
+	ge.num_edicts = global_maxClients + 1; 
+	(*java_env)->SetStaticIntField(java_env, class_NativeEntity, field_NativeEntity_fNumEntities, ge.num_edicts);
+	CHECK_EXCEPTION();
 	}
 
 
@@ -142,8 +179,13 @@ static vec3_t *lookupVec3(int index, int fieldNum)
 	// sanity check
 	if ((index < 0) || (index >= ge.max_edicts))
 		return NULL;
-		
+
 	ent	= ge.edicts + index;
+
+	// check for attemt to access player field in a non-player entity
+	if ((fieldNum >= 100) && !(ent->client))
+		return NULL;
+		
 
 	switch (fieldNum)
 		{
@@ -175,6 +217,10 @@ static int *lookupInt(int index, int fieldNum)
 		return NULL;
 
 	ent = ge.edicts + index;
+
+	// check for attemt to access player field in a non-player entity
+	if ((fieldNum >= 100) && !(ent->client))
+		return NULL;
 
 	switch (fieldNum)
 		{
@@ -323,7 +369,7 @@ static jint JNICALL Java_q2java_NativeEntity_allocateEntity(JNIEnv *env, jclass 
 		{
 		// the first couple seconds of server time can involve a lot of
 		// freeing and allocating, so relax the replacement policy
-		if	(!ent->inuse && ( ent->freetime < 2 || (global_frameTime - ent->freetime) > 0.5 ) )
+		if	(!ent->inuse && ( ent->freetime < 20 || (global_frameCount - ent->freetime) > 5 ) )
 			break;
 		}
 	
@@ -336,7 +382,10 @@ static jint JNICALL Java_q2java_NativeEntity_allocateEntity(JNIEnv *env, jclass 
 
 	// a never-before used entity
 	if (i == ge.num_edicts)
+		{
 		ge.num_edicts++;
+		(*java_env)->SetStaticIntField(java_env, class_NativeEntity, field_NativeEntity_fNumEntities, ge.num_edicts);
+		}
 
 	ent->inuse = true;
 	ent->s.number = i;			
@@ -373,7 +422,7 @@ static void JNICALL Java_q2java_NativeEntity_freeEntity0(JNIEnv *env, jclass cls
 		}
 
 	// make a note of when this entity was freed
-	ent->freetime = global_frameTime;
+	ent->freetime = global_frameCount;
 	}		
 
 
@@ -595,6 +644,9 @@ static void JNICALL Java_q2java_NativeEntity_setFloat0(JNIEnv *env, jclass cls, 
 		return;
 
 	ent = ge.edicts + index;
+	// check for attemt to access player field in a non-player entity
+	if ((fieldindex >= 100) && !(ent->client))
+		return;
 	
 	switch (fieldindex)
 		{
@@ -618,7 +670,7 @@ static void JNICALL Java_q2java_NativeEntity_setStat0(JNIEnv *env, jclass cls, j
 	edict_t *ent;
 
 	// sanity check
-	if ((index < 0) || (index > global_maxClients) || (fieldindex < 0) || (fieldindex > MAX_STATS))
+	if ((index < 1) || (index > global_maxClients) || (fieldindex < 0) || (fieldindex > MAX_STATS))
 		return;
 	
 	ent = ge.edicts + index;

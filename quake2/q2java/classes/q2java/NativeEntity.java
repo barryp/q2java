@@ -6,9 +6,18 @@ import java.lang.reflect.Constructor;
 import java.util.Enumeration;
 import java.util.Vector;
 
+import q2jgame.Game; // for Game.debugLog()
+
 public abstract class NativeEntity
 	{
+	// fNumEntities is modified by the DLL to reflect 
+	// the maximum number of entities potentially in use, 
+	// so we don't have to look at every one when enumerating
+	// through the array
+	private static int fNumEntities; 
+	private static int fMaxPlayers; // set by DLL
 	private static NativeEntity[] fEntityArray;
+		
 	private int fEntityIndex;
 	private NativeEntity fOwner;
 	
@@ -147,23 +156,23 @@ COLLISION DETECTION
 	public final static int AREA_TRIGGERS		= 2;	
 	
 	// setStat() field indexes
-	public final static int STAT_HEALTH_ICON    = 0;
-	public final static int STAT_HEALTH         = 1;
-	public final static int STAT_AMMO_ICON      = 2;
-	public final static int STAT_AMMO           = 3;
-	public final static int STAT_ARMOR_ICON     = 4;
-	public final static int STAT_ARMOR          = 5;
-	public final static int STAT_SELECTED_ICON  = 6;
-	public final static int STAT_PICKUP_ICON    = 7;
-	public final static int STAT_PICKUP_STRING  = 8;
-	public final static int STAT_TIMER_ICON     = 9;
-	public final static int STAT_TIMER          = 10;
-	public final static int STAT_HELPICON       = 11;
-	public final static int STAT_SELECTED_ITEM  = 12;
-	public final static int STAT_LAYOUTS        = 13;
-	public final static int STAT_FRAGS          = 14;
-	public final static int STAT_FLASHES        = 15; // cleared each frame, 1 = health, 2 = armor
-	public final static int MAX_STATS           = 32;
+	public final static int STAT_HEALTH_ICON		= 0;
+	public final static int STAT_HEALTH			= 1;
+	public final static int STAT_AMMO_ICON		= 2;
+	public final static int STAT_AMMO			= 3;
+	public final static int STAT_ARMOR_ICON		= 4;
+	public final static int STAT_ARMOR			= 5;
+	public final static int STAT_SELECTED_ICON	= 6;
+	public final static int STAT_PICKUP_ICON		= 7;
+	public final static int STAT_PICKUP_STRING	= 8;
+	public final static int STAT_TIMER_ICON		= 9;
+	public final static int STAT_TIMER			= 10;
+	public final static int STAT_HELPICON		= 11;
+	public final static int STAT_SELECTED_ITEM	= 12;
+	public final static int STAT_LAYOUTS			= 13;
+	public final static int STAT_FRAGS			= 14;
+	public final static int STAT_FLASHES			= 15; // cleared each frame, 1 = health, 2 = armor
+	public final static int MAX_STATS			= 32;
 
 
 
@@ -182,11 +191,11 @@ COLLISION DETECTION
 	private final static int VEC3_VELOCITY 			= 8;
 
 	// ONLY use these in NativePlayer
-	protected final static int VEC3_CLIENT_PS_VIEWANGLES	= 9;
-	protected final static int VEC3_CLIENT_PS_VIEWOFFSET	= 10;
-	protected final static int VEC3_CLIENT_PS_KICKANGLES	= 11;
-	protected final static int VEC3_CLIENT_PS_GUNANGLES	= 12;
-	protected final static int VEC3_CLIENT_PS_GUNOFFSET	= 13;
+	protected final static int VEC3_CLIENT_PS_VIEWANGLES	= 100;
+	protected final static int VEC3_CLIENT_PS_VIEWOFFSET	= 101;
+	protected final static int VEC3_CLIENT_PS_KICKANGLES	= 102;
+	protected final static int VEC3_CLIENT_PS_GUNANGLES	= 103;
+	protected final static int VEC3_CLIENT_PS_GUNOFFSET	= 104;
 	
 	private final static int INT_S_MODELINDEX	= 1;
 	private final static int INT_S_MODELINDEX2	= 2;
@@ -204,13 +213,13 @@ COLLISION DETECTION
 	private final static int INT_S_EVENT			= 14;
 	
 	// ONLY use these in NativePlayer
-	protected final static int INT_CLIENT_PS_GUNINDEX = 15;
-	protected final static int INT_CLIENT_PS_GUNFRAME = 16;
-	protected final static int INT_CLIENT_PS_RDFLAGS	= 17;
+	protected final static int INT_CLIENT_PS_GUNINDEX = 100;
+	protected final static int INT_CLIENT_PS_GUNFRAME = 101;
+	protected final static int INT_CLIENT_PS_RDFLAGS	= 102;
 	
 	// private flags for setFloat0()
-	private final static int FLOAT_CLIENT_PS_FOV 		= 0;
-	private final static int FLOAT_CLIENT_PS_BLEND 	= 1;			
+	private final static int FLOAT_CLIENT_PS_FOV 		= 100;
+	private final static int FLOAT_CLIENT_PS_BLEND 	= 101;			
 		
 	private final static int CALL_SOUND = 1;
 	private final static int CALL_POSITIONED_SOUND = 2;
@@ -269,10 +278,6 @@ public void centerprint(String s)
  */
 private native static void centerprint0(int index, String msg);
 
-public static void clearAllEntities()
-	{
-	fEntityArray = null;
-	}
 /**
  * Player Only
  */
@@ -288,6 +293,7 @@ private native static void cprint0(int index, int printlevel, String msg);
 
 public static Enumeration enumerateEntities() 
 	{
+	Engine.dprint("NativeEntity.enumerateEntities() fNumEntities = " + fNumEntities);
 	return new EntityEnumeration();
 	}
 public static Enumeration enumerateEntities(String targetClassName) 
@@ -296,23 +302,21 @@ public static Enumeration enumerateEntities(String targetClassName)
 	}
 public static Enumeration enumeratePlayers() 
 	{
+	Engine.dprint("NativeEntity.enumeratePlayers() fMaxPlayers = " + fMaxPlayers);
+	
 	return new PlayerEnumeration();
 	}
 static NativeEntity findNext(NativeEntity start, Class targetClass)
 	{
 	NativeEntity result = null;
-	int index;
-	if (start == null)
-		index = 0;
-	else 
-		index = start.fEntityIndex + 1;
+	int index = (start == null ? 0 : start.fEntityIndex + 1);
 				
-	while ((result == null) && (index < NativeEntity.fEntityArray.length))
+	while ((result == null) && (index <fNumEntities))
 		{
-		if (	(NativeEntity.fEntityArray[index] != null) 
-		&& 	((targetClass == null) || (targetClass.isAssignableFrom(NativeEntity.fEntityArray[index].getClass())))
+		if (	(fEntityArray[index] != null) 
+		&& 	((targetClass == null) || (targetClass.isAssignableFrom(fEntityArray[index].getClass())))
 		)
-			result = NativeEntity.fEntityArray[index];
+			result = fEntityArray[index];
 		index++;
 		}
 		
@@ -321,16 +325,12 @@ static NativeEntity findNext(NativeEntity start, Class targetClass)
 static NativeEntity findNextPlayer(NativeEntity start)
 	{
 	NativeEntity result = null;
-	int index;
-	if (start == null)
-		index = 1;
-	else 
-		index = start.fEntityIndex + 1;
+	int index = (start == null ? 1 : start.fEntityIndex + 1);
 				
-	while ((result == null) && (index < 9)) //---FIXME---
+	while ((result == null) && (index <= fMaxPlayers)) 
 		{
-		if (NativeEntity.fEntityArray[index] != null) 
-			result = NativeEntity.fEntityArray[index];
+		if (fEntityArray[index] != null) 
+			result = fEntityArray[index];
 		index++;
 		}
 		
@@ -341,9 +341,11 @@ static NativeEntity findNextPlayer(NativeEntity start)
  */
 public void freeEntity()
 	{
-	fEntityArray[fEntityIndex] = null;
-	freeEntity0(fEntityIndex);
+	// remove from the DLL
+	freeEntity0(fEntityIndex);	
 	
+	// remove from Java
+	fEntityArray[fEntityIndex] = null;
 	fEntityIndex = -1;
 	}
 
@@ -412,6 +414,10 @@ private native static Vec3 getVec3(int index, int fieldNum);
 public Vec3 getVelocity()
 	{
 	return getVec3(fEntityIndex, VEC3_VELOCITY);
+	}
+public Vec3 getViewAngles()
+	{
+	return getVec3(fEntityIndex, VEC3_CLIENT_PS_VIEWANGLES);
 	}
 public void linkEntity()
 	{
@@ -531,10 +537,6 @@ public void setKickAngles(Vec3 v)
 	{
 	setVec3(getEntityIndex(), VEC3_CLIENT_PS_KICKANGLES, v.x, v.y, v.z);
 	}
-public static void setMaxEntities(int max)
-	{
-	fEntityArray = new NativeEntity[max];
-	}
 public void setMaxs(float x, float y, float z)
 	{
 	setVec3(fEntityIndex, VEC3_MAXS, x, y, z);
@@ -643,7 +645,7 @@ protected native static void setVec3(int index, int fieldNum, float x, float y, 
 
 public void setVelocity(Vec3 v)
 	{
-	setVec3(fEntityIndex, VEC3_S_ORIGIN, v.x, v.y, v.z);
+	setVec3(fEntityIndex, VEC3_VELOCITY, v.x, v.y, v.z);
 	}
 /**
  * Player Only

@@ -13,7 +13,6 @@
 // memory tags to allow dynamic memory to be cleaned up
 #define	TAG_GAME	765		// clear when unloading the dll
 #define	TAG_LEVEL	766		// clear when loading a new level
-#define	FRAMETIME	0.1F		// seconds per frame
 
 //
 // per-level limits
@@ -178,7 +177,7 @@ typedef struct edict_s
 
     // the game dll can add anything it wants after
     // this point in the structure
-	float		freetime;			// time when the object was freed
+	int 		freetime;			// frame when the object was freed
 	vec3_t		velocity;
     } edict_t;
 

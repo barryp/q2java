@@ -19,7 +19,6 @@ public class GenericCharacter extends GameEntity
  */
 protected GenericCharacter() throws GameException
 	{
-	Game.debugLog("Executing GenericMobile() constructor");	
 	}	
 public GenericCharacter(String[] spawnArgs) throws GameException
 	{

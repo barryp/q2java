@@ -6,14 +6,14 @@ import q2java.*;
 public class item_armor_shard extends GenericArmor
 	{
 	private Vec3 fOriginalOrigin;
-	private double fRandSeed;
+	private float fRandSeed;
 	
 public item_armor_shard(String[] spawnArgs) throws GameException
 	{
 	super(spawnArgs);
 	setModel("models/items/armor/shard/tris.md2");
 	fOriginalOrigin = getOrigin();
-	fRandSeed = Math.random();
+	fRandSeed = Game.randomFloat();
 	linkEntity();
 	}
 /**

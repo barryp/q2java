@@ -9,45 +9,43 @@ import q2java.*;
 
 public class Game implements NativeGame
 	{
-	public static double fGameTime;
+	// game clocks
 	private static int fFrameCount;
-	public static CVar fBobUp;
-	
-	private static File fLogFile;	
+	public static double fGameTime;
+
+	// handy random number generator
 	private static Random fRandom;
 	
-public static void debugLog(String s)
-	{		
-	try
-		{
-		FileOutputStream fos = new FileOutputStream(fLogFile.getPath(), true);
-		PrintStream ps = new PrintStream(fos);
-		ps.println(s);
-		ps.close();
-		}
-	catch (IOException e)
-		{
-		}				
-	}
+	// various CVars
+	public static CVar fBobUp;	
+	public static CVar fRollAngle;
+	public static CVar fRollSpeed;
+	
 public void init()
 	{	
+/*	
+	// get setup so the debugLog() method has a place to write
 	File gameDir = new File(Engine.getGamePath());
 	File sandbox = new File(gameDir, "sandbox");
-	fRandom = new Random();
 	fLogFile = new File(sandbox, "game.log");
 	fLogFile.delete();
-		
-	debugLog("init()");
-
-	CVar maxclients = new CVar("maxclients", "4", CVar.CVAR_SERVERINFO | CVar.CVAR_LATCH);
-	CVar maxentities = new CVar("maxentities", "1024", CVar.CVAR_LATCH);
-	Engine.dprint(maxclients + "\n");
-	Engine.dprint(maxentities + "\n");
-
-	fBobUp = new CVar("bob_up", "0.005", 0);
+*/		
+	// actually initialize the game
+	Engine.debugLog("Game.init()");
+	fRandom = new Random();
 	
-	NativeEntity.setMaxEntities((int)maxentities.getFloat());
-	debugLog("Done with init()");
+	// load cvars
+	fBobUp = new CVar("bob_up", "0.005", 0);	
+	fRollAngle = new CVar("sv_rollangle", "2", 0);
+	fRollSpeed = new CVar("sv_rollspeed", "200", 0);
+	}
+/**
+ * This method was created by a SmartGuide.
+ * @return int
+ */
+public static float randomFloat() 
+	{
+	return fRandom.nextFloat();
 	}
 /**
  * This method was created by a SmartGuide.
@@ -59,19 +57,17 @@ public static int randomInt()
 	}
 public void readGame(String filename)
 	{
-	debugLog("readGame(\"" + filename + "\")");
-	Engine.dprint("Java readGame(\"" + filename + "\")\n");
+	Engine.debugLog("Game.readGame(\"" + filename + "\")");
 	}
 public void readLevel(String filename)
 	{
-	debugLog("readLevel(\"" + filename + "\")");
-	Engine.dprint("Java readLevel(\"" + filename + "\")\n");
+	Engine.debugLog("Game.readLevel(\"" + filename + "\")");
 	}
 public void runFrame()
 	{
 	fFrameCount++;
-	fGameTime = fFrameCount * 0.1;
-	
+	fGameTime = fFrameCount * Engine.SECONDS_PER_FRAME;
+		
 	Enumeration enum = new EntityEnumeration();
 	while (enum.hasMoreElements())
 		((GameEntity) enum.nextElement()).runFrame();
@@ -82,23 +78,19 @@ public void runFrame()
 	}
 public void shutdown()
 	{
-	debugLog("shutdown()");
-	Engine.dprint("Java shutdown() called\n");
-	NativeEntity.clearAllEntities();
+	Engine.debugLog("Game.shutdown()");
 	}
 public void spawnEntities(String mapname, String entString, String spawnPoint)
 	{
-	debugLog("spawnEntities()");
+	Engine.debugLog("Game.spawnEntities(\"" + mapname + ", <entString>, \"" + spawnPoint + "\")");
 	GameEntity.spawnEntities(entString);
 	}
 public void writeGame(String filename)
 	{
-	debugLog("writeGame(\"" + filename + "\")");		
-	Engine.dprint("Java writeGame(\"" + filename + "\")\n");
+	Engine.debugLog("Game.writeGame(\"" + filename + "\")");		
 	}
 public void writeLevel(String filename)
 	{
-	debugLog("writeLevel(\"" + filename + "\")");
-	Engine.dprint("Java writeLevel(\"" + filename + "\")\n");
+	Engine.debugLog("Game.writeLevel(\"" + filename + "\")");
 	}
 }

@@ -14,16 +14,27 @@ class Player extends GenericCharacter implements NativePlayer
 	private int fHand;
 	private boolean fIsGrounded;
 	private float fBobTime;
+	public int fButtons;
 	protected float fViewHeight;
 	private int fWaterType;
 	private int fWaterLevel;
 	private int fOldWaterLevel;
 	private Vec3 fOldVelocity;
 	
+	// temp vectors for endFrame()
+	private Vec3 fRight;
+	private Vec3 fForward;
+	private Vec3 fUp;
+	
 	// handedness values
 	public final static int RIGHT_HANDED		= 0;
 	public final static int LEFT_HANDED		= 1;
 	public final static int CENTER_HANDED	= 2;
+	
+	// button bits
+	public final static int BUTTON_ATTACK	= 1;
+	public final static int BUTTON_USE		= 2;
+	public final static int BUTTON_ANY		= 128; // any key whatsoever	
 	
 	public final static String DM_STATUSBAR = 
 		"yb	-24 " +
@@ -97,8 +108,13 @@ class Player extends GenericCharacter implements NativePlayer
  */
 public Player(String userinfo, boolean loadgame) throws GameException 
 	{
-	Game.debugLog("new player(\"" + userinfo + "\", " + loadgame + ")");
+	Engine.debugLog("new Player(\"" + userinfo + "\", " + loadgame + ")");
 	userinfoChanged(userinfo);
+	
+	// create temporary vectors
+	fRight = new Vec3();
+	fForward = new Vec3();
+	fUp = new Vec3();
 	}
 /**
  * This method was created by a SmartGuide.
@@ -106,8 +122,7 @@ public Player(String userinfo, boolean loadgame) throws GameException
  */
 public void begin(boolean loadgame) 
 	{
-	Game.debugLog("Player.begin(" + loadgame + ")");
-	Engine.dprint("Java Player.begin(" + loadgame + ")\n");
+	Engine.debugLog("Player.begin(" + loadgame + ")");
 	
 	GameEntity spawnPoint = null;
 	java.util.Enumeration enum = enumerateEntities("q2jgame.info_player_start");
@@ -151,7 +166,31 @@ public void begin(boolean loadgame)
 	setMaxs(16, 16, 32);
 	setStat(STAT_HEALTH_ICON, (short)worldspawn.fHealthPic);
 	linkEntity();
-	Game.debugLog("Player.begin() finished");
+	}
+/**
+ * This method was created by a SmartGuide.
+ * @return float
+ * @param angle q2java.Vec3
+ * @param velocity q2java.Vec3
+ */
+private float calcRoll(Vec3 velocity) 
+	{
+	float	sign;
+	float	side;
+	float	value;
+	
+	side = Vec3.dotProduct(velocity, fRight);
+	sign = side < 0 ? -1 : 1;
+	side = Math.abs(side);
+	
+	value = Game.fRollAngle.getFloat();
+
+	if (side < Game.fRollSpeed.getFloat())
+		side = side * value / Game.fRollSpeed.getFloat();
+	else
+		side = value;
+	
+	return side*sign*4;	
 	}
 /**
  * This method was created by a SmartGuide.
@@ -213,7 +252,7 @@ private void calcViewOffset()
  */
 public void command() 
 	{
-	Game.debugLog("Player.command()");
+	Engine.debugLog("Player.command()");
 	Engine.dprint("Java Player.command()\n");
 	Engine.dprint("   Engine.args = [" + Engine.args() + "]\n");
 	Engine.dprint("   Engine.argc = " + Engine.argc() + "\n");
@@ -227,8 +266,7 @@ public void command()
  */
 public void disconnect()
 	{
-	Game.debugLog("Player.disconnect()");
-	Engine.dprint("Java Player.disconnect()\n");
+	Engine.debugLog("Player.disconnect()");
 
 	Engine.configString(Engine.CS_PLAYERSKINS + getPlayerNum(), "");	
 	}
@@ -238,6 +276,19 @@ public void disconnect()
  */
 public void endFrame() 
 	{	
+	
+	//
+	// set model angles from view angles so other things in
+	// the world can tell which direction you are looking
+	//
+	Vec3 newAngles = getViewAngles();
+	newAngles.angleVectors(fForward, fRight, fUp);
+	if (newAngles.x > 180) 
+		newAngles.x = newAngles.x - 360;
+	newAngles.x /= 3;		
+	newAngles.z = calcRoll(getVelocity());
+	setAngles(newAngles);
+	
 	worldEffects();
 	fallingDamage();
 	calcViewOffset();	
@@ -378,6 +429,7 @@ public void think()
 	if (fIsGrounded && (pm.fGroundEntity == null) && (pm.fCmdUpMove >= 10) && (pm.fWaterLevel == 0))
 		sound(CHAN_VOICE, sexedSoundIndex("jump1"), 1, ATTN_NORM, 0);
 		
+	fButtons = pm.fCmdButtons;		
 	fViewHeight = pm.fViewHeight;	
 	fWaterType = pm.fWaterType;
 	fWaterLevel = pm.fWaterLevel;	
@@ -403,7 +455,7 @@ public void think()
 	}
 public void userinfoChanged(String userinfo)
 	{
-	Game.debugLog("Player.userinfoChanged(\"" + userinfo +"\")");
+	Engine.debugLog("Player.userinfoChanged(\"" + userinfo +"\")");
 	// Break the userinfo string up and store the info in a hashtable
 	// The format of the string is:
 	//    \keyword\value\keyword\value\....\keyword\value

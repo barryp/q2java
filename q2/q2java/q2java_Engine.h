@@ -41,6 +41,14 @@ jstring JNICALL Java_q2java_Engine_getGamePath
 
 /*
  * Class:     q2java_Engine
+ * Method:    debugLog
+ * Signature: (Ljava/lang/String;)V
+ */
+void JNICALL Java_q2java_Engine_debugLog
+  (JNIEnv *, jclass, jstring);
+
+/*
+ * Class:     q2java_Engine
  * Method:    addCommandString
  * Signature: (Ljava/lang/String;)V
  */

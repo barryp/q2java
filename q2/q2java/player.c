@@ -165,13 +165,13 @@ static void java_clientDisconnect(edict_t *ent)
 	(*java_env)->CallVoidMethod(java_env, javaPlayer, method_player_disconnect);	
 	CHECK_EXCEPTION();
 
-	// unlink from world (not sure about this)
+	// unlink from world (---FIXME--- not sure about this)
 	gi.unlinkentity (ent);		
 
-	// make the Java Entity forget about itself
+	// make the Java Entity forget where it is in the C array
 	Entity_set_fEntityIndex(javaPlayer, -1);
 
-	// remove the entity from the Java array
+	// remove the entity reference from the Java array
 	Entity_setEntity(index, 0);
 
 	// wipe the old entity and client info out

@@ -48,7 +48,7 @@ public void fire()
  */
 public void runFrame() 
 	{
-	GenericCharacter mob = (GenericCharacter) getOwner();
+	Player mob = (Player) getOwner();
 
 	// if this isn't a weapon that's being wielded then bail
 	if ((mob == null) || (mob.fWeapon != this))
@@ -89,7 +89,7 @@ public void runFrame()
 
 	if (fWeaponState == WEAPON_READY)
 		{
-		if ((Game.randomInt() & 63) == 0)
+		if ((mob.fButtons & Player.BUTTON_ATTACK) != 0)
 			{
 			fWeaponState = WEAPON_FIRING;
 			mob.setGunFrame(fGunFrame = fFrameActivateLast + 1); // FRAME_FIRE_FIRST = FRAME_ACTIVATE_LAST + 1
@@ -157,7 +157,6 @@ public void runFrame()
 
 	if (fWeaponState == WEAPON_FIRING)
 		{
-		Game.debugLog("GenericWeapon.runFrame() fWeaponState == WEAPON_FIRING, fGunFrame == " + fGunFrame);
 		int n;
 		for (n = 0; fFireFrames[n] != 0; n++)
 			{

@@ -3,6 +3,8 @@ package q2java;
 
 public class Engine
 	{   
+	public final static float SECONDS_PER_FRAME = 0.1F;
+	
 	public final static int PRINT_LOW		= 0;	// pickup messages
 	public final static int PRINT_MEDIUM		= 1;	// death messages
 	public final static int PRINT_HIGH 		= 2;	// critical messages
@@ -143,6 +145,13 @@ private native static NativeEntity[] boxEntities0(float minsx, float minsy, floa
 
 
 	public native static void debugGraph(float value, int color);
+
+
+/**
+ * This method was created by a SmartGuide.
+ * @param s java.lang.String
+ */
+public native static void debugLog(String s);
 
 
 	//

@@ -88,23 +88,27 @@ public Vec3 add(Vec3 v)
 	return this;
 	}
 /**
- * This method was created by a SmartGuide.
- * @param angles q2java.Vec3
+ * Given a Vec3 that represents Roll, Pitch, and Yaw angles, 
+ * calculate 3 unit vectors that point forward, right, 
+ * and up (?)
  */
 public void angleVectors(Vec3 forward, Vec3 right, Vec3 up) 
 	{
 	double		angle;
 	double		sr, sp, sy, cr, cp, cy;
 
-	angle = y * (Math.PI*2 / 360);
+	// Pitch
+	angle = x * (Math.PI / 180.0);
+	sp = Math.sin(angle);
+	cp = Math.cos(angle);
+
+	// Yaw
+	angle = y * (Math.PI / 180.0);
 	sy = Math.sin(angle);
 	cy = Math.cos(angle);
 	
-	angle = x * (Math.PI*2 / 360);
-	sp = Math.sin(angle);
-	cp = Math.cos(angle);
-	
-	angle = z * (Math.PI*2 / 360);
+	// Roll
+	angle = z * (Math.PI / 180.0);
 	sr = Math.sin(angle);
 	cr = Math.cos(angle);
 
@@ -137,6 +141,16 @@ public Vec3 clear()
 	{
 	x = y = z = 0.0F;
 	return this;
+	}
+/**
+ * This method was created by a SmartGuide.
+ * @return float
+ * @param a q2java.Vec3
+ * @param b q2java.Vec3
+ */
+public static float dotProduct(Vec3 a, Vec3 b) 
+	{
+	return (a.x*b.x) + (a.y*b.y) + (a.z*b.z);
 	}
 /**
  * Scale into a unit vector, and return the updated object

@@ -18,10 +18,10 @@ public class BlasterBolt extends GameEntity
 public BlasterBolt(GameEntity owner, Vec3 start, Vec3 dir, int damage, int speed, int effect) throws q2java.GameException 
 	{
 	super();
-
 	setOrigin(start);
 	setAngles(dir.toAngles());
-	setVelocity(dir.normalize().scale(speed));
+	dir.normalize().scale(speed);
+	setVelocity(dir);
 	setClipmask(MASK_SHOT);
 	setSolid(SOLID_BBOX);
 	setEffects(effect);
@@ -49,11 +49,12 @@ public BlasterBolt(GameEntity owner, Vec3 start, Vec3 dir, int damage, int speed
  */
 public void runFrame() 
 	{
-	Game.debugLog("BlasterBolt: " + this + " Time: " +Game.fGameTime);
 	if (Game.fGameTime >= fThinkTime)
 		{
-		Game.debugLog("--------- BlasterBolt freed");
 		freeEntity();
+		return;
 		}
+		
+	setOrigin(getOrigin().add(getVelocity().scale(Engine.SECONDS_PER_FRAME)));		
 	}
 }	
