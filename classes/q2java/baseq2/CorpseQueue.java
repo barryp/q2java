@@ -29,10 +29,10 @@ public CorpseQueue()
  * Make a copy of an entity to keep around for a while.
  * @param ent NativeEntity
  */
-void copyCorpse(NativeEntity ent) 
+void copyCorpse(NativeEntity ent, float health) 
 	{
 	ent.unlinkEntity();
-	fQueue[fPointer].copy(ent);	
+	fQueue[fPointer].copy(ent, health);	
 	fPointer = (fPointer + 1) % QUEUE_SIZE;
 	}
 }

@@ -9,6 +9,7 @@ import q2java.core.*;
 import q2java.core.gui.*;
 
 import q2java.baseq2.*;
+import q2java.baseq2.event.*;
 import q2java.baseq2.spawn.*;
 
 /**
@@ -163,16 +164,18 @@ protected void beginServerFrame()
  * Announce this player's death to the world.
  * @param attacker baseq2.GameObject the responsible party
  */
-public void broadcastObituary(GameObject attacker, String obitKey) 
+public void broadcastObituary(DamageEvent de) 
 	{
+	GameObject attacker = de.getAttacker();
+	
 	if (!(attacker instanceof Player) || (attacker == this))
 		{
-		if (obitKey.equals("guilt"))
+		if (de.getObitKey().equals("guilt"))
 			// special obitKey used by this mod
 			Game.bprint(Engine.PRINT_HIGH, getName() + " died because he felt so bad about killing innocent people\n");
 		else
 			// use regular obituaries if attacker isn't a player or suicided
-			super.broadcastObituary(attacker, obitKey);
+			super.broadcastObituary(de);
 		}
 	else
 		{
@@ -236,9 +239,9 @@ public static void connect(NativeEntity ent) throws GameException
 /**
  * Handle dying.
  */
-protected void die(GameObject inflictor, GameObject attacker, int damage, Point3f point, String obitKey)
+protected void die(DamageEvent de)
 	{
-	super.die(inflictor, attacker, damage, point, obitKey);
+	super.die(de);
 
 	// disable stuff on HUD
 	fTracker.setTarget(null);

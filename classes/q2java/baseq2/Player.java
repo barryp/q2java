@@ -115,6 +115,7 @@ implements ServerFrameListener, PlayerListener, PrintListener,
 	protected int fDrownDamage;
 	
 	protected boolean fIsDead;
+	protected boolean fIsGibbed;
 	protected transient GameObject fKiller;
 	protected float fKillerYaw;
 	protected float fRespawnTime;
@@ -181,6 +182,7 @@ implements ServerFrameListener, PlayerListener, PrintListener,
 	
 	// ------- Public constants ---------------------------------	
 
+	public final static int GIB_HEALTH_THRESHOLD = -40; //player turns to chunks when health drops below this
 	public final static int PRINT_CHANNELS = PrintEvent.PRINT_ANNOUNCE+PrintEvent.PRINT_TALK+PrintEvent.PRINT_TALK_TEAM+PrintEvent.PRINT_TALK_PRIVATE;
 	
 	public final static Color4f COLOR_LAVA  = new Color4f(1.0f, 0.3f, 0.0f, 0.6f);
@@ -801,10 +803,13 @@ public void breath(float duration, boolean resetDrownDamage)
 	}
 /**
  * Announce this player's death to the world.
- * @param attacker baseq2.GameObject the responsible party
+ * @param de the DamageEvent that caused the death
  */
-public void broadcastObituary(GameObject attacker, String obitKey) 
+public void broadcastObituary(DamageEvent de) 
 	{
+	GameObject attacker = de.getAttacker();
+	String obitKey = de.getObitKey();
+	
 	Object[] args = {getName(), new Integer(isFemale() ? 1 : 0), (attacker instanceof Player ? ((Player)attacker).getName() : null)};
 	if (attacker == this)
 		obitKey = "self_" + obitKey;
@@ -1170,7 +1175,8 @@ protected void clearSettings( )
 
 
 	// set various other bits to a normal setting
-	fIsDead = false;		
+	fIsDead = false;
+	fIsGibbed = false;
 	fKiller = null;
 	if (fInIntermission)
 		{
@@ -1542,8 +1548,13 @@ public void cmd_kill(String[] argv, String args)
 	{
 	if (fIsDead)
 		fEntity.cprint(Engine.PRINT_HIGH, fResourceGroup.getBundle("q2java.baseq2.Messages").getString("already_dead") + "\n");
-	else		
-		die(this, this, 0, fEntity.getOrigin(), "suicide");
+	else
+		{
+		DamageEvent de = DamageEvent.getEvent(this, this, this, null, fEntity.getOrigin(), null, 0,
+				       0, 0, 0, "suicide");
+		die(de);
+		DamageEvent.releaseEvent(de);		
+		}
 	}
 /**
  * Put's away the any special screens that are currently displayed, e.g. scoreboard, inventory or help computer.
@@ -1865,26 +1876,28 @@ public static void connect(NativeEntity ent) throws GameException
  * Make a copy of an entity to keep around for a while.
  * @param ent NativeEntity
  */
-public static void copyCorpse(NativeEntity ent) 
+public static void copyCorpse(NativeEntity ent, float health) 
 	{
-	gCorpseQueue.copyCorpse(ent);
+	gCorpseQueue.copyCorpse(ent, health);
 	}
 /**
  * Inflict damage on the Player.
  * If the player takes enough damage, this function will call the Player.die() function.
  * @param DamageObject - The damage we are taking.
  */
-public void damage(DamageEvent damage)
+public void damage(DamageEvent damage)	
 	{
-
-	// don't take any more damage if already dead
-	// but spray a little blood for kicks
-	if (fIsDead)
+	// special case of damaging a corpse
+	if (fIsDead && !fIsGibbed)
 		{
-//		spawnDamage(Engine.TE_BLOOD, damage.point, damage.normal, damage.amount);
+		setHealth(fHealth - damage.fAmount);
+		if (fHealth < GIB_HEALTH_THRESHOLD)
+			gib(damage);
+		else
+			spawnDamage(Engine.TE_BLOOD, damage.fPoint, damage.fNormal, damage.fAmount);		
 		return;
 		}
-	
+		
 	// call all the pre-armor damage filters
 	filterDamage(damage, DAMAGE_FILTER_PHASE_PREARMOR);
 	
@@ -1900,10 +1913,10 @@ public void damage(DamageEvent damage)
 	// always spawn explosive damage
 	if ((damage.fTempEvent == Engine.TE_ROCKET_EXPLOSION) || (damage.fTempEvent == Engine.TE_ROCKET_EXPLOSION_WATER))
 		spawnDamage(damage.fTempEvent, damage.fPoint, damage.fNormal, damage.fAmount);
-	
+		
 	if (damage.fAmount > 0)
 		{
-		// damaging a player causes a blood spray
+		// damaging a live player causes a blood spray
 		spawnDamage(Engine.TE_BLOOD, damage.fPoint, damage.fNormal, damage.fAmount);
 
 		// cause screams if damage is caused by lava
@@ -1917,8 +1930,9 @@ public void damage(DamageEvent damage)
 			}		
 
 		setHealth(fHealth - damage.fAmount);
-		if (fHealth <= 0)
-			die( (GameObject)damage.getInflictor(), damage.fAttacker, damage.fAmount, damage.fPoint, damage.fObitKey);
+
+		if ((fHealth <= 0) && (!fIsDead))
+			die(damage);
 		}
 	
 	// These are used to determine the blend for this frame. (TSW)
@@ -2051,66 +2065,55 @@ protected void decFrame()
 	fEntity.setFrame(--fAnimationFrame);
 	}
 /**
- * This method was created by a SmartGuide.
+ * Called when the player croaks.
  */
-protected void die(GameObject inflictor, GameObject attacker, int damage, Point3f point, String obitKey)
+protected void die(DamageEvent de)
 	{
 	if (fIsDead)
 		return;	// already dead
 		
-	fKiller = attacker;
-	
 	fIsDead = true;
 
+	// remember who killed us
+	fKiller = de.getAttacker();
+	
 	// figure the soonest time the player will be allowed to respawn
 	fRespawnTime = (float)(Game.getGameTime() + 1);  
 	
 	// broadcast a message announcing our death
-	broadcastObituary(attacker, obitKey);
+	broadcastObituary(de);
 	
 	// let the attacker know he killed us
-	DeathScoreEvent e = DeathScoreEvent.getEvent(attacker,this,obitKey,inflictor);
+	DeathScoreEvent e = DeathScoreEvent.getEvent(fKiller, this, de.getObitKey(), de.getInflictor());
 	RuleManager.getScoreManager().registerScoreEvent(e);
 	DeathScoreEvent.releaseEvent(e);
 
-	fEntity.setModelIndex2(0); // remove linked weapon model
 	fEntity.setSound(0);
-	
-	Point3f maxs = fEntity.getMaxs();
-	fEntity.setMaxs(maxs.x, maxs.y, maxs.z - 8);
-	
-//	fEntity.setSolid(NativeEntity.SOLID_NOT);
-	fEntity.setSVFlags(fEntity.getSVFlags() | NativeEntity.SVF_DEADMONSTER);
-
-	// let interested objects know the player died.
-	fPlayerStateSupport.fireEvent( this, PlayerStateEvent.STATE_DEAD, attacker );
-	gPlayerStateSupport.fireEvent( this, PlayerStateEvent.STATE_DEAD, attacker );
-	
+	fEntity.setModelIndex2(0); // remove linked weapon model
 	// remove the weapon from the POV
 	fEntity.setPlayerGunIndex(0);
 	fWeapon = null;
 	
-	fEntity.setPlayerPMType(NativeEntity.PM_DEAD);
-	fKillerYaw = calcAttackerYaw(inflictor, attacker);
-	writeDeathmatchScoreboardMessage(attacker);
+	Point3f maxs = fEntity.getMaxs();
+	fEntity.setMaxs(maxs.x, maxs.y, maxs.z - 8);
+	
+	fEntity.setSVFlags(fEntity.getSVFlags() | NativeEntity.SVF_DEADMONSTER);
+
+	// let interested objects know the player died.
+	fPlayerStateSupport.fireEvent( this, PlayerStateEvent.STATE_DEAD, fKiller );
+	gPlayerStateSupport.fireEvent( this, PlayerStateEvent.STATE_DEAD, fKiller );
+		
+	fKillerYaw = calcAttackerYaw(de.getInflictor(), fKiller);
+	writeDeathmatchScoreboardMessage(fKiller);
 	Engine.unicast(fEntity, true);
 	fEntity.setPlayerStat(NativeEntity.STAT_LAYOUTS, (short)1);
 	fShowScore = true;
 	
-	if (fHealth < -40)
-		{	// gib
-		fEntity.sound(NativeEntity.CHAN_BODY, Engine.getSoundIndex("misc/udeath.wav"), 1, NativeEntity.ATTN_NORM, 0);
-//		for (n= 0; n < 4; n++)
-//			ThrowGib (self, "models/objects/gibs/sm_meat/tris.md2", damage, GIB_ORGANIC);
-//		ThrowClientHead (self, damage);
-
-//		self->takedamage = DAMAGE_NO;
-
-		// workaround until full gib code is implemented
-		setAnimation(ANIMATE_DEATH);
-		}
+	if (fHealth < GIB_HEALTH_THRESHOLD) //FIXME..should be -40, was set lower for testing
+		gib(de);
 	else
 		{	// normal death
+		fEntity.setPlayerPMType(NativeEntity.PM_DEAD);		
 		setAnimation(ANIMATE_DEATH);
 		fEntity.sound(NativeEntity.CHAN_VOICE, getSexedSoundIndex("death"+((GameUtil.randomInt() & 0x03) + 1)), 1, NativeEntity.ATTN_NORM, 0);
 		}
@@ -2565,6 +2568,58 @@ public Object getTeam()
 public int getWaterLevel()
 	{
 	return fWaterLevel;
+	}
+/**
+ * Called when the player (alive or dead) receives too much damage.
+ *
+ * @param de, the DamageEvent that's putting the player over the edge
+ *  between leaving a good-looking corpse, and becoming chum for the fishes.
+ *  affects how far the chunks fly :)
+ */
+public void gib(DamageEvent de) 
+	{
+	fIsGibbed = true;
+
+	// make a nasty noise
+	fEntity.sound(NativeEntity.CHAN_BODY, Engine.getSoundIndex("misc/udeath.wav"), 1, NativeEntity.ATTN_NORM, 0);
+
+	// throw meaty chunks
+	for (int n = 0; n < 4; n++)
+		(new Gib()).toss(fEntity, "models/objects/gibs/sm_meat/tris.md2", de, Gib.GIB_ORGANIC);
+		
+	// conver the player model from a full body into just a head
+	if ((GameUtil.randomInt() & 1) == 1)
+		{
+		fEntity.setModel("models/objects/gibs/head2/tris.md2");
+		fEntity.setSkinNum(1);		// second skin is player
+		}
+	else
+		{
+		fEntity.setModel("models/objects/gibs/skull/tris.md2");
+		fEntity.setSkinNum(0);
+		}
+
+	Point3f origin = fEntity.getOrigin();
+	origin.z += 32;
+	fEntity.setOrigin(origin);
+
+	fEntity.setFrame(0);
+	fAnimationPriority = ANIM_DEATH;
+	fAnimationEnd = 0;
+	
+	fEntity.setMins(-16, -16, 0);
+	fEntity.setMaxs( 16, 16, 16);
+
+	fEntity.setSolid(NativeEntity.SOLID_NOT);
+	fEntity.setEffects(NativeEntity.EF_GIB);
+	fEntity.setPlayerPMType(NativeEntity.PM_GIB);		
+	fEntity.setSound(0);
+
+	Vector3f v = Gib.calcVelocity(de);
+	v.add(fEntity.getVelocity());
+	fEntity.setVelocity(v);
+
+	fEntity.linkEntity();	
 	}
 /**
  * This method was created by a SmartGuide.
@@ -3360,7 +3415,7 @@ protected void resetBlend()
 protected void respawn()
 	{
 	// leave a corpse behind
-	copyCorpse(fEntity);
+	copyCorpse(fEntity, fHealth);
 	
 	clearSettings();
 	

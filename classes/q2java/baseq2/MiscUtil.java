@@ -546,9 +546,21 @@ public static void radiusDamage(GameObject inflictor, GameObject attacker, float
 		GameObject obj = (GameObject) o;
 		Point3f victimOrigin = obj.fEntity.getOrigin();
 		
-		// I don't claim to understand these next 3 lines....
+		// I think I understand these next 2 lines now...
+		// by adding the mins and maxes, and then multiplying by 0.5
+		// you come up with a point in the center of the entity's
+		// bounding box.  Next, adding the victimOrigin gives you
+		// absolute coordinates to the center of the bounding box
+		// (mins/maxs are relative to the origin).  Isn't the origin
+		// the same as the center of the bounding box? usually, but
+		// not necessarily.  Submodels of the world (things like plats,
+		// doors, trains) usually have bounding boxes offset quite a bit
+		// from the origin.
 		v.add(obj.fEntity.getMins(), obj.fEntity.getMaxs());
 		v.scaleAdd(0.5f, v, victimOrigin);
+
+		// set v to be a vector between the inflictor origin and the
+		// center of the victim's bounding box
 		v.sub(inflictorOrigin, v);
 		
 		int damagePoints = (int)(damage - 0.5 * v.length());
