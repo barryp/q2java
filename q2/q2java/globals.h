@@ -13,7 +13,6 @@ extern int global_frameCount;
 extern int global_maxClients;
 
 extern gclient_t *global_clients;
-extern usercmd_t *thinkCmd;
 
 void Misc_javaInit();
 #define CHECK_EXCEPTION() checkException(__FILE__, __LINE__)
@@ -22,6 +21,8 @@ void enableSecurity(int level);
 jobject newPMoveResults(pmove_t pm);
 jobject newTraceResults(trace_t trace);
 jobject newJavaVec3(vec3_t *v);
+void setUserCmd(jbyte, jbyte, short, short, short, short, short, short, jbyte, jbyte);
+extern jobject userCmd;
 
 void CVar_javaInit();
 void CVar_javaFinalize();
@@ -30,6 +31,7 @@ void Engine_javaInit();
 void Engine_javaFinalize();
 
 void Entity_javaInit();
+void Entity_gameInit();
 void Entity_arrayInit();
 jobject Entity_getEntity(int index);
 void	Entity_setEntity(int index, jobject value);

@@ -5,8 +5,8 @@ static jmethodID method_player_ctor;
 static jmethodID method_player_begin;
 static jmethodID method_player_userinfoChanged;
 static jmethodID method_player_command;
-static jmethodID method_player_think;
 static jmethodID method_player_disconnect;
+static jmethodID method_player_think;
 
 
 void Player_javaInit()
@@ -47,11 +47,11 @@ void Player_javaInit()
 		}
 
 	method_player_ctor = (*java_env)->GetMethodID(java_env, class_player, "<init>", "(Ljava/lang/String;Z)V");
-	method_player_begin = (*java_env)->GetMethodID(java_env, class_player, "begin", "(Z)V");
-	method_player_userinfoChanged = (*java_env)->GetMethodID(java_env, class_player, "userinfoChanged", "(Ljava/lang/String;)V");
-	method_player_command = (*java_env)->GetMethodID(java_env, class_player, "command", "()V");
-	method_player_think = (*java_env)->GetMethodID(java_env, class_player, "think", "()V");
-	method_player_disconnect = (*java_env)->GetMethodID(java_env, class_player, "disconnect", "()V");
+	method_player_begin = (*java_env)->GetMethodID(java_env, class_player, "playerBegin", "(Z)V");
+	method_player_userinfoChanged = (*java_env)->GetMethodID(java_env, class_player, "playerInfoChanged", "(Ljava/lang/String;)V");
+	method_player_command = (*java_env)->GetMethodID(java_env, class_player, "playerCommand", "()V");
+	method_player_disconnect = (*java_env)->GetMethodID(java_env, class_player, "playerDisconnect", "()V");
+	method_player_think = (*java_env)->GetMethodID(java_env, class_player, "playerThink", "(Lq2java/UserCmd;)V");
 	if (CHECK_EXCEPTION())
 		{
 		java_error = "Problem finding one or more of the player methods\n";
@@ -109,6 +109,8 @@ static void java_clientBegin(edict_t *ent, qboolean loadgame)
 	int index = ent - ge.edicts;
 
 	javaPlayer = Entity_getEntity(index);
+	debugLog("About to call playerBegin, player = %i\n", javaPlayer);
+
 	(*java_env)->CallVoidMethod(java_env, javaPlayer, method_player_begin, loadgame);	
 	CHECK_EXCEPTION();
 	}
@@ -124,19 +126,6 @@ static void java_clientUserinfoChanged(edict_t *ent, char *userinfo)
 	(*java_env)->CallVoidMethod(java_env, javaPlayer, method_player_userinfoChanged, juserinfo);	
 	CHECK_EXCEPTION();
 	}
-
-static void java_clientThink(edict_t *ent, usercmd_t *cmd)
-	{
-	jobject javaPlayer;
-	int index = ent - ge.edicts;
-
-	thinkCmd = cmd;
-
-	javaPlayer = Entity_getEntity(index);
-	(*java_env)->CallVoidMethod(java_env, javaPlayer, method_player_think);	
-	CHECK_EXCEPTION();
-	}		
-
 
 static void java_clientCommand(edict_t *ent)
 	{
@@ -176,14 +165,32 @@ static void java_clientDisconnect(edict_t *ent)
 	}
 
 
+static void java_clientThink(edict_t *ent, usercmd_t *cmd)
+	{
+	jobject javaPlayer;
+	int index = ent - ge.edicts;
+
+	javaPlayer = Entity_getEntity(index);
+
+	setUserCmd(cmd->msec, cmd->buttons, 
+		cmd->angles[0], cmd->angles[1], cmd->angles[2], 
+		cmd->forwardmove, cmd->sidemove, cmd->upmove, 
+		cmd->impulse, cmd->lightlevel);	
+
+	(*java_env)->CallVoidMethod(java_env, javaPlayer, method_player_think, userCmd);
+
+	CHECK_EXCEPTION();
+	}		
+
+
 
 void Player_gameInit()
 	{
-	ge.ClientThink = java_clientThink;
 	ge.ClientConnect = java_clientConnect;
 	ge.ClientUserinfoChanged = java_clientUserinfoChanged;
 	ge.ClientDisconnect = java_clientDisconnect;
 	ge.ClientBegin = java_clientBegin;
 	ge.ClientCommand = java_clientCommand;
+	ge.ClientThink = java_clientThink;
 	}
 

@@ -21,9 +21,15 @@ static jmethodID method_PMoveResults_ctor;
 static jclass class_TraceResults;
 static jmethodID method_TraceResults_ctor;
 
+// handles to q2java.UserCmd class
+static jclass class_UserCmd;
+static jmethodID method_UserCmd_set;
+jobject userCmd;
 
 void Misc_javaInit()
 	{
+	jmethodID method_UserCmd_ctor;
+
 	class_Class = (*java_env)->FindClass(java_env, "java/lang/Class");
 	if (!class_Class)
 		{			
@@ -84,7 +90,7 @@ void Misc_javaInit()
 		return;
 		}
 
-	method_PMoveResults_ctor = (*java_env)->GetMethodID(java_env, class_PMoveResults, "<init>", "(BSSSSSSB[Lq2java/NativeEntity;FLq2java/NativeEntity;II)V");
+	method_PMoveResults_ctor = (*java_env)->GetMethodID(java_env, class_PMoveResults, "<init>", "([Lq2java/NativeEntity;FLq2java/NativeEntity;II)V");
 	if (CHECK_EXCEPTION() || !method_PMoveResults_ctor)
 		{
 		java_error = "Couldn't find q2java.PMoveResults constructor\n";
@@ -102,6 +108,34 @@ void Misc_javaInit()
 	if (CHECK_EXCEPTION() || !method_TraceResults_ctor)
 		{
 		java_error = "Couldn't find q2java.TraceResults constructor\n";
+		return;
+		}
+
+	class_UserCmd = (*java_env)->FindClass(java_env, "q2java/UserCmd");
+	if (CHECK_EXCEPTION() || !class_UserCmd)
+		{
+		java_error = "Couldn't find q2java.UserCmd\n";
+		return;
+		}
+
+	method_UserCmd_ctor = (*java_env)->GetMethodID(java_env, class_UserCmd, "<init>", "()V");
+	if (CHECK_EXCEPTION() || !method_UserCmd_ctor)
+		{
+		java_error = "Couldn't find q2java.UserCmd constructor\n";
+		return;
+		}
+
+	method_UserCmd_set = (*java_env)->GetMethodID(java_env, class_UserCmd, "set", "(BBSSSSSSBB)V");
+	if (CHECK_EXCEPTION() || !method_UserCmd_set)
+		{
+		java_error = "Couldn't find q2java.UserCmd set()\n";
+		return;
+		}
+
+	userCmd = (*java_env)->NewObject(java_env, class_UserCmd, method_UserCmd_ctor);
+	if (CHECK_EXCEPTION() || !userCmd)
+		{
+		java_error = "Couldn't create instance of q2java.UserCmd\n";
 		return;
 		}
 	}
@@ -205,8 +239,6 @@ jobject newPMoveResults(pmove_t pm)
 		groundEnt = Entity_getEntity(pm.groundentity - ge.edicts);
 
 	return (*java_env)->NewObject(java_env, class_PMoveResults, method_PMoveResults_ctor,
-		pm.cmd.buttons, pm.cmd.angles[0], pm.cmd.angles[1], pm.cmd.angles[2],
-		pm.cmd.forwardmove, pm.cmd.sidemove, pm.cmd.upmove, pm.cmd.lightlevel,
 		touched, pm.viewheight, groundEnt, pm.watertype, pm.waterlevel);
 	}
 
@@ -243,3 +275,11 @@ jobject newTraceResults(trace_t result)
 		resEnt);
 	}
 
+void setUserCmd(jbyte msec, jbyte buttons, 
+	short angle0, short angle1, short angle2,
+	short forward, short side, short up,
+	jbyte impulse, jbyte lightlevel)
+	{
+	(*java_env)->CallVoidMethod(java_env, userCmd, method_UserCmd_set,
+		msec, buttons, angle0, angle1, angle2, forward, side, up, impulse, lightlevel);
+	}

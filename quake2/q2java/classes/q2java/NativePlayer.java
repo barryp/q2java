@@ -11,23 +11,23 @@ public interface NativePlayer {
  * This method was created by a SmartGuide.
  * @param loadgame boolean
  */
-public abstract void begin(boolean loadgame);
+public abstract void playerBegin(boolean loadgame);
 /**
  * This method was created by a SmartGuide.
  */
-public abstract void command();
+public abstract void playerCommand();
 /**
  * This method was created by a SmartGuide.
  */
-public abstract void disconnect();
-/**
- * This method was created by a SmartGuide.
- * @param cmd q2java.UserCmd
- */
-public abstract void think();
+public abstract void playerDisconnect();
 /**
  * This method was created by a SmartGuide.
  * @param userinfo java.lang.String
  */
-public abstract void userinfoChanged(String userinfo);
+public abstract void playerInfoChanged(String userinfo);
+/**
+ * This method was created by a SmartGuide.
+ * @param cmd q2java.UserCmd
+ */
+public abstract void playerThink(UserCmd cmd);
 }

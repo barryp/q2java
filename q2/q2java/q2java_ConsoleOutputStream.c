@@ -55,8 +55,8 @@ static void JNICALL Java_q2java_ConsoleOutputStream_write__I(JNIEnv *env , jobje
 	switch (i)
 		{
 		case '\r': break;
-		case '\t': gi.dprintf("    "); break; // not the ideal way to handle tabs, but good enough for printing java Exceptions
-		default: gi.dprintf("%c", i); break;
+		case '\t': gi.dprintf("    "); debugLog("    "); break; // not the ideal way to handle tabs, but good enough for printing java Exceptions
+		default: gi.dprintf("%c", i); debugLog("%c", i); break;
 		}
 	}
 

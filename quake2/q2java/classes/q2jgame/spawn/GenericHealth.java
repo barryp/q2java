@@ -7,22 +7,28 @@ import q2jgame.*;
 abstract class GenericHealth extends GenericItem
 	{
 	private int fHealthValue;
+	private boolean fOverrideMax;
 	
-public GenericHealth(String[] spawnArgs, String modelName, String pickupSound, int healthValue) throws GameException
+public GenericHealth(String[] spawnArgs, String modelName, String pickupSound, int healthValue, boolean overrideMax) throws GameException
 	{
 	super(spawnArgs, pickupSound);
 	fHealthValue = healthValue;
+	fOverrideMax = overrideMax;
 	setModel(modelName);
-	linkEntity();	
+	linkEntity();		
 	}
 /**
  * This method was created by a SmartGuide.
  * @param mob q2jgame.GenericMobile
  */
-public void touch(GenericCharacter mob) 
+public void touch(Player p) 
 	{
-	super.touch(mob);
+	if (p.heal(fHealthValue, fOverrideMax))
+		{
+		super.touch(p);
 	
-	mob.heal(fHealthValue);
+		// bring the health back in 30 seconds
+		setRespawn(30);
+		}
 	}
 }

@@ -29,7 +29,7 @@ public DoorTrigger(GameEntity door) throws GameException
  * This method was created by a SmartGuide.
  * @param touchedBy q2jgame.GameEntity
  */
-public void touch(GenericCharacter touchedBy) 
+public void touch(Player touchedBy) 
 	{
 	((GameEntity)getOwner()).touch(touchedBy);
 	}

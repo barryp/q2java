@@ -49,7 +49,7 @@ public void setRespawn(float delay)
  * This method was created by a SmartGuide.
  * @param mob q2jgame.GenericMobile
  */
-public void touch(GenericCharacter mob) 
+public void touch(Player p) 
 	{
 	// play the pickup sound
 	sound(CHAN_ITEM, fPickupSoundIndex, 1, ATTN_NORM, 0);

@@ -21,15 +21,13 @@ public GenericAmmo(String[] spawnArgs, String ammoType, int count, String modelN
  * This method was created by a SmartGuide.
  * @param p q2jgame.Player
  */
-public void touch(GenericCharacter mob) 
-	{
-	Player p = (Player) mob;
-	
+public void touch(Player p) 
+	{	
 	// don't do anything if the player is already maxed out on this ammo
 	if (p.getAmmoCount(fAmmoType) >= p.getMaxAmmoCount(fAmmoType))
 		return;
 		
-	super.touch(mob);
+	super.touch(p);
 
 	p.addAmmo(fAmmoType, fCount);
 

@@ -147,7 +147,7 @@ private void setPortals(boolean state)
  * This method was created by a SmartGuide.
  * @param touchedBy q2jgame.GameEntity
  */
-public void touch(GenericCharacter touchedBy) 
+public void touch(Player touchedBy) 
 	{
 	if ((fState == STATE_CLOSED) || (fState == STATE_CLOSING))
 		fState = STATE_OPENING;
