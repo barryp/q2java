@@ -1,15 +1,19 @@
 
-package q2jgame;
+package q2jgame.spawn;
 
 import q2java.*;
+import q2jgame.*;
 
-public class GenericHealth extends GenericItem
+abstract class GenericHealth extends GenericItem
 	{
-	public int fHealthValue;
+	private int fHealthValue;
 	
-public GenericHealth(String[] spawnArgs) throws GameException
+public GenericHealth(String[] spawnArgs, String modelName, String pickupSound, int healthValue) throws GameException
 	{
-	super(spawnArgs);
+	super(spawnArgs, pickupSound);
+	fHealthValue = healthValue;
+	setModel(modelName);
+	linkEntity();	
 	}
 /**
  * This method was created by a SmartGuide.
@@ -20,6 +24,5 @@ public void touch(GenericCharacter mob)
 	super.touch(mob);
 	
 	mob.heal(fHealthValue);
-	freeEntity();
 	}
 }

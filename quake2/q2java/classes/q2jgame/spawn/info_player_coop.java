@@ -1,7 +1,8 @@
 
-package q2jgame;
+package q2jgame.spawn;
 
 import q2java.*;
+import q2jgame.*;
 
 public class info_player_coop extends GameEntity
 	{

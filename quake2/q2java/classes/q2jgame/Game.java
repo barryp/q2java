@@ -14,6 +14,9 @@ public class Game implements NativeGame
 	// game clocks
 	private static int fFrameCount;
 	public static double fGameTime;
+	
+	// central place to check if this is a deathmatch game
+	public static boolean fIsDeathmatch;
 
 	// handy random number generator
 	private static Random fRandom;
@@ -23,6 +26,14 @@ public class Game implements NativeGame
 	public static CVar fRollAngle;
 	public static CVar fRollSpeed;
 	
+/**
+ * This method was created by a SmartGuide.
+ * @return double
+ */
+public static double cRandom() 
+	{
+	return (fRandom.nextFloat() - 0.5) * 2.0;
+	}
 public void init()
 	{	
 /*	
@@ -40,6 +51,8 @@ public void init()
 	fBobUp = new CVar("bob_up", "0.005", 0);	
 	fRollAngle = new CVar("sv_rollangle", "2", 0);
 	fRollSpeed = new CVar("sv_rollspeed", "200", 0);
+	
+	System.out.println("Hello from Java");
 	}
 /**
  * This method was created by a SmartGuide.
@@ -67,13 +80,28 @@ public void readLevel(String filename)
 	}
 public void runFrame()
 	{
+	Enumeration enum;
+	Object obj;
+	
+	// increment the clocks
 	fFrameCount++;
 	fGameTime = fFrameCount * Engine.SECONDS_PER_FRAME;
-		
-	Enumeration enum = new EntityEnumeration();
-	while (enum.hasMoreElements())
-		((GameEntity) enum.nextElement()).runFrame();
 
+	// notify all the players we're beginning a frame
+	enum = new PlayerEnumeration();
+	while (enum.hasMoreElements())
+		((Player) enum.nextElement()).beginFrame();
+				
+	// give each non-player entity a chance to run				
+	enum = new EntityEnumeration();
+	while (enum.hasMoreElements())
+		{
+		obj = enum.nextElement();
+		if (!(obj instanceof Player))
+			((GameEntity) obj).runFrame();
+		}
+
+	// notify all the players we're ending a frame
 	enum = new PlayerEnumeration();
 	while (enum.hasMoreElements())
 		((Player) enum.nextElement()).endFrame();
@@ -134,7 +162,7 @@ public void spawnEntities(String mapname, String entString, String spawnPoint)
 					params[0] = sa;
 					try
 						{
-						Class entClass = Class.forName("q2jgame." + className);
+						Class entClass = Class.forName("q2jgame.spawn." + className);
 						Constructor ctor = entClass.getConstructor(paramTypes);							
 						GameEntity ent = (GameEntity) ctor.newInstance(params);
 						ps.println(ent);

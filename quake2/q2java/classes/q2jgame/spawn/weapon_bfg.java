@@ -1,5 +1,5 @@
 
-package q2jgame;
+package q2jgame.spawn;
 
 import q2java.*;
 
@@ -8,14 +8,7 @@ public class weapon_bfg extends GenericWeapon
 	
 public weapon_bfg(String[] spawnArgs) throws GameException
 	{
-	super(spawnArgs);
-	setModel("models/weapons/g_bfg/tris.md2");
-	linkEntity();
+	super(spawnArgs, "q2jgame.PlayerBFG", "bfg10k", 
+		"cells", 50, "models/weapons/g_bfg/tris.md2");
 	}
-/**
- * This method was created by a SmartGuide.
- */
-public void fire() {
-	return;
-}
 }

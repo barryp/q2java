@@ -1,25 +1,22 @@
 
-package q2jgame;
+package q2jgame.weapon;
 
 import q2java.*;
+import q2jgame.*;
 
-public class GenericBlaster extends GenericWeapon
+public class GenericBlaster extends PlayerWeapon
 	{
 	protected Vec3 fBlasterOffset;
 	protected int fEffect;  // the hyperblaster changes this as it fires
 	private int fDamage;
 	private int fMuzzleFlash;
 	
-public GenericBlaster(String[] spawnArgs) throws GameException
-	{
-	super(spawnArgs);
-	}
 /**
  * This method was created by a SmartGuide.
  */
-public GenericBlaster(int weaponModel, int lastActivate, int lastFire, int lastIdle, int lastDeactivate, int[] pauseFrames, int[] fireFrames, int blasterEffect, int blasterDamage, int blasterMuzzleFlash) throws GameException
+public GenericBlaster(String ammoType, String weaponModelName, int lastActivate, int lastFire, int lastIdle, int lastDeactivate, int[] pauseFrames, int[] fireFrames, int blasterEffect, int blasterDamage, int blasterMuzzleFlash) throws GameException
 	{
-	super(weaponModel, lastActivate, lastFire, lastIdle, lastDeactivate, pauseFrames, fireFrames);
+	super(ammoType, weaponModelName, lastActivate, lastFire, lastIdle, lastDeactivate, pauseFrames, fireFrames);
 
 	fEffect = blasterEffect;
 	fDamage = blasterDamage;

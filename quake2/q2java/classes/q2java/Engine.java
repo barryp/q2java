@@ -110,6 +110,13 @@ public class Engine
 	public final static int TE_BFG_BIGEXPLOSION		= 21;
 	public final static int TE_BOSSTPORT				= 22; // used as '22' in a map, so DON'T RENUMBER!!!
 	
+	public final static int SPLASH_UNKNOWN			= 0;
+	public final static int SPLASH_SPARKS			= 1;
+	public final static int SPLASH_BLUE_WATER		= 2;
+	public final static int SPLASH_BROWN_WATER		= 3;
+	public final static int SPLASH_SLIME				= 4;
+	public final static int SPLASH_LAVA				= 5;
+	public final static int SPLASH_BLOOD				= 6;	
 	
 /*
 ==============================================================
@@ -297,6 +304,18 @@ public native static int soundIndex(String name);
  * This method was created by a SmartGuide.
  * @return TraceResults
  * @param start Vec3
+ * @param end Vec3
+ * @param passEnt NativeEntity
+ * @param contentMask int
+ */
+public static TraceResults trace(Vec3 start, Vec3 end, NativeEntity passEnt, int contentMask) 
+	{
+	return trace0(start.x, start.y, start.z, 0, 0, 0, 0, 0, 0, end.x, end.y, end.z, passEnt, contentMask, 0);
+	}
+/**
+ * This method was created by a SmartGuide.
+ * @return TraceResults
+ * @param start Vec3
  * @param mins Vec3
  * @param maxs Vec3
  * @param end Vec3
@@ -305,7 +324,7 @@ public native static int soundIndex(String name);
  */
 public static TraceResults trace(Vec3 start, Vec3 mins, Vec3 maxs, Vec3 end, NativeEntity passEnt, int contentMask) 
 	{
-	return trace0(start.x, start.y, start.z, mins.x, mins.y, mins.z, maxs.x, maxs.y, maxs.z, end.x, end.y, end.z, passEnt, contentMask);
+	return trace0(start.x, start.y, start.z, mins.x, mins.y, mins.z, maxs.x, maxs.y, maxs.z, end.x, end.y, end.z, passEnt, contentMask, 1);
 	}
 
 /**
@@ -322,7 +341,7 @@ private native static TraceResults trace0(float startx, float starty, float star
 	float minsx, float minsy, float minsz, 
 	float maxsx, float maxsy, float maxsz,
 	float endx, float endy, float endz,
-	NativeEntity passEnt, int contentMask);
+	NativeEntity passEnt, int contentMask, int useMinMax);
 
 public static void unicast(NativeEntity ent, boolean reliable)
 	{

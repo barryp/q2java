@@ -1,7 +1,8 @@
 
-package q2jgame;
+package q2jgame.spawn;
 
 import q2java.*;
+import q2jgame.*;
 
 public class worldspawn extends GameEntity
 	{
@@ -36,6 +37,7 @@ public worldspawn(String[] spawnArgs) throws GameException
 	//
 		
 	fHealthPic = Engine.imageIndex("i_health");		
+	Engine.dprint("fHealthPic = " + fHealthPic + "\n");
 	
 	// setup player status bar
 	Engine.configString (Engine.CS_STATUSBAR, Player.DM_STATUSBAR);	

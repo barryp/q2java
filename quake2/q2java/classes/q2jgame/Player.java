@@ -7,15 +7,24 @@ package q2jgame;
  */
 import java.util.*;
 import q2java.*;
+import q2jgame.spawn.*;
+import q2jgame.weapon.*;
 
-class Player extends GenericCharacter implements NativePlayer
+public class Player extends GenericCharacter implements NativePlayer
 	{	
 	private Hashtable fUserInfo;
+	private Hashtable fInventory;
+	private Hashtable fAmmoBelt;
+
+	private PlayerWeapon fWeapon;
+	private PlayerWeapon fNextWeapon;	
+	private AmmoPack fAmmo;
+	
 	private int fHand;
 	private boolean fIsGrounded;
 	private float fBobTime;
-	public int fButtons;
-	protected float fViewHeight;
+	private int fButtons;
+	public float fViewHeight;
 	private int fWaterType;
 	private int fWaterLevel;
 	private int fOldWaterLevel;
@@ -118,14 +127,48 @@ public Player(String userinfo, boolean loadgame) throws GameException
 	}
 /**
  * This method was created by a SmartGuide.
+ * @param ammoType java.lang.String
+ * @param count int
+ * @param icon int
+ */
+public void addAmmo(String ammoType, int count) 
+	{
+	AmmoPack pack = (AmmoPack) fAmmoBelt.get(ammoType);
+	if (pack == null)
+		fAmmoBelt.put(ammoType, new AmmoPack(-1, 0));
+	else
+		{
+		if (pack == fAmmo)
+			alterAmmoCount(count);  // will also update HUD
+		else			
+			pack.fAmount += count;		
+		}
+	}
+/**
+ * This method was created by a SmartGuide.
+ * @param amount int
+ */
+public void alterAmmoCount(int amount) 
+	{
+	if (fAmmo != null)
+		{
+		fAmmo.fAmount += amount;
+		setStat(STAT_AMMO, (short) fAmmo.fAmount);
+		}
+	}
+/**
+ * This method was created by a SmartGuide.
  * @param loadgame boolean
  */
 public void begin(boolean loadgame) 
 	{
 	Engine.debugLog("Player.begin(" + loadgame + ")");
 	
+	fInventory = new Hashtable();
+	fAmmoBelt = new Hashtable();
+	
 	GameEntity spawnPoint = null;
-	java.util.Enumeration enum = enumerateEntities("q2jgame.info_player_start");
+	java.util.Enumeration enum = enumerateEntities("q2jgame.spawn.info_player_start");
 	while (enum.hasMoreElements())
 		{
 		spawnPoint = (GameEntity) enum.nextElement();
@@ -147,10 +190,32 @@ public void begin(boolean loadgame)
 	setSolid(SOLID_BBOX);
 	setClipmask(Engine.MASK_PLAYERSOLID);
 	
+	// initialize the AmmoBelt
+	fAmmoBelt.put("bullets", new AmmoPack(100, Engine.imageIndex("a_bullets")));
+	fAmmoBelt.put("cells", new AmmoPack(100, Engine.imageIndex("a_cells")));
+	fAmmoBelt.put("grenades", new AmmoPack(100, Engine.imageIndex("a_grenades")));
+	fAmmoBelt.put("rockets", new AmmoPack(100, Engine.imageIndex("a_rockets")));
+	fAmmoBelt.put("shells", new AmmoPack(100, Engine.imageIndex("a_shells")));
+	fAmmoBelt.put("slugs", new AmmoPack(100, Engine.imageIndex("a_slugs")));
+
+	// bring up the initial weapon
 	try
 		{
-		fWeapon = new weapon_hyperblaster(this);
-		fWeapon.activate();
+		// start off with a plain blaster
+		fWeapon = new Blaster();
+		fWeapon.use(this);
+
+		// stick it in our inventory too
+		putInventory("blaster", fWeapon);
+/*		
+		// give the user other weapons too, for testing
+		putInventory("hyperblaster", new weapon_hyperblaster());
+		putInventory("machinegun", new weapon_machinegun());
+		putInventory("chaingun", new weapon_chaingun());
+		putInventory("shotgun", new weapon_shotgun());
+		putInventory("super shotgun", new weapon_supershotgun());
+		putInventory("railgun", new weapon_railgun());
+*/		
 		}
 	catch (GameException e)
 		{
@@ -165,7 +230,15 @@ public void begin(boolean loadgame)
 	setMins(-16, -16, 24);
 	setMaxs(16, 16, 32);
 	setStat(STAT_HEALTH_ICON, (short)worldspawn.fHealthPic);
-	linkEntity();
+	linkEntity();	
+	}
+/**
+ * This method was created by a SmartGuide.
+ */
+public void beginFrame() 
+	{
+	if (fWeapon != null)
+		fWeapon.weaponThink();
 	}
 /**
  * This method was created by a SmartGuide.
@@ -250,6 +323,18 @@ private void calcViewOffset()
 /**
  * This method was created by a SmartGuide.
  */
+public void changeWeapon() 
+	{
+	if (fNextWeapon == null)
+		return;
+		
+	fWeapon = fNextWeapon;
+	fNextWeapon = null;
+	fWeapon.use(this);		
+	}
+/**
+ * This method was created by a SmartGuide.
+ */
 public void command() 
 	{
 	Engine.debugLog("Player.command()");
@@ -258,6 +343,18 @@ public void command()
 	Engine.dprint("   Engine.argc = " + Engine.argc() + "\n");
 	for (int i = 0; i < Engine.argc(); i++)
 		Engine.dprint("    " + i + ": [" + Engine.argv(i) + "]\n");
+		
+		
+	if (Engine.argc() > 1)
+		{
+		if (Engine.argv(0).equals("use"))
+			{
+			String item = Engine.argv(1);
+			for (int i = 2; i < Engine.argc(); i++)
+				item = item + " " + Engine.argv(i);
+			use(item);
+			}
+		}		
 	}
 /**
  * The player is disconnecting, clean things up and say goodbye.
@@ -373,6 +470,18 @@ private void fallingDamage()
 	}
 /**
  * This method was created by a SmartGuide.
+ * @return int
+ * @param itemname java.lang.String
+ */
+public int getAmmoCount(String ammoName) 
+	{
+	if (fAmmo == null)
+		return 0;
+	else
+		return fAmmo.fAmount;				
+	}
+/**
+ * This method was created by a SmartGuide.
  * @return java.lang.String
  * @param key java.lang.String
  */
@@ -381,6 +490,23 @@ public String getUserInfo(String key)
 	if (fUserInfo == null)
 		return null;
 	return (String) fUserInfo.get(key);		
+	}
+/**
+ * This method was created by a SmartGuide.
+ * @return boolean
+ */
+public boolean isAttacking() 
+	{
+	return (fButtons & Player.BUTTON_ATTACK) != 0;
+	}
+/**
+ * This method was created by a SmartGuide.
+ * @return boolean
+ * @param itemName java.lang.String
+ */
+public boolean isCarrying(String itemName) 
+	{
+	return (fInventory.containsKey(itemName));
 	}
 /**
  * This method was created by a SmartGuide.
@@ -396,6 +522,33 @@ public Vec3 projectSource(Vec3 offset, Vec3 forward, Vec3 right)
 		dist.y = 0;
 		
 	return Vec3.projectSource(getOrigin(), dist, forward, right);
+	}
+/**
+ * This method was created by a SmartGuide.
+ * @param itemName java.lang.String
+ * @param ent q2jgame.GameEntity
+ */
+public void putInventory(String itemName, Object ent) 
+	{
+	fInventory.put(itemName, ent);
+	}
+/**
+ * This method was created by a SmartGuide.
+ * @param ammoType java.lang.String
+ */
+public void setAmmoType(String ammoType) 
+	{
+	fAmmo = (ammoType == null ? null : (AmmoPack) fAmmoBelt.get(ammoType));	
+	if (fAmmo == null)
+		{
+		setStat(STAT_AMMO, (short) 0);
+		setStat(STAT_AMMO_ICON, (short) 0);
+		}
+	else
+		{
+		setStat(STAT_AMMO, (short) fAmmo.fAmount);
+		setStat(STAT_AMMO_ICON, (short) fAmmo.fIcon);
+		}	
 	}
 /**
  * This method was created by a SmartGuide.
@@ -452,6 +605,38 @@ public void think()
 			((GameEntity)pm.fTouched[i]).touch(this);
 		}
 		
+	}
+/**
+ * This method was created by a SmartGuide.
+ * @param itemName java.lang.String
+ */
+public void use(String itemName) 
+	{
+	Object ent = fInventory.get(itemName.toLowerCase());
+	if (ent == null)
+		{
+		cprint(Engine.PRINT_HIGH, "You don't have a " + itemName);
+		return;
+		}
+
+	// handle weapons a little differently
+	if (ent instanceof PlayerWeapon)
+		{
+		if (ent == fWeapon)
+			return; // do nothing if we're already using the weapon
+		
+		// make a note of what the next weapon will be	
+		fNextWeapon = (PlayerWeapon) ent;
+		
+		// signal the current weapon to deactivate..when it's
+		// done deactivating, it will signal back to the player to 
+		// switchWeapons() and we'll use() the next weapon		
+		fWeapon.deactivate();	
+
+		return;
+		}
+			
+//	ent.use(this);	---FIXME--
 	}
 public void userinfoChanged(String userinfo)
 	{

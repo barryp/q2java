@@ -38,6 +38,17 @@ void debugLog(const char *msg, ...)
 	fclose(f);
 	}
 
+
+static int JNICALL jvfprintf(FILE *f, const char *fmt, va_list args)
+	{
+	static char buf[2048];
+	int result;
+
+	result = _vsnprintf(buf, sizeof(buf), fmt, args);  // this is Microsoft VisualC++ specific, vsprintf() will probably have to be used in other platforms
+	gi.dprintf("%s", buf);
+	return result;
+	}
+
 // Figure out what directory we're operating out of,
 // so we can write a debug trace file and later
 // setup a Java classpath
@@ -136,7 +147,11 @@ void startJava()
 
 		// set the new classpath
         vm_args.classpath = classpath;
-	
+
+		
+		// hook up the output function
+		vm_args.vfprintf = &jvfprintf;
+
         (*p_JNI_CreateJavaVM)(&java_vm, &java_env, &vm_args);
 		if (!java_vm)
 			{
@@ -161,8 +176,16 @@ void startJava()
 		if (!java_error)
 			Misc_javaInit();  
 
+		// initialize the ConsoleOutputStream module next, so that
+		// when the Misc module prints exception stack traces,
+		// the output goes to the Quake2 console instead
+		// of disappearing into the void.
+		if (!java_error)
+			ConsoleOutputStream_javaInit();
+
 		if (!java_error)
 			Engine_javaInit();
+
 
 		if (!java_error)
 			Game_javaInit();
@@ -198,6 +221,7 @@ debugLog("in stopJava()\n");
 	Entity_javaFinalize();
 	Player_javaFinalize();
 	CVar_javaFinalize();
+	ConsoleOutputStream_javaFinalize();
 
 	if ((*java_vm)->DestroyJavaVM(java_vm))
 		debugLog("Error destroying Java VM, stupid Sun JDK is probably still broke\n");

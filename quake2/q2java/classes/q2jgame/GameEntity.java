@@ -10,7 +10,6 @@ public class GameEntity extends NativeEntity
 	{
 	private String[] fSpawnArgs;
 	protected int fSpawnFlags;
-	protected float fThinkTime;
 	
 	protected String fTargetName;
 	protected String fTarget;
@@ -112,4 +111,11 @@ public void touch(GenericCharacter touchedBy)
 	{
 	return;
 	}
+/**
+ * This method was created by a SmartGuide.
+ * @param p q2jgame.Player
+ */
+public void use(Player p) {
+	return;
+}
 }

@@ -1,5 +1,4 @@
 #include "globals.h"  // to get at the game_import_t structure
-#include "javalink.h"  // for some helper functions
 #include "q2java_Engine.h"
 
 
@@ -21,9 +20,6 @@
 // handle to Engine class
 static jclass class_Engine;
 
-// handle to TraceResults class
-static jclass class_TraceResults;
-static jmethodID method_TraceResults_ctor;
 
 static JNINativeMethod Engine_methods[] = 
 	{
@@ -34,7 +30,7 @@ static JNINativeMethod Engine_methods[] =
 	{"modelIndex",	"(Ljava/lang/String;)I",		Java_q2java_Engine_modelIndex},
 	{"soundIndex",	"(Ljava/lang/String;)I",		Java_q2java_Engine_soundIndex},
 	{"imageIndex",	"(Ljava/lang/String;)I",		Java_q2java_Engine_imageIndex},
-	{"trace0",		"(FFFFFFFFFFFFLq2java/NativeEntity;I)Lq2java/TraceResults;",	Java_q2java_Engine_trace0},
+	{"trace0",		"(FFFFFFFFFFFFLq2java/NativeEntity;II)Lq2java/TraceResults;",	Java_q2java_Engine_trace0},
 	{"pointContents0",		"(FFF)I",				Java_q2java_Engine_pointContents0},
 	{"inP0",				"(FFFFFFI)Z",			Java_q2java_Engine_inP0},
 	{"setAreaPortalState",	"(IZ)V",				Java_q2java_Engine_setAreaPortalState},
@@ -66,21 +62,6 @@ void Engine_javaInit()
 		java_error = "Couldn't register native methods for q2java.Engine\n";
 		return;
 		}
-
-	
-	class_TraceResults = (*java_env)->FindClass(java_env, "q2java/TraceResults");
-	if (CHECK_EXCEPTION() || !class_TraceResults)
-		{
-		java_error = "Couldn't find q2java.TraceResults\n";
-		return;
-		}
-
-	method_TraceResults_ctor = (*java_env)->GetMethodID(java_env, class_TraceResults, "<init>", "(ZZFLq2java/Vec3;Lq2java/Vec3;FBBLjava/lang/String;IIILq2java/NativeEntity;)V");
-	if (CHECK_EXCEPTION() || !method_TraceResults_ctor)
-		{
-		java_error = "Couldn't find q2java.TraceResults constructor\n";
-		return;
-		}
 	}
 
 void Engine_javaFinalize()
@@ -90,39 +71,6 @@ void Engine_javaFinalize()
 	}
 
 
-
-jobject newTraceResults(trace_t result)
-	{
-	jobject resEndpos;
-	jobject resPlaneNormal;
-	jstring resSurfaceName;
-	int resSurfaceFlags;
-	int resSurfaceValue;
-	jobject resEnt;
-
-	resEndpos = newJavaVec3(&(result.endpos));
-	resPlaneNormal = newJavaVec3(&(result.plane.normal));
-
-	if (!result.surface)
-		{
-		resSurfaceName = 0;
-		resSurfaceFlags = resSurfaceValue = 0;
-		}
-	else
-		{
-		resSurfaceName = (*java_env)->NewStringUTF(java_env, result.surface->name);
-		resSurfaceFlags = result.surface->flags;
-		resSurfaceValue = result.surface->value;
-		}
-
-	resEnt = Entity_getEntity(result.ent - ge.edicts);
-
-	return (*java_env)->NewObject(java_env, class_TraceResults, method_TraceResults_ctor, 
-		result.allsolid, result.startsolid, result.fraction, resEndpos, resPlaneNormal, 
-		result.plane.dist, result.plane.type, result.plane.signbits,
-		resSurfaceName, resSurfaceFlags, resSurfaceValue, result.contents,
-		resEnt);
-	}
 
 
 
@@ -204,7 +152,7 @@ static jobject JNICALL Java_q2java_Engine_trace0(JNIEnv *env, jclass cls,
 	jfloat minsx, jfloat minsy, jfloat minsz, 
 	jfloat maxsx, jfloat maxsy, jfloat maxsz, 
 	jfloat endx, jfloat endy, jfloat endz, 
-	jobject jpassEnt, jint contentMask)
+	jobject jpassEnt, jint contentMask, jint useMinMax)
 	{
 	vec3_t start;
 	vec3_t mins;
@@ -212,25 +160,30 @@ static jobject JNICALL Java_q2java_Engine_trace0(JNIEnv *env, jclass cls,
 	vec3_t end;
 	edict_t *passEnt;
 
+	passEnt = ge.edicts + Entity_get_fEntityIndex(jpassEnt);
+
 	start[0] = startx;
 	start[1] = starty;
 	start[2] = startz;
-
-	mins[0] = minsx;
-	mins[1] = minsy;
-	mins[2] = minsz;
-
-	maxs[0] = maxsx;
-	maxs[1] = maxsy;
-	maxs[2] = maxsz;
 
 	end[0] = endx;
 	end[1] = endy;
 	end[2] = endz;
 
-	passEnt = ge.edicts + Entity_get_fEntityIndex(jpassEnt);
+	if (!useMinMax)
+		return newTraceResults(gi.trace(start, NULL, NULL, end, passEnt, contentMask));
+	else		
+		{
+		mins[0] = minsx;
+		mins[1] = minsy;
+		mins[2] = minsz;
 
-	return newTraceResults(gi.trace(start, mins, maxs, end, passEnt, contentMask));
+		maxs[0] = maxsx;
+		maxs[1] = maxsy;
+		maxs[2] = maxsz;
+
+		return newTraceResults(gi.trace(start, mins, maxs, end, passEnt, contentMask));
+		}
 	}
 
 
@@ -404,7 +357,7 @@ static void JNICALL Java_q2java_Engine_debugGraph(JNIEnv *env, jclass cls, jfloa
 
 static jstring JNICALL Java_q2java_Engine_getGamePath(JNIEnv *env, jclass cls)
 	{
-	return (*env)->NewStringUTF(env, global_gameDirName);
+	return (*env)->NewStringUTF(env, java_gameDirName);
 	}
 
 

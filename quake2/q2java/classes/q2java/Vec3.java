@@ -62,6 +62,17 @@ public Vec3( Vec3 v)
 	z = v.z;
 	}
 /**
+ * Comvert all components into absolute values
+ * @return q2java.Vec3
+ */
+public Vec3 abs() 
+	{
+	x = Math.abs(x);
+	y = Math.abs(y);
+	z = Math.abs(z);
+	return this;
+	}
+/**
  * This method was created by a SmartGuide.
  * @return q2java.Vec3
  * @param x float
@@ -144,6 +155,16 @@ public Vec3 clear()
 	}
 /**
  * This method was created by a SmartGuide.
+ * @param v q2java.Vec3
+ */
+public void copyTo(Vec3 v) 
+	{
+	v.x = x;
+	v.y = y;
+	v.z = z;
+	}
+/**
+ * This method was created by a SmartGuide.
  * @return float
  * @param a q2java.Vec3
  * @param b q2java.Vec3
@@ -151,6 +172,24 @@ public Vec3 clear()
 public static float dotProduct(Vec3 a, Vec3 b) 
 	{
 	return (a.x*b.x) + (a.y*b.y) + (a.z*b.z);
+	}
+/**
+ * This method was created by a SmartGuide.
+ * @return boolean
+ * @param v q2java.Vec3
+ */
+public boolean equals(float nx, float ny, float nz) 
+	{
+	return (x == nx) && (y == ny) && (z == nz);
+	}
+/**
+ * This method was created by a SmartGuide.
+ * @return boolean
+ * @param v q2java.Vec3
+ */
+public boolean equals(Vec3 v) 
+	{
+	return (x == v.x) && (y == v.y) && (z == v.z);
 	}
 /**
  * Scale into a unit vector, and return the updated object
@@ -198,6 +237,32 @@ public Vec3 scale(float val)
 /**
  * This method was created by a SmartGuide.
  * @return q2java.Vec3
+ * @param x float
+ * @param y float
+ * @param z float
+ */
+public Vec3 subtract(float nx, float ny, float nz) 
+	{
+	x -= nx;
+	y -= ny;
+	z -= nz;
+	return this;
+	}
+/**
+ * This method was created by a SmartGuide.
+ * @return q2java.Vec3
+ * @param v q2java.Vec3
+ */
+public Vec3 subtract(Vec3 v) 
+	{
+	x -= v.x;
+	y -= v.y;
+	z -= v.z;
+	return this;
+	}
+/**
+ * This method was created by a SmartGuide.
+ * @return q2java.Vec3
  */
 public Vec3 toAngles() 
 	{
@@ -230,4 +295,18 @@ public String toString()
 	{
 	return x + " " + y + " " + z;
 	}   
+/**
+ * This method was created by a SmartGuide.
+ * @return q2java.Vec3
+ * @param f float
+ * @param v q2java.Vec3
+ */
+public Vec3 vectorMA(float f, Vec3 v) 
+	{
+	Vec3 result = new Vec3(this);
+	result.x += v.x * f;
+	result.y += v.y * f;
+	result.z += v.z * f;
+	return result;
+	}
 }

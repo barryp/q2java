@@ -7,6 +7,7 @@ static jmethodID method_Class_getName;
 // handles to java.lang.Throwable class
 static jclass class_Throwable;
 static jmethodID method_Throwable_getMessage;
+static jmethodID method_Throwable_printStackTrace;
 
 // handles to the q2java.Vec3 class
 static jclass class_Vec3;
@@ -48,6 +49,13 @@ void Misc_javaInit()
 	if (!method_Throwable_getMessage)
 		{
 		java_error = "Couldn't find java.lang.Throwable.getMessage() method\n";
+		return;
+		}
+
+	method_Throwable_printStackTrace = (*java_env)->GetMethodID(java_env, class_Throwable, "printStackTrace", "()V");		
+	if (!method_Throwable_printStackTrace)
+		{
+		java_error = "Couldn't find java.lang.Throwable.printStackTrace() method\n";
 		return;
 		}
 
@@ -101,43 +109,14 @@ void Misc_javaInit()
 
 int checkException(char *filename, int linenum)
 	{
-	jclass exClass;
 	jthrowable ex;
-	jstring jsName;
-	jstring jsMsg;
-	char *name;
-	char *msg;
 
 	ex = (*java_env)->ExceptionOccurred(java_env);
 	if (!ex)
 		return false;
 
 	(*java_env)->ExceptionClear(java_env);
-
-	exClass = (*java_env)->GetObjectClass(java_env, ex);
-	jsName = (*java_env)->CallObjectMethod(java_env, exClass, method_Class_getName);
-	if (jsName)
-		name = (char *)((*java_env)->GetStringUTFChars(java_env, jsName, 0));
-	else
-		name = "(Unknown Java exception)";
-
-	jsMsg = (*java_env)->CallObjectMethod(java_env, ex, method_Throwable_getMessage);
-	if (jsMsg)
-		{
-		msg = (char *)((*java_env)->GetStringUTFChars(java_env, jsMsg, 0));
-		debugLog("(%s:%d) %s: %s\n", filename, linenum, name, msg); 
-		gi.dprintf("%s: %s\n", name, msg);
-		(*java_env)->ReleaseStringUTFChars(java_env, jsMsg, msg);	
-		}
-	else
-		{
-		debugLog("(%s:%d)%s\n", filename, linenum, name); 
-		gi.dprintf("%s\n", name);
-		}
-
-	if (jsName)
-		(*java_env)->ReleaseStringUTFChars(java_env, jsName, name);	
-	
+	(*java_env)->CallVoidMethod(java_env, ex, method_Throwable_printStackTrace);
 	return true;
 	}
 

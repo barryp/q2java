@@ -1,5 +1,4 @@
 #include "globals.h"
-#include "javalink.h"
 #include "q2java_NativeEntity.h"
 
 // handles to fields in a C entity
@@ -54,9 +53,6 @@ static jfieldID  field_NativeEntity_fEntityArray;
 static jfieldID  field_NativeEntity_fNumEntities;
 static jfieldID	 field_NativeEntity_fMaxPlayers;
 
-// handle to PMoveResults class
-static jclass class_PMoveResults;
-static jmethodID method_PMoveResults_ctor;
 
 static JNINativeMethod Entity_methods[] = 
 	{
@@ -107,20 +103,6 @@ void Entity_javaInit()
 	if (CHECK_EXCEPTION())
 		{
 		java_error = "Couldn't get field handles for NativeEntity\n";
-		return;
-		}
-
-	class_PMoveResults = (*java_env)->FindClass(java_env, "q2java/PMoveResults");
-	if (CHECK_EXCEPTION() || !class_PMoveResults)
-		{
-		java_error = "Couldn't find q2java.PMoveResults\n";
-		return;
-		}
-
-	method_PMoveResults_ctor = (*java_env)->GetMethodID(java_env, class_PMoveResults, "<init>", "(BSSSSSSB[Lq2java/NativeEntity;FLq2java/NativeEntity;II)V");
-	if (CHECK_EXCEPTION() || !method_PMoveResults_ctor)
-		{
-		java_error = "Couldn't find q2java.PMoveResults constructor\n";
 		return;
 		}
 	}
@@ -579,8 +561,6 @@ static trace_t	PM_trace(vec3_t start, vec3_t mins, vec3_t maxs, vec3_t end)
 
 static jobject JNICALL Java_q2java_NativeEntity_pMove0(JNIEnv *env, jclass cls, jint index)
 	{
-	jobject groundEnt;
-	jobjectArray touched;
 	int i;
 	pmove_t pm;
 	gclient_t *client;
@@ -622,17 +602,7 @@ static jobject JNICALL Java_q2java_NativeEntity_pMove0(JNIEnv *env, jclass cls, 
 		client->ps.viewangles[i] = pm.viewangles[i];
 		}
 
-	touched = Entity_createArray(pm.touchents, pm.numtouch);
-
-	if (!pm.groundentity)
-		groundEnt = 0;
-	else
-		groundEnt = Entity_getEntity(pm.groundentity - ge.edicts);
-
-	return (*env)->NewObject(env, class_PMoveResults, method_PMoveResults_ctor,
-		pm.cmd.buttons, pm.cmd.angles[0], pm.cmd.angles[1], pm.cmd.angles[2],
-		pm.cmd.forwardmove, pm.cmd.sidemove, pm.cmd.upmove, pm.cmd.lightlevel,
-		touched, pm.viewheight, groundEnt, pm.watertype, pm.waterlevel);
+	return newPMoveResults(pm);
 	}
 
 

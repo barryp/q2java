@@ -22,7 +22,7 @@ game_export_t *GetGameAPI (game_import_t *import)
 		return 0;
 		}
 
-	gi.dprintf("=============================\nQuake 2 Java DLL v %s\n(c) 1998 Barry Pederson <bpederson@geocities.com>\n=============================\n", DLL_VERSION);
+	gi.dprintf("=============================\nQuake 2 Java DLL v %s\n(c) 1998 Barry Pederson\n<bpederson@geocities.com>\n=============================\n", DLL_VERSION);
 
 	// setup the game_export_t structure
 	ge.apiversion = GAME_API_VERSION;

@@ -1,28 +1,14 @@
 
-package q2jgame;
+package q2jgame.spawn;
 
 import q2java.*;
+import q2jgame.*;
 
 public class item_armor_shard extends GenericArmor
 	{
-	private Vec3 fOriginalOrigin;
-	private float fRandSeed;
 	
 public item_armor_shard(String[] spawnArgs) throws GameException
 	{
-	super(spawnArgs);
-	setModel("models/items/armor/shard/tris.md2");
-	fOriginalOrigin = getOrigin();
-	fRandSeed = Game.randomFloat();
-	linkEntity();
-	}
-/**
- * Have the shards bob up and down just as a test
- */
-public void runFrame() 
-	{
-	Vec3 temp = new Vec3(fOriginalOrigin);
-	temp.z = temp.z + (float)(Math.sin(Game.fGameTime + fRandSeed) * 10);
-	setOrigin(temp);
+	super(spawnArgs, "models/items/armor/shard/tris.md2");
 	}
 }

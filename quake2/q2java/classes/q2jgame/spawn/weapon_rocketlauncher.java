@@ -1,5 +1,5 @@
 
-package q2jgame;
+package q2jgame.spawn;
 
 import q2java.*;
 
@@ -8,14 +8,7 @@ public class weapon_rocketlauncher extends GenericWeapon
 	
 public weapon_rocketlauncher(String[] spawnArgs) throws GameException
 	{
-	super(spawnArgs);
-	setModel("models/weapons/g_rocket/tris.md2");
-	linkEntity();
+	super(spawnArgs, "q2jgame.weapon.RocketLauncher", "rocket launcher",
+		"rockets", 10, "models/weapons/g_rocket/tris.md2");
 	}
-/**
- * This method was created by a SmartGuide.
- */
-public void fire() {
-	return;
-}
 }

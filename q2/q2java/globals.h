@@ -1,7 +1,7 @@
 #ifndef _Included_globals
 #define _Included_globals
 
-#include <jni.h>
+#include "javalink.h"
 #include "Quake2.h"
 
 // game import and export structures
@@ -15,16 +15,19 @@ extern int global_maxClients;
 extern gclient_t *global_clients;
 extern usercmd_t *thinkCmd;
 
-// global functions
-extern char global_gameDirName[];
-void debugLog(const char *msg, ...);
+void Misc_javaInit();
+#define CHECK_EXCEPTION() checkException(__FILE__, __LINE__)
+int checkException(char *filename, int linenum);
+void enableSecurity(int level);
+jobject newPMoveResults(pmove_t pm);
+jobject newTraceResults(trace_t trace);
+jobject newJavaVec3(vec3_t *v);
 
 void CVar_javaInit();
 void CVar_javaFinalize();
 
 void Engine_javaInit();
 void Engine_javaFinalize();
-jobject newTraceResults(trace_t trace);
 
 void Entity_javaInit();
 void Entity_arrayInit();
@@ -43,5 +46,8 @@ jobject Player_new(int index);
 void Game_gameInit();
 void Game_javaInit();
 void Game_javaFinalize();
+
+void ConsoleOutputStream_javaInit();
+void ConsoleOutputStream_javaFinalize();
 
 #endif

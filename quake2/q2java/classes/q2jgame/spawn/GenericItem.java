@@ -1,18 +1,49 @@
 
-package q2jgame;
+package q2jgame.spawn;
 
 import q2java.*;
+import q2jgame.*;
 
-public class GenericItem extends GameEntity
+abstract class GenericItem extends q2jgame.GameEntity
 	{
-	public int fPickupSoundIndex;
+	private int fPickupSoundIndex;
+	private float fRespawnTime;
 	
-public GenericItem(String[] spawnArgs) throws GameException
+/**
+ * This method was created by a SmartGuide.
+ */
+public GenericItem (String[] spawnArgs) throws GameException
+	{
+	this(spawnArgs, "items/pkup.wav");
+	}
+public GenericItem(String[] spawnArgs, String pickupSound) throws GameException
 	{
 	super(spawnArgs);
 	setRenderFX(RF_GLOW); // all items glow
 	setSolid(SOLID_TRIGGER);
-	fPickupSoundIndex = Engine.soundIndex("items/pkup.wav");
+	fPickupSoundIndex = Engine.soundIndex(pickupSound);
+	}
+/**
+ * This method was created by a SmartGuide.
+ */
+public void runFrame() 
+	{
+	if ((fRespawnTime > 0) && (Game.fGameTime > fRespawnTime))
+		{
+		setSVFlags(getSVFlags() & ~SVF_NOCLIENT);
+		setSolid(SOLID_TRIGGER);
+		setEvent(EV_ITEM_RESPAWN);
+		linkEntity();
+		fRespawnTime = 0;
+		}
+	}
+/**
+ * This method was created by a SmartGuide.
+ * @param delay float
+ */
+public void setRespawn(float delay) 
+	{
+	fRespawnTime = (float)(Game.fGameTime + delay);
 	}
 /**
  * This method was created by a SmartGuide.
@@ -20,6 +51,12 @@ public GenericItem(String[] spawnArgs) throws GameException
  */
 public void touch(GenericCharacter mob) 
 	{
+	// play the pickup sound
 	sound(CHAN_ITEM, fPickupSoundIndex, 1, ATTN_NORM, 0);
+
+	// make the item disappear
+	setSolid(SOLID_NOT);
+	setSVFlags(SVF_NOCLIENT);
+	linkEntity();
 	}
 }

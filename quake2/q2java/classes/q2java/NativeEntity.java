@@ -100,7 +100,7 @@ public abstract class NativeEntity
 	public final static int SOLID_TRIGGER		= 1;		// only touch when inside, after moving
 	public final static int SOLID_BBOX			= 2;		// touch on edge
 	public final static int SOLID_BSP			= 3;		// bsp clip, touch on edge
-	
+		
 	// setStat() field indexes
 	public final static int STAT_HEALTH_ICON		= 0;
 	public final static int STAT_HEALTH			= 1;
@@ -120,6 +120,10 @@ public abstract class NativeEntity
 	public final static int STAT_FLASHES			= 15; // cleared each frame, 1 = health, 2 = armor
 	public final static int MAX_STATS			= 32;
 
+	// constants for setSVFlags()
+	public final static int SVF_NOCLIENT			= 0x00000001;	// don't send entity to clients, even if it has effects
+	public final static int SVF_DEADMONSTER		= 0x00000002;	// treat as CONTENTS_DEADMONSTER for collision
+	public final static int SVF_MONSTER			= 0x00000004;	// treat as CONTENTS_MONSTER for collision	
 
 
 	//
@@ -239,7 +243,6 @@ private native static void cprint0(int index, int printlevel, String msg);
 
 public static Enumeration enumerateEntities() 
 	{
-	Engine.dprint("NativeEntity.enumerateEntities() fNumEntities = " + fNumEntities);
 	return new EntityEnumeration();
 	}
 public static Enumeration enumerateEntities(String targetClassName) 
@@ -248,8 +251,6 @@ public static Enumeration enumerateEntities(String targetClassName)
 	}
 public static Enumeration enumeratePlayers() 
 	{
-	Engine.dprint("NativeEntity.enumeratePlayers() fMaxPlayers = " + fMaxPlayers);
-	
 	return new PlayerEnumeration();
 	}
 static NativeEntity findNext(NativeEntity start, Class targetClass)
@@ -353,6 +354,14 @@ public NativeEntity getOwner()
 public int getPlayerNum() 
 	{
 	return getEntityIndex() - 1;
+	}
+public Vec3 getSize()
+	{
+	return getVec3(fEntityIndex, VEC3_SIZE);
+	}
+public int getSVFlags()
+	{
+	return getInt(fEntityIndex, INT_SVFLAGS);
 	}
 
 private native static Vec3 getVec3(int index, int fieldNum);

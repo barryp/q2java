@@ -10,6 +10,7 @@ import q2java.*;
  
 public class BlasterBolt extends GameEntity 
 	{
+	private float fExpires;	
 	
 /**
  * BlasterBolt constructor comment.
@@ -28,7 +29,7 @@ public BlasterBolt(GameEntity owner, Vec3 start, Vec3 dir, int damage, int speed
 	setModelIndex(Engine.modelIndex("models/objects/laser/tris.md2"));
 	setSound(Engine.soundIndex("misc/lasfly.wav"));
 	setOwner(owner);
-	fThinkTime = (float)Game.fGameTime + 2;
+	fExpires = (float)Game.fGameTime + 2; // go away after 2 seconds
 //	bolt->think = G_FreeEdict;
 //	bolt->dmg = damage;
 	linkEntity();
@@ -49,7 +50,7 @@ public BlasterBolt(GameEntity owner, Vec3 start, Vec3 dir, int damage, int speed
  */
 public void runFrame() 
 	{
-	if (Game.fGameTime >= fThinkTime)
+	if (Game.fGameTime >= fExpires)
 		{
 		freeEntity();
 		return;

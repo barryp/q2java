@@ -1,8 +1,9 @@
 
-package q2jgame;
+package q2jgame.spawn;
 
 import java.util.Enumeration;
 import q2java.*;
+import q2jgame.*;
 
 public class func_plat extends GameEntity
 	{
