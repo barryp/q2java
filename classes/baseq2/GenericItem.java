@@ -120,7 +120,7 @@ public void touch(Player p)
 
 	// make the item disappear
 	fEntity.setSolid(NativeEntity.SOLID_NOT);
-	fEntity.setSVFlags(NativeEntity.SVF_NOCLIENT);
+	fEntity.setSVFlags(fEntity.getSVFlags() | NativeEntity.SVF_NOCLIENT);
 	fEntity.linkEntity();
 	}
 }

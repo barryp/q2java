@@ -20,12 +20,11 @@ import baseq2.spawn.*;
 public class Player extends GameObject implements FrameListener, PlayerListener, CrossLevel
 	{	
 	// ---- Instance fields ------------------------
-//	protected String fName;
-	protected int fScore;
+	private int fScore;
 	protected float fStartTime;
 
 	private int fHealth;
-	protected int fHealthMax;
+	private int fHealthMax;
 	protected boolean fIsFemale;
 	protected boolean fInIntermission;
 	
@@ -39,8 +38,8 @@ public class Player extends GameObject implements FrameListener, PlayerListener,
 	protected Hashtable fAmmoBelt;
 
 	// Armor 
-	protected int fArmorCount;
-	protected int fArmorMaxCount;
+	private int fArmorCount;
+	private int fArmorMaxCount;
 	/** what fraction of normal damage the player's armor absorbs. */
 	protected float fArmorProtection;
 	/** fraction of energy damage the player's armor absorbs. */
@@ -336,13 +335,16 @@ public Player(NativeEntity ent, boolean loadgame) throws GameException
 	Game.addFrameListener(this, Game.FRAME_BEGINNING + Game.FRAME_END, 0, 0);
 	}
 /**
- * This method was created by a SmartGuide.
- * @param ammoType java.lang.String
- * @param count int
- * @param icon int
+ * Add ammo to the player's inventory.
+ * @param ammoType Name of the kind of ammo we're adding, do nothing if this is null.
+ * @param count amount of ammo being offered to the player
+ * @return boolean true if some or all of the ammo was taken.
  */
 public boolean addAmmo(String ammoType, int count) 
 	{
+	if (ammoType == null)
+		return false;
+		
 	AmmoPack pack = (AmmoPack) fAmmoBelt.get(ammoType);
 	if (pack == null)
 		fAmmoBelt.put(ammoType, new AmmoPack(Integer.MAX_VALUE, null));
@@ -356,7 +358,7 @@ public boolean addAmmo(String ammoType, int count)
 			return false;
 		
 		if (pack == fAmmo)
-			alterAmmoCount(count);  // will also update HUD
+			setAmmoCount(count, false);  // will also update HUD
 		else			
 			pack.fAmount += count;		
 		}
@@ -448,8 +450,9 @@ public void addBlend(Color4f color)
  * Add a class of weapon to a player's inventory.
  * @return boolean true if the player took the weapon (or its ammo)
  * @param weaponClass class of the weapon.
+ * @param allowSwitch Have the player switch weapons if they're currently using just a blaster.
  */
-public boolean addWeapon(Class weaponClass) 
+public boolean addWeapon(Class weaponClass, boolean allowSwitch) 
 	{
 	GenericWeapon w;
 	try
@@ -478,10 +481,9 @@ public boolean addWeapon(Class weaponClass)
 		if (!fWeaponOrder.contains(w.getWeaponName()))
 			fWeaponOrder.addElement(w.getWeaponName());
 		w.setOwner(this);
-		fEntity.cprint(Engine.PRINT_HIGH, "You picked up a " + w.getWeaponName() + "\n");
 			
 		// switch weapons if we're currently using the blaster
-		if (fWeapon == getInventory("blaster"))
+		if (allowSwitch && (fWeapon == getInventory("blaster")))
 			{
 			fNextWeapon = w;
 			fWeapon.deactivate();
@@ -494,32 +496,21 @@ public boolean addWeapon(Class weaponClass)
 /**
  * Add a class of weapon to a player's inventory.
  * @param weaponClassSuffix class of the weapon, either a whole classname or a suffix.
+ * @param allowSwitch Have the player switch weapons if they're currently using just a blaster.
  * @return boolean true if the player took the weapon (or its ammo)
  */
-public boolean addWeapon(String weaponClassSuffix) 
+public boolean addWeapon(String weaponClassSuffix, boolean allowSwitch) 
 	{
 	try
 		{
 		Class cls = Game.lookupClass(weaponClassSuffix);
-		return addWeapon(cls);
+		return addWeapon(cls, allowSwitch);
 		}
 	catch (Exception e)
 		{
 		e.printStackTrace();		
 		return false;
 		}		
-	}
-/**
- * This method was created by a SmartGuide.
- * @param amount int
- */
-public void alterAmmoCount(int amount) 
-	{
-	if (fAmmo != null)
-		{
-		fAmmo.fAmount += amount;
-		fEntity.setPlayerStat(NativeEntity.STAT_AMMO, (short) fAmmo.fAmount);
-		}
 	}
 /**
  * Change user settings based on what was in userinfo string.
@@ -987,17 +978,16 @@ public void cmd_giveall(String[] args)
 		return;
 		}
 		
-	addWeapon(".spawn.ammo_grenades");		
-	addWeapon(".spawn.weapon_shotgun");
-	addWeapon(".spawn.weapon_supershotgun");
-	addWeapon(".spawn.weapon_machinegun");
-	addWeapon(".spawn.weapon_chaingun");
-	addWeapon(".spawn.weapon_grenadelauncher");
-	addWeapon(".spawn.weapon_rocketlauncher");
-	addWeapon(".spawn.weapon_hyperblaster");
-	addWeapon(".spawn.weapon_railgun");
-	addWeapon(".spawn.weapon_bfg");
-	use("blaster");
+	addWeapon(".spawn.ammo_grenades", false);		
+	addWeapon(".spawn.weapon_shotgun", false);
+	addWeapon(".spawn.weapon_supershotgun", false);
+	addWeapon(".spawn.weapon_machinegun", false);
+	addWeapon(".spawn.weapon_chaingun", false);
+	addWeapon(".spawn.weapon_grenadelauncher", false);
+	addWeapon(".spawn.weapon_rocketlauncher", false);
+	addWeapon(".spawn.weapon_hyperblaster", false);
+	addWeapon(".spawn.weapon_railgun", false);
+	addWeapon(".spawn.weapon_bfg", false);
 	}
 /**
  * Draw the help computer.
@@ -1337,8 +1327,12 @@ public void damage(GameObject inflictor, GameObject attacker,
 	int takeDamage = 0;		// for calculating blends later (TSW)
 	
 	// don't take any more damage if already dead
+	// but spray a little blood for kicks
 	if (fIsDead)
+		{
+		spawnDamage(Engine.TE_BLOOD, point, normal, damage);
 		return;
+		}
 
 	if ((dflags & DAMAGE_NO_KNOCKBACK) == 0)
 		{
@@ -1558,9 +1552,17 @@ protected void die(GameObject inflictor, GameObject attacker, int damage, Point3
 	obituary(inflictor, attacker);
 		
 	fEntity.setModelIndex2(0); // remove linked weapon model
+	fEntity.setSound(0);
+	
+	Point3f maxs = fEntity.getMaxs();
+	fEntity.setMaxs(maxs.x, maxs.y, maxs.z - 8);
+	
+//	fEntity.setSolid(NativeEntity.SOLID_NOT);
+	fEntity.setSVFlags(fEntity.getSVFlags() | NativeEntity.SVF_DEADMONSTER);
+	
 	fEntity.setPlayerGunIndex(0);
 	fWeapon = null;
-	fEntity.setSolid(NativeEntity.SOLID_NOT);
+	
 	fEntity.setPlayerPMType(NativeEntity.PM_DEAD);
 	fKillerYaw = calcAttackerYaw(inflictor, attacker);
 	writeDeathmatchScoreboardMessage(attacker);
@@ -1585,6 +1587,8 @@ protected void die(GameObject inflictor, GameObject attacker, int damage, Point3
 		setAnimation(ANIMATE_DEATH);
 		fEntity.sound(NativeEntity.CHAN_VOICE, getSexedSoundIndex("death"+((MiscUtil.randomInt() & 0x03) + 1)), 1, NativeEntity.ATTN_NORM, 0);
 		}
+		
+	fEntity.linkEntity();
 	}
 /**
  * Called for each player after all the entities have 
@@ -1683,20 +1687,10 @@ protected void fallingDamage()
 	// land hard enough to damage and make more noise
 	if (fHealth > 0)
 		{
-		if (fIsFemale)
-			{
-			if (delta >= 55)
-				fEntity.setEvent(NativeEntity.EV_FEMALE_FALLFAR);
-			else
-				fEntity.setEvent(NativeEntity.EV_FEMALE_FALL);
-			}
+		if (delta >= 55)
+			fEntity.setEvent(NativeEntity.EV_FALLFAR);
 		else
-			{
-			if (delta >= 55)
-				fEntity.setEvent(NativeEntity.EV_MALE_FALLFAR);
-			else
-				fEntity.setEvent(NativeEntity.EV_MALE_FALL);
-			}
+			fEntity.setEvent(NativeEntity.EV_FALL);
 		}
 
 //	ent->pain_debounce_time = level.time;	// no normal pain sound
@@ -1725,6 +1719,20 @@ public int getAmmoCount(String ammoName)
 	else
 		return p.fAmount;				
 	}
+/** 
+ * Get the Player's amount of Armor
+ */
+public int getArmorCount()
+	{
+	return fArmorCount;
+	}
+/**
+ * Get the Player's max armor capacity
+ */
+public int getArmorMaxCount()
+	{
+	return fArmorMaxCount;
+	}
 /**
  * Returns the current damage blend color for this frame.
  * @return float
@@ -1735,10 +1743,8 @@ public Color4f getDamageBlend()
 	}
 /**
  * How much damage should be scaled for this player. 
- * For example, normally this method would return 1.0, but if a
- * Quad was being used, it would return 4.0.
  *
- * @return float
+ * @return Damage multiplier - normally 1.0, but something like a quad might cause this to be 4.0
  */
 public float getDamageMultiplier() 
 	{
@@ -1753,12 +1759,20 @@ public float getFrameAlpha()
 	return fFrameAlpha;
 	}
 /**
- * This method was created by a SmartGuide.
+ * Get the player's health.
  * @return int
  */
 public int getHealth() 
 	{
 	return fHealth;
+	}
+/**
+ * Get the upper limit of the player's health range.
+ * @return int
+ */
+public int getHealthMax() 
+	{
+	return fHealthMax;
 	}
 /**
  * This method was created by a SmartGuide.
@@ -1882,6 +1896,13 @@ public boolean isCarrying(String itemName)
 	{
 	return (fInventory.containsKey(itemName));
 	}
+/** 
+ * Is this guy really a chick?
+ */
+public boolean isFemale()
+	{
+	return fIsFemale;
+	}
 /**
  * This method was created by a SmartGuide.
  * @return q2jgame.weapon.PlayerWeapon
@@ -1978,15 +1999,8 @@ public void playerBegin(boolean loadgame)
 	
 	clearSettings();
 	spawn();	
-	
-	// send effect
-	Engine.writeByte(Engine.SVC_MUZZLEFLASH);
-	Engine.writeShort(fEntity.getEntityIndex());
-	Engine.writeByte(Engine.MZ_LOGIN);
-	Engine.multicast(fEntity.getOrigin(), Engine.MULTICAST_PVS);
+	welcome();
 
-	Game.bprint(Engine.PRINT_HIGH, getName() + " entered the game\n");
-	fEntity.centerprint(WelcomeMessage.getMessage());
 	// make sure all view stuff is valid
 	endServerFrame();	
 	}
@@ -2160,7 +2174,7 @@ public void putInventory(String itemName, Object ent)
 protected void respawn()
 	{
 	// leave a corpse behind
-//	Game.copyToBodyQueue(this);
+	GameModule.copyCorpse(fEntity);
 	
 	clearSettings();
 	
@@ -2188,6 +2202,23 @@ public void runFrame(int phase)
 		case Game.FRAME_END:
 			endServerFrame();
 			break;
+		}
+	}
+/**
+ * Set the ammo count, or alter it by some amount.
+ * @param amount int
+ * @param isAbsolute is the amount an absolute value, or a relative one?
+ */
+public void setAmmoCount(int amount, boolean isAbsolute) 
+	{
+	if (fAmmo != null)
+		{
+		if (isAbsolute)
+			fAmmo.fAmount = amount;
+		else
+			fAmmo.fAmount += amount;
+			
+		fEntity.setPlayerStat(NativeEntity.STAT_AMMO, (short) fAmmo.fAmount);
 		}
 	}
 /**
@@ -2265,6 +2296,38 @@ public void setAnimation(int animation, boolean ignorePriority, int frameOffset)
 			}
 		}
 	}
+/** 
+ * Set the player's armor.  It can't go below zero or above the max armor count.
+ * @param amount amount of armor
+ */
+public void setArmorCount(int amount)
+	{
+	setArmorCount(amount, true);
+	}
+/** 
+ * Set the player's armor.  It can't go below zero or above the max armor count.
+ * @param amount amount of armor
+ * @param isAbsolute Whether the amount is an absolute value, or relative to the current armor.
+ */
+public void setArmorCount(int amount, boolean isAbsolute)
+	{
+	int newValue;
+	
+	if (isAbsolute)
+		newValue = amount;
+	else
+		newValue = fArmorCount + amount;
+		
+	fArmorCount = Math.max( 0, Math.min(newValue, fArmorMaxCount) );
+	fEntity.setPlayerStat(NativeEntity.STAT_ARMOR, (short)fArmorCount);
+	}
+/**
+ * Set the Player's max possible armor amount
+ */
+public void setArmorMaxCount( int maxCount )
+	{
+	fArmorMaxCount = maxCount;
+	}
 /**
  * Set the damage color blend for this frame.
  * @param x	Red value of damage color.
@@ -2281,9 +2344,8 @@ public void setDamageBlend(float x, float y, float z, float w)
 	}
 /**
  * Set how much damage should be scaled for this player. 
- * For example, a quad might set this value to 4.0.
  *
- * @return float
+ * @param f Damage multiplier..for example a quad would use the value 4.0
  */
 public void setDamageMultiplier(float f) 
 	{
@@ -2316,12 +2378,38 @@ public void setHealth(int val)
 	fEntity.setPlayerStat(NativeEntity.STAT_HEALTH, (short)fHealth);
 	}
 /**
+ * Set the Player's max health amount
+ */
+public void setHealthMax(int maxCount)
+	{
+	fHealthMax = maxCount;
+	}
+/**
  * Sets this player's mass. Used in determining physics, knockback, etc.
  * @param	mass	The mass to set. Normal player mass is 200.
  */
 public void setMass(int mass)
 	{
 	fMass = mass;
+	}
+/**
+ * Set the player's score.
+ */
+public void setScore(int amount)
+	{
+	setScore(amount, true);
+	}
+/**
+ * Set the player's score.
+ */
+public void setScore(int amount, boolean isAbsolute)
+	{
+	if (isAbsolute)
+		fScore = amount;
+	else
+		fScore += amount;
+		
+	fEntity.setPlayerStat( NativeEntity.STAT_FRAGS, (short)fScore );
 	}
 /**
  * Put a value into the userinfo hashtable.
@@ -2393,12 +2481,12 @@ protected void spawn()
 		}
 	
 	fEntity.setSolid(NativeEntity.SOLID_BBOX);
+	fEntity.setSVFlags(fEntity.getSVFlags() & ~NativeEntity.SVF_DEADMONSTER);
 	fEntity.setPlayerPMType(NativeEntity.PM_NORMAL);	
 	fEntity.setClipmask(Engine.MASK_PLAYERSOLID);	
 	fEntity.setEffects(0);
 	fEntity.setSkinNum(fEntity.getPlayerNum());
 	fEntity.setModelIndex(255);	// will use the skin specified model
-//	fEntity.setModelIndex2(255);	// custom gun model	
 	showVWep();
 	fEntity.setMins(-16, -16, 24);
 	fEntity.setMaxs(16, 16, 32);
@@ -2524,6 +2612,20 @@ public void use(String itemName)
 		}
 			
 //	ent.use(this);	---FIXME--
+	}
+/**
+ * Welcome the player to the game.
+ */
+public void welcome() 
+	{
+	// send effect
+	Engine.writeByte(Engine.SVC_MUZZLEFLASH);
+	Engine.writeShort(fEntity.getEntityIndex());
+	Engine.writeByte(Engine.MZ_LOGIN);
+	Engine.multicast(fEntity.getOrigin(), Engine.MULTICAST_PVS);
+
+	Game.bprint(Engine.PRINT_HIGH, getName() + " entered the game\n");
+	fEntity.centerprint(WelcomeMessage.getMessage());
 	}
 /**
  * This method was created by a SmartGuide.

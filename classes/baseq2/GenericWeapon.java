@@ -184,8 +184,10 @@ public final void setWeaponFrame(int newFrame)
  */
 public void touch(Player p) 
 	{
-	if (p.addWeapon(getClass()))
+	if (p.addWeapon(getClass(), true))
 		{
+		p.fEntity.cprint(Engine.PRINT_HIGH, "You picked up a " + getWeaponName() + "\n");
+		
 		super.touch(p);
 	
 		// bring the weapon back in 30 seconds

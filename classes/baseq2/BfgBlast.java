@@ -101,8 +101,11 @@ protected void explode()
 				//if (!CanDamage (ent, self->owner))
 				//	continue;
 
-				v.add( fEntity.getMins(), fEntity.getMaxs() );
-				v.scaleAdd( 0.5F, fEntity.getOrigin() );
+				// these next two lines were goofed in that they were
+				// using "fEntity" instead of "victim.fEntity" (BBP)
+				v.add(victim.fEntity.getMins(), victim.fEntity.getMaxs() );
+				v.scaleAdd( 0.5F, victim.fEntity.getOrigin() );
+
 				v.sub( fEntity.getOrigin(), v );
 				float dist   = v.length();
 				float points = fRadiusDamage * (1F - (float)Math.sqrt(dist/fDamageRadius));
@@ -115,7 +118,7 @@ protected void explode()
 				Engine.writeByte(Engine.TE_BFG_EXPLOSION);
 				Engine.writePosition( fEntity.getOrigin() );
 				Engine.multicast( fEntity.getOrigin(), Engine.MULTICAST_PHS);
-
+				
 				victim.damage( this, fOwner, fEntity.getVelocity(), ent.getOrigin(), VECTOR_ORIGIN, (int)points, 0, DAMAGE_ENERGY, MOD_BFG_EFFECT);
 				}
 			}

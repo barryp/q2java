@@ -24,6 +24,9 @@ public class GameModule extends q2jgame.GameModule implements GameStatusListener
 	// handy reference to the world
 	public static GameObject gWorld;
 		
+	// keep some bodies lying around		
+	protected static CorpseQueue gCorpseQueue;
+						
 	// various CVars
 	public static CVar gBobUp;	
 	public static CVar gRollAngle;
@@ -150,12 +153,20 @@ public static void checkInhibited(int spawnFlags) throws InhibitedException
 		}
 	}
 /**
+ * Make a copy of an entity to keep around for a while.
+ * @param ent NativeEntity
+ */
+public static void copyCorpse(NativeEntity ent) 
+	{
+	gCorpseQueue.copyCorpse(ent);
+	}
+/**
  * Describe this Game.
  * @return java.lang.String
  */
 public static String getVersion() 
 	{
-	return "Q2Java Base Game, v0.5.1";
+	return "Q2Java Base Game, v0.5.2";
 	}	
 /**
  * Check whether or not the Cheating option is on.
@@ -287,6 +298,8 @@ public void startLevel(String mapname, String entString, String spawnPoint)
 	gCurrentMap = mapname;
 	gNextMap = mapname; // in case there isn't a target_changelevel entity in the entString
 	gIsCheating = (gCheats.getFloat() == 1.0);
+
+	gCorpseQueue = new CorpseQueue();
 
 	//
 	// cache some sounds
@@ -455,7 +468,7 @@ public void svcmd_scores(String[] args)
 		{
 		Player p = (Player) ((NativeEntity)enum.nextElement()).getPlayerListener();
 		float playerD[] = new float[7];
-		playerD[0] = p.fScore; // score
+		playerD[0] = p.getScore(); // score
 		playerD[1] = p.fEntity.getPlayerPing(); // ping
 		playerD[2] = ((Game.getGameTime() - p.fStartTime) / 60); //time
 		playerD[3] = playerD[0] / playerD[2]; // rate

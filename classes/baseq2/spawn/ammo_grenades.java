@@ -74,7 +74,7 @@ public void fire()
 	incWeaponFrame();
 	
 //	PlayerNoise(ent, start, PNOISE_WEAPON);
-	fPlayer.alterAmmoCount(-1);
+	fPlayer.setAmmoCount(-1, false);
 	fTimer = Game.getGameTime() + 1;
 	
 	fPlayer.setAnimation(Player.ANIMATE_VWEP_THROW);

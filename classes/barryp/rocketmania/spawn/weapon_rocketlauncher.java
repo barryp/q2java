@@ -75,7 +75,7 @@ public void fire()
 	incWeaponFrame();
 	
 //	PlayerNoise(ent, start, PNOISE_WEAPON);
-	fPlayer.alterAmmoCount(-1);
+	fPlayer.setAmmoCount(-1, false);
 	}
 /**
  * Fill in the info specific to this type of weapon.
