@@ -1,7 +1,7 @@
-package baseq2;
+package q2java.baseq2;
 
 import q2java.*;
-import q2jgame.*;
+import q2java.core.*;
 
 /**
  * Superclass for all health entities lying around in the world.
@@ -22,7 +22,7 @@ public GenericHealth(String[] spawnArgs) throws GameException
 	{
 	super(spawnArgs);
 	
-	if (GameModule.isDMFlagSet(GameModule.DF_NO_HEALTH))
+	if (BaseQ2.isDMFlagSet(BaseQ2.DF_NO_HEALTH))
 		{
 		dispose();
 		throw new InhibitedException("health items inhibited");

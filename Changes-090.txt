@@ -1,0 +1,259 @@
+CHANGES from v0.8.0 to v0.9.0
+
+---------------------------------------------------------------------------
+This file will just list changes in the core packages 
+Add-ons will have to list their own changes.
+---------------------------------------------------------------------------
+
+DLL CHANGES ===============================================================
+
+    Minor changes to work with new package naming scheme described below.
+    
+JAVA CHANGES ==============================================================
+
+    Normally I list changes on a class-by-class basis, but this time there
+    were -so- many changes that I'll do more of a broad overview.
+
+
+    PACKAGE NAMES
+    -------------
+    
+    One big change in this release is reorganization of Java package
+    names.  
+    
+        (old names)     ---> (new names)
+        -------------------------------------
+        baseq2.*        ---> q2java.baseq2.*;
+        q2jgame.*       ---> q2java.core.*;
+        menno.ctf.*     ---> q2java.ctf.*;
+        menno.ctftech.* ---> q2java.ctf.*;
+        
+        (this next package was split three ways)
+        
+        q2java.gui.*    ---> q2java.gui.*;        (GUI classes that only require the q2java package)
+                         |-> q2java.core.gui.*;   (GUI classes that require some features in the q2java.core package)
+                         |-> q2java.baseq2.gui.*; (GUI classes that require the q2java.baseq2 package)
+
+    Just about every class had to change, especially in "import" statements
+    to reflect the new names - I won't even try to list them all.
+
+
+    
+    NEW FEATURES
+    ------------
+    
+    Another big change is Pete Donald's fleshing out of the event-delegation
+    model.  This brought another whole slew of changes I also won't try
+    to list individually, but I should mention that a bunch of new packages
+    came with his work:
+    
+        q2java.core.event.*;
+        q2java.baseq2.event.*;
+
+    A few classes were renamed, and a whole slew of new add/remove methods
+    were added to classes such as q2java.baseq2.Player.  Examples of what
+    this new stuff allows can be found in the "donaldp.*" packages - including
+    gamelets for gibstats, ip/name banning, and preventing players from 
+    changing skins.
+        
+    Also, he did some stuff with scoreboards and changable player models,
+    which are in these new packages:
+    
+        q2java.baseq2.rule.*;
+        q2java.baseq2.model.*;        
+
+
+    GAMELETS 
+    --------
+       
+    The whole scheme of "GameModules" has been reworked - now they're called
+    "Gamelets" (a name suggested by Pete), and they're quite a bit improved
+    over the old GameModules.
+    
+    First, there is no longer the requirement that game modules be implemented
+    in a class called "GameModule" - they can be called whatever you want.
+    For example: I've renamed the old "baseq2.GameModule" to be 
+    "q2java.baseq2.BaseQ2" and "menno.ctf.GameModule" is now "q2java.ctf.CTF"
+    
+    One benefit to this is that you can now have multiple gamelets in a 
+    single Java package - and I made use of this in putting the CTF and 
+    CTFTech gamelets in the "q2java.ctf" package.  In the old scheme it
+    was required that they be in separate packages which was a bit awkward.
+    
+    Another benefit is that it makes the code more readable - for example: 
+    if you're looking at code in CTF and see something referring to 
+    "GameModule" - you won't have to wonder if it meant the "baseq2.GameModule"
+    or the "menno.ctf.GameModule"
+    
+    The drawback is that when loading a gamelet, you now have to specify the
+    full classname, instead of just a package name.  It's a bit more typing,
+    but it's more similar to what you have to do to put an "Applet" in a 
+    webpage or a "Servlet" on a web server  - so it shouldn't be too 
+    unfamiliar to Java users.
+    
+
+    LOADING GAMELETS
+    ----------------
+    
+    There were and still are three ways to load game code:
+    
+    1)  On the command line - although the CVar is now named "gamelets"
+        instead of "q2jgame_modules", and the order that modules are
+        specified has been reversed (to be consistent with the other
+        methods).  So if under the old Q2Java you said
+        something like: 
+        
+            +set q2jgame_modules menno.ctf[ctf]+baseq2[baseq2]
+            
+        the new equivalent would be:
+        
+            +set gamelets q2java.baseq2.BaseQ2[baseq2]+q2java.ctf.CTF[ctf]
+            
+        but it can actually be even shorter now:
+        
+            +set gamelets q2java.ctf.CTF[ctf]
+            
+        (see the section on Gamelet Dependencies below)
+        
+        
+    2) In a properties file, although the key has changed from "q2java.module"
+       to "q2java.gamelet".  For example:
+       
+            q2java.gamelet.1=q2java.baseq2.BaseQ2 baseq2
+            q2java.gamelet.2=barryp.telnet.GameModule telnet
+            
+    3) As an svcmd on the command line - although "addmodule" is now called
+       "addgamelet", "removemodule" is replaced with "removegamelet", and
+       "addgameletlater" and "removegameletlater" are obsolete (see below)
+       
+    
+    GAMELET DEPENDENCIES
+    --------------------
+    
+    Gamelets are smarter in that they can specify if they depend on other
+    gamelets being loaded - which means you can load a gamelet like CTF
+    and have BaseQ2 automatically loaded - making things easier for server
+    admins.
+    
+    Another thing they can do is specify if they require a level change 
+    (with a "isLevelChangeRequired()" method) before being 
+    activated/deactivated - making those horrible svcmds 
+    "addmodulelater" and "removemodulelater" no longer necessary.  
+    
+    CTF makes use of this - so you can just type
+    
+        sv addgamelet q2java.ctf.CTF
+        
+    at the command line - and the game is smart enough to wait until a 
+    new map starts before it takes over.  Same thing happens when removing
+    a gamelet such as CTF.
+    
+    GAMELETS and PLAYERS
+    --------------------
+    
+    Gamelets have the ability to specify a class that should handle Players,
+    which removes another annoying restriction the old code had that player
+    classes had to be named "Player".  So now for example, the CTF player class
+    is now named "CTFPlayer", and the game finds out about this by checking
+    the CTF gamelets "getPlayerClass()" method.  This is another thing that's
+    going to make the code much more readable - I don't know how many times
+    I was working in CTF and confused the baseq2 "Player" with the ctf "Player".
+    
+    Since gamelets specify what player class if any they want to use - it's
+    now possible for the core game code to smoothly handle switching player
+    classes, such as between deathmatch, CTF, Paranoia, and BountyHunters.
+    
+    (In the older Q2Javas there was some kludgy code in the CTF GameModule
+    that allowed switching only between CTF and deathmatch.  Other mods
+    such as Paranoia and BountyHunters were S.O.L.)
+    
+    
+    RECYCLING OBJECTS
+    -----------------
+    
+    Based on seeing some stuff Pete was trying to do in his event code, and 
+    some discussions with Bernd about pooling objects, I figured it might not
+    be such a bad idea to have a facility for recycling some classes of 
+    objects, to cut back a bit on objects being constantly constructed and 
+    discarded.  
+    
+    I didn't want to use this too much - since it makes the code
+    a bit more awkward to read and maintain - but in a few key places such as
+    loops and/or frequently called methods it should cut down on the amount
+    of object creation (which I guess is expensive) and garbage collecting.
+        
+    A new class named "q2java.Recycler" does most of the work - basically 
+    you can dump any object into that class by calling 
+    "Recycler.put(Object obj)".  It'll sort the object by class and stick it
+    in a small recycling bin (if there are too many of a given type already in
+    the bin, it'll discard as necessary)
+    
+    When you need an object, you can call "Recycler.get(Class cls)" and it'll
+    pull an object of the specified class out of it's bins (creating a new one
+    if necessary).  
+    
+    Another helper class named "q2java.Q2Recycler" works with the "Recycler"
+    class to provide faster access to specific recycling bins, namely ones for
+    StringBuffer, Vector, Vector3f, Angle3f, and Point3f classes.  
+    
+    These methods are unsynchronized for speed reasons, so they should only be 
+    called from the main game thread.
+    
+    Like I mentioned above, I didn't want to use this recycling stuff 
+    -everywhere- because the code gets ugly - I'd much rather create objects
+    and let the Java GC clean things up - but using it carefully and sparingly 
+    in a few key places will probably pay off speedwise.
+    
+    
+    
+    SEPARATE CLASSES FOR SPAWINING MAP ENTITIES
+    -------------------------------------------
+    
+    Compared to the other stuff, this is fairly minor, but the code that handles
+    spawning entities when a new map starts has been split off into a separate 
+    class that can be more easily replaced.  There is an interface named 
+    "SpawnManager" that defines what this class must do, and an implementation 
+    named "DefaultSpawnManager".  The q2java.core.Game class has 
+    get/setSpawnManager() methods to allow other SpawnManager implementations 
+    to be installed.  
+    
+    One example is the barryp.debugspawn.DebugSpawn gamelet - which installs a 
+    new spawn manager when loaded that prints a log of spawned entities in the
+    sandbox directory (the old Q2Java did this by default).  Another example
+    of when you might want to install a different spawn manager would be for
+    getting entity information from an external file, rather than using what's
+    stored inside the maps.
+    
+    OTHER MINOR CHANGES
+    -------------------
+    
+        q2java.NativeEntity - enumeratePlayers() renamed to 
+        enumeratePlayerEntities() - for clarity.
+    
+        q2java.baseq2.Player - enumeratePlayers() added for convenience. This
+        enumeration returns the actual player objects.  So old code like:
+        
+            Enumeration enum = NativeEntity.enumeratePlayers();
+            while (enum.hasMoreElements())
+                {
+                Player p = (Player) ((NativeEntity)enum.nextElement()).getReference();
+                ...
+                }
+               
+        which is always in danger of having a ClassCastException thrown, can
+        be replaced with the simpler and safer:
+        
+            Enumeration enum = Player.enumeratePlayers();
+            while (enum.hasMoreElements())
+                {
+                Player p = (Player) enum.nextElement();
+                ...
+                }
+        
+        which skips over any player entities that aren't associated with the
+        Player class.
+                
+        There were a fair number of other tweaks and fixes, but I can't 
+        remember them all, and I think I've listed the really noteworthy ones.
+        
+----------- End of List -------------------------------------------------------             

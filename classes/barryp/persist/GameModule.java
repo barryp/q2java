@@ -1,12 +1,12 @@
 package barryp.persist;
 
-import q2jgame.*;
+import q2java.core.*;
 
 /**
  * Simple module for persistance.
  * 
  */
-public class GameModule extends q2jgame.GameModule 
+public class GameModule extends q2java.core.Gamelet 
 	{
 	
 /**

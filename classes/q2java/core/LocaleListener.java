@@ -1,9 +1,10 @@
-package q2jgame;
+package q2java.core;
 
 import java.util.Locale;
 /**
  * Interface for classes that receive localized text messages.
- * 
+ *
+ * @author Barry Pederson
  */
 public interface LocaleListener 
 	{

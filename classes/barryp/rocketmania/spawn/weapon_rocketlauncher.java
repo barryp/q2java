@@ -3,15 +3,15 @@ package barryp.rocketmania.spawn;
 import javax.vecmath.*;
 
 import q2java.*;
-import q2jgame.*;
-import baseq2.*;
+import q2java.core.*;
+import q2java.baseq2.*;
 
 /**
  * This is a souped-up rocketlauncher that 
  * fires rockets that fly faster and do more damage
  */
 
-public class weapon_rocketlauncher extends baseq2.spawn.weapon_rocketlauncher
+public class weapon_rocketlauncher extends q2java.baseq2.spawn.weapon_rocketlauncher
 	{
 	
 /**
@@ -33,7 +33,7 @@ public void fire()
 	Vector3f	forward = new Vector3f();
 	Vector3f	right = new Vector3f();
 	Vector3f	offset;
-	int		damage = 150 + (int)(Game.randomFloat() * 20.0);
+	int		damage = 150 + (int)(GameUtil.randomFloat() * 20.0);
 	int		radiusDamage = 180;
 	float	damageRadius = 180;
 

@@ -1,9 +1,9 @@
-package baseq2;
+package q2java.baseq2;
 
 import javax.vecmath.*;
 
 import q2java.*;
-import q2jgame.*;
+import q2java.core.*;
 
 public abstract class GenericBlaster extends GenericWeapon
 	{

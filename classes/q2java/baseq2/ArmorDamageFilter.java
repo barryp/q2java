@@ -1,13 +1,15 @@
-package baseq2;
+package q2java.baseq2;
 
 import q2java.*;
+
+import q2java.baseq2.event.*;
 
 /**
  * Reduce damage based on armor the player is carrying.
  *
  * @author Barry Pederson
  */
-public class ArmorDamageFilter implements DamageFilter
+public class ArmorDamageFilter implements PlayerDamageListener
 	{
 	Player fOwner;
 	
@@ -77,40 +79,36 @@ protected boolean addArmor(GenericArmor armor)
 	// guess we don't need this armor
 	return false;		
 	}
-/**
- * Method to implement in order to filter a player's damage.
- * @param DamageObject - damage to be filtered.
- */
-public DamageObject filterDamage(DamageObject damage)
+public void damageOccured(PlayerDamageEvent damage)
 	{
+	int dflags = damage.getDamageFlags();
 	// decrease damage based on armor
-	if ((damage.fDFlags & DamageObject.DAMAGE_NO_ARMOR) != 0)
-		return damage;
+	if ((dflags & PlayerDamageEvent.DAMAGE_NO_ARMOR) != 0) return;
 		
 	int save; // the amount of damage our armor protects us from
-	if ((damage.fDFlags & DamageObject.DAMAGE_ENERGY) != 0)
+	if ((dflags & PlayerDamageEvent.DAMAGE_ENERGY) != 0)
 		{
-		save = (int) Math.ceil(damage.fAmount * fArmorEnergyProtection);
-		damage.fPowerArmorSave += save;
+		save = (int) Math.ceil(damage.getAmount() * fArmorEnergyProtection);
+		damage.setPowerArmorSave(damage.getPowerArmorSave() + save);
 		}
 	else
 		{
-		save = (int) Math.ceil(damage.fAmount * fArmorProtection);
-		damage.fArmorSave += save;
+		save = (int) Math.ceil(damage.getAmount() * fArmorProtection);
+		damage.setArmorSave(damage.getArmorSave() + save);
 		}
 			
 	save = Math.min(save, fArmorCount);
 		
 	// FIXME: Do we need to do any adjustments here for armorSave or
 	// powerArmorSave based on fArmorCount? (TSW)
-	damage.fTakeDamage += damage.fAmount;				// for blends (TSW)
+	damage.setTakeDamage( damage.getTakeDamage() + damage.getAmount() );				// for blends (TSW)
 
 	if (save > 0)
 		{
-		damage.fAmount -= save;
+		damage.setAmount( damage.getAmount() - save );
 		// Doesn't this mean that takeDamage ends up the same as amount? Can we just get rid of takeDamage? - BH
-		damage.fTakeDamage -= damage.fArmorSave;		// for blends (TSW)
-		damage.fTakeDamage -= damage.fPowerArmorSave;	// for blends (TSW)
+		damage.setTakeDamage( damage.getTakeDamage() - damage.getArmorSave() ); // for blends (TSW)
+		damage.setTakeDamage( damage.getTakeDamage() - damage.getPowerArmorSave() ); // for blends (TSW)
 		fArmorCount -= save;
 		fOwner.fEntity.setPlayerStat(NativeEntity.STAT_ARMOR, (short)fArmorCount);
 		if (fArmorCount == 0) // if armor is depleted we need to reset it
@@ -120,10 +118,11 @@ public DamageObject filterDamage(DamageObject damage)
 			fArmorMaxCount = 50;
 			fOwner.fEntity.setPlayerStat(NativeEntity.STAT_ARMOR_ICON, (short) 0);
 			}
-		fOwner.spawnDamage(Engine.TE_SPARKS, damage.fPoint, damage.fNormal, save);
+		fOwner.spawnDamage( Engine.TE_SPARKS, 
+				    damage.getDamagePoint(), 
+				    damage.getDamageNormal(),
+				    save);
 		}
-		
-	return damage;		
 	}
 /** 
  * Get the Player's amount of Armor

@@ -1,9 +1,9 @@
-package baseq2;
+package q2java.baseq2;
 
 import javax.vecmath.*;
 
 import q2java.*;
-import q2jgame.*;
+import q2java.core.*;
 
 /**
  * Superclass for all entities lying around 
@@ -72,10 +72,10 @@ public GenericItem(String[] spawnArgs) throws GameException
  * limit velocity components
  */
  
-void checkVelocity()
+protected void checkVelocity()
 	{
 	Vector3f v = fEntity.getVelocity();
-	float maxv = GameModule.gMaxVelocity.getFloat();
+	float maxv = BaseQ2.gMaxVelocity.getFloat();
 	
 	if (v.x >  maxv)
 		v.x =  maxv;
@@ -101,7 +101,7 @@ void checkVelocity()
  * @param overbounce ???
  * @return integer flags indicating what we hit?
  */ 
-int clipVelocity(Vector3f normal, float overbounce)
+protected int clipVelocity(Vector3f normal, float overbounce)
 	{
 	float	 backoff;
 	int		 i, blocked;
@@ -139,48 +139,6 @@ public void dispose()
 /**
  * Drops the item on the ground
  *
- * @param dropper the Player tossing the item, so we can avoid colliding with it.
- * @param timeout number of seconds before the item should do something with itself,
- *   use zero for no action.  An item will finish falling to the ground before
- *   it considers what to do, so very small values might not work as accurately.
- */
-public void drop(Player dropper, float timeout)
-	{
-	// remember who dropped this
-	fDropper = dropper;
-
-	// setup the entity how we like it
-	setupEntity();
-
-	// figure out a starting spot somewhat offset from the player
-	Vector3f offset = new Vector3f(24, 0, -16);
-	Vector3f forward = new Vector3f();
-	Vector3f right = new Vector3f();
-	Angle3f direction;
-	if (dropper.isDead())
-		// toss in a random direction
-		direction = new Angle3f(0, Game.randomFloat() * 360, 0);
-	else
-		// toss where the player is looking
-		direction = dropper.fEntity.getPlayerViewAngles();
-	
-	direction.getVectors(forward, right, null);
-	Point3f origin = dropper.projectSource(offset, forward, right);
-	
-	// make sure the starting spot isn't on the other side of a wall or something
-	TraceResults tr = Engine.trace(dropper.fEntity.getOrigin(), 
-		fEntity.getMins(), fEntity.getMaxs(), origin, dropper.fEntity, Engine.CONTENTS_SOLID);
-
-	// fling it at a decent speed, with an upward kick
-	forward.scale(100);
-	forward.z = 300;
-
-	// actually toss the dang thing, starting at where our trace ended up
-	drop0(tr.fEndPos, forward, timeout);
-	}
-/**
- * Drops the item on the ground
- *
  * @param spot point that the item reappears in the world
  * @param direction direction direction the item initially moves, may be null if you don't care.
  * @param speed speed the item initially moves
@@ -205,6 +163,48 @@ public void drop(Point3f spot, Angle3f direction, float speed, float timeout)
 
 	// actually drop the dang thing.
 	drop0(spot, forward, timeout);
+	}
+/**
+ * Drops the item on the ground
+ *
+ * @param dropper the Player tossing the item, so we can avoid colliding with it.
+ * @param timeout number of seconds before the item should do something with itself,
+ *   use zero for no action.  An item will finish falling to the ground before
+ *   it considers what to do, so very small values might not work as accurately.
+ */
+public void drop(Player dropper, float timeout)
+	{
+	// remember who dropped this
+	fDropper = dropper;
+
+	// setup the entity how we like it
+	setupEntity();
+
+	// figure out a starting spot somewhat offset from the player
+	Vector3f offset = new Vector3f(24, 0, -16);
+	Vector3f forward = new Vector3f();
+	Vector3f right = new Vector3f();
+	Angle3f direction;
+	if (dropper.isDead())
+		// toss in a random direction
+		direction = new Angle3f(0, GameUtil.randomFloat() * 360, 0);
+	else
+		// toss where the player is looking
+		direction = dropper.fEntity.getPlayerViewAngles();
+	
+	direction.getVectors(forward, right, null);
+	Point3f origin = dropper.projectSource(offset, forward, right);
+	
+	// make sure the starting spot isn't on the other side of a wall or something
+	TraceResults tr = Engine.trace(dropper.fEntity.getOrigin(), 
+		fEntity.getMins(), fEntity.getMaxs(), origin, dropper.fEntity, Engine.CONTENTS_SOLID);
+
+	// fling it at a decent speed, with an upward kick
+	forward.scale(100);
+	forward.z = 300;
+
+	// actually toss the dang thing, starting at where our trace ended up
+	drop0(tr.fEndPos, forward, timeout);
 	}
 /**
  * Really drops the item on the ground
@@ -250,6 +250,22 @@ protected void dropTimeout()
  * @return java.lang.String
  */
 public abstract String getIconName();
+/**
+ * Get the name that Id used for item (usually just class name minus package).
+ * In some cases this will have to be overidden.
+ *
+ * @author Peter Donald
+ */
+public String getIdName()
+	{
+	String clsName = getClass().toString();
+	int lastDot = clsName.lastIndexOf(".");
+	
+	if( lastDot == -1 ) 
+		return clsName;
+	else 
+		return clsName.substring(lastDot+1);
+	}
 /**
  * Get the name of this item.
  * @return java.lang.String
@@ -313,8 +329,8 @@ public void runFrame(int phase)
 		case STATE_SPAWN:  // was just spawned, needs to snap to ground
 			fItemState = STATE_NORMAL;
 			Point3f org = fEntity.getOrigin();
-			Point3f dest = new Point3f();
-			dest.add(org, new Vector3f(0, 0, -1024));			
+			Point3f dest = new Point3f(org);
+			dest.add(new Vector3f(0, 0, -1024));			
 			tr = Engine.trace(org, fEntity.getMins(), fEntity.getMaxs(), dest, fEntity, Engine.MASK_SOLID);
 			
 			if (tr.fStartSolid)
@@ -351,7 +367,7 @@ public void runFrame(int phase)
 			if (fGroup != null)
 				{
 				// entity is member of a group, pick a member at random
-				int selection = (Game.randomInt() & 0x0fff) % fGroup.size();
+				int selection = (GameUtil.randomInt() & 0x0fff) % fGroup.size();
 				ent = ((GameObject)fGroup.elementAt(selection)).fEntity;
 				}
 

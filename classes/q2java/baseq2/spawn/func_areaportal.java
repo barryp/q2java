@@ -1,8 +1,8 @@
-package baseq2.spawn;
+package q2java.baseq2.spawn;
 
 import q2java.*;
-import q2jgame.*;
-import baseq2.*;
+import q2java.core.*;
+import q2java.baseq2.*;
 
 public class func_areaportal implements GameTarget
 	{
@@ -10,9 +10,9 @@ public class func_areaportal implements GameTarget
 	
 public func_areaportal(String[] spawnArgs) throws GameException
 	{
-	fArea = Game.getSpawnArg(spawnArgs, "style", 0);
+	fArea = GameUtil.getSpawnArg(spawnArgs, "style", 0);
 
-	String s = Game.getSpawnArg(spawnArgs, "targetname", null);
+	String s = GameUtil.getSpawnArg(spawnArgs, "targetname", null);
 	if (s != null)
 		Game.addLevelRegistry("target-" + s, this);			
 	}

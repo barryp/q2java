@@ -1,4 +1,4 @@
-package menno.ctf;
+package q2java.ctf;
 
 /*
 ======================================================================================
@@ -17,8 +17,8 @@ package menno.ctf;
 
 import javax.vecmath.*;
 import q2java.*;
-import q2jgame.*;
-import baseq2.*;
+import q2java.core.*;
+import q2java.baseq2.*;
 
 /**
  * The business end of a Grappling hook.

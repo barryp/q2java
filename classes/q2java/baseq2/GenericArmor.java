@@ -1,7 +1,7 @@
-package baseq2;
+package q2java.baseq2;
 
 import q2java.*;
-import q2jgame.*;
+import q2java.core.*;
 
 /**
  * Superclass for all armor entities lying around in the world.
@@ -21,7 +21,7 @@ public GenericArmor(String[] spawnArgs) throws GameException
 	{
 	super(spawnArgs);
 	
-	if (GameModule.isDMFlagSet(GameModule.DF_NO_ARMOR))
+	if (BaseQ2.isDMFlagSet(BaseQ2.DF_NO_ARMOR))
 		{
 		dispose();
 		throw new InhibitedException("armor items inhibited");

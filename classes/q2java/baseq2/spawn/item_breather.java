@@ -1,8 +1,10 @@
-package baseq2.spawn;
+package q2java.baseq2.spawn;
 
 import q2java.*;
-import q2jgame.*;
-import baseq2.*;
+import q2java.core.*;
+import q2java.core.gui.*;
+import q2java.baseq2.*;
+import q2java.baseq2.event.*;
 
 /**
  * The Rebreather.
@@ -11,7 +13,7 @@ import baseq2.*;
 public class item_breather extends GenericPowerUp implements PlayerStateListener
 	{	
 	protected Player fOwner;
-	protected q2java.gui.IconCountdownTimer fHUDTimer;
+	protected IconCountdownTimer fHUDTimer;
 	protected int fMillis;
 	protected float fAirFinished;
 	protected boolean fFirstSound;
@@ -49,14 +51,6 @@ public String getItemName()
 public String getModelName() 
 	{
 	return "models/items/breather/tris.md2";
-	}
-/**
- * Called by the carrying player when they die. This gives us the chance to reset 
- * their effects if we were in use when they died.
- */
-public void playerStateChanged(Player p, int changeEvent)
-	{
-	reset();
 	}
 /**
  * Undo effects of enviroment suit.
@@ -125,6 +119,14 @@ public void runFrame(int Phase)
 		fOwner.breath(1, false); // give them another little puff
 	}
 /**
+ * Called by the carrying player when they die. This gives us the chance to reset 
+ * their effects if we were in use when they died.
+ */
+public void stateChanged(PlayerStateEvent e)
+	{
+	reset();
+	}
+/**
  * When used filter the Player's damage for 30 seconds.
  */
 public void use(Player p)
@@ -140,7 +142,7 @@ public void use(Player p)
 	
 	if (fHUDTimer == null)
 		{
-		fHUDTimer = new q2java.gui.IconCountdownTimer(fOwner.fEntity, NativeEntity.STAT_TIMER_ICON, Engine.getImageIndex("p_envirosuit"), NativeEntity.STAT_TIMER, (fMillis/10)-1);
+		fHUDTimer = new IconCountdownTimer(fOwner.fEntity, NativeEntity.STAT_TIMER_ICON, Engine.getImageIndex("p_envirosuit"), NativeEntity.STAT_TIMER, (fMillis/10)-1);
 		fHUDTimer.setVisible(true);
 		fHUDTimer.setRunning(true);
 		}

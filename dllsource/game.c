@@ -50,7 +50,7 @@ void Game_javaInit()
         return;
         }
 
-    gameclass_cvar = q2java_gi.cvar("q2java_game", "q2jgame.Game", CVAR_NOSET);
+    gameclass_cvar = q2java_gi.cvar("q2java_game", "q2java.core.Game", CVAR_NOSET);
 
     // convert classname to the strange internal format Java
     // uses, where the periods are replaced with

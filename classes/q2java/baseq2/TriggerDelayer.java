@@ -1,12 +1,12 @@
-package baseq2;
+package q2java.baseq2;
 
 import java.util.Vector;
 import javax.vecmath.*;
 
 import q2java.*;
-import q2jgame.*;
-import baseq2.*;
-import baseq2.spawn.trigger_multiple;
+import q2java.core.*;
+import q2java.baseq2.*;
+import q2java.baseq2.spawn.trigger_multiple;
 
 /**
  * Delays triggering of a trigger_multiple.

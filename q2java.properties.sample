@@ -1,5 +1,5 @@
 #
-# Sample Properties for Q2Java 0.7 or later
+# Sample Properties for Q2Java 0.9 or later
 #
 # (comments begin with a '#')
 #
@@ -64,5 +64,9 @@
 #
 # Load Modules at startup
 #
-#q2java.module.1=baseq2
-#q2java.module.2=barryp.flashgrenade flash
+# format is: q2java.gamelet.<n>=<gamelet class> [<alias>]
+#
+# where <n> starts at one and goes up, and the <alias> is optional
+#
+#q2java.gamelet.1=q2java.baseq2.BaseQ2
+#q2java.gamelet.2=barryp.flashgrenade.FlashGrenades flash

@@ -1,4 +1,4 @@
-package menno.ctftech;
+package q2java.ctf;
 
 
 /*
@@ -17,22 +17,25 @@ package menno.ctftech;
 
 
 import java.util.*;
-import q2java.*;
-import q2jgame.*;
 import javax.vecmath.*;
+
+import q2java.*;
+import q2java.core.*;
+import q2java.baseq2.*;
+import q2java.baseq2.event.*;
 
 /**
  * A tech is a special powerup, used in CTF games.
  * Techs must be spawned manually, because they do not exist in maps...
  */
 
-public abstract class GenericTech extends baseq2.GenericItem implements baseq2.PlayerStateListener
+public abstract class GenericTech extends GenericItem implements PlayerStateListener
 {
 
 	public final static int CTF_TECH_TIMEOUT       = 60;  // seconds before techs spawn again
 	public final static int NO_HUD_ICON 		   = -1;  // value to use if we don't want the techs to put their icons on the HUD
 
-	private baseq2.Player  fOwner;			// The Player that's carrying us.
+	private Player  fOwner;	// The Player that's carrying us.
 	private int fHUDStat;  // HUD Stat to display icon on.
 	/**
 	 * Create a CTF Tech
@@ -65,7 +68,7 @@ public void becomeExplosion(int tempEntity)
 	 *   use zero for no action.  An item will finish falling to the ground before
 	 *   it considers what to do, so very small values might not work as accurately.
 	 */
-	public void drop(baseq2.Player dropper, float timeout)
+	public void drop(Player dropper, float timeout)
 	{
 		// ignore the supplied timeout and use the Tech timeout
 		super.drop(dropper, CTF_TECH_TIMEOUT);
@@ -83,20 +86,20 @@ public void becomeExplosion(int tempEntity)
 		Point3f point;
 		
 		// pick a random spot
-		point    = baseq2.MiscUtil.getSpawnpointRandom().getOrigin();
+		point    = q2java.baseq2.MiscUtil.getSpawnpointRandom().getOrigin();
 		point.z += 16;
 
 		// pick a random direction (pitch -30..-80, yaw 0..360, leave roll at zero)
-		Angle3f ang = new Angle3f((Game.randomFloat() * -50) - 30, Game.randomFloat() * 360, 0);
+		Angle3f ang = new Angle3f((GameUtil.randomFloat() * -50) - 30, GameUtil.randomFloat() * 360, 0);
 
 		// fling it with a random speed 300..800
-		drop(point, ang, (Game.randomFloat() * 500) + 300, GenericTech.CTF_TECH_TIMEOUT);
+		drop(point, ang, (GameUtil.randomFloat() * 500) + 300, GenericTech.CTF_TECH_TIMEOUT);
 	}
 	/**
 	 * Get the player that's holding the tech.
 	 * @return menno.ctf.Player - may be null if not currently held.
 	 */
-	public baseq2.Player getOwner() 
+	public Player getOwner() 
 	{
 		return fOwner;
 	}
@@ -105,13 +108,13 @@ public void becomeExplosion(int tempEntity)
 	 * @return boolean
 	 * @param p baseq2.Player
 	 */
-	public boolean isTouchable(baseq2.Player bp) 
+	public boolean isTouchable(Player bp) 
 	{
 /*	
 		// make sure player is a CTF player
 		if (!(bp instanceof Player))
 		{
-			bp.fEntity.centerprint(bp.getResourceGroup().getRandomString("menno.ctf.CTFMessages", "not_CTF"));
+			bp.fEntity.centerprint(bp.getResourceGroup().getRandomString("q2java.ctf.CTFMessages", "not_CTF"));
 			return false;
 		}
 			
@@ -121,14 +124,14 @@ public void becomeExplosion(int tempEntity)
 		Team t = p.getTeam();
 		if ( t == null )
 		{
-			p.fEntity.centerprint(p.getResourceGroup().getRandomString("menno.ctf.CTFMessages", "no_team"));
+			p.fEntity.centerprint(p.getResourceGroup().getRandomString("q2java.ctf.CTFMessages", "no_team"));
 			return false;
 		}
 */
 		// make sure player isn't already carrying a tech
 		if (bp.isCarrying("tech"))
 		{
-			bp.fEntity.centerprint(bp.getResourceGroup().getRandomString("menno.ctf.CTFMessages", "have_tech"));		
+			bp.fEntity.centerprint(bp.getResourceGroup().getRandomString("q2java.ctftech.TechMessages", "have_tech"));		
 			return false;
 		}
 			
@@ -136,25 +139,10 @@ public void becomeExplosion(int tempEntity)
 		return super.isTouchable(bp);
 	}
 	/**
-	 * Called when a player dies or disconnects.
-	 * @param wasDisconnected true on disconnects, false on normal deaths.
-	 */
-	public void playerStateChanged(baseq2.Player p, int changeEvent)
-	{
-		if (changeEvent != baseq2.PlayerStateListener.PLAYER_LEVELCHANGE)
-			drop(p, CTF_TECH_TIMEOUT); // will handle removing listener
-		else
-			p.removePlayerStateListener(this); // just remove the listener
-			
-		p.removeInventory("tech");
-		if (fOwner != null)
-			setOwner(null);
-	}
-	/**
 	 * Set which player is holding the tech.
-	 * @param p menno.ctf.Player
+	 * @param p q2java.baseq2.Player
 	 */
-	public void setOwner(baseq2.Player p) 
+	public void setOwner(Player p) 
 	{
 		fOwner = p;
 	}
@@ -167,10 +155,24 @@ public void becomeExplosion(int tempEntity)
 		fEntity.setEffects(NativeEntity.EF_ROTATE); // all techs rotate
 	}
 	/**
+	 * Called when a player dies or disconnects.
+	 * @param wasDisconnected true on disconnects, false on normal deaths.
+	 */
+	public void stateChanged(PlayerStateEvent pse)
+	{
+		Player p = pse.getPlayer();
+		
+		drop(p, CTF_TECH_TIMEOUT); // will handle removing listener
+			
+		p.removeInventory("tech");
+		if (fOwner != null)
+			setOwner(null);
+	}
+	/**
 	 * Called if item was actually taken.
 	 * @param p	The Player that took this item.
 	 */
-	protected void touchFinish(baseq2.Player p, baseq2.GenericItem itemTaken) 
+	protected void touchFinish(Player p, GenericItem itemTaken) 
 	{
 		super.touchFinish(p, itemTaken);
 

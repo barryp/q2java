@@ -1,12 +1,15 @@
-package baseq2;
+package q2java.baseq2;
 
+import java.beans.PropertyVetoException;
 import java.util.*;
 import javax.vecmath.*;
 
 import q2java.*;
-import q2jgame.*;
+import q2java.core.*;
 
-import baseq2.spawn.*;
+import q2java.baseq2.event.*;
+import q2java.baseq2.rule.*;
+import q2java.baseq2.spawn.*;
 
 /**
  * Player objects are subclassed from GameObject, but also
@@ -15,7 +18,8 @@ import baseq2.spawn.*;
  * @author Barry Pederson
  */
 
-public class Player extends GameObject implements FrameListener, PlayerListener, LocaleListener, CrossLevel
+public class Player extends GameObject 
+implements FrameListener, PlayerListener, LocaleListener, CrossLevel, SwitchablePlayer
 	{	
 	protected transient ResourceGroup fResourceGroup;
 	
@@ -34,13 +38,20 @@ public class Player extends GameObject implements FrameListener, PlayerListener,
 	protected Vector fWeaponOrder;
 	protected Vector fWeaponsExcluded;
 
-	protected Vector fCommandHandlers;
-	protected Vector fPlayerStateListeners; // track PlayerStateListeners
-	protected Vector fPreArmorDamageFilters;	// Things that may want to modify the damage we take.
-	protected Vector fArmorDamageFilters;
-	protected Vector fPostArmorDamageFilters;
+	// CHANGES for Delegation Model
+	// Peter Donald
+	protected PlayerMoveSupport fPlayerMoveSupport;
+		protected PlayerCvarSupport fPlayerCvarSupport;
+	protected PlayerCommandSupport fPlayerCommandSupport;
+	protected PlayerStateSupport fPlayerStateSupport;
+	protected PlayerInfoSupport fPlayerInfoSupport;
+	protected InventorySupport fInventorySupport;
+	protected PlayerDamageSupport fPreArmorPlayerDamageSupport;
+	protected PlayerDamageSupport fArmorPlayerDamageSupport;
+	protected PlayerDamageSupport fPostArmorPlayerDamageSupport;
+	//END Declarations for Delegation Model
+
 	protected ArmorDamageFilter fArmor;
-	private DamageObject fTempDamageObject;
 	
 	public final static int DAMAGE_FILTER_PHASE_PREARMOR = 0;
 	public final static int DAMAGE_FILTER_PHASE_ARMOR = 1;
@@ -284,13 +295,6 @@ public class Player extends GameObject implements FrameListener, PlayerListener,
 		ANIM_JUMP, 66, 67,		// flail around in the air
 		ANIM_WAVE, 68, 71		// land on the ground		
 		};
-	
-
-
-
-
-
-
 
 /**
  * Create a new Player Game object, and associate it with a Player
@@ -298,7 +302,7 @@ public class Player extends GameObject implements FrameListener, PlayerListener,
  */
 public Player(NativeEntity ent) throws GameException
 	{
-	Engine.debugLog("baseq2.Player.<ctor>(" + ent + ")");
+	Engine.debugLog("q2java.baseq2.Player.<ctor>(" + ent + ")");
 
 	fEntity = ent;
 	fEntity.setPlayerListener(this);
@@ -317,6 +321,18 @@ public Player(NativeEntity ent) throws GameException
 	
 	// sign up to receive broadcast messages using the default locale
 	fResourceGroup = Game.addLocaleListener(this);
+
+	//CHANGES for delegation model
+	fPlayerMoveSupport = new PlayerMoveSupport(this);
+	fPlayerCvarSupport = new PlayerCvarSupport(this);
+	fPlayerCommandSupport = new PlayerCommandSupport(this);
+	fPlayerStateSupport = new PlayerStateSupport(this);
+	fPlayerInfoSupport = new PlayerInfoSupport(this);
+	fInventorySupport = new InventorySupport(this);
+	fPreArmorPlayerDamageSupport = new PlayerDamageSupport(this);
+	fArmorPlayerDamageSupport = new PlayerDamageSupport(this);
+	fPostArmorPlayerDamageSupport = new PlayerDamageSupport(this);
+	//END changes for delegation Model
 		
 	fPlayerInfo = new Hashtable();
 	playerInfoChanged(fEntity.getPlayerInfo());
@@ -343,18 +359,9 @@ public Player(NativeEntity ent) throws GameException
 	fWeaponOrder = new Vector();
 	fWeaponsExcluded = new Vector();
 
-	fCommandHandlers = new Vector();	
-	fPlayerStateListeners = new Vector();
-
-	// Setup damage filter lists
-	fPreArmorDamageFilters = new Vector();
-	fArmorDamageFilters = new Vector();
-	fPostArmorDamageFilters = new Vector();
-
 	// create the basic Player Armor
 	fArmor = new ArmorDamageFilter(this);
-	fTempDamageObject = new DamageObject();
-	addDamageFilter(fArmor, DAMAGE_FILTER_PHASE_ARMOR);
+	addPlayerDamageListener(fArmor, DAMAGE_FILTER_PHASE_ARMOR);
 	
 	// Setup default weapon ordering
 	fWeaponOrder.addElement("blaster");
@@ -454,56 +461,12 @@ public void addBlend(Color4f color)
 	{
 	addBlend(color.x, color.y, color.z, color.w);
 	}
-/**
- * Add a command handler to this player.
- * @param obj an object with methods named "cmd_"
- */
-public void addCommandHandler(Object obj) 
-	{
-	if (!fCommandHandlers.contains(obj))
-		fCommandHandlers.addElement(obj);
-	}
-/**
- * Add an object that wants to filter damage the player takes.
- * It adds the filter as a pre-armor filter.
- * @param DamageFilter - The object to add as a damage filter
- */
-public void addDamageFilter(DamageFilter pdf)
-	{
-	if (pdf == null)
-		return;
-	
-	if (!fPreArmorDamageFilters.contains(pdf))
-		fPreArmorDamageFilters.addElement(pdf);
-	}
-/**
- * Add an object that wants to filter damage the player takes.
- * @param DamageFilter - The object to add as a damage filter
- * @param int - Phase at which it wants to filter.
- */
-public void addDamageFilter(DamageFilter pdf, int phase)
-	{
-	if (pdf == null)
-		return;
-	
-	if (phase == DAMAGE_FILTER_PHASE_PREARMOR)
-		{
-		if (!fPreArmorDamageFilters.contains(pdf))
-			fPreArmorDamageFilters.addElement(pdf);
-		}
-	else if (phase == DAMAGE_FILTER_PHASE_ARMOR)
-		{
-		if (!fArmorDamageFilters.contains(pdf))
-			fArmorDamageFilters.addElement(pdf);
-		}
-	else if (phase == DAMAGE_FILTER_PHASE_POSTARMOR)
-		{
-		if (!fPostArmorDamageFilters.contains(pdf))
-			fPostArmorDamageFilters.addElement(pdf);
-		}
-	
-	return;
-	}
+//CHANGES for Event delegation SYstem after here
+
+public void addInventoryListener(InventoryListener l)
+	   {
+	   fInventorySupport.addInventoryListener(l);
+	   }   
 /**
  * Add an item to the player's inventory.
  * @param item what we're trying to add.
@@ -513,6 +476,22 @@ public boolean addItem(GenericItem item)
 	{
 	if (item == null)
 		return false;
+
+	try 
+		{ 
+		fInventorySupport.fireEvent(item,true); 
+		}
+	catch(PropertyVetoException pve)
+		{
+	    String s = pve.getMessage();
+	    
+	    if( s != null )
+	    	{
+			fEntity.centerprint(s);
+	    	}
+
+	    return false;
+		}
 
 	if (item instanceof GenericWeapon)
 		return addWeapon((GenericWeapon)item, true);
@@ -532,17 +511,74 @@ public boolean addItem(GenericItem item)
 	// assume item knows what it's doing.
 	return true;
 	}
-/**
- * Add an object that wants to be notified when the player state changes.
- * @param pdl baseq2.PlayerDiedListener
- */
-public void addPlayerStateListener(PlayerStateListener psl) 
+public void addPlayerCommandListener(PlayerCommandListener l)
 	{
-	if (psl == null)
+	fPlayerCommandSupport.addPlayerCommandListener(l);
+	}
+public void addPlayerCvarListener(PlayerCvarListener l, String cvar)
+	{
+	fPlayerCvarSupport.addPlayerCvarListener(l,cvar);
+	}
+public void addPlayerDamageListener(PlayerDamageListener l)
+	{
+	addPlayerDamageListener(l,DAMAGE_FILTER_PHASE_PREARMOR);
+	}   
+/**
+ * Add an object that wants to filter damage the player takes.
+ * @param DamageFilter - The object to add as a damage filter
+ * @param int - Phase at which it wants to filter.
+ */
+public void addPlayerDamageListener(PlayerDamageListener l, int phase)
+	{
+	if (l == null)
 		return;
-		
-	if (!fPlayerStateListeners.contains(psl))
-		fPlayerStateListeners.addElement(psl);
+	
+	if (phase == DAMAGE_FILTER_PHASE_PREARMOR)
+		{
+		fPreArmorPlayerDamageSupport.addPlayerDamageListener(l);
+		}
+	else if (phase == DAMAGE_FILTER_PHASE_ARMOR)
+		{
+		fArmorPlayerDamageSupport.addPlayerDamageListener(l);
+		}
+	else if (phase == DAMAGE_FILTER_PHASE_POSTARMOR)
+	        {
+		fPostArmorPlayerDamageSupport.addPlayerDamageListener(l);
+		}
+	
+	return;
+	}
+public void addPlayerInfoListener(PlayerInfoListener l)
+	{
+	fPlayerInfoSupport.addPlayerInfoListener(l);
+	}   
+public void addPlayerMoveListener(PlayerMoveListener l)
+	{
+	fPlayerMoveSupport.addPlayerMoveListener(l);
+	}
+public void addPlayerStateListener(PlayerStateListener l)
+	{
+	fPlayerStateSupport.addPlayerStateListener(l);
+	}   
+/**
+ * Add a class of weapon to a player's inventory.
+ * @param weaponClassSuffix class of the weapon, either a whole classname or a suffix.
+ * @param allowSwitch Have the player switch weapons if they're currently using just a blaster.
+ * @return boolean true if the player took the weapon (or its ammo)
+ */
+protected boolean addWeapon(String weaponClassSuffix, boolean allowSwitch) 
+	{
+	try
+		{
+		Class cls = Game.lookupClass(weaponClassSuffix);
+		GenericWeapon w = (GenericWeapon) cls.newInstance();		
+		return addWeapon(w, allowSwitch);
+		}
+	catch (Exception e)
+		{
+		e.printStackTrace();		
+		return false;
+		}		
 	}
 /**
  * Add an actual instance of a weapon to a player's inventory.
@@ -551,7 +587,7 @@ public void addPlayerStateListener(PlayerStateListener psl)
  */
 protected boolean addWeapon(GenericWeapon w, boolean allowSwitch) 
 	{
-	boolean weaponStay = GameModule.isDMFlagSet(GameModule.DF_WEAPONS_STAY);
+	boolean weaponStay = BaseQ2.isDMFlagSet(BaseQ2.DF_WEAPONS_STAY);
 
 	InventoryPack p = fInventory.getPack(w.getItemName());
 
@@ -602,26 +638,6 @@ protected boolean addWeapon(GenericWeapon w, boolean allowSwitch)
 	return !weaponStay;
 	}
 /**
- * Add a class of weapon to a player's inventory.
- * @param weaponClassSuffix class of the weapon, either a whole classname or a suffix.
- * @param allowSwitch Have the player switch weapons if they're currently using just a blaster.
- * @return boolean true if the player took the weapon (or its ammo)
- */
-protected boolean addWeapon(String weaponClassSuffix, boolean allowSwitch) 
-	{
-	try
-		{
-		Class cls = Game.lookupClass(weaponClassSuffix);
-		GenericWeapon w = (GenericWeapon) cls.newInstance();		
-		return addWeapon(w, allowSwitch);
-		}
-	catch (Exception e)
-		{
-		e.printStackTrace();		
-		return false;
-		}		
-	}
-/**
  * Handle the beginning of a server frame.
  */
 protected void beginServerFrame()
@@ -632,7 +648,8 @@ protected void beginServerFrame()
 	if (fInIntermission)
 		return;
 		
-	if (fIsDead && (Game.getGameTime() > fRespawnTime) && ((fLatchedButtons != 0) || GameModule.isDMFlagSet(GameModule.DF_FORCE_RESPAWN)))
+	if (fIsDead && (Game.getGameTime() > fRespawnTime) 
+	&& ((fLatchedButtons != 0) || BaseQ2.isDMFlagSet(BaseQ2.DF_FORCE_RESPAWN)))
 		{
 		respawn();
 		fLatchedButtons = 0;
@@ -671,15 +688,15 @@ public void broadcastObituary(GameObject attacker, String obitKey)
 	if (attacker == this)
 		obitKey = "self_" + obitKey;
 		
-	if (Game.isResourceAvailable("baseq2.Messages", obitKey))		
-		Game.localecast("baseq2.Messages", obitKey, args, Engine.PRINT_MEDIUM);	
+	if (Game.isResourceAvailable("q2java.baseq2.Messages", obitKey))		
+		Game.localecast("q2java.baseq2.Messages", obitKey, args, Engine.PRINT_MEDIUM);	
 	else
 		{
 		// must be some new kind of obitKey, use a default death message
 		if (attacker == this)
-			Game.localecast("baseq2.Messages", "self_died", args, Engine.PRINT_MEDIUM);	
+			Game.localecast("q2java.baseq2.Messages", "self_died", args, Engine.PRINT_MEDIUM);	
 		else
-			Game.localecast("baseq2.Messages", "died", args, Engine.PRINT_MEDIUM);				
+			Game.localecast("q2java.baseq2.Messages", "died", args, Engine.PRINT_MEDIUM);				
 		}	
 	}
 /**
@@ -902,10 +919,10 @@ protected float calcRoll(Vector3f velocity)
 	sign = side < 0 ? -1 : 1;
 	side = Math.abs(side);
 	
-	value = GameModule.gRollAngle.getFloat();
+	value = BaseQ2.gRollAngle.getFloat();
 
-	if (side < GameModule.gRollSpeed.getFloat())
-		side = side * value / GameModule.gRollSpeed.getFloat();
+	if (side < BaseQ2.gRollSpeed.getFloat())
+		side = side * value / BaseQ2.gRollSpeed.getFloat();
 	else
 		side = value;
 	
@@ -957,17 +974,17 @@ protected void calcViewOffset()
 	Vector3f right = new Vector3f();
 	angle.getVectors( forward, right, null );
 	delta = (fEntity.getVelocity()).dot(forward);
-	angles.x += delta*GameModule.gRunPitch.getFloat();
+	angles.x += delta * BaseQ2.gRunPitch.getFloat();
 
 	delta = (fEntity.getVelocity()).dot(right);
-	angles.z += delta*GameModule.gRunRoll.getFloat();
+	angles.z += delta * BaseQ2.gRunRoll.getFloat();
 
 	// add angles based on bob
-	delta = fBobFracSin * GameModule.gBobPitch.getFloat() * fXYSpeed;
+	delta = fBobFracSin * BaseQ2.gBobPitch.getFloat() * fXYSpeed;
 	if (fIsDucking)
 			delta *= 6;             // crouching
 	angles.x += delta;
-	delta = fBobFracSin * GameModule.gBobRoll.getFloat() * fXYSpeed;
+	delta = fBobFracSin * BaseQ2.gBobRoll.getFloat() * fXYSpeed;
 	if (fIsDucking)
 			delta *= 6;             // crouching
 	if ((fBobCycle & 1) > 0)
@@ -977,7 +994,7 @@ protected void calcViewOffset()
 	
 
 	// add bob height
-	float bob = fBobFracSin * fXYSpeed * GameModule.gBobUp.getFloat(); // *3 added to magnify effect
+	float bob = fBobFracSin * fXYSpeed * BaseQ2.gBobUp.getFloat(); // *3 added to magnify effect
 	if (bob > 6)
 		bob = 6.0F;
 	fViewOffset.z += bob;	
@@ -1130,7 +1147,7 @@ public void cmd_drop(String[] argv, String args)
 	if ((ip == null) || (ip.fAmount < 1))
 		{
 		Object[] msgargv = {itemName};
-		fEntity.cprint(Engine.PRINT_HIGH, fResourceGroup.format("baseq2.Messages", "dont_have", msgargv) + "\n");
+		fEntity.cprint(Engine.PRINT_HIGH, fResourceGroup.format("q2java.baseq2.Messages", "dont_have", msgargv) + "\n");
 		return;
 		}		
 
@@ -1139,10 +1156,28 @@ public void cmd_drop(String[] argv, String args)
 		{
 		GenericItem item = (GenericItem) ip.fItem;
 
+		//CHANGES for Delegation model
+		try 
+			{ 
+			fInventorySupport.fireEvent(item,false); 
+			}
+		catch(PropertyVetoException pve)
+			{
+		    String s = pve.getMessage();
+		    
+		    if( s != null )
+		    	{
+				fEntity.centerprint(s);
+		    	}
+
+		    return;
+			}
+		//END changes for delegation model
+
 		// check whether the item is willing
 		if (!item.isDroppable())
 			{
-			fEntity.cprint(Engine.PRINT_HIGH, fResourceGroup.format("baseq2.Messages", "item_not_droppable", null) + "\n");
+			fEntity.cprint(Engine.PRINT_HIGH, fResourceGroup.format("q2java.baseq2.Messages", "item_not_droppable", null) + "\n");
 			return;
 			}
 
@@ -1152,7 +1187,7 @@ public void cmd_drop(String[] argv, String args)
 			// don't let them drop their current weapon if its the only one they have
 			if ((item == fWeapon) && (ip.fAmount < 2))
 				{
-				fEntity.cprint(Engine.PRINT_HIGH, fResourceGroup.format("baseq2.Messages", "no_current_weapon_drop", null) + "\n");
+				fEntity.cprint(Engine.PRINT_HIGH, fResourceGroup.format("q2java.baseq2.Messages", "no_current_weapon_drop", null) + "\n");
 				return;
 				}
 				
@@ -1265,7 +1300,7 @@ public void cmd_fov(String[] argv, String args)
  */
 public void cmd_gameversion(String[] argv, String args) 
 	{
-	fEntity.cprint(Engine.PRINT_HIGH, GameModule.getVersion() + "\n");
+	fEntity.cprint(Engine.PRINT_HIGH, BaseQ2.getVersion() + "\n");
 	}
 /**
  * Give the player one of each weapon.  Good for debugging.
@@ -1273,7 +1308,7 @@ public void cmd_gameversion(String[] argv, String args)
  */
 public void cmd_giveall(String[] argv, String args)
 	{
-	if (!baseq2.GameModule.isCheating())
+	if (!BaseQ2.isCheating())
 		{
 		fEntity.cprint(Engine.PRINT_HIGH, "cheating not turned on\n");
 		return;
@@ -1297,7 +1332,7 @@ public void cmd_giveall(String[] argv, String args)
  */
 public void cmd_help(String[] argv, String args)
 	{
- 	if (GameModule.gIsDeathmatch)
+ 	if (BaseQ2.gIsDeathmatch)
  		playerCommand("score");
 	}
 /**
@@ -1352,8 +1387,6 @@ public void cmd_iddebug(String[] argv, String args)
  */
 public void cmd_inven(String[] argv, String args)
 	{
-	StringBuffer sb = new StringBuffer();
-	
 	fShowScore = false;
 	
 	if (fShowInventory)
@@ -1404,7 +1437,7 @@ public void cmd_invuse(String[] argv, String args)
 public void cmd_kill(String[] argv, String args) 
 	{
 	if (fIsDead)
-		fEntity.cprint(Engine.PRINT_HIGH, fResourceGroup.getBundle("baseq2.Messages").getString("already_dead") + "\n");
+		fEntity.cprint(Engine.PRINT_HIGH, fResourceGroup.getBundle("q2java.baseq2.Messages").getString("already_dead") + "\n");
 	else		
 		die(this, this, 0, fEntity.getOrigin(), "suicide");
 	}
@@ -1426,15 +1459,25 @@ public void cmd_say(String[] argv, String args)
 	// remove any quote marks
 	if (args.charAt(args.length()-1) == '"')
 		args = args.substring(args.indexOf('"')+1, args.length()-1);
-		
-	args = getName() + ": " + args;		
+
+	// get a StringBuffer and reset it to zero-length
+	StringBuffer sb = Q2Recycler.getStringBuffer();
+
+	// build up the string to print
+	sb.append(getName());
+	sb.append(": ");
+	sb.append(args);
 	
 	// keep the message down to a reasonable length
-	if (args.length() > 150)
-		args = args.substring(0, 150);	
-			
-	args += "\n";			
-	Game.bprint(Engine.PRINT_CHAT, args);
+	if (sb.length() > 150)
+		sb.setLength(150);
+
+	// finish it off and send it out
+	sb.append('\n');
+	Game.bprint(Engine.PRINT_CHAT, sb.toString());
+
+	// be nice
+	Q2Recycler.put(sb);
 	}
 /**
  * Treat "say_team" the same as "say" for now.
@@ -1453,7 +1496,7 @@ public void cmd_score(String[] argv, String args)
 	{
 	// needs to check for coop mode
 	// --FIXME--
-	if (!GameModule.gIsDeathmatch)
+	if (!BaseQ2.gIsDeathmatch)
 		 return;
 
 	if (fShowScore == true)
@@ -1482,7 +1525,7 @@ public void cmd_use(String[] argv, String args)
 	if (ent == null)
 		{
 		Object[] msgargv = {itemName};
-		fEntity.cprint(Engine.PRINT_HIGH, fResourceGroup.format("baseq2.Messages", "dont_have", msgargv) + "\n");
+		fEntity.cprint(Engine.PRINT_HIGH, fResourceGroup.format("q2java.baseq2.Messages", "dont_have", msgargv) + "\n");
 		return;
 		}
 
@@ -1497,7 +1540,7 @@ public void cmd_use(String[] argv, String args)
 		if (!fNextWeapon.isEnoughAmmo())
 			{
 			Object[] msgargv = {itemName};
-			fEntity.cprint(Engine.PRINT_HIGH, fResourceGroup.format("baseq2.Messages", "no_ammo", msgargv) + "\n");
+			fEntity.cprint(Engine.PRINT_HIGH, fResourceGroup.format("q2java.baseq2.Messages", "no_ammo", msgargv) + "\n");
 			fNextWeapon = null;
 			return;
 			}
@@ -1711,7 +1754,7 @@ public void cmd_weapsetorder(String[] argv, String args)
  */
 public static void connect(NativeEntity ent) throws GameException
 	{
-	Engine.debugLog("baseq2.Player.connect(" + ent + ")");
+	Engine.debugLog("q2java.baseq2.Player.connect(" + ent + ")");
 	new Player(ent);
 	}
 /**
@@ -1719,7 +1762,7 @@ public static void connect(NativeEntity ent) throws GameException
  * If the player takes enough damage, this function will call the Player.die() function.
  * @param DamageObject - The damage we are taking.
  */
-public void damage(DamageObject damage)
+public void damage(PlayerDamageEvent damage)
 	{
 
 	// don't take any more damage if already dead
@@ -1731,16 +1774,16 @@ public void damage(DamageObject damage)
 		}
 	
 	// call all the pre-armor damage filters
-	damage = filterDamage(damage, DAMAGE_FILTER_PHASE_PREARMOR);
+	filterDamage(damage, DAMAGE_FILTER_PHASE_PREARMOR);
 	
 	// knock the player around
-	knockback(damage.fAttacker, damage.fDirection, damage.fKnockback, damage.fDFlags);
+	knockback(damage.fAttacker, damage.fDirection, damage.fKnockback, damage.fDamageFlags);
 
 	// notify any armor timed filters
-	damage = filterDamage(damage, DAMAGE_FILTER_PHASE_ARMOR);
+	filterDamage(damage, DAMAGE_FILTER_PHASE_ARMOR);
 	
 	// notify post-armor filters
-	damage = filterDamage(damage, DAMAGE_FILTER_PHASE_POSTARMOR);
+	filterDamage(damage, DAMAGE_FILTER_PHASE_POSTARMOR);
 
 	// always spawn explosive damage
 	if ((damage.fTempEvent == Engine.TE_ROCKET_EXPLOSION) || (damage.fTempEvent == Engine.TE_ROCKET_EXPLOSION_WATER))
@@ -1754,7 +1797,7 @@ public void damage(DamageObject damage)
 		// cause screams if damage is caused by lava
 		if (damage.fObitKey.equals("lava") && (Game.getGameTime() > fPainDebounceTime)) 
 			{
-			if ((Game.randomInt() & 1) != 0)
+			if ((GameUtil.randomInt() & 1) != 0)
 				fEntity.sound(NativeEntity.CHAN_VOICE, Engine.getSoundIndex("player/burn1.wav"), 1, NativeEntity.ATTN_NORM, 0);
 			else
 				fEntity.sound(NativeEntity.CHAN_VOICE, Engine.getSoundIndex("player/burn2.wav"), 1, NativeEntity.ATTN_NORM, 0);
@@ -1763,7 +1806,7 @@ public void damage(DamageObject damage)
 
 		setHealth(fHealth - damage.fAmount);
 		if (fHealth <= 0)
-			die(damage.fInflictor, damage.fAttacker, damage.fAmount, damage.fPoint, damage.fObitKey);
+			die( (GameObject)damage.getInflictor(), damage.fAttacker, damage.fAmount, damage.fPoint, damage.fObitKey);
 		}
 	
 	// These are used to determine the blend for this frame. (TSW)
@@ -1794,10 +1837,16 @@ public void damage(GameObject inflictor, GameObject attacker,
 	int damage, int knockback, int dflags, int tempEvent, String obitKey)
 	{
 	// re-use our existing damage object
-	fTempDamageObject.set(inflictor, attacker, this, dir, point, normal, damage,
-										knockback, dflags, tempEvent, obitKey);
+	// fTempDamageObject.set(inflictor, attacker, this, dir, point, normal, damage,
+	  //					knockback, dflags, tempEvent, obitKey);
 	// call the new damage function.
-	damage(fTempDamageObject);
+
+	  PlayerDamageEvent e = 
+	    PlayerDamageEvent.getEvent(inflictor, attacker, this, dir, point, normal, damage,
+				       knockback, dflags, tempEvent, obitKey);
+	  damage(e);
+
+	  PlayerDamageEvent.releaseEvent(e);
 	}
 /** 
  * Handles color blends and view kicks
@@ -1807,7 +1856,6 @@ public void damage(GameObject inflictor, GameObject attacker,
 protected void damageFeedback()
 	{
 	Color3f		color;
-	Vector3f	v;
 	float		realcount, count, kick;
 	float		side;
 	int			n;						// Which pain sound to play
@@ -1889,7 +1937,7 @@ protected void damageFeedback()
 		if (kick > 50)
 			kick = 50;
 
-		v = new Vector3f();
+		Vector3f v = Q2Recycler.getVector3f();
 
 		v.sub(fDamageFrom, fEntity.getOrigin());
 		v.normalize();
@@ -1901,6 +1949,8 @@ protected void damageFeedback()
 		fDamagePitch = kick*side*0.3f;
 
 		fDamageTime = Game.getGameTime() + DAMAGE_TIME;
+
+		Q2Recycler.put(v);
 		}
 
 	//
@@ -1923,7 +1973,6 @@ protected void decFrame()
  */
 protected void die(GameObject inflictor, GameObject attacker, int damage, Point3f point, String obitKey)
 	{
-	Vector3f forward = new Vector3f();
 	if (fIsDead)
 		return;	// already dead
 		
@@ -1938,12 +1987,10 @@ protected void die(GameObject inflictor, GameObject attacker, int damage, Point3
 	broadcastObituary(attacker, obitKey);
 	
 	// let the attacker know he killed us
-	if (attacker != null)
-		attacker.registerKill(this);
-	else
-		// doh! killed by something else
-		registerKill(null);
-		
+	DeathScoreEvent e = DeathScoreEvent.getEvent(attacker,this,obitKey,inflictor);
+	RuleManager.getScoreManager().registerScoreEvent(e);
+	DeathScoreEvent.releaseEvent(e);
+
 	fEntity.setModelIndex2(0); // remove linked weapon model
 	fEntity.setSound(0);
 	
@@ -1954,7 +2001,9 @@ protected void die(GameObject inflictor, GameObject attacker, int damage, Point3
 	fEntity.setSVFlags(fEntity.getSVFlags() | NativeEntity.SVF_DEADMONSTER);
 
 	// let interested objects know the player died.
-	notifyPlayerStateListeners(PlayerStateListener.PLAYER_DIED);
+	fPlayerStateSupport.fireEvent( PlayerStateEvent.STATE_DEAD, attacker );
+
+
 	
 	// remove the weapon from the POV
 	fEntity.setPlayerGunIndex(0);
@@ -1982,7 +2031,7 @@ protected void die(GameObject inflictor, GameObject attacker, int damage, Point3
 	else
 		{	// normal death
 		setAnimation(ANIMATE_DEATH);
-		fEntity.sound(NativeEntity.CHAN_VOICE, getSexedSoundIndex("death"+((Game.randomInt() & 0x03) + 1)), 1, NativeEntity.ATTN_NORM, 0);
+		fEntity.sound(NativeEntity.CHAN_VOICE, getSexedSoundIndex("death"+((GameUtil.randomInt() & 0x03) + 1)), 1, NativeEntity.ATTN_NORM, 0);
 		}
 		
 	fEntity.linkEntity();
@@ -1995,8 +2044,13 @@ protected void die(GameObject inflictor, GameObject attacker, int damage, Point3
 public void dispose() 
 	{
 	// let interested objects know we're disconnecting.
-	notifyPlayerStateListeners(PlayerStateListener.PLAYER_DISCONNECT);
-	
+	fPlayerStateSupport.fireEvent( PlayerStateEvent.STATE_INVALID, 
+					     this );	
+
+	// instead of us calling Game.PlayerDisconnect 
+	// Game should get called and then call this.
+	Game.playerDisconnect(fEntity);
+
 	Game.removeLocaleListener(this);
 	Game.removeFrameListener(this, Game.FRAME_BEGINNING + Game.FRAME_END);	
 	fEntity.setReference(null);
@@ -2066,6 +2120,14 @@ protected void endServerFrame()
 		}
 	}
 /**
+ * Get an enumeration of all active instances of this class.
+ * @return java.util.Enumeration
+ */
+public static Enumeration enumeratePlayers() 
+	{
+	return new PlayerEnumeration();
+	}
+/**
  * This method was created by a SmartGuide.
  */
 protected void fallingDamage() 
@@ -2129,7 +2191,7 @@ protected void fallingDamage()
 	if (damage < 1)
 		damage = 1;
 
-	if (!GameModule.isDMFlagSet(GameModule.DF_NO_FALLING))
+	if (!BaseQ2.isDMFlagSet(BaseQ2.DF_NO_FALLING))
 		damage(null, null, new Vector3f(0, 0, 1), fEntity.getOrigin(), new Vector3f(0, 0, 0), (int) damage, 0, 0, Engine.TE_NONE, "falling");
 	}
 /**
@@ -2138,41 +2200,20 @@ protected void fallingDamage()
  * @param int - phase of filtering, one of DAMAGE_FILTER_PHASE_*
  * @return DamageObject - the modified damage
  */
-protected DamageObject filterDamage(DamageObject damage, int phase) 
+protected void filterDamage(PlayerDamageEvent damage, int phase) 
 	{
-	// make a copy of the list
-	DamageFilter[] dfa;
-	
 	if (phase == DAMAGE_FILTER_PHASE_PREARMOR)
 		{
-		dfa = new DamageFilter[fPreArmorDamageFilters.size()];
-		fPreArmorDamageFilters.copyInto(dfa);
+		fPreArmorPlayerDamageSupport.fireEvent(damage);
 		}
 	else if (phase == DAMAGE_FILTER_PHASE_ARMOR)
 		{
-		dfa = new DamageFilter[fArmorDamageFilters.size()];
-		fArmorDamageFilters.copyInto(dfa);
+		fArmorPlayerDamageSupport.fireEvent(damage);
 		}
 	else
 		{
-		dfa = new DamageFilter[fPostArmorDamageFilters.size()];
-		fPostArmorDamageFilters.copyInto(dfa);
+		fPostArmorPlayerDamageSupport.fireEvent(damage);
 		}
-	
-	// spread the word
-	for (int i = 0; i < dfa.length; i++)
-		{
-		try
-			{
-			damage = dfa[i].filterDamage(damage);
-			}
-		catch (Throwable t)
-			{
-			t.printStackTrace();
-			}
-		}
-		
-	return damage;
 	}
 /**
  * This method was created by a SmartGuide.
@@ -2305,7 +2346,7 @@ public String getName()
  * @param key name of the value we're looking for.
  * @return value if key is found, null otherwise.
  */
-protected String getPlayerInfo(String key) 
+public String getPlayerInfo(String key) 
 	{
 	return getPlayerInfo(key, null);
 	}
@@ -2315,7 +2356,7 @@ protected String getPlayerInfo(String key)
  * @param defaultValue what to return if key isn't found.
  * @return java.lang.String
  */
-protected String getPlayerInfo(String key, String defaultValue) 
+public String getPlayerInfo(String key, String defaultValue) 
 	{
 	if (fPlayerInfo == null)
 		return defaultValue;
@@ -2358,9 +2399,9 @@ protected int getSexedSoundIndex(String base)
  */
 protected GenericSpawnpoint getSpawnpoint() 
 	{
-	if (GameModule.gIsDeathmatch)
+	if (BaseQ2.gIsDeathmatch)
 		{
-		if (GameModule.isDMFlagSet(GameModule.DF_SPAWN_FARTHEST))
+		if (BaseQ2.isDMFlagSet(BaseQ2.DF_SPAWN_FARTHEST))
 			return MiscUtil.getSpawnpointFarthest();		
 		else
 			return MiscUtil.getSpawnpointRandom();
@@ -2449,7 +2490,7 @@ public void knockback(GameObject attacker, Vector3f dir, int knockback, int dfla
 		{
 		if (knockback != 0)
 			{
-			Vector3f	kickVelocity = new Vector3f();
+			Vector3f	kickVelocity = Q2Recycler.getVector3f();
 			int			mass = getMass();
 
 			if (mass < 50)
@@ -2465,9 +2506,10 @@ public void knockback(GameObject attacker, Vector3f dir, int knockback, int dfla
 				kickVelocity.scale(500 * knockback / mass, dir);
 
 			// Add the new kick velocity to our current velocity.
-			Vector3f v = new Vector3f(fEntity.getVelocity());
-			v.add(kickVelocity);
-			fEntity.setVelocity(v);
+			kickVelocity.add(fEntity.getVelocity());
+			fEntity.setVelocity(kickVelocity);
+			
+			Q2Recycler.put(kickVelocity);
 			}
 		}
 	}
@@ -2530,29 +2572,6 @@ public void notifyPickup(String itemName, String iconName)
 	fPickupMsgTime = Game.getGameTime() + 3;
 	}
 /**
- * Let all the registered listeners know that the player died or disconnected.
- * @param wasDisconnected true for disconnecting players, false for normal deaths.
- */
-protected void notifyPlayerStateListeners(int changeEvent) 
-	{
-	// make a copy of the list
-	PlayerStateListener[] psla = new PlayerStateListener[fPlayerStateListeners.size()];
-	fPlayerStateListeners.copyInto(psla);
-
-	// spread the word
-	for (int i = 0; i < psla.length; i++)
-		{
-		try
-			{
-			psla[i].playerStateChanged(this, changeEvent);
-			}
-		catch (Throwable t)
-			{
-			t.printStackTrace();
-			}
-		}
-	}
-/**
  * Called by the DLL when the player should begin playing in the game.
  * @param loadgame boolean
  */
@@ -2572,7 +2591,9 @@ public void playerBegin()
 	fCmdAngles  = new Angle3f();		
 
 	// notify objects we're changing levels
-	notifyPlayerStateListeners(PlayerStateListener.PLAYER_LEVELCHANGE);	
+	//	notifyPlayerStateListeners(PlayerStateListener.PLAYER_LEVELCHANGE);	
+	fPlayerStateSupport.fireEvent( PlayerStateEvent.STATE_SUSPENDEDSTART, 
+					     BaseQ2.gWorld  );
 	
 	// things that need to be reset on map changes or respawn
 	clearSettings();
@@ -2638,53 +2659,14 @@ public void playerCommand(String methodName, String[] argv, String args)
 	Class[] paramTypes;
 	Object[] params;
 	
-	//
-	// look for the command to be handled by an external handler
-	//
-	if (fCommandHandlers.size() > 0)
-		{
-		// make a snapshot of the handlers list
-		Object[] handlers = new Object[fCommandHandlers.size()];
-		fCommandHandlers.copyInto(handlers);
-	
-		paramTypes = new Class[3];
-		paramTypes[0] = Player.class;
-		paramTypes[1] = argv.getClass();
-		paramTypes[2] = args.getClass();
-	
-		params = new Object[3];
-		params[0] = this;
-		params[1] = argv;
-		params[2] = args;
+	PlayerCommandEvent e = fPlayerCommandSupport.fireEvent( argv[0], args );
 
-		// search the list in reverse order, most recently added handler first
-		for (int i = handlers.length-1; i >=0; i--)
-			{	
-			try
-				{
-				java.lang.reflect.Method meth = handlers[i].getClass().getMethod(methodName, paramTypes);						
-				Object result = meth.invoke(handlers[i], params);
-	
-				// quit if the invoked returned something other than false (including void)
-				if (!(result instanceof Boolean) || ((Boolean)result).booleanValue() == false)
-					return;
-				}
-			catch (NoSuchMethodException e1)
-				{
-				}
-			catch (java.lang.reflect.InvocationTargetException e2)		
-				{
-				e2.getTargetException().printStackTrace();
-				return;
-				}
-			catch (Exception e3)
-				{
-				e3.printStackTrace();
-				return;
-				}
-			}	
+	if( e.isConsumed() )
+		{
+	    return;
 		}
-		
+
+	e = null;
 
 	//
 	// look for the command to be handled by the player class (or subclasses) itself
@@ -2720,11 +2702,19 @@ public void playerCommand(String methodName, String[] argv, String args)
 	//
 	// Couldn't find any methods to handle it? treat command as a chat
 	//
-	args = getName() + ": " + argv[0] + " " + args;
-	if (args.length() > 150)
-		args = args.substring(0, 150);		
-	args += "\n";		
-	Game.bprint(Engine.PRINT_CHAT, args);		
+	StringBuffer sb = Q2Recycler.getStringBuffer();
+	
+	sb.append(getName());
+	sb.append(": ");
+	sb.append(argv[0]);
+	sb.append(' ');
+	sb.append(args);
+	if (sb.length() > 150)
+		sb.setLength(150);
+	sb.append('\n');
+	Game.bprint(Engine.PRINT_CHAT, sb.toString());
+	
+	Q2Recycler.put(sb);
 	}
 /**
  * Called by the DLL when the player is disconnecting. 
@@ -2737,7 +2727,7 @@ public void playerDisconnect()
 
 	// broadcast an announcement
 	Object[] args = {getName()};
-	Game.localecast("baseq2.Messages", "disconnect", args, Engine.PRINT_HIGH);
+	Game.localecast("q2java.baseq2.Messages", "disconnect", args, Engine.PRINT_HIGH);
 	
 	// send effect
 	Engine.writeByte(Engine.SVC_MUZZLEFLASH);
@@ -2760,7 +2750,7 @@ public void playerDisconnect()
  */
 public void playerInfoChanged(String playerInfo) 
 	{
-	Engine.debugLog("baseq2.Player.playerInfoChanged(" + playerInfo + ")");
+	Engine.debugLog("q2java.baseq2.Player.playerInfoChanged(" + playerInfo + ")");
 
 	if (playerInfo == null)
 		return;
@@ -2791,7 +2781,8 @@ public void playerThink(PlayerCmd cmd)
 	{
 	if (fInIntermission)
 		return;
-		
+
+	fPlayerMoveSupport.fireEvent( cmd );
 	PMoveResults pm = fEntity.pMove(cmd, Engine.MASK_PLAYERSOLID);
 
 //  if (pm_passent->health > 0)
@@ -2845,7 +2836,29 @@ public void playerThink(PlayerCmd cmd)
  */
 protected void playerVariableChanged(String key, String oldValue, String newValue) 
 	{
-	Engine.debugLog("baseq2.Player.playerVariableChanged(" + key + ", " + oldValue + ", " + newValue + ")");
+	Engine.debugLog("q2java.baseq2.Player.playerVariableChanged(" + key + ", " + oldValue + ", " + newValue + ")");
+
+	try
+	    {
+	    fPlayerInfoSupport.fireEvent(key, newValue, oldValue);
+	    }
+	catch(PropertyVetoException pve)
+		{
+	    String s = pve.getMessage();
+	    
+	    if( s != null )
+			fEntity.centerprint(s);
+			
+
+		// put the variable back the way it was - reset the Java
+		// hashtable first, so that when we stuff the command and
+		// it comes back to Java through playerInfoChanged(), it
+		// won't trigger -another- call to this method thinking
+		// that the old value is a new value (if that makes any sense)
+		fPlayerInfo.put(key, oldValue);
+	    MiscUtil.stuffCommand(fEntity, "set " + key + " " + oldValue);
+	    return;
+		}
 
 	if (key.equalsIgnoreCase("skin") || key.equalsIgnoreCase("name"))
 		{
@@ -2887,7 +2900,8 @@ protected void playerVariableChanged(String key, String oldValue, String newValu
  */
 public Point3f projectSource(Vector3f offset, Vector3f forward, Vector3f right) 
 	{
-	Vector3f distance = new Vector3f(offset);
+	Vector3f distance = Q2Recycler.getVector3f();
+	distance.set(offset);
 	
 	if (fHand == LEFT_HANDED)
 		distance.y *= -1;
@@ -2901,6 +2915,8 @@ public Point3f projectSource(Vector3f offset, Vector3f forward, Vector3f right)
 	result.x = point.x + forward.x * distance.x + right.x * distance.y;
 	result.y = point.y + forward.y * distance.x + right.y * distance.y;
 	result.z = point.z + forward.z * distance.x + right.z * distance.y + distance.z;
+	
+	Q2Recycler.put(distance);
 	
 	return result;		
 	}
@@ -2935,47 +2951,44 @@ protected void registerKill(Player p)
 		setScore(1, false);	
 	}
 /**
- * Remove a command handler from this player.
- * @param obj an object that was hopefully registered as a command handler.
- */
-public void removeCommandHandler(Object obj) 
-	{
-	fCommandHandlers.removeElement(obj);
-	}
-/**
  * Remove an object that was registered to filter damage.
  * @param DamageFilter - filter to remove.
  */
-public void removeDamageFilter(DamageFilter df)
+	  /*
+public void removeDamageFilter(PlayerDamageListener l)
 	{
-	if (df == null)
+
+	if (l == null)
 		return;
 		
-	fPreArmorDamageFilters.removeElement(df);
+	fPreArmorPlayerDamageSupport.removePlayerDamageListener(l);
 	}
+	  */
 /**
  * Remove an object that was registered to filter damage.
  * @param DamageFilter - filter to remove.
  * @param int - phase the filter was at.
  */
-public void removeDamageFilter(DamageFilter df, int phase)
+	  /*
+public void removeDamageFilter(PlayerDamageListener l, int phase)
 	{
-	if (df == null)
+	if (l == null)
 		return;
 		
 	if (phase == DAMAGE_FILTER_PHASE_PREARMOR)
 		{
-		fPreArmorDamageFilters.removeElement(df);
+		fPreArmorPlayerDamageSupport.removePlayerDamageListener(l);
 		}
 	else if (phase == DAMAGE_FILTER_PHASE_ARMOR)
 		{
-		fArmorDamageFilters.removeElement(df);
+		fArmorPlayerDamageSupport.removePlayerDamageListener(l);
 		}
 	else
 		{
-		fPostArmorDamageFilters.removeElement(df);
+		fPostArmorPlayerDamageSupport.removePlayerDamageListener(l);
 		}
 	}
+	  */
 /**
  * This method was created by a SmartGuide.
  * @param name java.lang.String
@@ -2984,17 +2997,57 @@ public void removeInventory(String name)
 	{
 	fInventory.remove(name);
 	}
-/**
- * Remove an object that was registered to be called when the player dies.
- * @param pdl baseq2.PlayerDiedListener
- */
-public void removePlayerStateListener(PlayerStateListener psl) 
+public void removeInventoryListener(InventoryListener l)
 	{
-	if (psl == null)
+	fInventorySupport.removeInventoryListener(l);
+	}   
+public void removePlayerCommandListener(PlayerCommandListener l)
+	{
+	fPlayerCommandSupport.removePlayerCommandListener(l);
+	}
+public void removePlayerCvarListener(PlayerCvarListener l)
+	{
+	fPlayerCvarSupport.removePlayerCvarListener(l);
+	}
+public void removePlayerDamageListener(PlayerDamageListener l)
+	{
+	removePlayerDamageListener(l,DAMAGE_FILTER_PHASE_PREARMOR);
+	}   
+/**
+ * Remove an object that was registered to filter damage.
+ * @param DamageFilter - filter to remove.
+ * @param int - phase the filter was at.
+ */
+public void removePlayerDamageListener(PlayerDamageListener l, int phase)
+	{
+	if (l == null)
 		return;
 		
-	fPlayerStateListeners.removeElement(psl);
+	if (phase == DAMAGE_FILTER_PHASE_PREARMOR)
+		{
+		fPreArmorPlayerDamageSupport.removePlayerDamageListener(l);
+		}
+	else if (phase == DAMAGE_FILTER_PHASE_ARMOR)
+		{
+		fArmorPlayerDamageSupport.removePlayerDamageListener(l);
+		}
+	else
+		{
+		fPostArmorPlayerDamageSupport.removePlayerDamageListener(l);
+		}
 	}
+public void removePlayerInfoListener(PlayerInfoListener l)
+	{
+	fPlayerInfoSupport.removePlayerInfoListener(l);
+	}   
+public void removePlayerMoveListener(PlayerMoveListener l)
+	{
+	fPlayerMoveSupport.removePlayerMoveListener(l);
+	}
+public void removePlayerStateListener(PlayerStateListener l)
+	{
+	fPlayerStateSupport.removePlayerStateListener(l);
+	}   
 /**
  * Reset the color blend.
  * @author Brian Haskin
@@ -3014,7 +3067,7 @@ protected void resetBlend()
 protected void respawn()
 	{
 	// leave a corpse behind
-	GameModule.copyCorpse(fEntity);
+	BaseQ2.copyCorpse(fEntity);
 	
 	clearSettings();
 	
@@ -3127,7 +3180,7 @@ public void setAnimation(int animation, boolean ignorePriority, int frameOffset)
 		
 	// pain and death can have 3 variations...pick one randomly
 	if ((animation == ANIMATE_PAIN) || (animation == ANIMATE_DEATH))
-		animation += (Game.randomInt() & 0x00ff) % 3;
+		animation += (GameUtil.randomInt() & 0x00ff) % 3;
 		
 	// use different animations when crouching		
 	if ((animation < ANIMATE_FLIPOFF) && ducking)
@@ -3203,7 +3256,7 @@ public void setGravity(float x, float y, float z)
 	// Q2 only deals with player gravity along the Z axis
 	super.setGravity(0, 0, z);
 	
-	fEntity.setPlayerGravity((short)(GameModule.gGravity.getFloat() * -fGravity.z));
+	fEntity.setPlayerGravity((short)(BaseQ2.gGravity.getFloat() * -fGravity.z));
 	}
 /**
  * This method was created by a SmartGuide.
@@ -3388,7 +3441,9 @@ public void startIntermission(GenericSpawnpoint intermissionSpot)
 	fEntity.linkEntity();
 
 	// notify objects we're changing levels
-	notifyPlayerStateListeners(PlayerStateListener.PLAYER_LEVELCHANGE);	
+	//	notifyPlayerStateListeners(PlayerStateListener.PLAYER_LEVELCHANGE);	
+	fPlayerStateSupport.fireEvent( PlayerStateEvent.STATE_SUSPENDEDSTART, 
+					     BaseQ2.gWorld );
 
 	writeDeathmatchScoreboardMessage(null);
 	Engine.unicast(fEntity, true);
@@ -3458,7 +3513,7 @@ public void welcome()
 	Engine.multicast(fEntity.getOrigin(), Engine.MULTICAST_PVS);
 
 	Object[] args = {getName()};
-	Game.localecast("baseq2.Messages", "entered", args, Engine.PRINT_HIGH);
+	Game.localecast("q2java.baseq2.Messages", "entered", args, Engine.PRINT_HIGH);
 	fEntity.centerprint(WelcomeMessage.getMessage());
 	}
 /**
@@ -3500,9 +3555,9 @@ protected void worldEffects()
 	if ((fWaterLevel != 3) && (oldWaterLevel == 3))
 		fEntity.sound(NativeEntity.CHAN_VOICE, Engine.getSoundIndex("player/gasp2.wav"), 1, NativeEntity.ATTN_NORM, 0);
 
-	// FIXME --generate a zero vector for use in damage funcs	
-	// not terribly efficient to keep doing this
-	Vector3f origin = new Vector3f();
+	// generate a zero vector for use in damage funcs	
+	Vector3f origin = Q2Recycler.getVector3f();
+	origin.set(0, 0, 0);
 
 	//
 	// check for drowning
@@ -3527,14 +3582,14 @@ protected void worldEffects()
 				// play a gurp sound instead of a normal pain sound
 				if (fHealth <= fDrownDamage)
 					fEntity.sound(NativeEntity.CHAN_VOICE, Engine.getSoundIndex("player/drown1.wav"), 1, NativeEntity.ATTN_NORM, 0);
-				else if ((Game.randomInt() & 1) != 0)
+				else if ((GameUtil.randomInt() & 1) != 0)
 					fEntity.sound(NativeEntity.CHAN_VOICE, Engine.getSoundIndex("*gurp1.wav"), 1, NativeEntity.ATTN_NORM, 0);
 				else
 					fEntity.sound(NativeEntity.CHAN_VOICE, Engine.getSoundIndex("*gurp2.wav"), 1, NativeEntity.ATTN_NORM, 0);
 
 				fPainDebounceTime = Game.getGameTime();
 
-				damage(GameModule.gWorld, GameModule.gWorld, origin, fEntity.getOrigin(), origin, fDrownDamage, 0, DAMAGE_NO_ARMOR, Engine.TE_NONE, "water");
+				damage(BaseQ2.gWorld, BaseQ2.gWorld, origin, fEntity.getOrigin(), origin, fDrownDamage, 0, DAMAGE_NO_ARMOR, Engine.TE_NONE, "water");
 				}
 			}
 		}
@@ -3544,26 +3599,31 @@ protected void worldEffects()
 	// check for sizzle damage
 	//
 	if ((fWaterLevel != 0) && ((fWaterType & Engine.CONTENTS_LAVA) != 0))
-		damage(GameModule.gWorld, GameModule.gWorld, origin, fEntity.getOrigin(), origin, 3* fWaterLevel, 0, 0, Engine.TE_NONE, "lava");
+		damage(BaseQ2.gWorld, BaseQ2.gWorld, origin, fEntity.getOrigin(), origin, 3* fWaterLevel, 0, 0, Engine.TE_NONE, "lava");
 
 	if ((fWaterLevel != 0) && ((fWaterType & Engine.CONTENTS_SLIME) != 0))
-		damage(GameModule.gWorld, GameModule.gWorld, origin, fEntity.getOrigin(), origin, fWaterLevel, 0, 0, Engine.TE_NONE, "slime");
+		damage(BaseQ2.gWorld, BaseQ2.gWorld, origin, fEntity.getOrigin(), origin, fWaterLevel, 0, 0, Engine.TE_NONE, "slime");
+
+	// put back the Vector we borrowed
+	Q2Recycler.put(origin);
 	}
 /**
- * This method was created by a SmartGuide.
+ * Build up a layout string that displays the current score and write it
+ * out to this player.
  * @param killer q2jgame.Player
  */
 protected void writeDeathmatchScoreboardMessage(GameObject killer) 
-	{	
-	StringBuffer sb = new StringBuffer();
+	{
 	int i;
-
-	// generate a list of players sorted by score
-	Vector players = new Vector();
-	Enumeration enum = NativeEntity.enumeratePlayers();
+		
+	// get a vector
+	Vector players = Q2Recycler.getVector();
+	
+	// generate a list of players sorted by score	
+	Enumeration enum = Player.enumeratePlayers();
 	while (enum.hasMoreElements())
 		{
-		Player p = (Player) ((NativeEntity)enum.nextElement()).getPlayerListener();
+		Player p = (Player) enum.nextElement();
 		boolean isInserted = false;
 		for (i = 0; i < players.size(); i++)
 			{
@@ -3582,30 +3642,65 @@ protected void writeDeathmatchScoreboardMessage(GameObject killer)
 	int playerCount = players.size();
 	if (playerCount > 12)
 		playerCount = 12;		
-		
+
+	// get a couple StringBuffers from the Recycler
+	StringBuffer sb = Q2Recycler.getStringBuffer();
+	StringBuffer sb2 = Q2Recycler.getStringBuffer();		
+
 	for (i = 0; i < playerCount; i++)
 		{
 		int x = (i >= 6) ? 160 : 0;		// column
 		int y = (32 * (i % 6)) + 32;	// row
 		Player p = (Player) players.elementAt(i);
 		
-		// add a dogtag to the player and his killer
-		String s = null;
-		if (p == this)
-			s = "xv " + (x + 32) + " yv " + y + " picn tag1 ";
-		if (p == killer)
-			s = "xv " + (x + 32) + " yv " + y + " picn tag2 ";
-		if ((s != null) && ((sb.length() + s.length()) < 1024))
-			sb.append(s);
+		// add a dogtag to the player and his killer		
+		if ((p == this) || (p == killer))
+			{
+			sb2.setLength(0);
+			sb2.append("xv ");
+			sb2.append(x + 32);
+			sb2.append(" yv ");
+			sb2.append(y);
+			if (p == this)
+				sb2.append(" picn tag1 ");
+			else
+				sb2.append(" picn tag2 ");
 
-		// add the layout
-		s = "client " + x + " " + y + " " + p.fEntity.getPlayerNum() + " " + p.fScore + " " + p.fEntity.getPlayerPing() + " " + (int)((Game.getGameTime() - p.fStartTime) / 60) + " "; 
-		// the last 0 should really be the number of minutes the player's been in the game 		 			
-		if ((sb.length() + s.length()) < 1024)
-			sb.append(s);		
+			// add dogtag string only if it doesn't overflow the layout string
+			if ((sb.length() + sb2.length()) < 1024)
+				sb.append(sb2.toString());				
+			}
+						
+
+		// build the players scrore string
+		sb2.setLength(0);
+		sb2.append("client ");
+		sb2.append(x);
+		sb2.append(' ');
+		sb2.append(y);
+		sb2.append(' ');
+		sb2.append(p.fEntity.getPlayerNum());
+		sb2.append(' ');
+		sb2.append(p.fScore);
+		sb2.append(' ');
+		sb2.append(p.fEntity.getPlayerPing());
+		sb2.append(' ');
+		sb2.append((int)((Game.getGameTime() - p.fStartTime) / 60));
+		sb2.append(' ');
+		
+		// the last 0 should really be the number of minutes the player's been in the game
+
+		// add particular player only if it doesn't overflow layout string
+		if ((sb.length() + sb2.length()) < 1024)
+			sb.append(sb2.toString());		
 		}
 				
 	Engine.writeByte(Engine.SVC_LAYOUT);
 	Engine.writeString(sb.toString());
+
+	// Be nice, put stuff back into the Recycler
+	Q2Recycler.put(sb);
+	Q2Recycler.put(sb2);
+	Q2Recycler.put(players);
 	}
 }

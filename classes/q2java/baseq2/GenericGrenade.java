@@ -1,9 +1,9 @@
-package baseq2;
+package q2java.baseq2;
 
 
 import javax.vecmath.*;
 import q2java.*;
-import q2jgame.*;
+import q2java.core.*;
 
 /**
  * Grenades that have been thrown by a player,
@@ -36,7 +36,7 @@ void checkVelocity()
 	// bound velocity
 	//
 	v    = fEntity.getVelocity();
-	maxv = GameModule.gMaxVelocity.getFloat();
+	maxv = BaseQ2.gMaxVelocity.getFloat();
 
 	if (v.x >  maxv)
 		v.x =  maxv;
@@ -207,8 +207,8 @@ public void toss(GameObject owner, Point3f start, Vector3f aimdir, int damage, i
 	aimdir.scale(speed); // this seems wrong...I would think the direction should be normalized first, like the blaster is.
 
 	Vector3f vel = new Vector3f(aimdir);
-	vel.scaleAdd( 200 + Game.randomFloat()*10, up,    vel);
-	vel.scaleAdd(       Game.randomFloat()*10, right, vel);
+	vel.scaleAdd( 200 + GameUtil.randomFloat()*10, up,    vel);
+	vel.scaleAdd(       GameUtil.randomFloat()*10, right, vel);
 
 	fEntity.setVelocity(vel);
 

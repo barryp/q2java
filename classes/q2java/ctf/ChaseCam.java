@@ -1,4 +1,4 @@
-package menno.ctf;
+package q2java.ctf;
 
 /*
 ======================================================================================
@@ -16,9 +16,9 @@ package menno.ctf;
 
 
 import java.util.*;
-import q2java.*;
-import q2jgame.*;
 import javax.vecmath.*;
+import q2java.*;
+import q2java.core.*;
 
 /**
  * A misc_ctf_banner is a giant flag that
@@ -28,7 +28,7 @@ import javax.vecmath.*;
 
 public class ChaseCam
 {
-	protected Player  fOwner;		// The Player we're looking at.
+	protected CTFPlayer  fOwner;		// The Player we're looking at.
 	protected Vector  fListeners;	// The Players who are looking with us.
 
 	protected Point3f  fGoalPosition;
@@ -43,7 +43,7 @@ public class ChaseCam
 	//===================================================
 	// Constructor
 	//===================================================
-	public ChaseCam( Player owner )
+	public ChaseCam( CTFPlayer owner )
 	{
 		fOwner        = owner;
 		fListeners    = new Vector();

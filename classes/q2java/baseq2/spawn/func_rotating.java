@@ -1,9 +1,9 @@
-package baseq2.spawn;
+package q2java.baseq2.spawn;
 
 import javax.vecmath.*;
 import q2java.*;
-import q2jgame.*;
-import baseq2.*;
+import q2java.core.*;
+import q2java.baseq2.*;
 
 /**
  * Rotating objects like fans and such.
@@ -90,8 +90,10 @@ public void touch(Player touchedBy)
 	{
 	if (fTouchDamages && fIsRotating)
 		{
-		Vector3f zero = new Vector3f();
+		Vector3f zero = Q2Recycler.getVector3f();
+		zero.set(0, 0, 0);
 		touchedBy.damage(this, this, zero, touchedBy.fEntity.getOrigin(), zero, fDmg, 1, 0, Engine.TE_NONE, "crush");
+		Q2Recycler.put(zero);
 		}
 	}
 /**

@@ -415,6 +415,11 @@ static jint CreateJavaVM(JavaVM **java_vm, void **java_env, void *vm_args)
     }
 
 
+#ifdef KAFFE
+    JavaVMInitArgs vm_args;
+#else
+    JDK1_1InitArgs vm_args;
+#endif
 
 /**
  * Try to initialize VM using JNI 1.1
@@ -423,11 +428,7 @@ static jint CreateJavaVM(JavaVM **java_vm, void **java_env, void *vm_args)
  */
 static jint createVM_JNI_11(char **properties, JavaVM **java_vm)
     {
-#ifdef KAFFE
-    JavaVMInitArgs vm_args;
-#else
-    JDK1_1InitArgs vm_args;
-#endif
+
 
     char **prop;
     char *p;
@@ -460,6 +461,7 @@ static jint createVM_JNI_11(char **properties, JavaVM **java_vm)
         classpath = q2strcpy(p);
         javalink_debug("Found Q2JAVA_CLASSPATH environment variable\n");
         }
+
 
     // still no classpath? see if one was specified in properties
     if (!classpath)
@@ -762,7 +764,6 @@ void javalink_start()
 
     // see if the debugLog was set on the command line, and 
     // take care if any initialization of the debug log
-
     q2java_debugLog = q2java_gi.cvar("q2java_debugLog", debugFileName, 0);
 
     q2strfree(debugFileName);

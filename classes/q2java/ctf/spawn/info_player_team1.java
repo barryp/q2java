@@ -1,4 +1,4 @@
-package menno.ctf.spawn;
+package q2java.ctf.spawn;
 
 /*
 ======================================================================================
@@ -16,10 +16,10 @@ package menno.ctf.spawn;
 
 
 import q2java.*;
-import q2jgame.*;
-//import baseq2.*;
+import q2java.core.*;
+import q2java.baseq2.GenericSpawnpoint;
 
-public class info_player_team1 extends baseq2.GenericSpawnpoint
+public class info_player_team1 extends GenericSpawnpoint
 	{
 	public final static String REGISTRY_KEY = "spawn-team1";
 	

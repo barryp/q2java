@@ -1,10 +1,12 @@
-package baseq2.spawn;
+package q2java.baseq2.spawn;
 
 import q2java.*;
-import q2jgame.*;
-import baseq2.*;
+import q2java.core.*;
+import q2java.baseq2.*;
+import q2java.baseq2.event.*;
 
-public class item_health_mega extends GenericHealth implements PlayerStateListener
+public class item_health_mega extends GenericHealth
+  implements PlayerStateListener
 	{
 	protected Player fOwner;
 	
@@ -51,17 +53,6 @@ public boolean isOverridingMax()
 	return true;
 	}
 /**
- * Watch for Player disconnect or level change.
- */
-public void playerStateChanged(Player p, int changeEvent)
-	{
-	fOwner.removePlayerStateListener(this);
-	fOwner = null;
-		
-	Game.removeFrameListener(this);
-	setRespawn(20);
-	}
-/**
  * Decrease the player's health as the item wears out
  */
 public void runFrame(int phase) 
@@ -92,6 +83,17 @@ public void runFrame(int phase)
 	
 	Game.removeFrameListener(this);
 	setRespawn(20);		
+	}
+/**
+ * Watch for Player disconnect or level change.
+ */
+public void stateChanged(PlayerStateEvent e)
+	{
+	fOwner.removePlayerStateListener(this);
+	fOwner = null;
+		
+	Game.removeFrameListener(this);
+	setRespawn(20);
 	}
 /**
  * React to being touched by boosting player health 

@@ -1,12 +1,12 @@
-package q2jgame;
+package q2java.core;
 
-
-import java.io.*;
 import java.lang.reflect.*;
 import java.util.*;
 import javax.vecmath.*;
 
 import q2java.*;
+import q2java.core.event.*;
+import q2java.baseq2.*;
 
 /**
  * This class provides the framework for a Quake II Java game. 
@@ -20,9 +20,6 @@ import q2java.*;
 
 public class Game implements GameListener, JavaConsoleListener
 	{
-	// handy random number generator
-	private static Random gRandom = new Random();	
-
 	// Manage FrameListeners
 	public final static int FRAME_BEGINNING	= 0x01;
 	public final static int FRAME_MIDDLE	= 0x02;
@@ -32,30 +29,33 @@ public class Game implements GameListener, JavaConsoleListener
 	private static FrameList gFrameMiddle;
 	private static FrameList gFrameEnd;
 		
-	// Manage GameListeners
-	private static Vector gGameListeners;
+	// Event delegation support
+	private static ServerCommandSupport gServerCommandSupport = null;
+	private static GameStatusSupport gGameStatusSupport = null;
+	private static OccupancySupport gOccupancySupport = null;
+	private static GameletSupport gGameletSupport = null;
 
-	// Manage LevelListeners
-	private static Vector gLevelListeners;
-		
 	// Manage PrintListeners
 	private static Vector gPrintListeners;	
 
-	//Withnails 04/23/98 - implements Barrys suggestion
-	//Manage PackageListeners
-	protected static Vector gModuleListeners;	
-	
 	// Manage mod packages
 	//Withnails 04/22/98 - mods are now managed by GameClassFactory
 	protected static GameClassFactory gClassFactory;
 	protected static CVar gModules; // for persistant list of loaded modules
 
-	// lists of modules to add or remove only on level changes
-	protected static Vector gLaterModuleAdd;
-	protected static Vector gLaterModuleRemove;
+	// fields used when loading new gamelets
+	protected static Vector  gNewGameletList;
+	protected static boolean gNewGameletsShouldInit;
+	
+	// Track the current player class and the gamelet it came from
+	protected static Class	 gPlayerClass;
+	protected static Gamelet gPlayerGamelet;
 	
 	// Allow objects to find each other
 	private static Hashtable gLevelRegistry;
+
+	// Handle spawning entities
+	private static SpawnManager gSpawnManager;
 	
 	// game clocks
 	private static int gFrameCount;
@@ -104,22 +104,101 @@ public static void addFrameListener(FrameListener f, int phase, float delay, flo
 		gFrameEnd.addFrameListener(f, delay, interval);
 	}
 /**
+ * Add a new module to the game.  
+ * If a module has already been added, nothing happens.
+ * @param packageName java.lang.String
+ * @param alias short name that the gamelet will be referred to as.
+ */
+public static void addGamelet(String className, String alias) throws ClassNotFoundException
+	{
+	gNewGameletList = new Vector();
+	gNewGameletsShouldInit = true;
+
+	// actually add the gamelet and any others it depends on
+	addGamelet0(className, alias, null);
+	
+	if (gNewGameletsShouldInit)
+		{
+		Enumeration enum = gNewGameletList.elements();
+		while (enum.hasMoreElements())
+			{
+			Gamelet g = (Gamelet) enum.nextElement();
+			g.markInitialized();
+			g.init();
+			}			
+		}
+		
+	saveGameletList();
+	}
+/**
+ * This method was created in VisualAge.
+ * @param className java.lang.String
+ * @param alias java.lang.String
+ */
+private static void addGamelet0(String className, String alias, Gamelet higherGamelet) throws ClassNotFoundException
+	{
+	if (alias == null)
+		{
+		// build up a default alias for this gamelet
+		int p = className.lastIndexOf('.');
+		if (p >= 0)
+			alias = className.substring(p+1);
+		else
+			alias = "unknown";
+		}
+		
+	Gamelet g = gClassFactory.addGamelet(className, alias, higherGamelet);
+	
+	if (g != null)
+		{
+		// the class factory successfully added the Gamelet		
+		gGameletSupport.fireEvent( GameletEvent.GAMELET_ADDED, g);			
+		
+		gNewGameletList.insertElementAt(g, 0);
+		gNewGameletsShouldInit &= !(g.isLevelChangeRequired());
+		
+		// make sure dependent gamelets are loaded
+		String[] dependencies = g.getGameletDependencies();
+		if (dependencies != null)
+			{
+			for (int i = 0; i < dependencies.length; i++)
+				{
+				try
+					{
+					// see if the class factory already has a gamelet we depend on
+					Class depClass = Class.forName(dependencies[i]);
+					Gamelet other = gClassFactory.getGamelet(depClass);					
+				
+					if (other == null)
+						// not loaded? then recursively call to add -that- gamelet and -its- dependencies
+						addGamelet0(dependencies[i], null, g);
+					else
+						// already loaded, think about whether we should initialize or not
+						gNewGameletsShouldInit &= (other.isInitialized() || (!other.isLevelChangeRequired()));
+					}
+				catch (ClassNotFoundException cnfe)
+					{
+					}
+				}
+			}
+		}
+	}
+/**
+ * Other packages or mods may wish to be notified when a package is added to 
+ * the game. This event based interface introduces a 'PackageListener'.
+ * @param pl The PackageListener to add
+ */
+public static void addGameletListener(GameletListener l) 
+	{
+	gGameletSupport.addGameletListener(l);
+	}
+/**
  * Add a game listener.
  * @param pl q2jgame.GameListener
  */
-public static void addGameStatusListener(GameStatusListener gl) 
+public static void addGameStatusListener(GameStatusListener gsl) 
 	{
-	if (!gGameListeners.contains(gl))
-		gGameListeners.addElement(gl);
-	}
-/**
- * Add a level listener.
- * @param pl q2jgame.GameListener
- */
-public static void addLevelListener(LevelListener x) 
-	{
-	if (!gLevelListeners.contains(x))
-		gLevelListeners.addElement(x);
+	gGameStatusSupport.addGameStatusListener(gsl);
 	}
 /**
  * Add an arbitrary object to the Game's registry.
@@ -158,7 +237,7 @@ public static ResourceGroup addLocaleListener(LocaleListener obj)
  */
 public static ResourceGroup addLocaleListener(LocaleListener obj, String localeName) 
 	{
-	return addLocaleListener(obj, getLocale(localeName));
+	return addLocaleListener(obj, GameUtil.getLocale(localeName));
 	}
 /**
  * Add an object that wants to receive broadcasts that are localized.
@@ -174,25 +253,11 @@ public static ResourceGroup addLocaleListener(LocaleListener obj, Locale loc)
 	return grp;
 	}
 /**
- * Add a new module to the game.  If the module has a class named:
- * <packagename>.GameModule, then that classes static void load() method is called.  
- * If a module has already been added, nothing happens.
- * @param packageName java.lang.String
+ * notify when number of players change or player changes class...
  */
-public static void addModule(String packageName, String alias) 
+public static void addOccupancyListener(OccupancyListener l) 
 	{
-	//Withnails 04/22/98
-	gClassFactory.addModule(packageName, alias);
-	}
-/**
- * Other packages or mods may wish to be notified when a package is added to 
- * the game. This event based interface introduces a 'PackageListener'.
- * @param pl The PackageListener to add
- */
-public static void addModuleListener(ModuleListener pl) 
-	{
-	if (!gModuleListeners.contains(pl))
-		gModuleListeners.addElement(pl);	
+	gOccupancySupport.addOccupancyListener(l);
 	}
 /**
  * Add a print listener.
@@ -202,6 +267,13 @@ public static void addPrintListener(PrintListener pl)
 	{
 	if (!gPrintListeners.contains(pl))
 		gPrintListeners.addElement(pl);
+	}
+/**
+ * notify server command issued...
+ */
+public static void addServerCommandListener(ServerCommandListener l) 
+	{
+	gServerCommandSupport.addServerCommandListener(l);
 	}
 /**
  * Handle broadcast print messages.
@@ -223,13 +295,6 @@ public static void bprint(int flags, String msg)
 			{
 			}
 		}
-	}
-/**
- * @return A random number between -1.0 and +1.0
- */
-public static float cRandom() 
-	{
-	return (float)((gRandom.nextFloat() - 0.5) * 2.0);
 	}
 /**
  * Handle debugging print messages.
@@ -260,15 +325,15 @@ public static void dprint(String msg)
  */
 private boolean externalServerCommand(String alias, String cmd, Class[] paramTypes, Object[] params) 
 	{
-	GameModule gm = gClassFactory.getModule(alias);
-	if (gm == null) 
+	Gamelet g = gClassFactory.getGamelet(alias);
+	if (g == null) 
 		{
 		// _Quinn:05/15/98
-		dprint( alias + " is not a loaded module.\n" );
+		dprint( alias + " is not a loaded gamelet.\n" );
 		return false;
 		}
 
-	return externalServerCommand(gm, cmd, paramTypes, params);
+	return externalServerCommand(g, cmd, paramTypes, params);
 	}
 /**
  * This method was created by a SmartGuide.
@@ -277,12 +342,12 @@ private boolean externalServerCommand(String alias, String cmd, Class[] paramTyp
  * @param cmd java.lang.String
  * @param args java.lang.String[]
  */
-private boolean externalServerCommand(GameModule gm, String cmd, Class[] paramTypes, Object[] params) 
+private boolean externalServerCommand(Gamelet g, String cmd, Class[] paramTypes, Object[] params) 
 	{
 	try
 		{
-		java.lang.reflect.Method meth = gm.getClass().getMethod("svcmd_" + cmd, paramTypes);						
-		meth.invoke(gm, params);
+		java.lang.reflect.Method meth = g.getClass().getMethod("svcmd_" + cmd, paramTypes);						
+		meth.invoke(g, params);
 		}
 	catch (NoSuchMethodException nsme)
 		{
@@ -310,6 +375,52 @@ public static GameClassFactory getClassFactory()
 	return gClassFactory;
 	}
 /**
+ * Append a gamelet and all the other gamelets it depends on to a vector.
+ * @param g Gamelet we're looking at.
+ * @param v Vector to append the gamelet and its dependencies to.
+ */
+private static void getDependantGamelets(Gamelet g, Vector v) 
+	{
+	// bail if this gamelet is already on the list
+	if (v.indexOf(g) >= 0)
+		return;
+
+	v.addElement(g);
+	String clsName = g.getClass().getName();
+
+	// look through all gamelets for ones that depend on this one
+	Enumeration enum = gClassFactory.getGamelets();
+	while (enum.hasMoreElements())
+		{
+		Gamelet g2 = (Gamelet) enum.nextElement();
+		
+		String[] dependencies = g2.getGameletDependencies();
+		if (dependencies != null)
+			{			
+			for (int i = 0; i < dependencies.length; i++)
+				{
+				if (clsName.equals(dependencies[i]))
+					{
+					// g2 depends on g, so recursively call to see
+					// what else depends on g
+					getDependantGamelets(g2, v);
+					break; // out of the for loop
+					}
+				}
+			}
+		}
+	}
+/**
+ * Lookup a loaded package, based on its name.
+ * @return q2jgame.LoadedPackage, null if not found.
+ * @param alias java.lang.String
+ */
+public static Gamelet getGamelet(String alias) 
+	{
+	//Withnails 04/22/98
+	return gClassFactory.getGamelet(alias);
+	}
+/**
  * Fetch the current gametime, measured as seconds since 
  * the server (not the level) started.
  * @return float
@@ -333,42 +444,6 @@ public static Vector getLevelRegistryList(Object key)
 		}
 		
 	return result;
-	}
-/**
- * Get a Locale object given a name.
- * (no idea why the Locale class didn't do this itself)
- *
- * @return java.util.Locale
- * @param localeName java.lang.String
- */
-public static Locale getLocale(String localeName) 
-	{
-	if ((localeName == null) || localeName.equalsIgnoreCase("default"))
-		return Locale.getDefault();
-
-	StringTokenizer st = new StringTokenizer(localeName, "_");
-	String lang = st.nextToken();
-	String country;
-			
-	if (st.hasMoreTokens())
-		country = st.nextToken();
-	else 
-		country = "";
-			
-	if (st.hasMoreTokens())
-		return new Locale(lang, country, st.nextToken());
-	else
-		return new Locale(lang, country);
-	}
-/**
- * Lookup a loaded package, based on its name.
- * @return q2jgame.LoadedPackage, null if not found.
- * @param alias java.lang.String
- */
-public static GameModule getModule(String alias) 
-	{
-	//Withnails 04/22/98
-	return gClassFactory.getModule(alias);
 	}
 /**
  * Let the DLL know what class to use for new Players.
@@ -400,85 +475,16 @@ public static ResourceGroup getResourceGroup(Locale loc)
 	return grp;
 	}
 /**
- * Lookup an float spawn argument.
- * @return value found, or defaultValue.
- * @param args String array holding the map's entity arguments, as created by the spawnEntities() method.
- * @param name name of spawn argument.
- * @param defaultValue value to return if "name" is not found or isn't a valid float
+ * Get which object the Game is using to handle spawning entities
+ * when a new map starts.
+ * @return q2java.core.SpawnManager - will never be null.
  */
-public static float getSpawnArg(String[] args, String keyword, float defaultValue) 
+public static SpawnManager getSpawnManager() 
 	{
-	if (args == null)
-		return defaultValue;
-
-	keyword = keyword.intern();
-	for (int i = 0; i < args.length; i+=2)
-		{
-		if (keyword == args[i])
-			{
-			try
-				{
-				float result = Float.valueOf(args[i+1]).floatValue();
-				return result;
-				}
-			catch (NumberFormatException nfe)
-				{
-				}
-			}
-		}
+	if (gSpawnManager == null)
+		gSpawnManager = new DefaultSpawnManager();
 		
-	return defaultValue;
-	}
-/**
- * Lookup an integer spawn argument.
- * @return value found, or defaultValue.
- * @param args String array holding the map's entity arguments, as created by the spawnEntities() method.
- * @param name name of spawn argument.
- * @param defaultValue value to return if "name" is not found or isn't a valid integer
- */
-public static int getSpawnArg(String[] args, String keyword, int defaultValue) 
-	{
-	if (args == null)
-		return defaultValue;
-
-	keyword = keyword.intern();
-	for (int i = 0; i < args.length; i+=2)
-		{
-		if (keyword == args[i])
-			{
-			try
-				{
-				int result = Integer.parseInt(args[i+1]);
-				return result;
-				}
-			catch (NumberFormatException nfe)
-				{
-				}
-			}
-		}
-
-	return defaultValue;
-	}
-/**
- * Lookup a string spawn argument.
- * @return value found, or defaultValue.
- * @param args String array holding the map's entity arguments, as created by the spawnEntities() method.
- * @param name name of spawn argument.
- * @param defaultValue value to return if "name" is not found.
- */
-public static String getSpawnArg(String[] args, String keyword, String defaultValue)
-	{
-	if (args == null)
-		return defaultValue;
-
-	keyword = keyword.intern();
-	for (int i = 0; i < args.length; i+=2)
-		{
-		if (keyword == args[i])
-			return args[i+1];
-		}
-			
-	return defaultValue;
+	return gSpawnManager;
 	}
 /**
  * Called by the DLL when Quake II calls the DLL's init() function.
@@ -492,19 +498,16 @@ public void init()
 	gFrameBeginning = new FrameList(64, 16);
 	gFrameMiddle = new FrameList(512, 128);
 	gFrameEnd = new FrameList(64, 16);
-		
-	// setup to manage GameListeners
-	gGameListeners = new Vector();		
-	
-	// setup to manage LevelListeners
-	gLevelListeners = new Vector();
-	
+
+	// event delegation support
+	gGameStatusSupport = new GameStatusSupport();		
+	gOccupancySupport = new OccupancySupport();
+	gGameletSupport = new GameletSupport();
+	gServerCommandSupport = new ServerCommandSupport();
+
 	// setup to manage PrintListeners
 	gPrintListeners = new Vector();	
 	Engine.setJavaConsoleListener(this);
-	
-	// setup to manage PackageListeners
-	gModuleListeners = new Vector();
 	
 	// setup to manage BroadcastListeners and cached ResourceBundles
 	gResourceGroups = new Vector();
@@ -518,16 +521,13 @@ public void init()
 	//gClassHash = new Hashtable();
 	setClassFactory(new DefaultClassFactory());
 
-	// setup lists to track module changes that occur only when the level changes
-	gLaterModuleAdd = new Vector();
-	gLaterModuleRemove = new Vector();	
-
+	// Game clocks;
 	gFrameCount = 0;
 	gGameTime = 0;				
 	
 	// new command-line cvar, but use the old one as the default for
 	// backwards compatibility - will remove old one somewhere down the road
-	gModules = new CVar("q2jgame_modules", "", 0);
+	gModules = new CVar("gamelets", "", 0);
 	String modules = gModules.getString();
 
 	if (!modules.equals(""))
@@ -546,14 +546,17 @@ public void init()
 			{
 			temp = v.elementAt(i).toString();
 			tidx = temp.indexOf( "[" );
-			if ( tidx == -1 ) 
+			try
 				{
-				addModule( temp, temp );
-				} // end if not aliased.
-			else 
+				if ( tidx == -1 ) 
+					addGamelet( temp, null );
+				else 
+					addGamelet( temp.substring( 0, tidx ), temp.substring( tidx + 1, temp.length() - 1 ) );
+				}
+			catch (ClassNotFoundException cnfe)
 				{
-				addModule( temp.substring( 0, tidx ), temp.substring( tidx + 1, temp.length() - 1 ) );
-				} // end if aliased.
+				dprint("Error: " + temp + " not found\n");
+				}
 			} // end for loop.
 		}
 	else
@@ -561,21 +564,42 @@ public void init()
 		// read module names from System properties
 		int i = 1;
 		String s;
-		while ((s = System.getProperty("q2java.module."+i, null)) != null)
+		while ((s = System.getProperty("q2java.gamelet."+i, null)) != null)
 			{
 			StringTokenizer st = new StringTokenizer(s);
 			String name = st.nextToken();
+			String alias = null;
 			if (st.hasMoreElements())
-				addModule(name, st.nextToken());
-			else
-				addModule(name, name);
+				alias = st.nextToken();
+
+			try
+				{
+				addGamelet(name, alias);
+				}
+			catch (ClassNotFoundException cnfe)
+				{
+				dprint("Error: " + name + " not found\n");
+				}
+				
 			i++;
 			}
 
 		// add default module if nothing else was loaded			
 		if (i == 1)
-			addModule("baseq2", "baseq2");
+			{
+			try
+				{				
+				addGamelet("q2java.baseq2.BaseQ2", "baseq2");
+				}
+			catch (ClassNotFoundException cnfe)
+				{
+				dprint("Error: the default Gamelet q2java.baseq2.BaseQ2 not found\n");
+				}
+			}
 		}
+
+	// Added for delegation event model
+	gGameStatusSupport.fireEvent( GameStatusEvent.GAME_INIT, null );
 			
 	Engine.debugLog("Game.init() finished");
 	}
@@ -663,122 +687,76 @@ public static Class lookupClass(String classSuffix) throws ClassNotFoundExceptio
 	return gClassFactory.lookupClass(classSuffix);
 	}
 /**
- * Notifies all package listeners that a package has been added
- */
-protected static void notifyModuleAdded(q2jgame.GameModule gm) 
-	{
-	Enumeration enum = gModuleListeners.elements();
-	while (enum.hasMoreElements())
-		{
-		try
-			{
-			((ModuleListener) enum.nextElement()).moduleAdded(gm);
-			}
-		catch (Exception e)
-			{
-			}
-		}
-		
-	// save an updated list of modules in the CVar		
-	saveList();			
-	}
-/**
- * Notifies all package listeners that a package has been removed
- */
-protected static void notifyModuleRemoved( q2jgame.GameModule gm) 
-	{
-	Enumeration enum = gModuleListeners.elements();
-	while (enum.hasMoreElements())
-		{
-		try
-			{
-			((ModuleListener) enum.nextElement()).moduleRemoved(gm);
-			}
-		catch (Exception e)
-			{
-			}
-		}
-		
-	// save an updated list of modules in the CVar		
-	saveList();		
-	}
-/**
  * Called by the DLL when a new player connects. Throw an exception to reject the connection.
  * @param playerEntity instance of NativeEntity (or a subclass of NativeEntity) that represents the player.
- * @param userinfo Player's basic info
- * @param loadgame boolean
  */
 public void playerConnect(NativeEntity playerEntity) throws Exception, Throwable
 	{
+	Engine.debugLog("Game.playerConnect() class = " + gPlayerClass.getName());
+	
+	if (gPlayerClass == null)
+		{
+		Game.dprint("Big problem..none of the loaded gamelets specify a player class\n");
+		return;
+		}
+	
 	try
 		{
-		Class playerClass = gClassFactory.lookupClass(".Player");
-	
 		Class[] paramTypes = new Class[1];
 		paramTypes[0] = q2java.NativeEntity.class;
 
-		Method initMethod = playerClass.getMethod("connect", paramTypes);
+		Method initMethod = gPlayerClass.getMethod("connect", paramTypes);
 
 		Object[] params = new Object[1];
 		params[0] = playerEntity;
 
 		initMethod.invoke(null, params);		
+
+		gOccupancySupport.fireEvent(playerEntity, OccupancyEvent.PLAYER_CONNECTED );
 		}
 	catch (InvocationTargetException ite)
 		{
 		throw ite.getTargetException();
 		}
+	catch (java.beans.PropertyVetoException pve)
+		{
+		Object o = playerEntity.getReference();
+		if( o instanceof GameObject )
+		    {
+		    ((GameObject)o).dispose();
+		    }
+		throw pve;
+		}  
 	}
 /**
- * Return A random float between 0.0 and 1.0.
+ * Should be called by the DLL when a new player disconnects.
+ * currently called by baseq2.Player
+ * @param playerEntity instance of NativeEntity 
+ * @author Peter Donald
  */
-
-public static float randomFloat() 
+public static void playerDisconnect(NativeEntity playerEntity) 
 	{
-	return gRandom.nextFloat();
-	}
-/**
- * Get a random integer, values are distributed across 
- * the full range of the signed 32-bit integer type.
- * @return A random integer.
- */
-public static int randomInt() 
-	{
-	return gRandom.nextInt();
+	try 
+		{
+	    gOccupancySupport.fireEvent(playerEntity, OccupancyEvent.PLAYER_DISCONNECTED );
+		}
+	catch(java.beans.PropertyVetoException pve) 
+		{
+		}
 	}
 /**
  * Called by the DLL when the DLL's ReadGame() function is called.
  */
 public void readGame(String filename)
 	{
-	Enumeration enum = gGameListeners.elements();
-	while (enum.hasMoreElements())
-		{
-		try
-			{
-			((GameStatusListener) enum.nextElement()).readGame(filename);
-			}
-		catch (Exception e)
-			{
-			}
-		}
+	gGameStatusSupport.fireEvent( GameStatusEvent.GAME_READGAME, filename );
 	}
 /**
  * Called by the DLL when the DLL's ReadLevel() function is called.
  */
 public void readLevel(String filename)
 	{
-	Enumeration enum = gGameListeners.elements();
-	while (enum.hasMoreElements())
-		{
-		try
-			{
-			((GameStatusListener) enum.nextElement()).readLevel(filename);
-			}
-		catch (Exception e)
-			{
-			}
-		}
+	gGameStatusSupport.fireEvent( GameStatusEvent.GAME_READLEVEL, filename );
 	}
 /**
  * Remove a normal FrameListener that's registered to listen
@@ -807,22 +785,78 @@ public static void removeFrameListener(FrameListener f, int phase)
 			
 	if ((phase & FRAME_END) != 0)
 		gFrameEnd.removeFrameListener(f);
-	}	
+	}
 /**
- * Remove a game listener.
- * @param pl q2jgame.GameListener
+ * Remove a module from the game's package list
+ * @param gm A loaded Gamelet
  */
-public static void removeGameStatusListener(GameStatusListener gl) 
+public static void removeGamelet(Gamelet g) 
 	{
-	gGameListeners.removeElement(gl);
+	// get a list of all gamelets that depend on this one
+	Vector v = new Vector();
+	getDependantGamelets(g, v);
+
+	// look them all over and decide if any require a level change
+	// and will hold all the others up
+	boolean levelChangeRequired = false;
+	Enumeration enum = v.elements();
+	while (enum.hasMoreElements())
+		{
+		Gamelet g2 = (Gamelet) enum.nextElement();
+		levelChangeRequired |= g2.isLevelChangeRequired();
+		}
+
+	// deal with the gamelets we decided have to be unloaded together
+	if (levelChangeRequired)
+		{
+		// mark the gamelets we want to unload at level change
+		enum = v.elements();
+		while (enum.hasMoreElements())
+			{
+			Gamelet g2 = (Gamelet) enum.nextElement();
+			g2.markUnloading();
+			}
+		}
+	else
+		{
+		// unload gamelets now, highest priority first
+		enum = gClassFactory.getGamelets();
+		while (enum.hasMoreElements())
+			{
+			Gamelet g2 = (Gamelet) enum.nextElement();
+			if (v.indexOf(g2) >= 0)
+				removeGamelet0(g2);
+			}
+		}
+	}
+/**
+ * Do the dirty work of actually removing a gamelet. Doesn't check for
+ * depencencies or whether a level change is required - that should have
+ * already been handled by removeGamelet()
+ *
+ * @param gm A loaded Gamelet
+ */
+private static void removeGamelet0(Gamelet g) 
+	{
+	gGameletSupport.fireEvent( GameletEvent.GAMELET_REMOVED, g);
+	gClassFactory.removeGamelet(g);
+	saveGameletList();	
+	}
+/**
+ * Removes a package listener
+ * @param pl the PackageListener to remove
+ */
+public static void removeGameletListener(GameletListener l)
+	{
+	gGameletSupport.removeGameletListener(l);
 	}
 /**
  * Remove a game listener.
  * @param pl q2jgame.GameListener
  */
-public static void removeLevelListener(LevelListener x) 
+public static void removeGameStatusListener(GameStatusListener gsl) 
 	{
-	gLevelListeners.removeElement(x);
+	gGameStatusSupport.removeGameStatusListener(gsl);
 	}
 /**
  * This method was created by a SmartGuide.
@@ -853,7 +887,7 @@ public static void removeLocaleListener(LocaleListener obj)
  */
 public static void removeLocaleListener(LocaleListener obj, String localeName) 
 	{
-	removeLocaleListener(obj, getLocale(localeName));
+	removeLocaleListener(obj, GameUtil.getLocale(localeName));
 	}
 /**
  * Remove a broadcast listener from a specific locale.
@@ -865,29 +899,11 @@ public static void removeLocaleListener(LocaleListener obj, Locale loc)
 	grp.removeLocaleListener(obj);	
 	}
 /**
- * Remove a module from the game's package list
- * @param packageName java.lang.String
+ * notify when number of players change or player changes class...
  */
-public static void removeModule(String alias) 
+public static void removeOccupancyListener(OccupancyListener l) 
 	{
-	//Withnails 04/22/98
-	gClassFactory.removeModule(alias);
-	}
-/**
- * Remove a module from the game's package list
- * @param gm A loaded GameModule
- */
-public static void removeModule(GameModule gm) 
-	{
-	gClassFactory.removeModule(gm);
-	}
-/**
- * Removes a package listener
- * @param pl the PackageListener to remove
- */
-public static void removeModuleListener(ModuleListener pl) 
-	{
-	gModuleListeners.removeElement(pl);
+	gOccupancySupport.removeOccupancyListener(l);
 	}
 /**
  * Remove a listener.
@@ -896,6 +912,49 @@ public static void removeModuleListener(ModuleListener pl)
 public static void removePrintListener(PrintListener pl) 
 	{
 	gPrintListeners.removeElement(pl);
+	}
+/**
+ * notify server command issued...
+ */
+public static void removeServerCommandListener(ServerCommandListener l) 
+	{
+	gServerCommandSupport.removeServerCommandListener(l);
+	}
+/**
+ * Reconsider which class should be controlling players.
+ */
+public static void rethinkPlayerClass() 
+	{
+	Gamelet g = null;
+	Class cls = null;
+	
+	// look for a gamelet that provides a player class
+	// searching from highest priority on down
+	Enumeration enum = gClassFactory.getGamelets();
+	while (enum.hasMoreElements())
+		{
+		g = (Gamelet) enum.nextElement();
+		if (!g.isInitialized())
+			continue;
+			
+		cls = g.getPlayerClass();
+		if (cls != null)
+			break;
+		}
+
+	// check if the current player gamelet is different 
+	// from what we found
+	if (g != gPlayerGamelet)
+		{
+		// different? then do the big switch
+		
+		if (gPlayerGamelet != null)
+			gPlayerGamelet.releasePlayers();
+
+		gPlayerGamelet = g;
+		gPlayerClass = cls;
+		g.grabPlayers();
+		}
 	}
 /**
  * Called by the DLL when the DLL's RunFrame() function is called.
@@ -921,21 +980,24 @@ public void runFrame()
 	gPerformanceFrames++;	
 	}
 /**
- * Save the list of loaded modules in a CVar.
+ * Save the list of loaded gamelets in a CVar.
  */
-protected static void saveList() 
+protected static void saveGameletList() 
 	{
 	StringBuffer sb = new StringBuffer();
-	Enumeration enum = gClassFactory.getModules();
+	Enumeration enum = gClassFactory.getGamelets();
 	while (enum.hasMoreElements()) 
 		{
-		GameModule gm = (GameModule) enum.nextElement();
-		sb.append(gm.getPackageName());
-		sb.append('[');
-		sb.append(gm.getModuleName());
-		sb.append(']');
-		if (enum.hasMoreElements())
-			sb.append('+');
+		Gamelet g = (Gamelet) enum.nextElement();
+
+		// insert the gamelet info in reverse order, so the
+		// first gamelet loaded appears first when all is done.
+		if (sb.length() > 0)
+			sb.insert(0, '+');
+		sb.insert(0, ']');
+		sb.insert(0, g.getGameletName());
+		sb.insert(0, '[');
+		sb.insert(0,g.getClass().getName());
 		}	
 		
 	gModules.setValue(sb.toString());		
@@ -956,7 +1018,17 @@ public void serverCommand()
 
 	// special case where the user just typed "sv" by itself
 	if (argc == 1)
+		{
 		sa[1] = "help";
+		}
+	else
+		{
+	    ServerCommandEvent e = gServerCommandSupport.fireEvent(sa[1], sa); 
+	    if( e.isConsumed() )
+	    	{
+			return;
+		    }
+		}
 
 	// create parameter type array for reflection
 	Class[] paramTypes = new Class[1];
@@ -1013,11 +1085,11 @@ public void serverCommand()
 								
 		// look for a module command second
 		//Withnails 04/22/98 - now makes use of an enumeration instead
-		Enumeration enum = gClassFactory.getModules();
+		Enumeration enum = gClassFactory.getGamelets();
 		while (enum.hasMoreElements()) 
 			{
-			GameModule gm = (GameModule)enum.nextElement();
-			if (externalServerCommand(gm, cmd, paramTypes, params))
+			Gamelet g = (Gamelet)enum.nextElement();
+			if (externalServerCommand(g, cmd, paramTypes, params))
 				return;
 			}
 		}
@@ -1027,7 +1099,7 @@ public void serverCommand()
 	dprint("    args(): [" + Engine.getArgs() + "]\n");
 	for (int i = 0; i < sa.length; i++)
 		dprint("    argv(" + i + "): [" + sa[i] + "]\n");
-	}	
+	}
 /**
  * Withnails 04/22/98
  * Sets the current ClassFactory. The init() method sets it to the default q2jgame.GameClassFactory
@@ -1048,30 +1120,30 @@ public static void setClassFactory(GameClassFactory gcf)
 	gClassFactory = gcf;
 	}
 /**
+ * Set which object will handle spawning entities when a new map is started.
+ * @param sm q2java.core.SpawnManager may be null, which will cause the Game
+ *  to create and set itself to use a DefaultSpawnManager.
+ */
+public static void setSpawnManager(SpawnManager sm) 
+	{
+	gSpawnManager = sm;
+	}
+/**
  * Called by the DLL when the DLL's Shutdown() function is called.
  */
 public void shutdown()
 	{
-	Enumeration enum = gGameListeners.elements();
-	while (enum.hasMoreElements())
-		{
-		try
-			{
-			((GameStatusListener) enum.nextElement()).shutdown();
-			}
-		catch (Exception e)
-			{
-			}
-		}
+	gGameStatusSupport.fireEvent( GameStatusEvent.GAME_SHUTDOWN, null );
 
 	// unload the packages
-	enum = gClassFactory.getModules();
+	Enumeration enum = gClassFactory.getGamelets();
 	while (enum.hasMoreElements()) 
 		{
-		GameModule gm = (GameModule) enum.nextElement();
+		Gamelet g = (Gamelet) enum.nextElement();
 		try
 			{
-			gm.unload();
+			gGameletSupport.fireEvent( GameletEvent.GAMELET_REMOVED, g);			
+			g.unload();
 			}
 		catch (Exception e)
 			{
@@ -1088,119 +1160,10 @@ public void shutdown()
  * in the entString, and instantiates instances of them, with
  * the entity parameters passed as an array of Strings.
  */
-private void spawnEntities(String entString)
-	{
-	try
-		{
-		StringReader sr = new StringReader(entString);
-		StreamTokenizer st = new StreamTokenizer(sr);
-		st.eolIsSignificant(false);
-		st.quoteChar('"');
-		int token;
-		Vector v = new Vector(16);
-		boolean foundClassname = false;
-		String className = null;
-
-		File sandbox = new File(Engine.getGamePath(), "sandbox");
-		File entFile = new File(sandbox, "entities.log");
-		FileWriter fw = new FileWriter(entFile);
-		PrintWriter pw = new PrintWriter(fw);	
-	
-		pw.println(entString);
-		pw.println("--------------------------");
-
-		Object[] params = new Object[1];
-		Class[] paramTypes = new Class[1];
-		String[] sa = new String[1];
-		paramTypes[0] = sa.getClass();
-
-		while ((token = st.nextToken()) != StreamTokenizer.TT_EOF)
-			{
-			switch (token)
-				{
-				case '"' : 
-					if (foundClassname)
-						{
-						className = st.sval;
-						foundClassname = false;
-						break;
-						}
-					if (st.sval.equalsIgnoreCase("classname"))
-						{
-						foundClassname = true;
-						break;
-						}
-					v.addElement(st.sval.intern()); 
-					break;
-
-				case '{' : foundClassname = false; break;
-
-				case '}' : 
-					sa = new String[v.size()];
-					v.copyInto(sa);
-					v.removeAllElements();
-					params[0] = sa;
-					try
-						{
-						Class entClass = gClassFactory.lookupClass(".spawn." + className.toLowerCase());
-						Constructor ctor = entClass.getConstructor(paramTypes);							
-						Object obj = ctor.newInstance(params);
-						pw.println(obj);
-						}
-					// this stinks..since we're using reflection to find the 
-					// constructor, the compiler can't tell what exceptions
-					// it'll throw - so we have to catch 'em all
-					// and sort out the ones we really want to deal with.
-					catch (InvocationTargetException ite)
-						{
-						Throwable te = ite.getTargetException();
-						if (!(te instanceof InhibitedException))
-							te.printStackTrace();						
-						}
-					catch (ClassNotFoundException cnfe)
-						{
-						pw.print("---- " + className + "(");
-						if (sa != null)
-							{
-							String prefix = "";
-							for (int i = 0; i < sa.length; i+=2)
-								{
-								pw.print(prefix + sa[i] + "=\"" + sa[i+1] + "\"");
-								prefix = ", ";
-								}
-							}
-						pw.println(")");						
-						}
-					catch (Exception e)
-						{
-						e.printStackTrace();
-						}
-
-					foundClassname = false;
-					className = null;
-					break;
-
-				default  : 
-					foundClassname = false;				
-				}
-			}
-
-		pw.close();			
-		}
-	catch (Exception e)
-		{
-		e.printStackTrace();
-		}
-	}
-/**
- * Spawn entities into the Quake II environment.
- * This methods parses the entString passed to it, and looks
- * for Java classnames equivalent to the classnames specified 
- * in the entString, and instantiates instances of them, with
- * the entity parameters passed as an array of Strings.
- */
 public void startLevel(String mapname, String entString, String spawnPoint)
 	{
+	Engine.debugLog("Game.startLevel(\"" + mapname + "\", <entString>, \"" + spawnPoint + "\")");
+	
 	// purge non-player NativeEntity objects from FrameListener lists
 	gFrameBeginning.purge();
 	gFrameMiddle.purge();
@@ -1209,49 +1172,45 @@ public void startLevel(String mapname, String entString, String spawnPoint)
 	// clear the object registry
 	gLevelRegistry.clear();
 	
-	// remove modules that were deferred until a level change
-	for (int i = 0; i < gLaterModuleRemove.size(); i++)
-		removeModule((String)gLaterModuleRemove.elementAt(i));
-	gLaterModuleRemove.removeAllElements();
+	// look for gamelets that were waiting for a level change
+	Vector initList = new Vector();
+	Enumeration enum = gClassFactory.getGamelets();
+	while (enum.hasMoreElements())
+		{
+		Gamelet g = (Gamelet) enum.nextElement();
+		if (g.isUnloading())
+			removeGamelet0(g);
+		else if (!g.isInitialized())
+			initList.insertElementAt(g, 0); // build list in reverse order
+		}
 
-	// add modules that were deferred until a level change
-	for (int i = 0; i < gLaterModuleAdd.size(); i+=2)
-		addModule((String)gLaterModuleAdd.elementAt(i), (String)gLaterModuleAdd.elementAt(i+1));
-	gLaterModuleAdd.removeAllElements();	
+	// initialize gamelets we found uninitialized
+	enum = initList.elements();
+	while (enum.hasMoreElements())
+		{
+		Gamelet g = (Gamelet) enum.nextElement();
+		g.markInitialized();
+		g.init();	
+		}
 	
-
+	// ponder whether or not we need to change player classes
+	rethinkPlayerClass();
+	
 	// force a gc, to clean things up from the last level, before
 	// spawning all the new entities
 	System.gc();		
 
-	// let interested objects know that a new level is starting
-	Enumeration enum = gLevelListeners.elements();
-	while (enum.hasMoreElements())
-		{
-		try
-			{
-			((LevelListener) enum.nextElement()).startLevel(mapname, entString, spawnPoint);
-			}
-		catch (Exception e)
-			{
-			}
-		}
+	gGameStatusSupport.fireEvent( GameStatusEvent.GAME_PRESPAWN, 
+				      mapname,
+				      entString,
+				      spawnPoint );	
 
-	spawnEntities(entString);
+	getSpawnManager().spawnEntities(mapname, entString, spawnPoint);
 
-	// let interested objects know that entities have been spawned
-	enum = gLevelListeners.elements();
-	while (enum.hasMoreElements())
-		{
-		try
-			{
-			((LevelListener) enum.nextElement()).levelEntitiesSpawned();
-			}
-		catch (Exception e)
-			{
-			}
-		}
-
+	gGameStatusSupport.fireEvent( GameStatusEvent.GAME_POSTSPAWN, 
+				      mapname,
+				      entString,
+				      spawnPoint );	
 						
 	// now, right before the game starts, is a good time to 
 	// force Java to do another garbage collection to tidy things up.
@@ -1263,52 +1222,27 @@ public void startLevel(String mapname, String entString, String spawnPoint)
 /**
  * Let the user add a game module.
  */
-public static void svcmd_addmodule(String[] args) 
+public static void svcmd_addgamelet(String[] args) 
 	{
 	if (args.length < 3)
 		{
-		dprint("Usage: sv addmodule <package-name> [<alias>]\n");
+		dprint("Usage: sv addgamelet <class-name> [<alias>]\n");
 		return;
 		}
-	
-	if (args.length < 4)
-		addModule(args[2], args[2]);		
-	else
-		addModule(args[2], args[3]);
-	}
-/**
- * Schedule a module addition for the next level change.
- */
-public static void svcmd_addmodulelater(String[] args) 
-	{
-	if (args.length < 3)
-		{
-		dprint("Usage: sv addmodulelater <package-name> [<alias>]\n");
-		dprint("  Cancel an addition by running this command again with the same package or alias name\n");
-		return;
-		}
-
-
-	int i = gLaterModuleAdd.indexOf(args[2]);
-
-	if (i < 0)
-		{
-		gLaterModuleAdd.addElement(args[2]);
-		if (args.length < 4)
-			gLaterModuleAdd.addElement(args[2]);
-		else
-			gLaterModuleAdd.addElement(args[3]);
-		dprint(args[2] + " will be added on the next level change\n");
-		}
-	else
-		{
-		i = i & 0xfffe; // strip off lower bit
-		gLaterModuleAdd.removeElementAt(i+1);
-		gLaterModuleAdd.removeElementAt(i);
-		dprint(args[2] + " addition cancelled\n");
-		}
-
 		
+	String alias = null;
+	
+	if (args.length > 3)
+		alias = args[3];
+
+	try
+		{
+		addGamelet(args[2], alias);
+		}
+	catch (ClassNotFoundException cnfe)
+		{
+		dprint("Error: " + args[2] + " not found\n");
+		}
 	}
 /**
  * Print timing info to the console.
@@ -1317,42 +1251,48 @@ public static void svcmd_help(String[] args)
 	{	
 	dprint("Q2Java Game Framework\n\n");
 	dprint("   commands:\n");
-	dprint("      sv addmodule <package-name> [<alias>]\n");
-	dprint("      sv removemodule <alias>\n");
-	dprint("\n");
-	dprint("      sv addmodulelater <package-name> [<alias>]\n");
-	dprint("      sv removemodulelater <alias>\n");
+	dprint("      sv addgamelet <class-name> [<alias>]\n");
+	dprint("      sv removegamelet <alias>\n");
 	dprint("\n");
 	dprint("      sv javamem       // show Java memory usage\n");
 	dprint("      sv javagc        // force a Java GC\n");
 	dprint("\n");
 	dprint("      sv time          // show performance timing\n");
 	dprint("      sv help          // this screen\n");
-	dprint("      sv <module>.help // help for a loaded module\n");
+	dprint("      sv <gamelet>.help // help for a loaded module\n");
 
 
 	//Withnails 04/22/98 - now makes use of an enumeration instead
 	dprint("\n");
-	dprint("   loaded modules:\n");
-	Enumeration enum = gClassFactory.getModules();
+	dprint("   loaded gamelets:\n");
+
+	boolean foundLoad = false;
+	boolean foundUnload = false;
+	
+	Enumeration enum = gClassFactory.getGamelets();
 	while (enum.hasMoreElements()) 
 		{
-		dprint("      " + ((GameModule)enum.nextElement()).getModuleName() + "\n");        
+		Gamelet g = (Gamelet) enum.nextElement();
+		if (g.isUnloading())
+			{
+			dprint("     (unload) " + g.getGameletName() + "\n");
+			foundUnload = true;
+			}
+		else if (g.isInitialized())
+			dprint("              " + g.getGameletName() + "\n");        
+		else
+			{
+			dprint("       (load) " + g.getGameletName() + "\n");
+			foundLoad = true;
+			}
 		}
+	dprint("\n");
 
-	if (gLaterModuleRemove.size() > 0)
-		{
-		dprint("\n    modules to be removed at level change:\n");
-		for (int i = 0; i < gLaterModuleRemove.size(); i++)
-			dprint("      " + gLaterModuleRemove.elementAt(i) + "\n");
-		}
-
-	if (gLaterModuleAdd.size() > 0)
-		{
-		dprint("\n    modules to be added at level change:\n");
-		for (int i = 0; i < gLaterModuleAdd.size(); i+=2)
-			dprint("      " + gLaterModuleAdd.elementAt(i) + " [" + gLaterModuleAdd.elementAt(i+1) + "]\n");
-		}
+	// explain the (load)/(unload) notes if necessary
+	if (foundLoad)
+		dprint("    (load) = uninitialized gamelet waiting for level change\n");
+	if (foundUnload)
+		dprint("  (unload) = gamelet that will be removed on next level change\n");
 	}
 /**
  * Force the Java Garbage collector to run.
@@ -1400,38 +1340,14 @@ public static void svcmd_properties(String[] args)
 /**
  * Let the user remove a game module.
  */
-public static void svcmd_removemodule(String[] args) 
+public static void svcmd_removegamelet(String[] args) 
 	{
 	if (args.length < 3)
-		dprint("Usage: sv removemodule <alias>\n");
-	else
-		removeModule(args[2]);		
-	}
-/**
- * Schedule a module removal for the next level change.
- * Invoking this command a second time with the same parameter cancels
- * the first call.
- */
-public static void svcmd_removemodulelater(String[] args) 
-	{
-	if (args.length < 3)
-		{
-		dprint("Usage: sv removemodule <alias>\n");
-		dprint("  Cancel a removal by running this command again with the same alias name\n");
-		return;
-		}
-
-	int i = gLaterModuleRemove.indexOf(args[2]);
-
-	if (i < 0)
-		{
-		gLaterModuleRemove.addElement(args[2]);
-		dprint(args[2] + " will be removed on the next level change\n");
-		}
+		dprint("Usage: sv removegamelet <alias>\n");
 	else
 		{
-		gLaterModuleRemove.removeElementAt(i);
-		dprint(args[2] + " removal cancelled\n");
+		Gamelet g = gClassFactory.getGamelet(args[2]);
+		removeGamelet(g);
 		}
 	}
 /**
@@ -1459,33 +1375,13 @@ public static void svcmd_time(String[] args)
  */
 public void writeGame(String filename, boolean autosave)
 	{
-	Enumeration enum = gGameListeners.elements();
-	while (enum.hasMoreElements())
-		{
-		try
-			{
-			((GameStatusListener) enum.nextElement()).writeGame(filename);
-			}
-		catch (Exception e)
-			{
-			}
-		}
+	gGameStatusSupport.fireEvent( GameStatusEvent.GAME_WRITEGAME, filename );
 	}
 /**
  * Called by the DLL when the DLL's WriteLevel() function is called.
  */
 public void writeLevel(String filename)
 	{
-	Enumeration enum = gGameListeners.elements();
-	while (enum.hasMoreElements())
-		{
-		try
-			{
-			((GameStatusListener) enum.nextElement()).writeLevel(filename);
-			}
-		catch (Exception e)
-			{
-			}
-		}
+	gGameStatusSupport.fireEvent( GameStatusEvent.GAME_WRITEGAME, filename );
 	}
 }

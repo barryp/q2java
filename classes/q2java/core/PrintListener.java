@@ -1,8 +1,9 @@
-package q2jgame;
+package q2java.core;
 
 /**
  * Interface for objects that want to be notified of print events.
- * 
+ *
+ * @author Barry Pederson
  */
 public interface PrintListener 
 	{

@@ -1,8 +1,8 @@
-package baseq2.spawn;
+package q2java.baseq2.spawn;
 
 import q2java.*;
-import q2jgame.*;
-import baseq2.*;
+import q2java.core.*;
+import q2java.baseq2.*;
 
 public class info_player_deathmatch extends GenericSpawnpoint
 	{
@@ -12,7 +12,7 @@ public info_player_deathmatch(String[] spawnArgs) throws GameException
 	{
 	super(spawnArgs);
 			
-	if (!baseq2.GameModule.gIsDeathmatch)
+	if (!BaseQ2.gIsDeathmatch)
 		throw new InhibitedException("Inhibited in non-deathmatch");
 		
 	Game.addLevelRegistry(REGISTRY_KEY, this);

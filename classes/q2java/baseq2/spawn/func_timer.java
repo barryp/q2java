@@ -1,9 +1,9 @@
-package baseq2.spawn;
+package q2java.baseq2.spawn;
 
 import java.util.Vector;
 import q2java.*;
-import q2jgame.*;
-import baseq2.*;
+import q2java.core.*;
+import q2java.baseq2.*;
 
 /**  
  *  func_timer objects wait a bit after being triggered, and
@@ -25,27 +25,27 @@ public class func_timer implements GameTarget, FrameListener
 	
 public func_timer(String[] spawnArgs) throws GameException
 	{
-	baseq2.GameModule.checkInhibited(spawnArgs);
+	BaseQ2.checkInhibited(spawnArgs);
 		
-	fWait      = Game.getSpawnArg(spawnArgs, "wait",      1f );
-	fRandom    = Game.getSpawnArg(spawnArgs, "random",    0f );
-	fDelay     = Game.getSpawnArg(spawnArgs, "delay",     0f );
-	fPauseTime = Game.getSpawnArg(spawnArgs, "pausetime", 0f );
+	fWait      = GameUtil.getSpawnArg(spawnArgs, "wait",      1f );
+	fRandom    = GameUtil.getSpawnArg(spawnArgs, "random",    0f );
+	fDelay     = GameUtil.getSpawnArg(spawnArgs, "delay",     0f );
+	fPauseTime = GameUtil.getSpawnArg(spawnArgs, "pausetime", 0f );
 
 	if (fRandom >= fWait)
 		fRandom = fWait - Engine.SECONDS_PER_FRAME;
 
-	if ((Game.getSpawnArg(spawnArgs, "spawnflags", 0) & 1) != 0)
+	if ((GameUtil.getSpawnArg(spawnArgs, "spawnflags", 0) & 1) != 0)
 		{
-		Game.addFrameListener(this, 1 + fPauseTime + fDelay + fWait + (float)Game.cRandom() * fRandom, -1);
+		Game.addFrameListener(this, 1 + fPauseTime + fDelay + fWait + (float)GameUtil.cRandom() * fRandom, -1);
 		fIsOn = true;
 		}
 
-	String s = Game.getSpawnArg(spawnArgs, "target", null);
+	String s = GameUtil.getSpawnArg(spawnArgs, "target", null);
 	if (s != null)
 		fTargets = Game.getLevelRegistryList("target-" + s);
 		
-	s = Game.getSpawnArg(spawnArgs, "targetname", null);
+	s = GameUtil.getSpawnArg(spawnArgs, "targetname", null);
 	if (s != null)
 		Game.addLevelRegistry("target-" + s, this);
 	}
@@ -54,7 +54,7 @@ public void runFrame(int phase)
 	useTargets();
 	
 	// schedule another call
-	Game.addFrameListener(this, fWait + (float)Game.cRandom() * fRandom, -1);
+	Game.addFrameListener(this, fWait + (float)GameUtil.cRandom() * fRandom, -1);
 	}
 /**
  * Trigger the timer.

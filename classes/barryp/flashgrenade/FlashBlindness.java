@@ -1,7 +1,8 @@
 package barryp.flashgrenade;
 
-import q2jgame.*;
-import baseq2.*;
+import q2java.core.*;
+import q2java.baseq2.*;
+import q2java.baseq2.event.*;
 
 /**
  * Blind a player for a short time.
@@ -40,15 +41,6 @@ public void dispose()
 	fPlayer.removePlayerStateListener(this);
 	}
 /**
- * Called when the player dies, disconnects, or changes level.
- * @param p baseq2.Player
- * @param changeEvent int
- */
-public void playerStateChanged(Player p, int changeEvent) 
-	{
-	dispose();
-	}
-/**
  * Blind the player a bit.
  * @param phase int
  */
@@ -64,5 +56,14 @@ public void runFrame(int phase)
 		if (fPower < BLINDNESS_ENDS)
 			dispose();
 		}
+	}
+/**
+ * Called when the player dies, disconnects, or changes level.
+ * @param p baseq2.Player
+ * @param changeEvent int
+ */
+public void stateChanged(PlayerStateEvent pse) 
+	{
+	dispose();
 	}
 }

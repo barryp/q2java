@@ -1,10 +1,10 @@
-package baseq2.spawn;
+package q2java.baseq2.spawn;
 
 import javax.vecmath.*;
 
 import q2java.*;
-import q2jgame.*;
-import baseq2.*;
+import q2java.core.*;
+import q2java.baseq2.*;
 
 public class weapon_rocketlauncher extends GenericWeapon
 	{
@@ -31,7 +31,7 @@ public void fire()
 	Vector3f	forward = new Vector3f();
 	Vector3f	right = new Vector3f();
 	Vector3f	offset;
-	int		damage = 100 + (int)(Game.randomFloat() * 20.0);
+	int		damage = 100 + (int)(GameUtil.randomFloat() * 20.0);
 	int		radiusDamage = 120;
 	float	damageRadius = 120;
 

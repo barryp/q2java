@@ -1,8 +1,8 @@
-package baseq2.spawn;
+package q2java.baseq2.spawn;
 
 import q2java.*;
-import q2jgame.*;
-import baseq2.*;
+import q2java.core.*;
+import q2java.baseq2.*;
 
 /**
  * Cause level changes in single-player mode
@@ -18,7 +18,7 @@ public target_changelevel(String[] spawnArgs) throws GameException
 	{
 	super(spawnArgs);
 	
-	fMap = Game.getSpawnArg(spawnArgs, "map", null);
+	fMap = GameUtil.getSpawnArg(spawnArgs, "map", null);
 	}
 /**
  * Switch to next map if not in DM mode
@@ -26,7 +26,7 @@ public target_changelevel(String[] spawnArgs) throws GameException
  */
 public void use(Player usedBy) 
 	{	
-	if (!baseq2.GameModule.gIsDeathmatch)
+	if (!BaseQ2.gIsDeathmatch)
 		Engine.addCommandString("gamemap \"" + fMap + "\"\n");	
 	}
 }

@@ -2,19 +2,19 @@ package barryp.testbot;
 
 
 import java.text.MessageFormat;
-import java.util.Locale;
+import java.util.*;
 import javax.vecmath.*;
 
 import q2java.*;
-import q2jgame.*;
-import baseq2.*;
-import java.util.*;
+import q2java.core.*;
+import q2java.core.event.*;
+import q2java.baseq2.*;
 
 /**
  * Simple test bot
  *
  */
-public class TestBot extends baseq2.Player implements LevelListener
+public class TestBot extends q2java.baseq2.Player implements GameStatusListener
 	{
 	protected Player fLastAttacker;
 	protected boolean fLevelChanged;
@@ -35,13 +35,13 @@ TestBot(q2java.NativeEntity ent, String name) throws q2java.GameException
 	setName(name);
 	setSkin("male/grunt");
 
-	fEntity.setGroundEntity(baseq2.GameModule.gWorld.fEntity);
+	fEntity.setGroundEntity(q2java.baseq2.BaseQ2.gWorld.fEntity);
 
 	// place the bot into the game
 	playerBegin();
 
 	// ask to be notified when levels change (so the bot can respawn)
-	Game.addLevelListener(this);
+	Game.addGameStatusListener(this);
 	}
 /**
  * Extend the Player.clearSettings() method to clear
@@ -95,20 +95,18 @@ public void doRespawn()
 	respawn();
 	Game.dprint("Test bot respawned at " + fEntity.getOrigin() + "\n");
 	}
+public void gameStatusChanged(GameStatusEvent e)
+	{
+	// Make a note of the level change
+	if (e.getState() == GameStatusEvent.GAME_POSTSPAWN)
+		fLevelChanged = true;	
+	}
 /**
  * Get this bot's locale
  */
 public Locale getLocale()
 	{
 	return fResourceGroup.getLocale();
-	}
-/**
- * Called when a new level is starting, after entities have been spawned.
- */
-public void levelEntitiesSpawned()
-	{
-	// Make a note of the level change
-	fLevelChanged = true;
 	}
 /**
  * Disconnect the Bot.
@@ -169,12 +167,6 @@ public void setName(String name)
 public void setSkin(String name) 
 	{
 	setPlayerInfo("skin", name);
-	}
-/**
- * Called when a new level is starting, before entities are spawned.
- */
-public void startLevel(String mapname, String entString, String spawnPoint)
-	{
 	}
 /**
  * Do nothing - sending a scoreboard to a bot would crash the game.

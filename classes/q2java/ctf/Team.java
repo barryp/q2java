@@ -1,4 +1,4 @@
-package menno.ctf;
+package q2java.ctf;
 
 /*
 ======================================================================================
@@ -18,18 +18,18 @@ package menno.ctf;
 import java.util.*;
 import javax.vecmath.*;
 import q2java.*;
-import q2jgame.*;
-import baseq2.PlayerStateListener;
-import baseq2.DamageFilter;
-import menno.ctf.spawn.*;
+import q2java.core.*;
+import q2java.core.event.*;
+import q2java.baseq2.*;
+import q2java.baseq2.event.*;
+import q2java.ctf.spawn.*;
 
 /**
- * A misc_ctf_banner is a giant flag that
- * just sits and flutters in the wind.
+ * Group players together into two teams.
  */
 
 
-public class Team implements LevelListener, PlayerStateListener, DamageFilter
+public class Team implements GameStatusListener, PlayerStateListener, PlayerDamageListener, PlayerCommandListener
 {
 	public static final String CTF_TEAM1_SKIN = "ctf_r";
 	public static final String CTF_TEAM2_SKIN = "ctf_b";
@@ -59,26 +59,26 @@ public class Team implements LevelListener, PlayerStateListener, DamageFilter
 	{
 		fTeamIndex      = new Integer(teamIndex);
 		fPlayers        = new Vector();
-		Game.addLevelListener( this );
+		Game.addGameStatusListener( this );
 	}
-	public void addCapture( Player capturer )
+	public void addCapture( CTFPlayer capturer )
 	{
 		fCaptures++;
 
 		// add bonusses to team-members and update hud
-		Player[] players = getPlayers();
+		CTFPlayer[] players = getPlayers();
 		for ( int i=0; i<players.length; i++ )
 		{
-			players[i].setScore( players[i].getScore() + Player.CTF_TEAM_BONUS );
+			players[i].setScore( players[i].getScore() + CTFPlayer.CTF_TEAM_BONUS );
 		}
 
 		// Add extra to carrier
-		capturer.setScore( capturer.getScore() + Player.CTF_CAPTURE_BONUS - Player.CTF_TEAM_BONUS );
+		capturer.setScore( capturer.getScore() + CTFPlayer.CTF_CAPTURE_BONUS - CTFPlayer.CTF_TEAM_BONUS );
 
 		//inform all players (also spectators) that our captures increased
 		int index = ( this == Team.TEAM1 ? STAT_CTF_TEAM1_CAPS : STAT_CTF_TEAM2_CAPS );
 
-		Enumeration enum = NativeEntity.enumeratePlayers();
+		Enumeration enum = NativeEntity.enumeratePlayerEntities();
 		while ( enum.hasMoreElements() )
 		{
 			NativeEntity p = (NativeEntity)enum.nextElement();
@@ -98,15 +98,15 @@ public class Team implements LevelListener, PlayerStateListener, DamageFilter
 		p.addPlayerStateListener(this);
 
 		// act as a damage filter for this member
-		p.addDamageFilter(this);
+		p.addPlayerDamageListener(this);
 
 		// handle the say_team command for the player
-		p.addCommandHandler(this);
+		p.addPlayerCommandListener(this);
 		
 		// assign new skin
 		assignSkinTo( p );
 		Object[] args = {p.getName(), fTeamIndex};
-		Game.localecast("menno.ctf.CTFMessages", "join_team", args, Engine.PRINT_HIGH);	
+		Game.localecast("q2java.ctf.CTFMessages", "join_team", args, Engine.PRINT_HIGH);	
 		
 		//update players stats that he joined this team (the yellow line around team-icon)
 		int index1 = ( this == Team.TEAM1 ? STAT_CTF_JOINED_TEAM1_PIC : STAT_CTF_JOINED_TEAM2_PIC );
@@ -159,51 +159,68 @@ public class Team implements LevelListener, PlayerStateListener, DamageFilter
 	 * Handle "say_team" commands for our members.
 	 * @param (Ignored, uses the Engine.args() value instead)
 	 */
-	public void cmd_say_team(baseq2.Player source, String[] argv, String args) 
+	public void commandIssued(PlayerCommandEvent pce) 
 	{
-		// remove any quote marks
-		if (args.charAt(args.length()-1) == '"')
-			args = args.substring(args.indexOf('"')+1, args.length()-1);
+		if (pce.getCommand().equalsIgnoreCase("say_team"))
+		{
+			String args = pce.getArgs();
 			
-		args = "(" + source.getName() + "): " + args;		
+			// remove any quote marks
+			if (args.charAt(args.length()-1) == '"')
+				args = args.substring(args.indexOf('"')+1, args.length()-1);
+			
+			args = "(" + pce.getPlayer().getName() + "): " + args;		
 		
-		// keep the message down to a reasonable length
-		if (args.length() > 150)
-			args = args.substring(0, 150);	
+			// keep the message down to a reasonable length
+			if (args.length() > 150)
+				args = args.substring(0, 150);	
 				
-		args += "\n";
-				
-		Player[] players = getPlayers();
+			args += "\n";
+					
+			Player[] players = getPlayers();
 
-		for ( int i=0; i<players.length; i++ )
-			players[i].fEntity.cprint( Engine.PRINT_CHAT, args );
+			for ( int i=0; i<players.length; i++ )
+				players[i].fEntity.cprint( Engine.PRINT_CHAT, args );
+
+			//let the event know it's been handled
+			pce.consume();	
+		}
+			
 	}
 	/**
 	 * Filter a team member's damage.
 	 * @param DamageObject - damage to be filtered.
 	 */
-	public baseq2.DamageObject filterDamage(baseq2.DamageObject damage)
+	public void damageOccured(PlayerDamageEvent damage)
 	{
 		// check for self-inflicted damage
-		if (damage.fVictim == damage.fAttacker)
-			return damage; // they deserve what they get..no help from us
+		if (damage.getPlayer() == damage.getAttacker())
+			return; // they deserve what they get..no help from us
 			
 		// check if the attacker also belongs to this team
-		if (isTeamMember(damage.fAttacker))
+		if (isTeamMember(damage.getAttacker()))
 		{
 			damage.fAmount = 0;
-			return damage;  // give the guy a break
+			return;  // give the guy a break
 		}
 		
-		if ((damage.fAttacker instanceof Player) && ((Player)damage.fVictim).isCarrying("flag"))
+		if ((damage.getAttacker() instanceof Player) && ((Player)damage.getPlayer()).isCarrying("flag"))
 		{
 			// A CTF Player other than ourselves attacked us and we have the flag			
 			// mark the attacker that he was aggressive to the flag-carrier.
-			Player p = (Player)(damage.fAttacker);
+			CTFPlayer p = (CTFPlayer)(damage.getAttacker());
 			p.fLastCarrierHurt = Game.getGameTime();
+		}		
+	}
+	public void gameStatusChanged(GameStatusEvent e)
+	{
+		if (e.getState() == GameStatusEvent.GAME_PRESPAWN)
+		{
+			// a new Level has been started, 
+			// reset the captures and the flags, cause every level has it's own flags...
+			fCaptures = 0;
+			fFlag     = null;		
 		}
-		
-		return damage;
 	}
 	/**
 	* Returns the origin of the base of this team.
@@ -220,7 +237,7 @@ public class Team implements LevelListener, PlayerStateListener, DamageFilter
 	{
 		return fCaptures;
 	}
-	public String getDeathmatchScoreboardMessage( baseq2.GameObject victim, baseq2.GameObject killer, boolean inIntermission ) 
+	public String getDeathmatchScoreboardMessage( GameObject victim, GameObject killer, boolean inIntermission ) 
 	{
 		int xOffset, statHeader, statCaps, headerIndex;
 		String s;
@@ -298,9 +315,9 @@ public class Team implements LevelListener, PlayerStateListener, DamageFilter
 	{
 		return fPlayers.size();
 	}
-	public Player[] getPlayers()
+	public CTFPlayer[] getPlayers()
 	{
-		Player[] players = new Player[ fPlayers.size() ];
+		CTFPlayer[] players = new CTFPlayer[ fPlayers.size() ];
 		fPlayers.copyInto( players );
 		return players;
 	}
@@ -318,11 +335,11 @@ public class Team implements LevelListener, PlayerStateListener, DamageFilter
 	* This method finds a ctf spawnpoint for the TEAM,
 	* but NOT the two points closest to other players.
 	**/
-	public baseq2.GenericSpawnpoint getSpawnpoint()
+	public GenericSpawnpoint getSpawnpoint()
 	{
-		baseq2.GenericSpawnpoint spawnPoint = null;
-		baseq2.GenericSpawnpoint spot1 = null;
-		baseq2.GenericSpawnpoint spot2 = null;
+		GenericSpawnpoint spawnPoint = null;
+		GenericSpawnpoint spot1 = null;
+		GenericSpawnpoint spot2 = null;
 		float range1 = Float.MAX_VALUE;
 		float range2 = Float.MAX_VALUE;
 		int count = 0;
@@ -336,8 +353,8 @@ public class Team implements LevelListener, PlayerStateListener, DamageFilter
 		while (enum.hasMoreElements())
 		{
 			count++;
-			spawnPoint = (baseq2.GenericSpawnpoint) enum.nextElement();
-			float range = baseq2.MiscUtil.nearestPlayerDistance(spawnPoint);
+			spawnPoint = (GenericSpawnpoint) enum.nextElement();
+			float range = q2java.baseq2.MiscUtil.nearestPlayerDistance(spawnPoint);
 
 			if (range < range1)
 			{
@@ -362,13 +379,13 @@ public class Team implements LevelListener, PlayerStateListener, DamageFilter
 		else
 			count -= 2;			
 
-		int selection = (Game.randomInt() & 0x0fff) % count;
+		int selection = (GameUtil.randomInt() & 0x0fff) % count;
 		spawnPoint = null;
 
 		enum = list.elements();
 		while (enum.hasMoreElements())
 		{
-			spawnPoint = (baseq2.GenericSpawnpoint) enum.nextElement();
+			spawnPoint = (GenericSpawnpoint) enum.nextElement();
 			
 			// skip the undesirable spots
 			if ((spawnPoint == spot1) || (spawnPoint == spot2))
@@ -396,21 +413,6 @@ public class Team implements LevelListener, PlayerStateListener, DamageFilter
 	{
 		return fPlayers.contains(obj);
 	}
-/**
- * Called when a new map is starting, after entities have been spawned.
- */
-public void levelEntitiesSpawned() {
-	return;
-}
-	/**
-	 * Called when a player dies or disconnects.
-	 * @param wasDisconnected true on disconnects, false on normal deaths.
-	 */
-	public void playerStateChanged(baseq2.Player p, int changeEvent)
-	{
-		if (changeEvent == baseq2.PlayerStateListener.PLAYER_DISCONNECT)
-			removePlayer((Player)p);
-	}
 	public boolean removePlayer( Player p )
 	{
 		if (!fPlayers.contains(p))
@@ -421,7 +423,7 @@ public void levelEntitiesSpawned() {
 		p.fEntity.setPlayerStat( STAT_CTF_JOINED_TEAM2_PIC, (short)0 );
 		
 		p.removePlayerStateListener(this);
-		p.removeDamageFilter(this);
+		p.removePlayerDamageListener(this);
 		return fPlayers.removeElement( p );
 	}
 	//===================================================
@@ -444,5 +446,14 @@ public void levelEntitiesSpawned() {
 		// reset the captures and the flags, cause every level has it's own flags...
 		fCaptures = 0;
 		fFlag     = null;
+	}
+	/**
+	 * Called when a player dies or disconnects.
+	 * @param wasDisconnected true on disconnects, false on normal deaths.
+	 */
+	public void stateChanged(PlayerStateEvent pse)
+	{
+		if (pse.getStateChanged() == PlayerStateEvent.STATE_INVALID)
+			removePlayer((Player)pse.getPlayer());
 	}
 }

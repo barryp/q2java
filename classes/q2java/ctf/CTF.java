@@ -1,4 +1,4 @@
-package menno.ctf;
+package q2java.ctf;
 
 
 /*
@@ -16,9 +16,9 @@ package menno.ctf;
 */
 
 import q2java.*;
-import q2jgame.*;
-import baseq2.InventoryList;
-import menno.ctftech.*;
+import q2java.core.*;
+import q2java.core.event.*;
+import q2java.baseq2.InventoryList;
 
 /**
  * Q2Java CTF module.
@@ -26,71 +26,80 @@ import menno.ctftech.*;
  * @author Menno van Gangelen
  */
 
-public class GameModule extends q2jgame.GameModule implements LevelListener
+public class CTF extends q2java.core.Gamelet implements GameStatusListener
 {
 	public final static int STAT_CTF_TECH          = 26;
-	public GameModule(String moduleName)
+	public CTF(String moduleName)
 	{
-		super( moduleName );
-		
+		super( moduleName );		
+	}
+	public void gameStatusChanged(GameStatusEvent gse)
+	{
+		switch (gse.getState())
+		{
+			case GameStatusEvent.GAME_PRESPAWN:
+				// overrule the statbar
+				Engine.setConfigString (Engine.CS_STATUSBAR, CTFPlayer.CTF_STATUSBAR);				
+				break;
+
+			case GameStatusEvent.GAME_POSTSPAWN:
+				// now it's time to spawn the techs.
+				try 
+				{
+					new AutoDoc(STAT_CTF_TECH);
+					new PowerAmplifier(STAT_CTF_TECH);
+					new DisruptorShield(STAT_CTF_TECH);
+					new TimeAccel(STAT_CTF_TECH);
+				}
+				catch ( Exception e )
+				{
+					// do nothing here.
+					System.out.println( "error in spwaning techs... " + e );
+				}		
+				break;
+			
+		default:
+			break;			
+		}
+	}
+/**
+ * Get which Gamelet classes this Gamelet requires.
+ * @return java.lang.Class[]
+ */
+public String[] getGameletDependencies() 
+	{
+	String[] result = { "q2java.baseq2.BaseQ2" };
+	return result;
+	}
+/**
+ * Get which class (if any) this Gamelet wants to use for a Player class.
+ * @return java.lang.Class
+ */
+public Class getPlayerClass() 
+	{
+	return CTFPlayer.class;
+	}
+	/**
+	 * Initialize the CTF gamelet.
+	 */
+	public void init() 
+	{
 		// ask to be called on level changes
-		Game.addLevelListener(this);
+		Game.addGameStatusListener(this);
 
 		// update player inventory lists to support techs
 		InventoryList.addItem("Disruptor Shield");
 		InventoryList.addItem("AutoDoc");
 		InventoryList.addItem("Time Accel");
-		InventoryList.addItem("Power Amplifier");
-		
-		// turn the players into CTF players.
-		java.util.Enumeration players = NativeEntity.enumeratePlayers();
-		while (players.hasMoreElements())
-		{
-			try
-			{
-				NativeEntity ent = (NativeEntity) players.nextElement();
-				
-				// get rid of the old player object
-				baseq2.Player bp = (baseq2.Player) ent.getReference();
-				bp.dispose();
-
-				// create a new CTF player object
-				menno.ctf.Player p = new menno.ctf.Player(ent);
-//				p.playerBegin(false);
-			}
-			catch (Exception e)
-			{
-				e.printStackTrace();
-			}
-		}
+		InventoryList.addItem("Power Amplifier");			
 	}
-	/**
-	 * Called when a new map is starting, after entities have been spawned.
-	 */
-	public void levelEntitiesSpawned() 
+/**
+ * CTF needs special maps, so require a level change before starting.
+ * @return boolean
+ */
+public boolean isLevelChangeRequired() 
 	{
-		// now it's time to spawn the techs.
-		try 
-		{
-			new AutoDoc(STAT_CTF_TECH);
-			new PowerAmplifier(STAT_CTF_TECH);
-			new DisruptorShield(STAT_CTF_TECH);
-			new TimeAccel(STAT_CTF_TECH);
-		}
-		catch ( Exception e )
-		{
-			// do nothing here.
-			System.out.println( "error in spwaning techs... " + e );
-		}	
-	}
-	/**
-	 * Start a new level.
-	 */
-	public void startLevel(String mapname, String entString, String spawnPoint)
-	{
-		// overrule the statbar
-		Engine.setConfigString (Engine.CS_STATUSBAR, Player.CTF_STATUSBAR);	
-
+	return true;
 	}
 	/**
 	 * This method was created by a SmartGuide.
@@ -107,32 +116,6 @@ public class GameModule extends q2jgame.GameModule implements LevelListener
 	public void unload() 
 	{
 		// we no longer want to be notified of level changes
-		Game.removeLevelListener(this);
-		
-		// turn the players into baseq2 players.
-		java.util.Enumeration players = NativeEntity.enumeratePlayers();
-		while (players.hasMoreElements())
-		{
-			try
-			{
-				NativeEntity ent = (NativeEntity) players.nextElement();
-
-				// get rid of any CTF player objects
-				Object obj = ent.getReference();
-				if (obj instanceof Player)
-				{				
-					Player p = (Player) obj;
-					p.dispose();
-
-					// replace with a baseq2.Player
-					baseq2.Player bp = new baseq2.Player(ent);
-//					bp.playerBegin(false);
-				}
-			}
-			catch (Exception e)
-			{
-				e.printStackTrace();
-			}
-		}	
+		Game.removeGameStatusListener(this);		
 	}
 }

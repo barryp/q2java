@@ -5,7 +5,7 @@ import java.net.*;
 import java.util.*;
 
 import q2java.*;
-import q2jgame.*;
+import q2java.core.*;
 
 /**
  * Thread class that accepts Telnet-type connections,

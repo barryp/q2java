@@ -1,5 +1,4 @@
-package baseq2;
-
+package q2java.baseq2;
 
 import java.io.*;
 import java.lang.reflect.*;
@@ -8,7 +7,8 @@ import java.util.*;
 import javax.vecmath.*;
 
 import q2java.*;
-import q2jgame.*;
+import q2java.core.*;
+import q2java.core.event.*;
 
 /**
  * This class implements a Quake II Java game. All the
@@ -19,7 +19,8 @@ import q2jgame.*;
  * @author Barry Pederson 
  */
 
-public class GameModule extends q2jgame.GameModule implements GameStatusListener, FrameListener, LevelListener	, CrossLevel
+public class BaseQ2 extends q2java.core.Gamelet
+  implements FrameListener, GameStatusListener, CrossLevel
 	{	
 	// handy reference to the world
 	public static GameObject gWorld;
@@ -83,38 +84,12 @@ public class GameModule extends q2jgame.GameModule implements GameStatusListener
 	public final static int SPAWNFLAG_NOT_COOP		= 0x00001000;		
 	
 /**
- * This method was created by a SmartGuide.
+ * Create the Gamelet.
+ * @param gameletName java.lang.String
  */
-public GameModule(String moduleName) 
+public BaseQ2(String gameletName) 
 	{
-	super(moduleName);
-	
-	Game.addGameStatusListener(this);
-	Game.addFrameListener(this, 0, 0);
-	Game.addLevelListener(this);
-	
-	// load cvars
-	gRunRoll = new CVar("run_roll", "0.005", 0);	
-	gRunPitch = new CVar("run_pitch", "0.002", 0);	
-	gBobUp = new CVar("bob_up", "0.005", 0);	
-	gBobRoll = new CVar("bob_roll", "0.002", 0);	
-	gBobPitch = new CVar("bob_pitch", "0.002", 0);	
-	gRollAngle = new CVar("sv_rollangle", "2", 0);
-	gRollSpeed = new CVar("sv_rollspeed", "200", 0);	
-	gGravity = new CVar("sv_gravity", "800", 0);	
-	gMaxVelocity = new CVar("sv_maxvelocity", "2000", 0);
-	
-	gFragLimit = new CVar("fraglimit", "0", CVar.CVAR_SERVERINFO);
-	gTimeLimit = new CVar("timelimit", "0", CVar.CVAR_SERVERINFO);
-	gDMFlags = new CVar("dmflags", "0", CVar.CVAR_SERVERINFO);
-	gCheats = new CVar("cheats", "0", CVar.CVAR_LATCH);
-	
-	gIsDeathmatch = (new CVar("deathmatch", "0", CVar.CVAR_LATCH)).getFloat() == 1.0;
-	gSkillLevel = (int) ((new CVar("skill", "1", CVar.CVAR_LATCH)).getFloat());		
-	
-	InventoryList.setupList( 42, 84, 128, 172, 214, true);	
-	
-	new CVar("locale", "en_US", CVar.CVAR_USERINFO | CVar.CVAR_ARCHIVE);
+	super(gameletName);
 	}
 /**
  * Check whether an entity should be inhibited because
@@ -124,7 +99,7 @@ public GameModule(String moduleName)
  */
 public static void checkInhibited(String[] spawnArgs) throws InhibitedException
 	{
-	checkInhibited(Game.getSpawnArg(spawnArgs, "spawnflags", 0));
+	checkInhibited(GameUtil.getSpawnArg(spawnArgs, "spawnflags", 0));
 	}
 /**
  * Check whether an entity should be inhibited because
@@ -172,141 +147,6 @@ public static void copyCorpse(NativeEntity ent)
 	gCorpseQueue.copyCorpse(ent);
 	}
 /**
- * Get the name of the spawnpoint we're supposed to use (single-player).
- * @return java.lang.String
- */
-public static String getSpawnpoint() 
-	{
-	return gSpawnpoint;
-	}
-/**
- * Describe this Game.
- * @return java.lang.String
- */
-public static String getVersion() 
-	{
-	return "Q2Java Base Game, v0.8.0";
-	}	
-/**
- * Check whether or not the Cheating option is on.
- * @return boolean
- */
-public static boolean isCheating() 
-	{
-	return gIsCheating;
-	}
-/**
- * Check whether a given deathmatch flag is set.  Use the Game.DF_* constants.
- * @return true if the flag is set, false if not.
- */
-public static boolean isDMFlagSet(int flag) 
-	{
-	return (((int)gDMFlags.getFloat()) & flag) != 0;
-	}
-/**
- * Called when a new map is starting, after entities have been spawned.
- */
-public void levelEntitiesSpawned() 
-	{
-	}
-/**
- * Called when the DLL's ReadGame() function is called.
- */
-public void readGame(String filename)
-	{
-	}
-/**
- * Called when the DLL's ReadLevel() function is called.
- */
-public void readLevel(String filename)
-	{
-	}
-/**
- * Called by the DLL when the DLL's RunFrame() function is called.
- */
-public void runFrame(int phase)
-	{		
-	if (gInIntermission && (Game.getGameTime() > gIntermissionEndTime))
-		{
-		if (gChangeMapNow || (!isDMFlagSet(DF_SAME_LEVEL)))
-			Engine.addCommandString("gamemap \"" + gNextMap + "\"\n");
-		else
-			Engine.addCommandString("gamemap \"" + gCurrentMap + "\"\n");
-		return;
-		}
-
-	if (!gInIntermission && timeToQuit())
-		startIntermission();
-	}
-/**
- * Set what the next map will be.
- * @param mapname java.lang.String
- */
-public static void setNextMap(String mapname) 
-	{
-	if (mapname != null)
-		gNextMap = mapname;
-	}
-/**
- * Called when the DLL's Shutdown() function is called.
- */
-public void shutdown()
-	{
-	}
-/**
- * Called by svcmd_scores
- * @author _Quinn
- * @param int num Number of spaces to return
- */
-
-public String spaces( float spaces ) 
-	{
-	StringBuffer sb = new StringBuffer();
-	for ( int i = 0; i <= spaces; i++ ) 
-			{
-			sb.append(" ");
-			} // end for
-
-	return sb.toString();
-	} // end spaces
-/**
- * Pick an intermission spot, and notify each player.
- */
-public static void startIntermission() 
-	{
-	if (gInIntermission)
-		return; // already in intermission
-		
-	Enumeration enum;
-	Vector v;
-	
-	// gather list of info_player_intermission entities
-	v = Game.getLevelRegistryList(baseq2.spawn.info_player_intermission.REGISTRY_KEY);
-
-	// if there weren't any intermission spots, try for info_player_start spots
-	if (v.size() < 1)
-		v = Game.getLevelRegistryList(baseq2.spawn.info_player_start.REGISTRY_KEY);
-
-	// still no spots found? try for info_player_deathmatch
-	if (v.size() < 1)
-		v = Game.getLevelRegistryList(baseq2.spawn.info_player_deathmatch.REGISTRY_KEY);
-		
-	// randomly pick something from the list
-	int i = (Game.randomInt() & 0x0fff) % v.size();
-	GenericSpawnpoint spot = (GenericSpawnpoint) v.elementAt(i);
-
-	// notify each player
-	enum = NativeEntity.enumeratePlayers();
-	while (enum.hasMoreElements())
-		{
-		Player p = (Player) ((NativeEntity) enum.nextElement()).getReference();
-		p.startIntermission(spot);
-		}
-		
-	gInIntermission = true;	
-	gIntermissionEndTime = Game.getGameTime() + 5.0;	
-	}
-/**
  * Start a new level.
  * @param mapname Name of map we're loading
  * @param entString a -very- large string (many 10's of Kbytes) 
@@ -314,9 +154,19 @@ public static void startIntermission()
  * @param spawnPoint name of single-player spawnpoint we should use
  *      (I'm guessing this is really the name of the last map we were on).
  */
-public void startLevel(String mapname, String entString, String spawnPoint)
+public void gameStatusChanged(GameStatusEvent e)
 	{
-	Engine.debugLog("Game.spawnEntities(\"" + mapname + "\", <entString>, \"" + spawnPoint + "\")");
+	Engine.debugLog("Game.gameStatusChanged(" + e.getState() + ")");
+
+	if( e.getState() != GameStatusEvent.GAME_PRESPAWN )
+	    {
+		return;
+	    }
+
+	Engine.debugLog("BaseQ2 intitialising");
+
+	String mapname = e.getMapname();
+	String spawnPoint = e.getSpawnPoint();
 
 	gLevelStartTime = Game.getGameTime();
 	gInIntermission = false;
@@ -443,6 +293,158 @@ public void startLevel(String mapname, String entString, String spawnPoint)
 	Engine.setConfigString(Engine.CS_LIGHTS+63, "a");				
 	}
 /**
+ * Get which class (if any) this Gamelet wants to use for a Player class.
+ * @return java.lang.Class
+ */
+public Class getPlayerClass() 
+	{
+	return Player.class;
+	}
+/**
+ * Get the name of the spawnpoint we're supposed to use (single-player).
+ * @return java.lang.String
+ */
+public static String getSpawnpoint() 
+	{
+	return gSpawnpoint;
+	}
+/**
+ * Describe this Game.
+ * @return java.lang.String
+ */
+public static String getVersion() 
+	{
+	return "Q2Java Base Game, v0.9.0";
+	}
+/**
+ * Initialize this gamelet.
+ */
+public void init() 
+	{
+	Game.addFrameListener(this, 0, 0);
+	Game.addGameStatusListener(this);
+	
+	// load cvars
+	gRunRoll = new CVar("run_roll", "0.005", 0);	
+	gRunPitch = new CVar("run_pitch", "0.002", 0);	
+	gBobUp = new CVar("bob_up", "0.005", 0);	
+	gBobRoll = new CVar("bob_roll", "0.002", 0);	
+	gBobPitch = new CVar("bob_pitch", "0.002", 0);	
+	gRollAngle = new CVar("sv_rollangle", "2", 0);
+	gRollSpeed = new CVar("sv_rollspeed", "200", 0);	
+	gGravity = new CVar("sv_gravity", "800", 0);	
+	gMaxVelocity = new CVar("sv_maxvelocity", "2000", 0);
+	
+	gFragLimit = new CVar("fraglimit", "0", CVar.CVAR_SERVERINFO);
+	gTimeLimit = new CVar("timelimit", "0", CVar.CVAR_SERVERINFO);
+	gDMFlags = new CVar("dmflags", "0", CVar.CVAR_SERVERINFO);
+	gCheats = new CVar("cheats", "0", CVar.CVAR_LATCH);
+	
+	gIsDeathmatch = (new CVar("deathmatch", "0", CVar.CVAR_LATCH)).getFloat() == 1.0;
+	gSkillLevel = (int) ((new CVar("skill", "1", CVar.CVAR_LATCH)).getFloat());		
+	
+	InventoryList.setupList( 42, 84, 128, 172, 214, true);	
+	
+	new CVar("locale", "en_US", CVar.CVAR_USERINFO | CVar.CVAR_ARCHIVE);
+	}
+/**
+ * Check whether or not the Cheating option is on.
+ * @return boolean
+ */
+public static boolean isCheating() 
+	{
+	return gIsCheating;
+	}
+/**
+ * Check whether a given deathmatch flag is set.  Use the Game.DF_* constants.
+ * @return true if the flag is set, false if not.
+ */
+public static boolean isDMFlagSet(int flag) 
+	{
+	return (((int)gDMFlags.getFloat()) & flag) != 0;
+	}
+/**
+ * Called by the DLL when the DLL's RunFrame() function is called.
+ */
+public void runFrame(int phase)
+	{		
+	if (gInIntermission && (Game.getGameTime() > gIntermissionEndTime))
+		{
+		  if (gChangeMapNow || (!isDMFlagSet(DF_SAME_LEVEL)))
+			Engine.addCommandString("gamemap \"" + gNextMap + "\"\n");
+		else
+			Engine.addCommandString("gamemap \"" + gCurrentMap + "\"\n");
+		return;
+		}
+
+	if (!gInIntermission && timeToQuit())
+		startIntermission();
+	}
+/**
+ * Set what the next map will be.
+ * @param mapname java.lang.String
+ */
+public static void setNextMap(String mapname) 
+	{
+	if (mapname != null)
+		gNextMap = mapname;
+	}
+/**
+ * Called by svcmd_scores
+ * @author _Quinn
+ * @param int num Number of spaces to return
+ */
+
+public String spaces( float spaces ) 
+	{
+	StringBuffer sb = new StringBuffer();
+	for ( int i = 0; i <= spaces; i++ ) 
+			{
+			sb.append(" ");
+			} // end for
+
+	return sb.toString();
+	} // end spaces
+/**
+ * Pick an intermission spot, and notify each player.
+ */
+public static void startIntermission() 
+	{
+	if (gInIntermission)
+		return; // already in intermission
+
+	gChangeMapNow = false; 
+		
+	Enumeration enum;
+	Vector v;
+	
+	// gather list of info_player_intermission entities
+	v = Game.getLevelRegistryList(q2java.baseq2.spawn.info_player_intermission.REGISTRY_KEY);
+
+	// if there weren't any intermission spots, try for info_player_start spots
+	if (v.size() < 1)
+		v = Game.getLevelRegistryList(q2java.baseq2.spawn.info_player_start.REGISTRY_KEY);
+
+	// still no spots found? try for info_player_deathmatch
+	if (v.size() < 1)
+		v = Game.getLevelRegistryList(q2java.baseq2.spawn.info_player_deathmatch.REGISTRY_KEY);
+		
+	// randomly pick something from the list
+	int i = (GameUtil.randomInt() & 0x0fff) % v.size();
+	GenericSpawnpoint spot = (GenericSpawnpoint) v.elementAt(i);
+
+	// notify each player
+	enum = Player.enumeratePlayers();
+	while (enum.hasMoreElements())
+		{
+		Player p = (Player) enum.nextElement();
+		p.startIntermission(spot);
+		}
+		
+	gInIntermission = true;	
+	gIntermissionEndTime = Game.getGameTime() + 5.0;	
+	}
+/**
  * Force a map change, but do it nicely so that players see the scoreboard.
  */
 public void svcmd_changemap(String[] args) 
@@ -507,7 +509,7 @@ public void svcmd_scores(String[] args)
 	// RelPing is relative ping, 0 to 1.0 with 1 the max.
 	// Rank is Rate times RPing
 
-	Enumeration enum = NativeEntity.enumeratePlayers();
+	Enumeration enum = Player.enumeratePlayers();
 	Vector playerData = new Vector();
 	Vector players = new Vector();
 
@@ -517,7 +519,7 @@ public void svcmd_scores(String[] args)
 
 	while (enum.hasMoreElements())
 		{
-		Player p = (Player) ((NativeEntity)enum.nextElement()).getPlayerListener();
+		Player p = (Player) enum.nextElement();
 		float playerD[] = new float[7];
 		playerD[0] = p.getScore(); // score
 		playerD[1] = p.fEntity.getPlayerPing(); // ping
@@ -610,7 +612,7 @@ protected static boolean timeToQuit()
 
 	if ((timeLimit > 0) && (Game.getGameTime() > (gLevelStartTime + (timeLimit * 60))))
 		{
-		Game.localecast("baseq2.Messages", "timelimit",  Engine.PRINT_HIGH);
+		Game.localecast("q2java.baseq2.Messages", "timelimit",  Engine.PRINT_HIGH);
 		return true;
 		}
 		
@@ -618,13 +620,13 @@ protected static boolean timeToQuit()
 	if (fragLimit < 1)
 		return false;
 		
-	Enumeration enum = NativeEntity.enumeratePlayers();
+	Enumeration enum = Player.enumeratePlayers();
 	while (enum.hasMoreElements())
 		{
-		Player p = (Player) ((NativeEntity)enum.nextElement()).getPlayerListener();
+		Player p = (Player) enum.nextElement();
 		if (p.getScore() > fragLimit)
 			{
-			Game.localecast("baseq2.Messages", "fraglimit", Engine.PRINT_HIGH);
+			Game.localecast("q2java.baseq2.Messages", "fraglimit", Engine.PRINT_HIGH);
 			return true;
 			}
 		}		
@@ -636,20 +638,7 @@ protected static boolean timeToQuit()
  */
 public void unload() 
 	{
-	Game.removeGameStatusListener(this);
 	Game.removeFrameListener(this);
-	Game.removeLevelListener(this);
-	}
-/**
- * Called when the DLL's WriteGame() function is called.
- */
-public void writeGame(String filename)
-	{
-	}
-/**
- * Called when the DLL's WriteLevel() function is called.
- */
-public void writeLevel(String filename)
-	{
+	Game.removeGameStatusListener(this);
 	}
 }

@@ -1,11 +1,11 @@
-package baseq2;
+package q2java.baseq2;
 
 import java.io.*;
 import java.util.Enumeration;
 import java.util.Vector;
 import javax.vecmath.*;
 import q2java.*;
-import q2jgame.*;
+import q2java.core.*;
 
 /**
  * GameObject represents a "thing" in the Quake world, such
@@ -50,7 +50,7 @@ public GameObject(String[] spawnArgs, int entityType) throws GameException
 	// The worldspawn is never inhibited..although
 	// on the jail1 map, it's flagged as if it is.
 	if (entityType != NativeEntity.ENTITY_WORLD)
-		GameModule.checkInhibited(fSpawnFlags);
+		BaseQ2.checkInhibited(fSpawnFlags);
 				
 	// at this point, looks like the object will be sticking around
 	// so create the entity that represents it in the Quake world
@@ -95,7 +95,7 @@ public GameObject(String[] spawnArgs, int entityType) throws GameException
 public void applyGravity()
 	{
 	Vector3f v = fEntity.getVelocity();
-	float f = GameModule.gGravity.getFloat() * Engine.SECONDS_PER_FRAME;
+	float f = BaseQ2.gGravity.getFloat() * Engine.SECONDS_PER_FRAME;
 
 	// we could have used the Tuple3f scaleAdd() here too.
 	v.x += fGravity.x * f;
@@ -210,7 +210,7 @@ public GameObject getRandomTarget()
 	if ((fTargets == null) || (fTargets.size() < 1))
 		return null;
 		
-	int choice = (Game.randomInt() & 0x0fff) % fTargets.size();
+	int choice = (GameUtil.randomInt() & 0x0fff) % fTargets.size();
 	return (GameObject) fTargets.elementAt(choice);
 	}
 /**
@@ -221,7 +221,7 @@ public GameObject getRandomTarget()
  */
 public float getSpawnArg(String keyword, float defaultValue) 
 	{
-	return Game.getSpawnArg(fSpawnArgs, keyword, defaultValue);
+	return GameUtil.getSpawnArg(fSpawnArgs, keyword, defaultValue);
 	}
 /**
  * Lookup an integer spawn argument.
@@ -231,7 +231,7 @@ public float getSpawnArg(String keyword, float defaultValue)
  */
 public int getSpawnArg(String keyword, int defaultValue) 
 	{
-	return Game.getSpawnArg(fSpawnArgs, keyword, defaultValue);
+	return GameUtil.getSpawnArg(fSpawnArgs, keyword, defaultValue);
 	}
 /**
  * Lookup a string spawn argument.
@@ -241,7 +241,7 @@ public int getSpawnArg(String keyword, int defaultValue)
  */
 public String getSpawnArg(String keyword, String defaultValue)
 	{
-	return Game.getSpawnArg(fSpawnArgs, keyword, defaultValue);
+	return GameUtil.getSpawnArg(fSpawnArgs, keyword, defaultValue);
 	}
 /**
  * Get this object's spawnflags.

@@ -1,8 +1,8 @@
-package baseq2.spawn;
+package q2java.baseq2.spawn;
 
 import q2java.*;
-import q2jgame.*;
-import baseq2.*;
+import q2java.core.*;
+import q2java.baseq2.*;
 
 public class misc_deadsoldier extends GameObject
 	{
@@ -11,7 +11,7 @@ public misc_deadsoldier(String[] spawnArgs) throws GameException
 	{
 	super(spawnArgs);
 	
-	if (baseq2.GameModule.gIsDeathmatch)
+	if (BaseQ2.gIsDeathmatch)
 		{
 		dispose();
 		throw new InhibitedException("misc_deadsoldier inhibited in deathmatch");

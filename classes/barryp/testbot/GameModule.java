@@ -2,13 +2,13 @@ package barryp.testbot;
 
 
 import q2java.*;
-import q2jgame.*;
+import q2java.core.*;
 
 /**
  * Test simple bot support.
  * 
  */
-public class GameModule extends q2jgame.GameModule 
+public class GameModule extends q2java.core.Gamelet 
 	{
 	protected TestBot fTestBot;
 	

@@ -1,10 +1,10 @@
-package baseq2;
+package q2java.baseq2;
 
 import java.util.Vector;
 
 import q2java.*;
-import q2jgame.*;
-import baseq2.*;
+import q2java.core.*;
+import q2java.baseq2.*;
 
 /**
  * Superclass for various trigger entities
@@ -16,13 +16,13 @@ public abstract class Trigger implements GameTarget
 	
 public Trigger(String[] spawnArgs) throws GameException
 	{
-	baseq2.GameModule.checkInhibited(spawnArgs);
+	BaseQ2.checkInhibited(spawnArgs);
 	
-	String s = Game.getSpawnArg(spawnArgs, "target", null);
+	String s = GameUtil.getSpawnArg(spawnArgs, "target", null);
 	if (s != null)
 		fTargets = Game.getLevelRegistryList("target-" + s);
 		
-	s = Game.getSpawnArg(spawnArgs, "targetname", null);
+	s = GameUtil.getSpawnArg(spawnArgs, "targetname", null);
 	if (s != null)
 		Game.addLevelRegistry("target-" + s, this);	
 	}

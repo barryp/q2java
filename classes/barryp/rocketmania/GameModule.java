@@ -1,13 +1,13 @@
 package barryp.rocketmania;
 
-import q2jgame.*;
+import q2java.core.*;
 
 /**
  * Demo of altered weapons.
  * 
  * @author Barry Pederson
  */
-public class GameModule extends q2jgame.GameModule 
+public class GameModule extends q2java.core.Gamelet 
 	{
 	
 /**
@@ -16,6 +16,15 @@ public class GameModule extends q2jgame.GameModule
 public GameModule(String moduleName) 
 	{
 	super(moduleName);
+	}
+/**
+ * Get which Gamelet classes this Gamelet requires.
+ * @return java.lang.Class[]
+ */
+public String[] getGameletDependencies() 
+	{
+	String[] result = { "q2java.baseq2.BaseQ2" };
+	return result;
 	}
 /**
  * This method was created by a SmartGuide.

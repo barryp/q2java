@@ -1,11 +1,11 @@
-package baseq2.spawn;
+package q2java.baseq2.spawn;
 
 import java.util.Enumeration;
 import javax.vecmath.*;
 
 import q2java.*;
-import q2jgame.*;
-import baseq2.*;
+import q2java.core.*;
+import q2java.baseq2.*;
 
 /**
  * func_train - objects that move around following

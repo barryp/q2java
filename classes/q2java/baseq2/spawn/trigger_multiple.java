@@ -1,11 +1,11 @@
-package baseq2.spawn;
+package q2java.baseq2.spawn;
 
 import java.util.Vector;
 import javax.vecmath.*;
 
 import q2java.*;
-import q2jgame.*;
-import baseq2.*;
+import q2java.core.*;
+import q2java.baseq2.*;
 
 /**
  * Trigger that can be activated multiple times.
@@ -46,7 +46,7 @@ public trigger_multiple(String[] spawnArgs, boolean isMultiple) throws GameExcep
 	{
 	super(spawnArgs);
 
-	int sounds = Game.getSpawnArg(spawnArgs, "sounds", 0);
+	int sounds = GameUtil.getSpawnArg(spawnArgs, "sounds", 0);
 	
 	if(sounds == 1)
 	    fSound = Engine.getSoundIndex("misc/secret.wav");
@@ -55,13 +55,13 @@ public trigger_multiple(String[] spawnArgs, boolean isMultiple) throws GameExcep
 	else if(sounds == 3)
 	    fSound = Engine.getSoundIndex("misc/trigger1.wav");
 
-	fMessage = Game.getSpawnArg(spawnArgs, "message", null);
+	fMessage = GameUtil.getSpawnArg(spawnArgs, "message", null);
 
-	fWait = (isMultiple ? Game.getSpawnArg(spawnArgs, "wait", 0.2F) : -1.0F);	
+	fWait = (isMultiple ? GameUtil.getSpawnArg(spawnArgs, "wait", 0.2F) : -1.0F);	
 
 	if( isMultiple )
 	    {
-	    fDelay = Game.getSpawnArg(spawnArgs, "delay", 0);
+	    fDelay = GameUtil.getSpawnArg(spawnArgs, "delay", 0);
 	    }
 	
 	fEntity.setSVFlags(NativeEntity.SVF_NOCLIENT);
@@ -87,7 +87,7 @@ public trigger_multiple(String[] spawnArgs, boolean isMultiple) throws GameExcep
 		fEntity.setAngles(0, 0, 0);
 		}
 		
-	fEntity.setModel(Game.getSpawnArg(spawnArgs, "model", ""));
+	fEntity.setModel(GameUtil.getSpawnArg(spawnArgs, "model", ""));
 	fEntity.linkEntity();	
 	}
 /**
@@ -124,9 +124,12 @@ public void touch(Player touchedBy)
 	  
 	if (fTriggerDir != null)
 		{
-		Vector3f forward = new Vector3f();
+		Vector3f forward = Q2Recycler.getVector3f();
 		touchedBy.fEntity.getAngles().getVectors(forward, null, null);
-		if (forward.dot(fTriggerDir) < 0) 
+		boolean bail = forward.dot(fTriggerDir) < 0;
+		Q2Recycler.put(forward);
+		
+		if (bail)
 			return;
 		}
 	  

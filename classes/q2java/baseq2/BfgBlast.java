@@ -1,9 +1,9 @@
-package baseq2;
+package q2java.baseq2;
 
 
 import javax.vecmath.*;
 import q2java.*;
-import q2jgame.*;
+import q2java.core.*;
 
 /**
  * Rockets that have been fired, and are flying through the air.
@@ -122,7 +122,7 @@ public void launch(GameObject owner, Point3f start, Vector3f dir, int damage, in
 	fOwner = owner;
 	fEntity.setOwner(owner.fEntity);
 	fExpires = (float)Game.getGameTime() + (8000 / speed); // go away after a while
-	fDamage = (GameModule.gIsDeathmatch ? 5 : 10);
+	fDamage = (BaseQ2.gIsDeathmatch ? 5 : 10);
 	fRadiusDamage = damage;
 	fDamageRadius = damageRadius;
 	fState        = FLYING;
@@ -155,7 +155,7 @@ protected void prepareExplosion(TraceResults tr)
 	fEntity.setSolid(NativeEntity.SOLID_NOT);
 	org.scaleAdd( -Engine.SECONDS_PER_FRAME, fEntity.getVelocity(), fEntity.getOrigin() );
 	fEntity.setOrigin( org );
-	fEntity.setVelocity( new Vector3f(0,0,0) );
+	fEntity.setVelocity(0, 0, 0);
 	fEntity.setModelIndex( Engine.getModelIndex("sprites/s_bfg3.sp2") );
 	fEntity.setFrame(0);
 	fEntity.setSound(0);

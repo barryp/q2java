@@ -1,24 +1,25 @@
-package menno.ctftech;
+package q2java.ctf;
 
 import q2java.*;
-import q2jgame.*;
-import baseq2.InventoryList;
+import q2java.core.*;
+import q2java.core.event.*;
+import q2java.baseq2.InventoryList;
 
 /**
- * Q2Java CTF Techs
+ * Q2Java CTF Techs by themselves - can be mixed with other gamelets like BaseQ2 or Paranoia.
  * 
  * @author Barry Pederson
  */
 
-public class GameModule extends q2jgame.GameModule implements LevelListener
+public class CTFTechs extends q2java.core.Gamelet implements GameStatusListener
 	{
 	
-	public GameModule(String moduleName)
+	public CTFTechs(String moduleName)
 	{
 		super( moduleName );
 		
 		// ask to be called on level changes
-		Game.addLevelListener(this);
+		Game.addGameStatusListener(this);
 
 		// update player inventory lists to support techs
 		InventoryList.addItem("Disruptor Shield");
@@ -27,30 +28,24 @@ public class GameModule extends q2jgame.GameModule implements LevelListener
 		InventoryList.addItem("Power Amplifier");
 		
 	}
-/**
- * Called when a new map is starting, after entities have been spawned.
- */
-public void levelEntitiesSpawned() 
+public void gameStatusChanged(GameStatusEvent gse)
 	{
-	// now it's time to spawn the techs.
-	try 
+	if (gse.getState() == GameStatusEvent.GAME_POSTSPAWN)
 		{
-		new AutoDoc(GenericTech.NO_HUD_ICON);
-		new DisruptorShield(GenericTech.NO_HUD_ICON);
-		new PowerAmplifier(GenericTech.NO_HUD_ICON);
-		new TimeAccel(GenericTech.NO_HUD_ICON);
+		// now it's time to spawn the techs.
+		try 
+			{
+			new AutoDoc(GenericTech.NO_HUD_ICON);
+			new DisruptorShield(GenericTech.NO_HUD_ICON);
+			new PowerAmplifier(GenericTech.NO_HUD_ICON);
+			new TimeAccel(GenericTech.NO_HUD_ICON);
+			}
+		catch ( Exception e )
+			{
+			// do nothing here.
+			System.out.println( "error in spawning techs... " + e );
+			}		
 		}
-	catch ( Exception e )
-		{
-		// do nothing here.
-		System.out.println( "error in spawning techs... " + e );
-		}	
-	}
-/**
- * Start a new level.
- */
-public void startLevel(String mapname, String entString, String spawnPoint)
-	{
 	}
 /**
  * Help for this module.
@@ -66,6 +61,6 @@ public void svcmd_help(String[] args)
 public void unload() 
 	{
 	// we no longer want to be notified of level changes
-	Game.removeLevelListener(this);
+	Game.removeGameStatusListener(this);
 	}
 }

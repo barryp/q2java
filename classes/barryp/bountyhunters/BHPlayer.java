@@ -5,11 +5,11 @@ import java.util.*;
 import javax.vecmath.*;
 
 import q2java.*;
-import q2java.gui.*;
-import q2jgame.*;
+import q2java.core.*;
+import q2java.core.gui.*;
 
-import baseq2.*;
-import baseq2.spawn.*;
+import q2java.baseq2.*;
+import q2java.baseq2.spawn.*;
 
 /**
  * BountyHunter player.  
@@ -17,10 +17,10 @@ import baseq2.spawn.*;
  * @author Barry Pederson
  */
 
-public class Player extends baseq2.Player 
+public class BHPlayer extends q2java.baseq2.Player 
 	{
-	protected Player fVictim;  // who we're after
-	protected Player fStalker; // who's after us
+	protected BHPlayer fVictim;  // who we're after
+	protected BHPlayer fStalker; // who's after us
 	
 	protected DirectionTracker fTracker;	// HUD widget for tracking victim
 	protected RangeTracker     fRange;		// HUD widget for range of victim
@@ -125,7 +125,7 @@ public class Player extends baseq2.Player
  * Create a new Player Game object, and associate it with a Player
  * native entity.
  */
-public Player(NativeEntity ent) throws GameException
+public BHPlayer(NativeEntity ent) throws GameException
 	{
 	super(ent);
 
@@ -157,7 +157,7 @@ protected void beginServerFrame()
 		
 	if (fVictim == null)
 		// try to get the game to assign us a victim
-		GameModule.assignVictim(this);
+		BountyHunters.assignVictim(this);
 	}
 /**
  * Announce this player's death to the world.
@@ -176,7 +176,7 @@ public void broadcastObituary(GameObject attacker, String obitKey)
 		}
 	else
 		{
-		Player killer = (Player) attacker;
+		BHPlayer killer = (BHPlayer) attacker;
 		if (killer.fVictim == this)
 			Game.bprint(Engine.PRINT_HIGH, killer.getName() + " terminated " + getName() + "\n");
 		else if (killer == fVictim)
@@ -196,7 +196,7 @@ protected void clearContracts()
 		if (fVictim == fStalker)
 			{
 			fVictim.setStalker(null);
-			GameModule.addVictim(fVictim);
+			BountyHunters.addVictim(fVictim);
 			}
 		else
 			fVictim.setStalker(fStalker); 
@@ -231,7 +231,7 @@ protected void clearSettings( )
  */
 public static void connect(NativeEntity ent) throws GameException
 	{
-	new Player(ent);
+	new BHPlayer(ent);
 	}
 /**
  * Handle dying.
@@ -255,7 +255,7 @@ protected void die(GameObject inflictor, GameObject attacker, int damage, Point3
 public void dispose()
 	{
 	// let the game module know not to put out contracts on us
-	GameModule.removePlayer(this);
+	BountyHunters.removePlayer(this);
 
 	// remove HUD Widgets
 	fTracker.dispose();
@@ -268,7 +268,7 @@ public void dispose()
  * Get who's after this player.
  * @return barryp.contract.Player
  */
-public Player getStalker() 
+public BHPlayer getStalker() 
 	{
 	return fStalker;
 	}
@@ -276,7 +276,7 @@ public Player getStalker()
  * Get who this player's after.
  * @return barryp.contract.Player
  */
-public Player getVictim() 
+public BHPlayer getVictim() 
 	{
 	return fVictim;
 	}
@@ -284,7 +284,7 @@ public Player getVictim()
  * Override baseq2.Player.registerKill() to use different scoring scheme.
  * @param p baseq2.Player this player's victim, may be the player himself or null.
  */
-protected void registerKill(baseq2.Player p) 
+protected void registerKill(q2java.baseq2.Player p) 
 	{
 	// killed self
 	if ((p == this) || (p == null))
@@ -304,7 +304,7 @@ protected void registerKill(baseq2.Player p)
  * Set who's after this player.
  * @return barryp.contract.Player
  */
-public void setStalker(Player stalker) 
+public void setStalker(BHPlayer stalker) 
 	{
 	fStalker = stalker;
 	}
@@ -312,7 +312,7 @@ public void setStalker(Player stalker)
  * Set who this player is after.
  * @return barryp.contract.Player
  */
-public void setVictim(Player victim) 
+public void setVictim(BHPlayer victim) 
 	{
 	fVictim = victim;
 
@@ -341,7 +341,7 @@ protected void spawn()
 	super.spawn();
 
 	// make ourselves available for assignment
-	GameModule.addVictim(this);
+	BountyHunters.addVictim(this);
 
 	fHasSpawned = true;
 	}
@@ -373,7 +373,7 @@ public void welcome()
 	Engine.multicast(fEntity.getOrigin(), Engine.MULTICAST_PVS);
 
 	Object[] args = {getName()};
-	Game.localecast("baseq2.Messages", "entered", args, Engine.PRINT_HIGH);
+	Game.localecast("q2java.baseq2.Messages", "entered", args, Engine.PRINT_HIGH);
 
 	if (fVictim == null)
 		fEntity.centerprint("Welcome to BountyHunters\n(Inspired by Assassin Quake)\n");

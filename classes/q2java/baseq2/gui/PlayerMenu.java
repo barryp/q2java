@@ -1,14 +1,16 @@
-package q2java.gui;
+package q2java.baseq2.gui;
 
 import java.util.Vector;
-import baseq2.Player;
+import q2java.baseq2.Player;
+import q2java.baseq2.event.*;
+import q2java.gui.*;
 
 /**
  * Menu bound to a baseq2 Player.
  *
  * @author Barry Pederson
  */
-public class PlayerMenu extends GenericMenu 
+public class PlayerMenu extends GenericMenu implements PlayerCommandListener
 	{
 	protected Vector fCommands;
 	protected Player fPlayer;
@@ -39,7 +41,7 @@ public void close()
 	super.close();
 	
 	// stop receiving player commands.
-	fPlayer.removeCommandHandler(this);
+	fPlayer.removePlayerCommandListener(this);
 
 	// forget about the player
 	fPlayer = null;
@@ -48,28 +50,28 @@ public void close()
  * Handle the inven command by closing the menu
  * (the player must have hit TAB again)
  */
-public void cmd_inven(baseq2.Player source, String[] argv, String args)
+public void cmd_inven(Player source, String[] argv, String args)
 	{
 	close();
 	}
 /**
  * Player hit ']' probably.
  */
-public void cmd_invnext(baseq2.Player source, String[] argv, String args)
+public void cmd_invnext(Player source, String[] argv, String args)
 	{
 	selectNextItem();
 	}
 /**
  * Player probably hit '['
  */
-public void cmd_invprev(baseq2.Player source, String[] argv, String args)
+public void cmd_invprev(Player source, String[] argv, String args)
 	{
 	selectPreviousItem();
 	}
 /**
  * Called when player presses Enter key
  */
-public void cmd_invuse(baseq2.Player source, String[] argv, String args)
+public void cmd_invuse(Player source, String[] argv, String args)
 	{
 	String command = (String)fCommands.elementAt(getSelectedIndex());
 	if (command != null)
@@ -79,9 +81,34 @@ public void cmd_invuse(baseq2.Player source, String[] argv, String args)
 /**
  * Player hit ESC?
  */
-public void cmd_putaway(baseq2.Player source, String[] argv, String args)
+public void cmd_putaway(Player source, String[] argv, String args)
 	{
 	close();
+	}
+public void commandIssued(PlayerCommandEvent e)
+	{
+	String command = e.getCommand();
+
+	if( command.equals("inven") )
+	    {
+		cmd_inven( e.getPlayer(), null, e.getArgs() );
+	    }
+	else if( command.equals("putaway") )
+	    {
+		cmd_putaway( e.getPlayer(), null, e.getArgs() );
+	    }
+	else if( command.equals("invnext") )
+	    {
+		cmd_invnext( e.getPlayer(), null, e.getArgs() );
+	    }
+	else if( command.equals("invuse") )
+	    {
+		cmd_invuse( e.getPlayer(), null, e.getArgs() );
+	    }
+	else if( command.equals("invprev") )
+	    {
+		cmd_invprev( e.getPlayer(), null, e.getArgs() );
+	    }
 	}
 /**
  * Show the menu on the player's screen.
@@ -94,6 +121,6 @@ public void show(Player p)
 	fPlayer = p;
 	
 	// start intercepting menu commands
-	p.addCommandHandler(this);
+	p.addPlayerCommandListener(this);
 	}
 }

@@ -1,4 +1,4 @@
-package menno.ctf.spawn;
+package q2java.ctf.spawn;
 
 /*
 ======================================================================================
@@ -15,11 +15,10 @@ package menno.ctf.spawn;
 */
 
 
-import q2java.*;
-import q2jgame.*;
-//import baseq2.*;
 import javax.vecmath.*;
-import menno.ctf.*;
+import q2java.*;
+import q2java.core.*;
+import q2java.ctf.*;
 
 
 /**

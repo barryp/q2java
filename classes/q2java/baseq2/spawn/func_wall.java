@@ -1,9 +1,9 @@
-package baseq2.spawn;
+package q2java.baseq2.spawn;
 
 import javax.vecmath.*;
 import q2java.*;
-import q2jgame.*;
-import baseq2.*;
+import q2java.core.*;
+import q2java.baseq2.*;
 
 /**
 QUAKED func_wall (0 .5 .8) ? TRIGGER_SPAWN TOGGLE START_ON ANIMATED ANIMATED_FAST

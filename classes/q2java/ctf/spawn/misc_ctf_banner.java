@@ -1,4 +1,4 @@
-package menno.ctf.spawn;
+package q2java.ctf.spawn;
 
 /*
 ======================================================================================
@@ -16,8 +16,8 @@ package menno.ctf.spawn;
 
 
 import q2java.*;
-import q2jgame.*;
-import baseq2.*;
+import q2java.core.*;
+import q2java.baseq2.*;
 
 /*-----------------------------------------------------------------------*/
 /*QUAKED misc_ctf_banner (1 .5 0) (-4 -64 0) (4 64 248) TEAM2
@@ -45,7 +45,7 @@ public class misc_ctf_banner extends GameObject implements FrameListener
 			fEntity.setSkinNum( 1 );
 
 		//fCurrentFrame = (MiscUtil.randomInt() & 0x0fff) % 16;
-		fCurrentFrame = Game.randomInt() % 16;
+		fCurrentFrame = GameUtil.randomInt() % 16;
 		fEntity.setFrame(fCurrentFrame);
 
 		fEntity.linkEntity();

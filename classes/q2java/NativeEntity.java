@@ -363,9 +363,9 @@ public static Enumeration enumerateEntities(String targetClassName)
  * the active NativeEntity objects in the system
  * that are associated with active players.
  */
-public static Enumeration enumeratePlayers() 
+public static Enumeration enumeratePlayerEntities() 
 	{
-	return new PlayerEnumeration();
+	return new PlayerEntityEnumeration();
 	}
 static NativeEntity findNext(NativeEntity start, Class targetClass)
 	{

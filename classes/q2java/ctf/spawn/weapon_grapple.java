@@ -1,4 +1,4 @@
-package menno.ctf.spawn;
+package q2java.ctf.spawn;
 
 
 /*
@@ -19,9 +19,10 @@ package menno.ctf.spawn;
 import javax.vecmath.*;
 
 import q2java.*;
-import q2jgame.*;
-import baseq2.*;
-import menno.ctf.*;
+import q2java.core.*;
+import q2java.baseq2.*;
+import q2java.baseq2.event.*;
+import q2java.ctf.*;
 
 public class weapon_grapple extends GenericWeapon
 {
@@ -132,7 +133,7 @@ public class weapon_grapple extends GenericWeapon
 	/**
 	* Maybe this method should be in GenericWeapon.java...
 	**/
-	public baseq2.Player getOwner()
+	public q2java.baseq2.Player getOwner()
 	{
 		return fPlayer;
 	}
@@ -150,15 +151,6 @@ public class weapon_grapple extends GenericWeapon
 	public boolean isDroppable() 
 	{
 		return false;
-	}
-	/**
-	 * Called when a player dies or disconnects.
-	 * @param wasDisconnected true on disconnects, false on normal deaths.
-	 */
-	public void playerStateChanged(baseq2.Player p, int changeEvent)
-	{
-		reset();
-		super.playerStateChanged(p, changeEvent);
 	}
 	public void reset()
 	{
@@ -181,5 +173,14 @@ public class weapon_grapple extends GenericWeapon
 
 		fPauseFrames = PAUSE_FRAMES;
 		fFireFrames  = FIRE_FRAMES;					
+	}
+	/**
+	 * Called when a player dies or disconnects.
+	 * @param wasDisconnected true on disconnects, false on normal deaths.
+	 */
+	public void stateChanged(PlayerStateEvent pse)
+	{
+		reset();
+		super.stateChanged(pse);
 	}
 }

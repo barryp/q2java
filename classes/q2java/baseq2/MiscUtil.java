@@ -1,9 +1,9 @@
-package baseq2;
+package q2java.baseq2;
 
 import java.util.*;
 import javax.vecmath.*;
 import q2java.*;
-import q2jgame.*;
+import q2java.core.*;
 
 /**
  * Various minor static utilities useful to the game.
@@ -87,7 +87,6 @@ public static boolean equals(Tuple3f t, float x, float y, float z)
 public static void fireLead(GameObject p, Point3f start, Vector3f aimDir, int damage, int kick, int teImpact, int hSpread, int vSpread, String obitKey) 
 	{
 	TraceResults	tr;
-	Angle3f  dir;
 	Vector3f	forward = new Vector3f();
 	Vector3f	right = new Vector3f();
 	Vector3f	up = new Vector3f();
@@ -101,11 +100,16 @@ public static void fireLead(GameObject p, Point3f start, Vector3f aimDir, int da
 	tr = Engine.trace(p.fEntity.getOrigin(), start, p.fEntity, Engine.MASK_SHOT);
 	if (!(tr.fFraction < 1.0))
 		{
-		dir = new Angle3f(aimDir);
-		dir.getVectors(forward, right, up);
+		// limit the scope of "dir"
+			{
+			Angle3f  dir = Q2Recycler.getAngle3f();
+			dir.set(aimDir);
+			dir.getVectors(forward, right, up);
+			Q2Recycler.put(dir);
+			}
 
-		r = (float) (Game.cRandom() * hSpread);
-		u = (float) (Game.cRandom() * vSpread);
+		r = (float) (GameUtil.cRandom() * hSpread);
+		u = (float) (GameUtil.cRandom() * vSpread);
 		end.scaleAdd(8192, forward, start);
 		end.scaleAdd(r, right, end);
 		end.scaleAdd(u, up, end);
@@ -155,15 +159,21 @@ public static void fireLead(GameObject p, Point3f start, Vector3f aimDir, int da
 					}
 
 				// change bullet's course when it enters water
-				Vector3f diff = new Vector3f();
+				Vector3f diff = Q2Recycler.getVector3f();
+				Angle3f ang = Q2Recycler.getAngle3f();
+				
 				diff.sub(end, start);
-				Angle3f ang = new Angle3f(diff);
+				ang.set(diff);
 				ang.getVectors(forward, right, up);
-				r = (float)(Game.cRandom() * hSpread * 2);
-				u = (float)(Game.cRandom() * vSpread * 2);
+				
+				r = (float)(GameUtil.cRandom() * hSpread * 2);
+				u = (float)(GameUtil.cRandom() * vSpread * 2);
 				end.scaleAdd(8192, forward, waterStart);
 				end.scaleAdd(r, right, end);
 				end.scaleAdd(u, up, end);
+
+				Q2Recycler.put(ang);
+				Q2Recycler.put(diff);
 				}
 
 			// re-trace ignoring water this time
@@ -184,19 +194,19 @@ public static void fireLead(GameObject p, Point3f start, Vector3f aimDir, int da
 	// if went through water, determine where the end and make a bubble trail
 	if (water)
 		{
-		Point3f pos = new Point3f();
-
-		Vector3f leadDir = new Vector3f(tr.fEndPos);
-		leadDir.sub(waterStart);
+		Point3f pos = Q2Recycler.getPoint3f();
+		Vector3f leadDir = Q2Recycler.getVector3f();
+		
+		leadDir.sub(tr.fEndPos, waterStart);				
 		leadDir.normalize();
 		pos.scaleAdd(-2, leadDir, tr.fEndPos); // = tr.fEndPos.vectorMA(-2, dir);
+		
 		if ((Engine.getPointContents(pos) & Engine.MASK_WATER) != 0)
 			tr.fEndPos = new Point3f(pos);
 		else
 			tr = Engine.trace(pos, waterStart, tr.fEntity, Engine.MASK_WATER);
 
-		pos = new Point3f(waterStart);
-		pos.add(tr.fEndPos);
+		pos.add(tr.fEndPos, waterStart);
 		pos.scale(0.5F);
 
 		Engine.writeByte(Engine.SVC_TEMP_ENTITY);
@@ -204,6 +214,9 @@ public static void fireLead(GameObject p, Point3f start, Vector3f aimDir, int da
 		Engine.writePosition(waterStart);
 		Engine.writePosition(tr.fEndPos);
 		Engine.multicast(pos, Engine.MULTICAST_PVS);
+
+		Q2Recycler.put(leadDir);
+		Q2Recycler.put(pos);
 		}
 	}
 /**
@@ -258,8 +271,7 @@ public static void fireRail(GameObject p, Point3f start, Vector3f aimDir, int da
 	Engine.multicast(p.fEntity.getOrigin(), Engine.MULTICAST_PHS);
 	if (water)
 		{
-System.out.println("Second water effect");		
-		Engine.writeByte(Engine.SVC_TEMP_ENTITY);
+	   	Engine.writeByte(Engine.SVC_TEMP_ENTITY);
 		Engine.writeByte(Engine.TE_RAILTRAIL);
 		Engine.writePosition(start);
 		Engine.writePosition(tr.fEndPos);
@@ -291,7 +303,7 @@ public static GenericSpawnpoint getSpawnpointFarthest()
 	GenericSpawnpoint result = null;
 	float bestDistance = 0;
 	
-	Vector list = Game.getLevelRegistryList(baseq2.spawn.info_player_deathmatch.REGISTRY_KEY);
+	Vector list = Game.getLevelRegistryList(q2java.baseq2.spawn.info_player_deathmatch.REGISTRY_KEY);
 	Enumeration enum = list.elements();
 	while (enum.hasMoreElements())
 		{
@@ -322,11 +334,11 @@ public static GenericSpawnpoint getSpawnpointRandom()
 	int count = 0;
 	
 	// find the two deathmatch spawnpoints that are closest to any players
-	Vector list = Game.getLevelRegistryList(baseq2.spawn.info_player_deathmatch.REGISTRY_KEY);
+	Vector list = Game.getLevelRegistryList(q2java.baseq2.spawn.info_player_deathmatch.REGISTRY_KEY);
 
 	// if no deathmatch spawnpoint, try single-player ones
 	if (list.size() < 1)
-		list = Game.getLevelRegistryList(baseq2.spawn.info_player_start.REGISTRY_KEY);
+		list = Game.getLevelRegistryList(q2java.baseq2.spawn.info_player_start.REGISTRY_KEY);
 		
 	Enumeration enum = list.elements();
 	while (enum.hasMoreElements())
@@ -359,7 +371,7 @@ public static GenericSpawnpoint getSpawnpointRandom()
 	else
 		count -= 2;			
 
-	int selection = (Game.randomInt() & 0x0fff) % count;
+	int selection = (GameUtil.randomInt() & 0x0fff) % count;
 	spawnPoint = null;
 
 	enum = list.elements();
@@ -383,12 +395,12 @@ public static GenericSpawnpoint getSpawnpointRandom()
  */
 public static GenericSpawnpoint getSpawnpointSingle() 
 	{
-	String target = GameModule.getSpawnpoint();
+	String target = BaseQ2.getSpawnpoint();
 
 	if (target == null)
 		{
 		// look for an info_player_start spawnpoint that's not a target
-		Vector list = Game.getLevelRegistryList(baseq2.spawn.info_player_start.REGISTRY_KEY);
+		Vector list = Game.getLevelRegistryList(q2java.baseq2.spawn.info_player_start.REGISTRY_KEY);
 		Enumeration enum = list.elements();
 		while (enum.hasMoreElements())
 			{
@@ -409,7 +421,7 @@ public static GenericSpawnpoint getSpawnpointSingle()
 		while (enum.hasMoreElements())
 			{
 			Object obj = enum.nextElement();
-			if (obj instanceof baseq2.spawn.info_player_start)
+			if (obj instanceof q2java.baseq2.spawn.info_player_start)
 				return (GenericSpawnpoint) obj;
 			}		
 		}
@@ -459,14 +471,14 @@ public static float nearestPlayerDistance(GenericSpawnpoint ent)
 	float result = Float.MAX_VALUE;
 	Point3f startPoint = ent.getOrigin();
 
-	Enumeration players = NativeEntity.enumeratePlayers();
+	Enumeration players = Player.enumeratePlayers();
 	while (players.hasMoreElements())
 		{
-		NativeEntity p = (NativeEntity)players.nextElement();
-		if (((Player)p.getReference()).getHealth() < 0)
+		Player p = (Player) players.nextElement();
+		if (p.getHealth() < 0)
 			continue;
 			
-		float f = startPoint.distanceSquared(p.getOrigin());
+		float f = startPoint.distanceSquared(p.fEntity.getOrigin());
 		if (f < result)
 			result = f;
 		}
@@ -518,13 +530,19 @@ public static Point3f parsePoint3f(String s)
  */
 public static void radiusDamage(GameObject inflictor, GameObject attacker, float damage, GameObject ignore, float radius, String obitKey) 
 	{
+	// get a few Vector3f objects we can use temporarily
+	Vector3f d = Q2Recycler.getVector3f();
+	Vector3f v = Q2Recycler.getVector3f();
+	Vector3f zeroVec = Q2Recycler.getVector3f();
+	zeroVec.set(0, 0, 0);
+	
 	Point3f inflictorOrigin = inflictor.fEntity.getOrigin();
 	float radiusSquared = radius * radius;  // square the radius for faster checking
 
-	Enumeration enum = NativeEntity.enumeratePlayers();
+	Enumeration enum = Player.enumeratePlayers();
 	while (enum.hasMoreElements())
 		{		
-		Player p  = (Player) ((NativeEntity) enum.nextElement()).getReference();
+		Player p  = (Player) enum.nextElement();
 
 		if (p == ignore)
 			continue;
@@ -534,9 +552,8 @@ public static void radiusDamage(GameObject inflictor, GameObject attacker, float
 		if (inflictorOrigin.distanceSquared(victimOrigin) > radiusSquared)
 			continue;
 						
-		// I don't claim to understand these next 4 lines....
-		Vector3f v = new Vector3f(p.fEntity.getMins());
-		v.add(p.fEntity.getMaxs());
+		// I don't claim to understand these next 3 lines....
+		v.add(p.fEntity.getMins(), p.fEntity.getMaxs());
 		v.scaleAdd(0.5f, v, victimOrigin);
 		v.sub(inflictorOrigin, v);
 		
@@ -546,10 +563,26 @@ public static void radiusDamage(GameObject inflictor, GameObject attacker, float
 			
 		if (damagePoints > 0)			
 			{
-			Vector3f d = new Vector3f();
 			d.sub(victimOrigin, inflictorOrigin);
-			p.damage(inflictor, attacker, d, inflictorOrigin, new Vector3f(0,0,0), damagePoints, damagePoints, GameObject.DAMAGE_RADIUS, Engine.TE_NONE, obitKey);			
+			p.damage(inflictor, attacker, d, inflictorOrigin, zeroVec, damagePoints, damagePoints, GameObject.DAMAGE_RADIUS, Engine.TE_NONE, obitKey);			
 			}
-		}	
-	}		
+		}
+
+	Q2Recycler.put(zeroVec);
+	Q2Recycler.put(v);
+	Q2Recycler.put(d);
+	}
+/**
+ * Sends a command to the clients console
+ * @author Peter Donald 24/1/99  
+ */
+public static void stuffCommand(NativeEntity ent, String command)
+	{
+	if( ent.isPlayer() && !ent.isBot() )
+	    {
+	    Engine.writeByte( Engine.SVC_STUFFTEXT );
+	    Engine.writeString(command);
+	    Engine.unicast(ent, true);	  
+	    }	
+	}
 }

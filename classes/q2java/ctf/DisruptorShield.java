@@ -1,4 +1,4 @@
-package menno.ctftech;
+package q2java.ctf;
 
 
 /*
@@ -16,14 +16,13 @@ package menno.ctftech;
 */
 
 
-import q2java.*;
-import q2jgame.*;
-import baseq2.DamageFilter;
-import baseq2.DamageObject;
 import javax.vecmath.*;
+import q2java.*;
+import q2java.core.*;
+import q2java.baseq2.event.*;
 
 
-public class DisruptorShield extends GenericTech implements baseq2.DamageFilter
+public class DisruptorShield extends GenericTech implements q2java.baseq2.event.PlayerDamageListener
 {
 	protected final static float DAMAGE_MULTIPLIER = 0.5f;
 	public DisruptorShield(int hudStat) throws GameException
@@ -34,7 +33,7 @@ public class DisruptorShield extends GenericTech implements baseq2.DamageFilter
 	 * Method to implement in order to filter a player's damage.
 	 * @param DamageObject - damage to be filtered.
 	 */
-	public DamageObject filterDamage(DamageObject damage)
+	public void damageOccured(PlayerDamageEvent damage)
 	{
 		float volume = 1f;
 		//if (self->owner->client->silencer_shots)
@@ -42,7 +41,6 @@ public class DisruptorShield extends GenericTech implements baseq2.DamageFilter
 		getOwner().fEntity.sound( NativeEntity.CHAN_VOICE, Engine.getSoundIndex("ctf/tech1.wav"), volume, NativeEntity.ATTN_NORM, 0);
 	
 		damage.fAmount *= DAMAGE_MULTIPLIER;
-		return damage;
 	}
 	/**
 	 * Get the name of this item's icon.
@@ -72,12 +70,12 @@ public class DisruptorShield extends GenericTech implements baseq2.DamageFilter
 	 * Set which player is holding the tech.
 	 * @param p menno.ctf.Player
 	 */
-	public void setOwner(baseq2.Player p) 
+	public void setOwner(q2java.baseq2.Player p) 
 	{
 		if (p == null)
-			getOwner().removeDamageFilter(this);
+			getOwner().removePlayerDamageListener(this);
 		else
-			p.addDamageFilter(this);
+			p.addPlayerDamageListener(this);
 			
 		super.setOwner(p);
 	}

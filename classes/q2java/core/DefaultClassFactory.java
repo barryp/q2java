@@ -1,5 +1,4 @@
-package q2jgame;
-
+package q2java.core;
 
 import java.util.*;
 
@@ -19,7 +18,7 @@ import java.util.*;
  * @version 	0.2
  * @author 	Leigh Dodds
  */
-public class DefaultClassFactory extends GameClassFactory 
+public class DefaultClassFactory implements GameClassFactory 
 	{
 	protected Vector gModList;
 	protected Hashtable gClassHash;
@@ -35,35 +34,36 @@ public DefaultClassFactory()
 /**
  * Adds a package to the running game.
  */
-public void addModule(String packageName, String alias) 
+public Gamelet addGamelet(String className, String alias,
+	Gamelet higherGamelet) throws ClassNotFoundException
 	{
-	GameModule gp = getModule(alias);
-	if (gp != null) 
+	Gamelet g = getGamelet(alias);
+	if (g != null) 
 		{
 		Game.dprint("There is already a [" + alias + "] loaded\n");
-		return;
+		return null;
 		}
 		
 	try 
 		{
-		Class cls = Class.forName(packageName + ".GameModule");
+		Class cls = Class.forName(className);
 		Object[] args = new Object[1];
 		args[0] = alias;
 		Class[] argTypes = new Class[1];
 		argTypes[0] = alias.getClass();
 		java.lang.reflect.Constructor ctor = cls.getConstructor(argTypes);		
-		GameModule gm = (GameModule) ctor.newInstance(args);
+		g = (Gamelet) ctor.newInstance(args);
 
-		gModList.insertElementAt(gm, 0);
+		int position = 0;
+		if (higherGamelet != null)
+			position = gModList.indexOf(higherGamelet) + 1;
+		gModList.insertElementAt(g, position);
 
 		// clear the cache so the new package will be 
 		// looked at when looking up classes
-		gClassHash.clear(); 
+		gClassHash.clear();
 
-		//Withnails 05/16/98
-		//Game.notifyModuleAdded(gm);
-		//notify the module has been added
-		super.notify(gm, 1);
+		return g;
 		} 
 	catch (java.lang.reflect.InvocationTargetException ite)
 		{
@@ -73,28 +73,53 @@ public void addModule(String packageName, String alias)
 		{
 		e.printStackTrace();
 		}
+
+	return null;
+	}
+/**
+ * Look for a gamelet based on the class.
+ * @return q2java.core.Gamelet, null if not found.
+ * @param gameletClass class we're looking for.
+ */
+public Gamelet getGamelet(Class gameletClass) 
+	{
+	for (int i = 0; i < gModList.size(); i++)
+		{
+		Object obj = gModList.elementAt(i);
+		if (obj.getClass().equals(gameletClass))
+			return (Gamelet) obj;
+		}
+		
+	return null;
 	}
 /**
  * Lookup a loaded package, based on its name.
  * @return q2jgame.GameModule, null if not found.
  * @param alias java.lang.String
  */
-public GameModule getModule(String alias) 
+public Gamelet getGamelet(String alias) 
 	{
 	for (int i = 0; i < gModList.size(); i++)
 		{
-		GameModule gm = (GameModule) gModList.elementAt(i);
-		if (gm.getModuleName().equalsIgnoreCase(alias))
-			return gm;
+		Gamelet g = (Gamelet) gModList.elementAt(i);
+		if (g.getGameletName().equalsIgnoreCase(alias))
+			return g;
 		}
 		
 	return null;
 	}
 /**
+ * Returns the number of loaded packages
+ */
+public int getGameletCount() 
+	{
+	return gModList.size();
+	}
+/**
  * Get an Enumeration of all loaded packages. The enumeration will be
  * of LoadedPackage objects
  */
-public Enumeration getModules() 
+public Enumeration getGamelets() 
 	{
 	return gModList.elements();
 	}
@@ -121,55 +146,35 @@ public Class lookupClass(String classSuffix) throws ClassNotFoundException
 
 	while (enum.hasMoreElements())
 		{
-		GameModule gm = (GameModule) enum.nextElement();
-		try
+		Gamelet g = (Gamelet) enum.nextElement();
+
+		// only check initialized Gamelets
+		if (g.isInitialized())
 			{
-			result = Class.forName(gm.getPackageName() + classSuffix);
-			gClassHash.put(classSuffix, result);
-			return result;
-			}
-		catch (ClassNotFoundException e)
-			{
+			try
+				{
+				result = Class.forName(g.getPackageName() + classSuffix);
+				gClassHash.put(classSuffix, result);
+				return result;
+				}
+			catch (ClassNotFoundException e)
+				{
+				}
 			}
 		}
 
 	throw new ClassNotFoundException("No match for [" + classSuffix + "]");
 	}
 /**
- * Returns the number of loaded packages
- */
-public int numModules() 
-	{
-	return gModList.size();
-	}
-/**
  * Removes a module from a running game.
  */
-public void removeModule(String alias)  
+public void removeGamelet(Gamelet g)  
 	{
 	int i;
 	for (i = 0; i < gModList.size(); i++)
 		{
-		GameModule gm = (GameModule) gModList.elementAt(i);
-		if (gm.getModuleName().equalsIgnoreCase(alias))
-			{
-			removeModule(gm);
-			return;
-			}
-		}
-
-	Game.dprint("[" + alias + "] is not loaded\n");
-	}
-/**
- * Removes a module from a running game.
- */
-public void removeModule(GameModule mod)  
-	{
-	int i;
-	for (i = 0; i < gModList.size(); i++)
-		{
-		GameModule gm = (GameModule) gModList.elementAt(i);
-		if (gm == mod)
+		Gamelet g2 = (Gamelet) gModList.elementAt(i);
+		if (g2 == g)
 			{
 			gModList.removeElementAt(i);
 			// clear the cache so the old package won't be 
@@ -177,18 +182,15 @@ public void removeModule(GameModule mod)
 			gClassHash.clear();
 			try
 				{
-				gm.unload();
+				g.unload();
 				}
 			catch (Exception e)
 				{
 				e.printStackTrace();
 				}	
-			//Withnails 16/05/98
-			//Game.notifyModuleRemoved(gm);
-			super.notify(gm, 0);
 			return;
 			}
 		}
-	Game.dprint("GameModule: " + mod + "wasn't loaded\n");
+	Game.dprint("Gamelet: " + g + "wasn't loaded\n");
 	}
 }

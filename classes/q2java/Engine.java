@@ -98,6 +98,7 @@ public class Engine
 	public final static int SVC_TEMP_ENTITY		= 3;
 	public final static int SVC_LAYOUT			= 4;
 	public final static int SVC_INVENTORY		= 5;
+	public final static int SVC_STUFFTEXT 		= 11;	
 	
 	//
 	// muzzle flashes / player effects

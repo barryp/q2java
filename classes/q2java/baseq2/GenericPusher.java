@@ -1,10 +1,10 @@
-package baseq2;
+package q2java.baseq2;
 
-import q2java.*;
-import q2jgame.*;
 import java.util.Enumeration;
 import java.util.Vector;
 import javax.vecmath.*;
+import q2java.*;
+import q2java.core.*;
  
 /**
  * Superclass for entities like doors, plats, and trains
@@ -173,7 +173,7 @@ protected void moveTo(Point3f dest)
 
 	if ((fSpeed == fAccel) && (fSpeed == fDecel))
 		{
-		fLinearVelocity = new Vector3f(fMoveDir);
+		fLinearVelocity.set(fMoveDir);
 		fLinearVelocity.scale(fSpeed);		
 		float frames = (float) Math.floor((fRemainingDistance / fSpeed) / Engine.SECONDS_PER_FRAME);
 		fRemainingDistance -= frames * fSpeed * Engine.SECONDS_PER_FRAME;
@@ -277,11 +277,15 @@ protected boolean push()
 		fEntity.setAngles(currentAngle);
 
 		// we need this for pushing things later			
-		Angle3f org = new Angle3f(-angularMove.x, -angularMove.y, -angularMove.z);
+		Angle3f org = Q2Recycler.getAngle3f();
+		
+		org.set(-angularMove.x, -angularMove.y, -angularMove.z);
 		forward = new Vector3f();
 		right = new Vector3f();
 		up = new Vector3f();
-		org.getVectors(forward, right, up);			
+		org.getVectors(forward, right, up);
+		
+		Q2Recycler.put(org);
 		}
 	
 	fEntity.linkEntity();
@@ -312,9 +316,10 @@ protected boolean push()
 		if (isAngularMove)
 			{
 			// figure movement due to the pusher's amove
-			Vector3f org = new Vector3f(check.fEntity.getOrigin());
-			org.sub(pusherOrigin);
-			Point3f org2 = new Point3f();
+			Vector3f org = Q2Recycler.getVector3f();
+			Point3f org2 = Q2Recycler.getPoint3f();
+			
+			org.sub(check.fEntity.getOrigin(), pusherOrigin);
 			org2.x = forward.dot(org);
 			org2.y = -right.dot(org);
 			org2.z = up.dot(org);
@@ -327,6 +332,9 @@ protected boolean push()
 				da.y += angularMove.y;
 				check.fEntity.setPlayerDeltaAngles(da);
 				}
+
+			Q2Recycler.put(org2);
+			Q2Recycler.put(org);
 			}
 			
 		check.fEntity.setOrigin(checkOrigin);
@@ -541,8 +549,8 @@ protected void setPortals(boolean state)
 	for (int i = 0; i < fTargets.size(); i++)		
 		{
 		Object obj = fTargets.elementAt(i);
-		if (obj instanceof baseq2.spawn.func_areaportal)
-			((baseq2.spawn.func_areaportal) obj).setPortal(state);
+		if (obj instanceof q2java.baseq2.spawn.func_areaportal)
+			((q2java.baseq2.spawn.func_areaportal) obj).setPortal(state);
 		}
 	}
 /**
@@ -664,7 +672,7 @@ protected static GameObject testEntityPosition(NativeEntity ent)
 	Point3f origin = ent.getOrigin();
 	TraceResults tr = Engine.trace(origin, ent.getMins(), ent.getMaxs(), origin, ent, mask);
 	if (tr.fStartSolid)
-		return GameModule.gWorld;
+		return BaseQ2.gWorld;
 		
 	return null;		
 	}

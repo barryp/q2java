@@ -1,11 +1,11 @@
-package baseq2;
+package q2java.baseq2;
 
 import java.io.*;
 import java.util.Enumeration;
 import java.util.Vector;
 import javax.vecmath.*;
 import q2java.*;
-import q2jgame.*;
+import q2java.core.*;
 
 /**
  * Simple class to represent a spawnpoint in a map.
@@ -23,15 +23,15 @@ public GenericSpawnpoint(String[] spawnArgs) throws GameException
 	{
 	super();
 	
-	String s = Game.getSpawnArg(spawnArgs, "origin", null);
+	String s = GameUtil.getSpawnArg(spawnArgs, "origin", null);
 	if (s != null)
 		fOrigin = MiscUtil.parsePoint3f(s);
 
-	s = Game.getSpawnArg(spawnArgs, "angles", null);
+	s = GameUtil.getSpawnArg(spawnArgs, "angles", null);
 	if (s != null)
 		fAngles = MiscUtil.parseAngle3f(s);
 
-	s = Game.getSpawnArg(spawnArgs, "angle", null);
+	s = GameUtil.getSpawnArg(spawnArgs, "angle", null);
 	if (s != null)
 		{
 		Float f = new Float(s);
@@ -41,7 +41,7 @@ public GenericSpawnpoint(String[] spawnArgs) throws GameException
 	if (fAngles == null)
 		fAngles = new Angle3f();
 		
-	fTargetName = Game.getSpawnArg(spawnArgs, "targetname", null);
+	fTargetName = GameUtil.getSpawnArg(spawnArgs, "targetname", null);
 	if (fTargetName != null)
 		fTargetGroup = Game.addLevelRegistry("target-" + fTargetName, this);				
 	}

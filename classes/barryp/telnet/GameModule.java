@@ -5,7 +5,7 @@ import java.text.*;
 import java.util.*;
 
 import q2java.*;
-import q2jgame.*;
+import q2java.core.*;
 
 /**
  * Class to hold the init method, and any server commands implemented
@@ -13,7 +13,7 @@ import q2jgame.*;
  * 
  * @author Barry Pederson
  */
-public class GameModule extends q2jgame.GameModule
+public class GameModule extends q2java.core.Gamelet
 	{
 	private static Vector gServers;
 	private static boolean gIsLogging;

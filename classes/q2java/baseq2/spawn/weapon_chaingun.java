@@ -1,10 +1,10 @@
-package baseq2.spawn;
+package q2java.baseq2.spawn;
 
 import javax.vecmath.*;
 
 import q2java.*;
-import q2jgame.*;
-import baseq2.*;
+import q2java.core.*;
+import q2java.baseq2.*;
 
 public class weapon_chaingun extends GenericWeapon
 	{
@@ -108,16 +108,16 @@ public void fire()
 	damage *= fPlayer.getDamageMultiplier();
 	kick *= fPlayer.getDamageMultiplier();
 
-	fPlayer.fKickOrigin.set(Game.cRandom() * 0.35f, Game.cRandom() * 0.35f, Game.cRandom() * 0.35f);
-	fPlayer.fKickAngles.set(Game.cRandom() * 0.7f,  Game.cRandom() * 0.7f,  Game.cRandom() * 0.7f);
+	fPlayer.fKickOrigin.set(GameUtil.cRandom() * 0.35f, GameUtil.cRandom() * 0.35f, GameUtil.cRandom() * 0.35f);
+	fPlayer.fKickAngles.set(GameUtil.cRandom() * 0.7f,  GameUtil.cRandom() * 0.7f,  GameUtil.cRandom() * 0.7f);
 
 	for (i=0 ; i<shots ; i++)
 		{
 		// get start / end positions
 		Angle3f ang = fEntity.getPlayerViewAngles();
 		ang.getVectors(forward, right, up);
-		r = (float)(7 + Game.cRandom() * 4);
-		u = (float)(Game.cRandom() * 4);
+		r = (float)(7 + GameUtil.cRandom() * 4);
+		u = (float)(GameUtil.cRandom() * 4);
 		offset = new Vector3f(0, r, u + fPlayer.fViewHeight - 8);
 		start = fPlayer.projectSource(offset, forward, right);
 		MiscUtil.fireLead(fPlayer, start, forward, damage, kick, Engine.TE_GUNSHOT, DEFAULT_BULLET_HSPREAD, DEFAULT_BULLET_VSPREAD, "chaingun");

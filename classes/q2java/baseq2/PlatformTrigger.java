@@ -1,11 +1,11 @@
-package baseq2;
+package q2java.baseq2;
 
 import javax.vecmath.*;
 
 import q2java.*;
-import q2jgame.*;
+import q2java.core.*;
 
-import baseq2.spawn.func_plat;
+import q2java.baseq2.spawn.func_plat;
 
 /**
  * Trigger field that causes platforms to move when you 
@@ -18,7 +18,7 @@ public class PlatformTrigger extends GameObject implements FixedObject
 	{
 	protected func_plat fOwner;	
 	
-public PlatformTrigger(baseq2.spawn.func_plat target, Tuple3f mins, Tuple3f maxs) throws GameException
+public PlatformTrigger(q2java.baseq2.spawn.func_plat target, Tuple3f mins, Tuple3f maxs) throws GameException
 	{
 	fEntity = new NativeEntity();
 	fEntity.setReference(this);

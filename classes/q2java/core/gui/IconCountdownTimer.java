@@ -1,7 +1,8 @@
-package q2java.gui;
+package q2java.core.gui;
 
-import q2jgame.*;
 import q2java.NativeEntity;
+import q2java.core.*;
+import q2java.gui.*;
 
 /**
  * Runs a count down timer on the players hud.

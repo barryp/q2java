@@ -1,18 +1,11 @@
-package baseq2;
+package q2java.baseq2.event;
 
 /**
- * Interface for classes that want to be notified when Players die (or disconnect).
+ * Interface to receive PlayerStateChange events.
+ *
+ * @author Peter DOnald
  */
-public interface PlayerStateListener 
-	{
-	public final static int PLAYER_DIED			= 1;
-	public final static int PLAYER_LEVELCHANGE	= 2;
-	public final static int PLAYER_DISCONNECT	= 3;
-	
-/**
- * Called when a player dies or disconnects.
- * @param p - the player we're squealing on.
- * @param changeEvent - what has changed, one of the PLAYER_ constants.
- */
-public void playerStateChanged(Player p, int changeEvent);
+public interface PlayerStateListener  extends java.util.EventListener
+{
+  public void stateChanged(PlayerStateEvent e);    
 }

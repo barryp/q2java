@@ -1,8 +1,8 @@
-package baseq2.spawn;
+package q2java.baseq2.spawn;
 
 import q2java.*;
-import q2jgame.*;
-import baseq2.*;
+import q2java.core.*;
+import q2java.baseq2.*;
 
 /**
  * Lights that can be turned on and off
@@ -25,19 +25,19 @@ public class light implements GameTarget
 public light(String[] spawnArgs) throws GameException
 	{
 	// no targeted lights in deathmatch, because they cause global messages
-	if (baseq2.GameModule.gIsDeathmatch)
+	if (BaseQ2.gIsDeathmatch)
 		return;
 		
-	String s = Game.getSpawnArg(spawnArgs, "targetname", null);
+	String s = GameUtil.getSpawnArg(spawnArgs, "targetname", null);
 	if (s == null)
 		return;
 		
 	Game.addLevelRegistry("target-" + s, this);
 	
-	fStyle = Game.getSpawnArg(spawnArgs, "style", 0);
+	fStyle = GameUtil.getSpawnArg(spawnArgs, "style", 0);
 	if (fStyle >= 32)
 		{
-		int spawnFlags = Game.getSpawnArg(spawnArgs, "spawnflags", 0);
+		int spawnFlags = GameUtil.getSpawnArg(spawnArgs, "spawnflags", 0);
 		
 		if ((spawnFlags & START_OFF) == 1)
 			{

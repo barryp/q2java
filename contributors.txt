@@ -40,7 +40,8 @@ Menno "Fushion" van Gangelen <menno@element.nl>
 
 Peter "Rahvin" Donald <donaldp@lion.cs.latrobe.edu.au>
 
-    New implementations and improvements to map entities.
+    New implementations and improvements to map entities.  More complete 
+    implementation of event-delegation model. 
     
 _Quinn <tmiller@haverford.edu>
 

@@ -1,8 +1,9 @@
-package baseq2;
+package q2java.baseq2;
 
-import q2java.*;
-import q2jgame.*;
 import javax.vecmath.*;
+import q2java.*;
+import q2java.core.*;
+import q2java.baseq2.event.*;
 
 
 /**
@@ -12,7 +13,8 @@ import javax.vecmath.*;
  * @author Barry Pederson
  */
  
-public abstract class GenericWeapon extends AmmoHolder implements PlayerStateListener
+public abstract class GenericWeapon extends AmmoHolder 
+  implements PlayerStateListener
 	{
 	protected int    fVWepIndex;
 	
@@ -198,22 +200,6 @@ public boolean isFiring()
 	return fWeaponState == WEAPON_FIRING;
 	}
 /**
- * Called when a player dies or disconnects.
- * @param wasDisconnected true on disconnects, false on normal deaths.
- */
-public void playerStateChanged(Player p, int changeEvent)
-	{
-	// not interested anymore if the player dies
-	fPlayer.removePlayerStateListener(this);
-	
-	if ((changeEvent != PlayerStateListener.PLAYER_LEVELCHANGE) && isDroppable())
-		{
-		setAmmoCount(getDefaultAmmoCount());
-		p.removeInventory(getItemName()); // not really necessary, but you never know
-		drop(p, GenericItem.DROP_TIMEOUT);
-		}
-	}
-/**
  * Make sure a weapon's VWep skin is precached.  Most useful
  * for weapons that aren't spawned in maps, like the blaster
  * and grapple hook.
@@ -232,7 +218,7 @@ public static void precacheVWep(String weaponClassSuffix)
 		}
 	}
 /**
- * This method was created by a SmartGuide.
+ * Fill in the info specific to this type of weapon.
  */
 protected abstract void setFields();
 /**
@@ -258,6 +244,25 @@ public final void setWeaponFrame(int newFrame)
 	{
 	fGunFrame = newFrame;
 	fEntity.setPlayerGunFrame(fGunFrame);
+	}
+/**
+ * Called when a player dies or disconnects.
+ * @param wasDisconnected true on disconnects, false on normal deaths.
+ */
+public void stateChanged(PlayerStateEvent e)
+	{
+	Player p = e.getPlayer();
+	int changeEvent = e.getStateChanged();
+	
+	// not interested anymore if the player dies
+	fPlayer.removePlayerStateListener(this);
+	
+	if ((changeEvent != PlayerStateEvent.STATE_SUSPENDEDSTART) && isDroppable())
+		{
+		setAmmoCount(getDefaultAmmoCount());
+		p.removeInventory(getItemName()); // not really necessary, but you never know
+		drop(p, GenericItem.DROP_TIMEOUT);
+		}
 	}
 /**
  * This method was created by a SmartGuide.
@@ -343,7 +348,7 @@ public void weaponThink()
 					{
 					if (fGunFrame == fPauseFrames[n])
 						{
-						if ((Game.randomInt() & 15) != 0)
+						if ((GameUtil.randomInt() & 15) != 0)
 							return;
 						}
 					}

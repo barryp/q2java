@@ -1,5 +1,9 @@
 package q2java.gui;
 
+import java.util.*;
+import java.awt.Rectangle;
+import q2java.*;
+
 /**
  * Base class for game menus.
  *
@@ -16,10 +20,6 @@ package q2java.gui;
 ======================================================================================
 */
 
-
-import java.util.*;
-import java.awt.Rectangle;
-import q2java.*;
 
 public class GenericMenu
 {

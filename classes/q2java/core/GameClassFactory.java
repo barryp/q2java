@@ -1,5 +1,4 @@
-package q2jgame;
-
+package q2java.core;
 
 import java.util.*;
 
@@ -7,23 +6,35 @@ import java.util.*;
  * @version 	0.3
  * @author 	Leigh Dodds
  */
-public abstract class GameClassFactory {
-
-	/**
-	 * Adds a package to the running game.
-	 */
-	public abstract void addModule(String packageName, String alias);
-	/**
-	 * Lookup a loaded package, based on its name.
-	 * @return q2jgame.GameModule, null if not found.
-	 * @param alias java.lang.String
-	 */
-	public abstract GameModule getModule(String alias);
-	/**
-	 * Get an Enumeration of all loaded packages. The enumeration will be
-	 * of LoadedPackage objects
-	 */
-	public abstract Enumeration getModules();
+public interface GameClassFactory 
+	{
+	
+/**
+ * Adds a package to the running game.
+ */
+public Gamelet addGamelet(String className, String alias, 
+	Gamelet higherGamelet) throws ClassNotFoundException;
+/**
+ * Lookup a loaded package, based on its name.
+ * @return q2java.core.Gamelet, null if not found.
+ * @param alias java.lang.String
+ */
+public Gamelet getGamelet(Class gameletClass);
+/**
+ * Lookup a loaded package, based on its name.
+ * @return q2java.core.Gamelet, null if not found.
+ * @param alias java.lang.String
+ */
+public Gamelet getGamelet(String alias);
+/**
+ * Returns the number of loaded packages
+ */
+public int getGameletCount();
+/**
+ * Get an Enumeration of all loaded packages. The enumeration will be
+ * of Gamelet objects in order of priority - highest to lowest.
+ */
+public Enumeration getGamelets();
 /**
  * Looks up a class in loaded packages, or attempts to load the 
  * given class if not currently loaded.
@@ -32,32 +43,9 @@ public abstract class GameClassFactory {
  * @return The class matching the suffix/name
  * @exception java.lang.ClassNotFoundException if there was no match.
  */
-public abstract Class lookupClass(String classSuffix) throws ClassNotFoundException;
+public Class lookupClass(String classSuffix) throws ClassNotFoundException;
 /**
- * Notifies the system that a module has been removed or added
- *
- * @param gm The game module added or removed
- * @param flag 0 = removed 1 = added
+ * Removes a gamelet from a running game.
  */
-protected void notify (GameModule gm, int flag)
-{
-	if (flag == 1) {
-		Game.notifyModuleAdded(gm);
-	}
-	else {
-		Game.notifyModuleRemoved(gm);
-	}
-}
-	/**
-	 * Returns the number of loaded packages
-	 */
-public abstract int numModules();
-	/**
-	 * Removes a package from a running game.
-	 */
-public abstract void removeModule(String alias);
-	/**
-	 * Removes a package from a running game.
-	 */
-public abstract void removeModule(GameModule gm);
+public void removeGamelet(Gamelet g);
 }

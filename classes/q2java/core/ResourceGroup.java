@@ -1,4 +1,4 @@
-package q2jgame;
+package q2java.core;
 
 import java.text.MessageFormat;
 import java.util.*;
@@ -6,6 +6,8 @@ import java.util.*;
 /**
  * Track ResourceBundles using a given locale, along with 
  * BroadcastListeners interested in that locale.
+ *
+ * @author Barry Pederson
  */
 public class ResourceGroup 
 	{
@@ -99,7 +101,7 @@ public String getRandomString(String basename, String key)
 	if (obj instanceof String[])
 		{
 		String[] sa = (String[]) obj;
-		int choice = (Game.randomInt() & 0x0fff) % sa.length;
+		int choice = (GameUtil.randomInt() & 0x0fff) % sa.length;
 		return sa[choice];
 		}
 		

@@ -1,11 +1,10 @@
-package baseq2;
+package q2java.baseq2;
 
 import java.util.Enumeration;
 import javax.vecmath.*;
 
 import q2java.*;
-import q2jgame.*;
-import baseq2.*;
+import q2java.core.*;
 
 /**
  * Abstract class to handle both sliding and rotating doors
@@ -64,7 +63,7 @@ public Door(String[] spawnArgs) throws GameException
 		fEntity.setModel(s);
 
 	fSpeed = getSpawnArg("speed", 100.0F);
-	if (GameModule.gIsDeathmatch)
+	if (BaseQ2.gIsDeathmatch)
 		fSpeed *= 2;
 	
 	fAccel = getSpawnArg("accel", fSpeed);

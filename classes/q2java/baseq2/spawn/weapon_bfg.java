@@ -1,10 +1,10 @@
-package baseq2.spawn;
+package q2java.baseq2.spawn;
 
 
 import javax.vecmath.*;
 import q2java.*;
-import q2jgame.*;
-import baseq2.*;
+import q2java.core.*;
+import q2java.baseq2.*;
 
 public class weapon_bfg extends GenericWeapon
 	{
@@ -34,7 +34,7 @@ public void fire()
 	Vector3f	forward = new Vector3f();
 	Vector3f	right = new Vector3f();
 	Vector3f	offset;
-	int		damage = ( baseq2.GameModule.gIsDeathmatch ? 200 : 500 );
+	int		damage = ( BaseQ2.gIsDeathmatch ? 200 : 500 );
 	float	damageRadius = 1000;
 
 	damage *= fPlayer.getDamageMultiplier();
@@ -66,7 +66,7 @@ public void fire()
 	fPlayer.fKickOrigin.set(forward);
 	fPlayer.fKickOrigin.scale(-2);
 
-	fPlayer.fKickAngles.set(-40, 0, Game.cRandom()*8);
+	fPlayer.fKickAngles.set(-40, 0, GameUtil.cRandom()*8);
 	// make a big pitch kick with an inverse fall
 	//ent->client->v_dmg_pitch = -40;
 	//ent->client->v_dmg_roll = crandom()*8;

@@ -1,4 +1,4 @@
-package menno.ctftech;
+package q2java.ctf;
 
 
 /*
@@ -16,11 +16,10 @@ package menno.ctftech;
 */
 
 
-import q2java.*;
-import q2jgame.*;
-//import baseq2.*;
 import javax.vecmath.*;
-import menno.ctf.*;
+import q2java.*;
+import q2java.core.*;
+import q2java.ctf.*;
 
 
 /**
@@ -92,8 +91,8 @@ public class TimeAccel extends GenericTech
 
 		if ((phase == Game.FRAME_BEGINNING) && (getOwner() != null))
 		{
-			baseq2.GenericWeapon gw = getOwner().getCurrentWeapon();
-			if ((!(gw instanceof menno.ctf.spawn.weapon_grapple)) &&  getOwner().getCurrentWeapon().isFiring() )
+			q2java.baseq2.GenericWeapon gw = getOwner().getCurrentWeapon();
+			if ((!(gw instanceof q2java.ctf.spawn.weapon_grapple)) &&  getOwner().getCurrentWeapon().isFiring() )
 			{
 				gw.weaponThink();
 				playSound();
@@ -104,7 +103,7 @@ public class TimeAccel extends GenericTech
 	 * Set which player is holding the tech.
 	 * @param p menno.ctf.Player
 	 */
-	public void setOwner(baseq2.Player p) 
+	public void setOwner(q2java.baseq2.Player p) 
 	{
 		super.setOwner(p);
 

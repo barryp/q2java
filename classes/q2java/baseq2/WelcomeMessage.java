@@ -1,4 +1,4 @@
-package baseq2;
+package q2java.baseq2;
 
 /**
  * Simple class to hold a welcome message to show 
@@ -15,7 +15,7 @@ public class WelcomeMessage
 	// so we might as well figure out things like VM versions one time
 	// when the class is first loaded instead of doing it over and over
 	// each time someone connects
-	private static String gPrefix = GameModule.getVersion() 
+	private static String gPrefix = BaseQ2.getVersion() 
 		+ "\nVM: [" + System.getProperty("java.vendor") + " " + System.getProperty("java.version") + "]"
 		+ "\nOS: [" + System.getProperty("os.name") + " " + System.getProperty("os.version") + " " + System.getProperty("os.arch") + "]";
 	

@@ -1,8 +1,8 @@
-package baseq2.spawn;
+package q2java.baseq2.spawn;
 
 import q2java.*;
-import q2jgame.*;
-import baseq2.*;
+import q2java.core.*;
+import q2java.baseq2.*;
 
 /**
  * A misc_banner seems to be a giant flag that
@@ -20,7 +20,7 @@ public misc_banner(String[] spawnArgs) throws GameException
 	fEntity.setSolid(NativeEntity.SOLID_NOT);
 	fEntity.setModel("models/objects/banner/tris.md2");
 
-	fCurrentFrame = (Game.randomInt() & 0x0fff) % 16;
+	fCurrentFrame = (GameUtil.randomInt() & 0x0fff) % 16;
 	fEntity.setFrame(fCurrentFrame);
 
 	fEntity.linkEntity();

@@ -1,9 +1,10 @@
-package q2jgame;
+package q2java.core;
 
 /**
  * Interface a class needs to implement to be notified
  * of Game serverframe activities.
- * 
+ *
+ * @author Barry Pederson
  */
 public interface FrameListener 
 	{
@@ -14,4 +15,4 @@ public interface FrameListener
  *   is in, one of the Game.FRAME_* constants.
  */
 public void runFrame(int phase);
-}	
+}

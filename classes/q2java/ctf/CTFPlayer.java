@@ -1,4 +1,4 @@
-package menno.ctf;
+package q2java.ctf;
 
 
 /*
@@ -18,11 +18,13 @@ package menno.ctf;
 import java.util.*;	// remove..
 import javax.vecmath.*;
 import q2java.*;
-import q2java.gui.PlayerMenu;
-import q2jgame.*;
-import menno.ctf.spawn.*;
+import q2java.core.*;
+import q2java.baseq2.*;
+import q2java.baseq2.event.*;
+import q2java.baseq2.gui.PlayerMenu;
+import q2java.ctf.spawn.*;
 
-public class Player extends baseq2.Player implements CameraListener
+public class CTFPlayer extends q2java.baseq2.Player implements CameraListener
 {
 	public static final int STAT_CTF_TECH             = 26;
 	public static final int STAT_CTF_ID_VIEW          = 27;
@@ -180,12 +182,12 @@ public class Player extends baseq2.Player implements CameraListener
 	* The constructor is called every time a player connects to the server.
 	* It sets some local vars which are consistent during the entire game.
 	**/
-	public Player(NativeEntity ent) throws GameException
+	public CTFPlayer(NativeEntity ent) throws GameException
 	{
 		super( ent );
 		
 		// make sure the grapple VWep skin is cached before we set the player's skin
-		baseq2.GenericWeapon.precacheVWep(".spawn.weapon_grapple");
+		q2java.baseq2.GenericWeapon.precacheVWep(".spawn.weapon_grapple");
 		
 		fTeam     = null;
 		fViewer   = null;
@@ -286,12 +288,15 @@ public class Player extends baseq2.Player implements CameraListener
 	public boolean canSee( Point3f p )
 	{
 		TraceResults tr;
-		Point3f      viewPoint;
+		Point3f viewPoint = Q2Recycler.getPoint3f(); // borrow a Point3f
 		
-		viewPoint = new Point3f( fEntity.getOrigin() );
+		viewPoint.set(fEntity.getOrigin());
 		viewPoint.z += fViewHeight;
 
 		tr = Engine.trace( viewPoint, p, fEntity, Engine.MASK_SOLID );
+
+		Q2Recycler.put(viewPoint); // put it back
+		
 		if ( tr.fFraction == 1 )
 			return true;
 		else
@@ -303,7 +308,7 @@ public class Player extends baseq2.Player implements CameraListener
 	**/
 	protected void clearSettings()
 	{
-		baseq2.GenericWeapon weapon;
+		GenericWeapon weapon;
 
 		// don't add weapons if spectator
 		if ( fTeam == null )
@@ -342,7 +347,7 @@ public class Player extends baseq2.Player implements CameraListener
 		if ( fViewer != null )
 		{
 			// pretend we disconnected - to drop weapons and techs and leave teams
-			notifyPlayerStateListeners(baseq2.PlayerStateListener.PLAYER_DISCONNECT);
+			fPlayerStateSupport.fireEvent(PlayerStateEvent.STATE_INVALID, q2java.baseq2.BaseQ2.gWorld);
 
 			//die( null, null, 0, null );
 			//fShowScore = false;
@@ -381,45 +386,45 @@ public class Player extends baseq2.Player implements CameraListener
 
 		// Join Red Team
 		msgArgs[0] = new Integer(Team.TEAM1.getNumPlayers());
-		String[] item0  = { rg.getRandomString("menno.ctf.CTFMessages", "menu_join_red"),  
-						    rg.format("menno.ctf.CTFMessages", "menu_playercount", msgArgs)};
+		String[] item0  = { rg.getRandomString("q2java.ctf.CTFMessages", "menu_join_red"),  
+						    rg.format("q2java.ctf.CTFMessages", "menu_playercount", msgArgs)};
 		menu.addMenuItem( item0, "team red" );
 
 		// Join Blue Team		
 		msgArgs[0] = new Integer(Team.TEAM2.getNumPlayers());
-		String[] item1  = { rg.getRandomString("menno.ctf.CTFMessages", "menu_join_blue"),  
-						    rg.format("menno.ctf.CTFMessages", "menu_playercount", msgArgs)};
+		String[] item1  = { rg.getRandomString("q2java.ctf.CTFMessages", "menu_join_blue"),  
+						    rg.format("q2java.ctf.CTFMessages", "menu_playercount", msgArgs)};
 		menu.addMenuItem( item1, "team blue" );
 
 		// Common string for Chasecam and Spectator menu items
-		String leavesTeam = rg.getRandomString("menno.ctf.CTFMessages", "menu_leaves_team");		
+		String leavesTeam = rg.getRandomString("q2java.ctf.CTFMessages", "menu_leaves_team");		
 
 		// Chasecam
 		if ( isChasing() )
 		{
-			String[] item22 = { rg.getRandomString("menno.ctf.CTFMessages", "menu_stop_chase") };
+			String[] item22 = { rg.getRandomString("q2java.ctf.CTFMessages", "menu_stop_chase") };
 			menu.addMenuItem( item22, "chasecam" );
 		}
 		else
 		{
-			String[] item21 = { rg.getRandomString("menno.ctf.CTFMessages", "menu_start_chase"), leavesTeam};
+			String[] item21 = { rg.getRandomString("q2java.ctf.CTFMessages", "menu_start_chase"), leavesTeam};
 			menu.addMenuItem( item21, "chasecam" );
 		}
 
 		// Spectator
-		String[] item3  = { rg.getRandomString("menno.ctf.CTFMessages", "menu_spectator"), leavesTeam};
+		String[] item3  = { rg.getRandomString("q2java.ctf.CTFMessages", "menu_spectator"), leavesTeam};
 		menu.addMenuItem( item3, "spectator" );
 
 
 		// Setup the footer of the menu
 		msgArgs[0] = MENU_AUTHOR;
 	    String[] footer = { "",
-	                        rg.getRandomString("menno.ctf.CTFMessages", "menu_footer_press"),
-							rg.getRandomString("menno.ctf.CTFMessages", "menu_footer_cursor"),
-							rg.getRandomString("menno.ctf.CTFMessages", "menu_footer_enter"),
-							rg.getRandomString("menno.ctf.CTFMessages", "menu_footer_tab"),
+	                        rg.getRandomString("q2java.ctf.CTFMessages", "menu_footer_press"),
+							rg.getRandomString("q2java.ctf.CTFMessages", "menu_footer_cursor"),
+							rg.getRandomString("q2java.ctf.CTFMessages", "menu_footer_enter"),
+							rg.getRandomString("q2java.ctf.CTFMessages", "menu_footer_tab"),
 							"",
-							rg.format("menno.ctf.CTFMessages", "menu_footer_author", msgArgs)
+							rg.format("q2java.ctf.CTFMessages", "menu_footer_author", msgArgs)
 						  };						  
 		menu.setFooter( footer );
 
@@ -475,7 +480,8 @@ public class Player extends baseq2.Player implements CameraListener
 		}
 
 		// pretend we disconnected - to drop weapons and techs and leave teams
-		notifyPlayerStateListeners(baseq2.PlayerStateListener.PLAYER_DISCONNECT);
+		fPlayerStateSupport.fireEvent(PlayerStateEvent.STATE_INVALID, q2java.baseq2.BaseQ2.gWorld);
+		
 		fTeam = null;
 		
 		// deactivate our chasecam
@@ -515,7 +521,7 @@ public class Player extends baseq2.Player implements CameraListener
 		}
 		
 		// pretend we disconnected - to drop weapons and techs and leave teams
-		notifyPlayerStateListeners(baseq2.PlayerStateListener.PLAYER_DISCONNECT);
+		fPlayerStateSupport.fireEvent(PlayerStateEvent.STATE_INVALID, q2java.baseq2.BaseQ2.gWorld);
 
 		// join new team
 		newTeam.addPlayer( this );
@@ -535,7 +541,8 @@ public class Player extends baseq2.Player implements CameraListener
 	 */
 	public static void connect(NativeEntity ent) throws GameException
 	{
-		new Player(ent);
+		Engine.debugLog("q2java.ctf.CTFPlayer.connect(" + ent + ")");	
+		new CTFPlayer(ent);
 	}
 	/**
 	 * Disassociate the CTF player object from the rest 
@@ -567,7 +574,7 @@ public class Player extends baseq2.Player implements CameraListener
 	 * spawnpoints if the player belongs to a team.
 	 * @return baseq2.GenericSpawnpoint
 	 */
-	protected baseq2.GenericSpawnpoint getSpawnpoint() 
+	protected GenericSpawnpoint getSpawnpoint() 
 	{
 		if (( fTeam != null ) && fUseTeamSpawnpoint)
 			{
@@ -590,7 +597,7 @@ public class Player extends baseq2.Player implements CameraListener
  * @return boolean
  * @param p baseq2.Player
  */
-public boolean isTeammate(baseq2.Player p) 
+public boolean isTeammate(q2java.baseq2.Player p) 
 	{
 	return fTeam.isTeamMember(p);
 	}
@@ -659,7 +666,7 @@ public void playerBegin()
 	* Note that bonuses are not cumaltive.  You get one, they are in importance
 	* order.
 	**/
-	protected void registerKill( Player victim )
+	protected void registerKill( CTFPlayer victim )
 	{
 		if ( victim.fTeam == fTeam )
 		{
@@ -671,10 +678,10 @@ public void playerBegin()
 		if ( victim.isCarrying("flag"))
 		{
 			Object[] args = {new Integer(CTF_FRAG_CARRIER_BONUS)};
-			fEntity.centerprint(fResourceGroup.format("menno.ctf.CTFMessages", "bonus_points", args) + "\n");
+			fEntity.centerprint(fResourceGroup.format("q2java.ctf.CTFMessages", "bonus_points", args) + "\n");
 
 			// The victim had the flag, clear the hurt carrier field on our team
-			Player[] players = fTeam.getPlayers();
+			CTFPlayer[] players = fTeam.getPlayers();
 
 			for ( int i=0; i<players.length; i++) 
 				players[i].fLastCarrierHurt = 0f;
@@ -687,7 +694,7 @@ public void playerBegin()
 				&& getInventory("flag") == null )
 		{
 			Object[] args = {getName(), fTeam.getTeamIndex()};
-			Game.localecast("menno.ctf.CTFMessages", "defend_aggressive", args, Engine.PRINT_MEDIUM);	
+			Game.localecast("q2java.ctf.CTFMessages", "defend_aggressive", args, Engine.PRINT_MEDIUM);	
 		
 			setScore(1 + CTF_CARRIER_DANGER_PROTECT_BONUS, false);
 		}
@@ -714,9 +721,9 @@ public void playerBegin()
 			Object[] args = {getName(), fTeam.getTeamIndex()};
 			
 			if ( ourFlag.getState() == GenericFlag.CTF_FLAG_STATE_STANDING )
-				Game.localecast("menno.ctf.CTFMessages", "defend_flag", args, Engine.PRINT_MEDIUM);	
+				Game.localecast("q2java.ctf.CTFMessages", "defend_flag", args, Engine.PRINT_MEDIUM);	
 			else
-				Game.localecast("menno.ctf.CTFMessages", "defend_base", args, Engine.PRINT_MEDIUM);	
+				Game.localecast("q2java.ctf.CTFMessages", "defend_base", args, Engine.PRINT_MEDIUM);	
 
 			setScore(1 + CTF_FLAG_DEFENSE_BONUS, false);
 		}
@@ -740,7 +747,7 @@ public void playerBegin()
 				|| this.canSee(carrier.fEntity.getOrigin()) || victim.canSee(carrier.fEntity.getOrigin()) )
 			{
 				Object[] args = {getName(), fTeam.getTeamIndex()};
-				Game.localecast("menno.ctf.CTFMessages", "defend_carrier", args, Engine.PRINT_MEDIUM);	
+				Game.localecast("q2java.ctf.CTFMessages", "defend_carrier", args, Engine.PRINT_MEDIUM);	
 			
 				setScore(1 + CTF_CARRIER_PROTECT_BONUS, false);
 			}
@@ -821,13 +828,13 @@ public void playerBegin()
 		Engine.multicast(fEntity.getOrigin(), Engine.MULTICAST_PVS);
 
 		Object[] args = {getName()};
-		Game.localecast("baseq2.Messages", "entered", args, Engine.PRINT_HIGH);		
+		Game.localecast("q2java.baseq2.Messages", "entered", args, Engine.PRINT_HIGH);		
 	}
 	/**
 	 * Send CTF Scoreboard to client.
 	 * @param killer the Player who killed this one (if any).
 	 */
-	protected void writeDeathmatchScoreboardMessage( baseq2.GameObject killer ) 
+	protected void writeDeathmatchScoreboardMessage( q2java.baseq2.GameObject killer ) 
 	{	
 		int     x, y;
 		String  s;
@@ -845,10 +852,14 @@ public void playerBegin()
 
 		x = 0;
 		
-		Enumeration enum = NativeEntity.enumeratePlayers();
+		Enumeration enum = Player.enumeratePlayers();
 		while ( enum.hasMoreElements() )
 		{
-			Player p = (Player)((NativeEntity)enum.nextElement()).getReference();
+			Object obj = enum.nextElement();
+			if (!(obj instanceof CTFPlayer))
+				continue;
+				
+			CTFPlayer p = (CTFPlayer) obj;
 			if ( p.fTeam != null )
 				continue;
 

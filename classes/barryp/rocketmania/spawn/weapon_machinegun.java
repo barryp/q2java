@@ -3,15 +3,15 @@ package barryp.rocketmania.spawn;
 import javax.vecmath.*;
 
 import q2java.*;
-import q2jgame.*;
-import baseq2.*;
+import q2java.core.*;
+import q2java.baseq2.*;
 
 /**
  * A machine gun that occasionally throws out 
  * a very high-speed, but low-damage rocket
  */
 
-public class weapon_machinegun extends baseq2.spawn.weapon_machinegun
+public class weapon_machinegun extends q2java.baseq2.spawn.weapon_machinegun
 	{
 	
 /**
@@ -73,8 +73,8 @@ public void fire()
 		}
 */
 
-	fPlayer.fKickOrigin.set(Game.cRandom() * 0.35f, Game.cRandom() * 0.35f, Game.cRandom() * 0.35f);
-	fPlayer.fKickAngles.set(fShotCount * -1.5f,  Game.cRandom() * 0.7f,  Game.cRandom() * 0.7f);
+	fPlayer.fKickOrigin.set(GameUtil.cRandom() * 0.35f, GameUtil.cRandom() * 0.35f, GameUtil.cRandom() * 0.35f);
+	fPlayer.fKickAngles.set(fShotCount * -1.5f,  GameUtil.cRandom() * 0.7f,  GameUtil.cRandom() * 0.7f);
 
 	// raise the gun as it is firing
 	if (true /*!deathmatch->value */)
@@ -92,7 +92,7 @@ public void fire()
 	MiscUtil.fireLead(fPlayer, start, forward, damage, kick, Engine.TE_GUNSHOT, DEFAULT_BULLET_HSPREAD, DEFAULT_BULLET_VSPREAD, "machinegun");
 
 	// throw a rocket occasionally
-	if ((Game.randomInt() & 0x07) == 0)
+	if ((GameUtil.randomInt() & 0x07) == 0)
 		{
 		try
 			{

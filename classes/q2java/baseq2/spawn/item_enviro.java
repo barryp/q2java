@@ -1,17 +1,20 @@
-package baseq2.spawn;
+package q2java.baseq2.spawn;
 
 import q2java.*;
-import q2jgame.*;
-import baseq2.*;
+import q2java.core.*;
+import q2java.core.gui.*;
+import q2java.baseq2.*;
+import q2java.baseq2.event.*;
 
 /**
  * The environment suit.
  * @author Brian Haskin
  */
-public class item_enviro extends GenericPowerUp implements PlayerStateListener, DamageFilter
+public class item_enviro extends GenericPowerUp 
+  implements PlayerStateListener, PlayerDamageListener
 	{	
 	protected Player fOwner;
-	protected q2java.gui.IconCountdownTimer fHUDTimer;
+	protected IconCountdownTimer fHUDTimer;
 	protected int fMillis;
 	protected float fAirFinished;
 	protected boolean fFirstSound;
@@ -29,18 +32,18 @@ public item_enviro(String[] spawnArgs) throws GameException
 /**
  * Called by the carrying player when they take damage.
  */
-public DamageObject filterDamage(DamageObject damage)
+public void damageOccured(PlayerDamageEvent damage)
 	{
-	if (damage.fInflictor == baseq2.GameModule.gWorld && damage.fObitKey.equals("slime"))
+	if (damage.getInflictor() == BaseQ2.gWorld && 
+	    damage.getObitKey().equals("slime"))
 		{
-		damage.fAmount = 0;
+		damage.setAmount(0);
 		}
-	else if (damage.fInflictor == baseq2.GameModule.gWorld && damage.fObitKey.equals("lava"))
+	else if (damage.getInflictor() == BaseQ2.gWorld &&
+		 damage.getObitKey().equals("lava"))
 		{
-		damage.fAmount /= 3;
+		damage.setAmount( damage.getAmount() / 3 );
 		}
-		
-	return damage;
 	}
 /**
  * Get enviroment suit icon name.
@@ -67,14 +70,6 @@ public String getModelName()
 	return "models/items/enviro/tris.md2";
 	}
 /**
- * Called by the carrying player when they die. This gives us the chance to reset 
- * their effects if we were in use when they died.
- */
-public void playerStateChanged(Player p, int changeEvent)
-	{
-	reset();
-	}
-/**
  * Undo effects of enviroment suit.
  */
 protected void reset() 
@@ -86,7 +81,7 @@ protected void reset()
 		
 		// disassociate from the player
 		fOwner.removePlayerStateListener(this);		
-		fOwner.removeDamageFilter(this);
+		fOwner.removePlayerDamageListener(this);
 		fOwner = null;
 		}
 		
@@ -142,6 +137,14 @@ public void runFrame(int Phase)
 		fOwner.breath(1, false); // give them another little puff
 	}
 /**
+ * Called by the carrying player when they die. This gives us the chance to reset 
+ * their effects if we were in use when they died.
+ */
+public void stateChanged(PlayerStateEvent e)
+	{
+	reset();
+	}
+/**
  * When used filter the Player's damage for 30 seconds.
  */
 public void use(Player p)
@@ -150,7 +153,7 @@ public void use(Player p)
 	
 	Game.addFrameListener(this, 0, 0); // Call us every frame
 	fOwner.addPlayerStateListener(this);
-	fOwner.addDamageFilter(this);
+	fOwner.addPlayerDamageListener(this);
 	
 	fMillis += 300;
 	
@@ -158,7 +161,7 @@ public void use(Player p)
 	
 	if (fHUDTimer == null)
 		{
-		fHUDTimer = new q2java.gui.IconCountdownTimer(fOwner.fEntity, NativeEntity.STAT_TIMER_ICON, Engine.getImageIndex("p_envirosuit"), NativeEntity.STAT_TIMER, (fMillis/10)-1);
+		fHUDTimer = new IconCountdownTimer(fOwner.fEntity, NativeEntity.STAT_TIMER_ICON, Engine.getImageIndex("p_envirosuit"), NativeEntity.STAT_TIMER, (fMillis/10)-1);
 		fHUDTimer.setVisible(true);
 		fHUDTimer.setRunning(true);
 		}

@@ -1,10 +1,10 @@
-package baseq2.spawn;
+package q2java.baseq2.spawn;
 
 import javax.vecmath.*;
 
 import q2java.*;
-import q2jgame.*;
-import baseq2.*;
+import q2java.core.*;
+import q2java.baseq2.*;
 
 /**
  * Grenades - act both as weapon and ammo
@@ -198,7 +198,7 @@ public void weaponThink()
 
 		if ((fGunFrame == 29) || (fGunFrame == 34) || (fGunFrame == 39) || (fGunFrame == 48))
 			{
-			if ((Game.randomInt() & 15) != 0)
+			if ((GameUtil.randomInt() & 15) != 0)
 				return;
 			}
 

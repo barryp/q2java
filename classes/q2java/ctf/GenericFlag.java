@@ -1,4 +1,4 @@
-package menno.ctf;
+package q2java.ctf;
 
 /*
 ======================================================================================
@@ -16,13 +16,13 @@ package menno.ctf;
 
 
 import java.util.*;
-import q2java.*;
-import q2jgame.*;
-//import baseq2.*;
 import javax.vecmath.*;
+import q2java.*;
+import q2java.core.*;
+import q2java.baseq2.event.*;
 
 
-public abstract class GenericFlag extends baseq2.GenericItem implements baseq2.GameTarget, baseq2.PlayerStateListener
+public abstract class GenericFlag extends q2java.baseq2.GenericItem implements q2java.baseq2.GameTarget, q2java.baseq2.event.PlayerStateListener
 {
 	public static final int CTF_FLAG_STATE_STANDING = 0;
 	public static final int CTF_FLAG_STATE_DROPPED  = 1;
@@ -37,7 +37,7 @@ public abstract class GenericFlag extends baseq2.GenericItem implements baseq2.G
 	protected static int fReturnSoundIndex;
 
 	protected int     fCurrentFrame;
-	protected Player  fCarrier;			// The Player that's carrying us.
+	protected CTFPlayer  fCarrier;			// The Player that's carrying us.
 	protected int     fState;
 	protected float   fReturnTime;
 	protected float   fDroppedTime;
@@ -96,12 +96,12 @@ public abstract class GenericFlag extends baseq2.GenericItem implements baseq2.G
 public void becomeExplosion(int tempEntity) 
 	{
 	}
-	public void drop(baseq2.Player dropper, float timeout)
+	public void drop(q2java.baseq2.Player dropper, float timeout)
 	{
 		// drop it and say it was lost
 		drop(dropper, CTF_FLAG_AUTO_RETURN_TIME, true);
 	}
-	protected void drop(baseq2.Player dropper, float timeout, boolean lostIt)
+	protected void drop(q2java.baseq2.Player dropper, float timeout, boolean lostIt)
 	{
 		super.drop(dropper, CTF_FLAG_AUTO_RETURN_TIME);
 		fState = CTF_FLAG_STATE_DROPPED;
@@ -109,7 +109,7 @@ public void becomeExplosion(int tempEntity)
 		if (lostIt)
 			{
 			Object[] args = {fCarrier.getName(), fFlagIndex};
-			Game.localecast("menno.ctf.CTFMessages", "lost_flag", args, Engine.PRINT_HIGH);
+			Game.localecast("q2java.ctf.CTFMessages", "lost_flag", args, Engine.PRINT_HIGH);
 			}
 
 		dropper.fEntity.setEffects( dropper.fEntity.getEffects() & ~getFlagEffects() );
@@ -130,13 +130,13 @@ public void becomeExplosion(int tempEntity)
 	{
 		reset();
 		Object[] args = {fFlagIndex};
-		Game.localecast("menno.ctf.CTFMessages", "reset_flag", args, Engine.PRINT_HIGH);	
+		Game.localecast("q2java.ctf.CTFMessages", "reset_flag", args, Engine.PRINT_HIGH);	
 	}
 	public Point3f getBaseOrigin()
 	{
 		return fBaseOrigin;
 	}
-	public Player getCarrier()
+	public CTFPlayer getCarrier()
 	{
 		return fCarrier;
 	}
@@ -172,22 +172,22 @@ public void becomeExplosion(int tempEntity)
 	 * @return boolean
 	 * @param p baseq2.Player
 	 */
-	public boolean isTouchable(baseq2.Player bp) 
+	public boolean isTouchable(q2java.baseq2.Player bp) 
 	{
 		// make sure player is a CTF player
-		if (!(bp instanceof Player))
+		if (!(bp instanceof CTFPlayer))
 		{
-			bp.fEntity.centerprint(bp.getResourceGroup().getRandomString("menno.ctf.CTFMessages", "not_CTF"));
+			bp.fEntity.centerprint(bp.getResourceGroup().getRandomString("q2java.ctf.CTFMessages", "not_CTF"));
 			return false;
 		}
 			
-		Player p = (Player)bp;
+		CTFPlayer p = (CTFPlayer)bp;
 
 		// make sure CTF Player has joined a team
 		Team t = p.getTeam();
 		if ( t == null )
 		{
-			p.fEntity.centerprint(p.getResourceGroup().getRandomString("menno.ctf.CTFMessages", "no_team"));
+			p.fEntity.centerprint(p.getResourceGroup().getRandomString("q2java.ctf.CTFMessages", "no_team"));
 			return false;
 		}
 		
@@ -209,7 +209,7 @@ public void becomeExplosion(int tempEntity)
 				{
 					// WE HAVE A CAPTURE !!!!!
 					Object[] args = {p.getName(), otherFlag.fFlagIndex};
-					Game.localecast("menno.ctf.CTFMessages", "capture_flag", args, Engine.PRINT_HIGH);	
+					Game.localecast("q2java.ctf.CTFMessages", "capture_flag", args, Engine.PRINT_HIGH);	
 
 					playCaptureSound();
 		
@@ -225,10 +225,10 @@ public void becomeExplosion(int tempEntity)
 				
 			case CTF_FLAG_STATE_DROPPED:			
 				// was dropped on the ground
-				p.setScore( Player.CTF_RECOVERY_BONUS, false );
+				p.setScore( CTFPlayer.CTF_RECOVERY_BONUS, false );
 				reset();
 				Object[] args = {p.getName(), fFlagIndex};
-				Game.localecast("menno.ctf.CTFMessages", "return_flag", args, Engine.PRINT_HIGH);	
+				Game.localecast("q2java.ctf.CTFMessages", "return_flag", args, Engine.PRINT_HIGH);	
 				playReturnSound();
 				break;
 		}
@@ -242,19 +242,6 @@ public void becomeExplosion(int tempEntity)
 	public void playCaptureSound() 
 	{
 		fEntity.sound(NativeEntity.CHAN_RELIABLE+NativeEntity.CHAN_NO_PHS_ADD+NativeEntity.CHAN_VOICE, fCaptureSoundIndex, 1, NativeEntity.ATTN_NONE, 0);	
-	}
-	/**
-	 * Called when a player dies or disconnects.
-	 * @param wasDisconnected true on disconnects, false on normal deaths.
-	 */
-	public void playerStateChanged(baseq2.Player p, int changeEvent)
-	{
-		if (changeEvent != baseq2.PlayerStateListener.PLAYER_LEVELCHANGE)
-			drop(p, CTF_FLAG_AUTO_RETURN_TIME); // will handle removing listener
-		else
-			p.removePlayerStateListener(this); // just remove the listener
-			
-		p.removeInventory("flag");		
 	}
 	/**
 	 * Player the flag return sound.
@@ -316,10 +303,20 @@ public void becomeExplosion(int tempEntity)
 			super.runFrame(phase);
 	}
 	/**
+	 * Called when a player dies or disconnects.
+	 * @param wasDisconnected true on disconnects, false on normal deaths.
+	 */
+	public void stateChanged(PlayerStateEvent pse)
+	{
+		q2java.baseq2.Player p = pse.getPlayer();
+		drop(p, CTF_FLAG_AUTO_RETURN_TIME); // will handle removing listener			
+		p.removeInventory("flag");		
+	}
+	/**
 	 * Called if item was actually taken.
 	 * @param p	The Player that took this item.
 	 */
-	protected void touchFinish(baseq2.Player p, baseq2.GenericItem itemTaken) 
+	protected void touchFinish(q2java.baseq2.Player p, q2java.baseq2.GenericItem itemTaken) 
 	{
 		super.touchFinish(p, itemTaken);
 		
@@ -328,15 +325,15 @@ public void becomeExplosion(int tempEntity)
 		p.fEntity.setEffects( p.fEntity.getEffects() | getFlagEffects() );
 		p.fEntity.setModelIndex3( Engine.getModelIndex(getModelName()) );
 		p.putInventory( "flag", this );
-		p.setScore( Player.CTF_FLAG_BONUS, false );
+		p.setScore( CTFPlayer.CTF_FLAG_BONUS, false );
 
 		fState = CTF_FLAG_STATE_CARRIED;
 
 		// set the carrier
-		fCarrier = (Player) p;
+		fCarrier = (CTFPlayer) p;
 
 		Object[] args = {fCarrier.getName(), fFlagIndex};
-		Game.localecast("menno.ctf.CTFMessages", "got_flag", args, Engine.PRINT_HIGH);	
+		Game.localecast("q2java.ctf.CTFMessages", "got_flag", args, Engine.PRINT_HIGH);	
 		
 		// setup the listener so, that it's called every 0.8 seconds to flash the carriers flag-icon
 		Game.addFrameListener( this, 0, 0.8F );
@@ -354,7 +351,7 @@ public void becomeExplosion(int tempEntity)
 	{		
 		int index  = ( getTeam() == Team.TEAM1 ? Team.STAT_CTF_TEAM1_PIC         : Team.STAT_CTF_TEAM2_PIC         );
 		int picnum = Engine.getImageIndex(iconName);
-		Enumeration enum = NativeEntity.enumeratePlayers();
+		Enumeration enum = NativeEntity.enumeratePlayerEntities();
 		while ( enum.hasMoreElements() )
 		{
 			NativeEntity ent = (NativeEntity)enum.nextElement();

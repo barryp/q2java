@@ -1,24 +1,33 @@
 package barryp.flashgrenade;
 
-import q2jgame.*;
+import q2java.core.*;
 
 /**
  * Demo of altered weapons.
  * 
  * @author Barry Pederson
  */
-public class GameModule extends q2jgame.GameModule 
+public class FlashGrenades extends q2java.core.Gamelet 
 	{
 	
 /**
  * This method was created by a SmartGuide.
  */
-public GameModule(String moduleName) 
+public FlashGrenades(String moduleName) 
 	{
 	super(moduleName);
 	}
 /**
- * Help for FlashGrenade module.
+ * Get which Gamelet classes this Gamelet requires.
+ * @return java.lang.Class[]
+ */
+public String[] getGameletDependencies() 
+	{
+	String[] result = { "q2java.baseq2.BaseQ2" };
+	return result;
+	}
+/**
+ * Help for FlashGrenades module.
  */
 public void svcmd_help(String[] args) 
 	{

@@ -1,4 +1,4 @@
-package q2jgame;
+package q2java.core;
 
 /**
  * An Exception class that indicates a particular entity

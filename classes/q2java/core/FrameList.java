@@ -1,10 +1,11 @@
-package q2jgame;
+package q2java.core;
 
 import q2java.*;
 
 /**
  * Private class used by Game to track FrameListeners.
- * 
+ *
+ * @author Barry Pederson
  */
 class FrameList 
 	{

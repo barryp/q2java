@@ -1,8 +1,10 @@
-package baseq2.spawn;
+package q2java.baseq2.spawn;
 
 import q2java.*;
-import q2jgame.*;
-import baseq2.*;
+import q2java.core.*;
+import q2java.core.gui.*;
+import q2java.baseq2.*;
+import q2java.baseq2.event.*;
 
 /**
  * The quad damage power up.
@@ -11,7 +13,7 @@ import baseq2.*;
 public class item_quad extends GenericPowerUp implements PlayerStateListener
 	{	
 	protected Player fOwner;
-	protected q2java.gui.IconCountdownTimer fHUDTimer;
+	protected IconCountdownTimer fHUDTimer;
 	protected int fMillis;
 	protected int fNumberUsed;
 	protected boolean fClearGlow;
@@ -53,14 +55,6 @@ public String getItemName()
 public String getModelName() 
 	{
 	return "models/items/quaddama/tris.md2";
-	}
-/**
- * called by the carrying player when they die to give us a chance to reset 
- * there damage multiplier and effects if we were in use when they died.
- */
-public void playerStateChanged(Player p, int changeEvent)
-	{
-	reset();
 	}
 /**
  * Undo effects of quad.
@@ -142,6 +136,14 @@ public void runFrame(int Phase)
 		reset();
 	}
 /**
+ * called by the carrying player when they die to give us a chance to reset 
+ * there damage multiplier and effects if we were in use when they died.
+ */
+public void stateChanged(PlayerStateEvent e)
+	{
+	reset();
+	}
+/**
  * Increase the Players damage multiplier for 30 seconds when used.
  */
 public void use(Player p)
@@ -158,7 +160,7 @@ public void use(Player p)
 	
 	if (fHUDTimer == null)
 		{
-		fHUDTimer = new q2java.gui.IconCountdownTimer(fOwner.fEntity, NativeEntity.STAT_TIMER_ICON, Engine.getImageIndex("p_quad"), NativeEntity.STAT_TIMER, (fMillis/10)-1);
+		fHUDTimer = new IconCountdownTimer(fOwner.fEntity, NativeEntity.STAT_TIMER_ICON, Engine.getImageIndex("p_quad"), NativeEntity.STAT_TIMER, (fMillis/10)-1);
 		fHUDTimer.setVisible(true);
 		fHUDTimer.setRunning(true);
 		}

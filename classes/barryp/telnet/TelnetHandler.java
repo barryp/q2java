@@ -6,8 +6,8 @@ import java.text.*;
 import java.util.*;
 
 import q2java.*;
-import q2jgame.*;
-import baseq2.Player;
+import q2java.core.*;
+import q2java.baseq2.Player;
 
 /**
  * Handle communication with an individual Telnet client.
@@ -75,10 +75,10 @@ public void doWho() throws IOException
 	{	
 	output("Players:\n");
 						
-	Enumeration enum = NativeEntity.enumeratePlayers();
+	Enumeration enum = Player.enumeratePlayers();
 	while (enum.hasMoreElements())
 		{
-		Player p = (Player) ((NativeEntity)enum.nextElement()).getPlayerListener();
+		Player p = (Player) enum.nextElement();
 		output("    " + p.getName() + '\n');
 		}
 						

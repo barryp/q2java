@@ -2,50 +2,50 @@ Q2JAVA EXTRAS
 
 The Q2Java distribution includes a few extra goodies intended to 
 demonstrate various interesting things programming in Java allows.  They 
-are implemented as game modules you can load either at startup on the 
+are implemented as gamelets you can load either at startup on the 
 command line with a command like: 
 
-    quake2 +set game q2java +set q2jgame_modules <module>+baseq2
+    quake2 +set game q2java +set gamelets q2java.baseq2.BaseQ2+<gamelet>
     
 Or in a properties file with lines like:
 
-    q2java.module.1=baseq2
-    q2java.module.2=<module> <alias-name>
-    q2java.module.3=<module> <alias-name>    
+    q2java.gamelet.1=q2java.baseq2.BaseQ2
+    q2java.gamelet.2=<class> [<alias-name>]
+    q2java.gamelet.3=<class> [<alias-name>]
     
 or in some cases while the game is running with a console command like:
 
-    sv addmodule <module> [<alias-name>]
+    sv addgamelet <class> [<alias-name>]
     
-The <module>'s are:
+The <class>'s are:
 
-    barryp.autoload
+    barryp.autoload.GameModule
 
-        Simple module that automatically exec's a file named "autoload.cfg" 
+        Simple gamelet that automatically exec's a file named "autoload.cfg" 
         as soon as possible once the game is running.  Great for loading 
-        other modules like barryp.telnet.   
+        other gamelets like barryp.telnet.GameModule.   
         
         For example, on my test server, I have a batch file that loads 
         Q2Java with the parameter: 
         
-            +set q2jgame_modules barryp.autoload+baseq2
+            +set gamelets q2java.baseq2.BaseQ2+barryp.autoload.GameModule
             
         and have a file named "autoload.cfg" that looks something like 
         this:    
         
-            sv addmodule barryp.telnet telnet 
+            sv addgamelet barryp.telnet.GameModule telnet 
             sv telnet.start 1100 -nocmd 
             sv telnet.log on 
             set timelimit 15 
             gamemap q2dm1
 
-        so that after the game has started, the "barryp.telnet" module is 
-        loaded with the alias "telnet", then the "telnet" module is given a 
-        few commands to start listening to port 1100 and to start logging 
-        connections.  Finally the timelimit CVAR is set, and the map is set 
-        to q2dm1.
+        so that after the game has started, the "barryp.telnet.GameModule" 
+        gamelet is loaded with the alias "telnet", then the "telnet" gamelet 
+        is given a few commands to start listening to port 1100 and to start 
+        logging connections.  Finally the timelimit CVAR is set, and the map 
+        is set to q2dm1.
 
-    barryp.bountyhunters
+    barryp.bountyhunters.BountyHunters
     
         Changes the rules of DM so that players are assigned particular
         victims.  A Direction indicator and Range indicator help in
@@ -55,13 +55,13 @@ The <module>'s are:
         points for killing your assigned victim or your stalker, and lose
         points for killing innocent victims.        
         
-    barryp.flashgrenade
+    barryp.flashgrenade.FlashGrenades
     
         Replaces the baseq2.HandGrenade class to add the extra behavior
         of temporarily blinding enemies - based on how far they are
         from the explosion, and what direction they're looking.
 
-    barryp.paranoia
+    barryp.paranoia.Paranoia
     
         Changes the rules of DM so that players are paired off, one
         is assigned as a stalker, the other as a paranoid victim.  
@@ -73,9 +73,9 @@ The <module>'s are:
         paired off with another player are "loose cannons", and can kill or
         be killed by anyone for a smaller number of points.
                
-    barryp.persist
+    barryp.persist.GameModule
     
-        After this module is loaded, any player that connects is a 
+        After this gamelet is loaded, any player that connects is a 
         "persistant" player - meaning that when they quit, their settings 
         (including weapons, ammo, current health, etc.) are saved in a file 
         (in the sandbox directory), and when they reconnect - their 
@@ -83,14 +83,14 @@ The <module>'s are:
         retrieve a player's state is the first step towards multiserver 
         clustering)
 
-    barryp.rocketmania
+    barryp.rocketmania.GameModule
 
         Demonstrates replacement of the basic games weapons.  Includes a 
         blaster with that fires small rockets, a machinegun that fires 
         rockets as well as bullets, and a rocketlauncher that fires more 
         powerful rockets.
 
-    barryp.telnet
+    barryp.telnet.GameModule
 
         Allows telnet or MUD clients to act as remote consoles. 
         
@@ -102,7 +102,7 @@ The <module>'s are:
         allow access to some network ports.  The sample policy file 
         contains a commented-out line showing what's necessary
         
-        This is one of the oldest modules, and configuration is a bit 
+        This is one of the oldest gamelets, and configuration is a bit 
         awkward.  It really needs to be reworked to take advantage of 
         the new property file support added with Q2Java 0.7.  What 
         follows are the old instructions for usage....
@@ -112,7 +112,7 @@ The <module>'s are:
         You can load the Telnet server package at the command line
         with a statement such as:
 
-            +set q2jgame_modules barryp.telnet+baseq2
+            +set gamelets q2java.baseq2.BaseQ2+barryp.telnet.GameModule[telnet]
 
         To actually start a server session, set the port you want to 
         run the server on (for example: 1200) at the command line with 
@@ -130,8 +130,8 @@ The <module>'s are:
         You can also load the Telnet server package and start a session
         after the game has started, by typing on the console:
 
-            sv addpackage barryp.telnet
-            sv telnet_start 1200 -pass foobar
+            sv addgamelet barryp.telnet.GameModule telnet
+            sv telnet.start 1200 -pass foobar
        
         The Telnet server will relay all Game output to any number of
         connected telnet clients, and allow the client to send chat
@@ -149,19 +149,19 @@ The <module>'s are:
         this way by default.
         
 
-    barryp.testbot
+    barryp.testbot.GameModule
 
         A very very very simple bot that just stands where it's spawned, 
-        but it demonstrates subclassing the baseq2.Player class to create 
-        somthing that looks and mostly acts like a player, even though 
+        but it demonstrates subclassing the q2java.baseq2.Player class to 
+        create somthing that looks and mostly acts like a player, even though 
         nobody's actually controlling it though a Q2 client program.
 
         You have to be running Quake2 in server mode (as opposed to         
         single-player mode) in order to spawn bots.  Once the game is 
         started, drop down the console and type something like:
 
-            sv addmodule barryp.testbot fred             
-            sv.addmodule barryp.testbot barney
+            sv addgamelet barryp.testbot.GameModule fred             
+            sv addgamelet barryp.testbot.GameModule barney
 
         to create a bots named "fred" and "barney".  They will be standing         
         on map spawnpoints (finding them bot can be a pain on some maps), 

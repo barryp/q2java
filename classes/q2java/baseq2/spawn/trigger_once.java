@@ -1,4 +1,4 @@
-package baseq2.spawn;
+package q2java.baseq2.spawn;
 
 /**
  * Trigger that can be activated only once when a 

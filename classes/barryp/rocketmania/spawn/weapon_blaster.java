@@ -3,8 +3,8 @@ package barryp.rocketmania.spawn;
 import javax.vecmath.*;
 
 import q2java.*;
-import q2jgame.*;
-import baseq2.*;
+import q2java.core.*;
+import q2java.baseq2.*;
 
 /**
  * This replacement for the hand blaster fires
@@ -13,7 +13,7 @@ import baseq2.*;
  * But be careful not to run while firing..you may run into your own rocket.
  */
 
-public class weapon_blaster extends baseq2.spawn.weapon_blaster
+public class weapon_blaster extends q2java.baseq2.spawn.weapon_blaster
 	{
 	
 /**
@@ -35,7 +35,7 @@ public void fire()
 	Vector3f right = new Vector3f();
 	Vector3f offset = new Vector3f(24, 8, fPlayer.fViewHeight - 8);
 		
-	int		damage = 80 + (int)(Game.randomFloat() * 20.0);
+	int		damage = 80 + (int)(GameUtil.randomFloat() * 20.0);
 	int		radiusDamage = 60;
 	float	damageRadius = 60;	
 /*

@@ -1,10 +1,10 @@
-package baseq2.spawn;
+package q2java.baseq2.spawn;
 
 import javax.vecmath.*;
 
 import q2java.*;
-import q2jgame.*;
-import baseq2.*;
+import q2java.core.*;
+import q2java.baseq2.*;
 
 public class weapon_machinegun extends GenericWeapon
 	{
@@ -68,11 +68,11 @@ public void fire()
 	damage *= fPlayer.getDamageMultiplier();
 	kick *= fPlayer.getDamageMultiplier();
 
-	fPlayer.fKickOrigin.set(Game.cRandom() * 0.35f, Game.cRandom() * 0.35f, Game.cRandom() * 0.35f);
-	fPlayer.fKickAngles.set(fShotCount * -1.5f,  Game.cRandom() * 0.7f,  Game.cRandom() * 0.7f);
+	fPlayer.fKickOrigin.set(GameUtil.cRandom() * 0.35f, GameUtil.cRandom() * 0.35f, GameUtil.cRandom() * 0.35f);
+	fPlayer.fKickAngles.set(fShotCount * -1.5f,  GameUtil.cRandom() * 0.7f,  GameUtil.cRandom() * 0.7f);
 
 	// raise the gun as it is firing
-	if (!baseq2.GameModule.gIsDeathmatch)
+	if (!BaseQ2.gIsDeathmatch)
 		{
 		fShotCount++;
 		if (fShotCount > 9)
@@ -86,7 +86,7 @@ public void fire()
 	start = fPlayer.projectSource(offset, forward, right);
 	MiscUtil.fireLead(fPlayer, start, forward, damage, kick, Engine.TE_GUNSHOT, DEFAULT_BULLET_HSPREAD, DEFAULT_BULLET_VSPREAD, "machinegun");
 	
-	fPlayer.setAnimation(Player.ANIMATE_ATTACK, false,(int)(Game.randomFloat() + 0.25f));  //VWep
+	fPlayer.setAnimation(Player.ANIMATE_ATTACK, false,(int)(GameUtil.randomFloat() + 0.25f));  //VWep
 	
 	Engine.writeByte(Engine.SVC_MUZZLEFLASH);
 	Engine.writeShort(fEntity.getEntityIndex());

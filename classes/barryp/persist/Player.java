@@ -5,10 +5,10 @@ import java.util.*;
 import javax.vecmath.*;
 
 import q2java.*;
-import q2jgame.*;
+import q2java.core.*;
 
-import baseq2.*;
-import baseq2.spawn.*;
+import q2java.baseq2.*;
+import q2java.baseq2.spawn.*;
 
 /**
  * Persistent player class.  
@@ -16,7 +16,7 @@ import baseq2.spawn.*;
  * @author Barry Pederson
  */
 
-public class Player extends baseq2.Player 
+public class Player extends q2java.baseq2.Player 
 	{
 	protected transient boolean fWasSaved;	
 	
@@ -104,7 +104,7 @@ public void playerBegin()
 
 	fStartTime = (float) Game.getGameTime();	
 	fEntity.setPlayerStat(NativeEntity.STAT_HEALTH_ICON, (short) Engine.getImageIndex("i_health"));	
-	fEntity.setPlayerGravity((short)baseq2.GameModule.gGravity.getFloat());
+	fEntity.setPlayerGravity((short)q2java.baseq2.BaseQ2.gGravity.getFloat());
 	
 	if (!fWasSaved)
 		clearSettings();

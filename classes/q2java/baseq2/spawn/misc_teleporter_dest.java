@@ -1,7 +1,7 @@
-package baseq2.spawn;
+package q2java.baseq2.spawn;
 
 import q2java.*;
-import baseq2.*;
+import q2java.baseq2.*;
 
 /**
  * Point teleporters at these.

@@ -1,4 +1,4 @@
-package baseq2;
+package q2java.baseq2;
 
 import java.util.Hashtable;
 

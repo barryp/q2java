@@ -4,14 +4,16 @@ import java.util.Vector;
 
 import q2java.*;
 import q2java.gui.*;
-import q2jgame.*;
+import q2java.core.*;
+import q2java.core.event.*;
+import q2java.core.gui.*;
 
 /**
  * BountyHunters Game Module.  Inspired by the "Assassin Quake" mod.
  *
  * @author Barry Pederson
  */
-public class GameModule extends q2jgame.GameModule implements LevelListener
+public class Paranoia extends q2java.core.Gamelet implements GameStatusListener
 	{
 	protected static Vector gVictimList = new Vector();
 
@@ -24,18 +26,18 @@ public class GameModule extends q2jgame.GameModule implements LevelListener
  * Constructor for BountyHunter game module.
  * @param moduleName java.lang.String
  */
-public GameModule(String moduleName) 
+public Paranoia(String moduleName) 
 	{
 	super(moduleName);
 
 	// ask to be called on level changes
-	Game.addLevelListener(this);	
+	Game.addGameStatusListener(this);	
 	}
 /**
  * Add a player to the open contract list.
  * @param p barryp.contract.Player
  */
-public static void addPlayer(Player p) 
+public static void addPlayer(ParanoiaPlayer p) 
 	{
 	if (!gVictimList.contains(p))
 		gVictimList.addElement(p);
@@ -45,7 +47,7 @@ public static void addPlayer(Player p)
  * @param requestor Player asking for an assignment, necessary to
  *  avoid being assigned to kill yourself.
  */
-public static void assignRole(Player requestor) 
+public static void assignRole(ParanoiaPlayer requestor) 
 	{
 	int nEntries = gVictimList.size();
 
@@ -53,11 +55,11 @@ public static void assignRole(Player requestor)
 		return;
 		
 	// randomize the order in which requests are granted
-	if ((Game.randomInt() & 0x003f) != 0)
+	if ((GameUtil.randomInt() & 0x003f) != 0)
 		return; // only fullfill one request out of every 64
 		
-	int selection = (Game.randomInt() & 0x0fff) % gVictimList.size();	
-	Player p = (Player) gVictimList.elementAt(selection);
+	int selection = (GameUtil.randomInt() & 0x0fff) % gVictimList.size();	
+	ParanoiaPlayer p = (ParanoiaPlayer) gVictimList.elementAt(selection);
 	if (p != requestor)
 		{
 		gVictimList.removeElementAt(selection);
@@ -67,37 +69,54 @@ public static void assignRole(Player requestor)
 		return;
 		}
 	}
-/**
- * Called when a new level is starting, after entities have 
- * been spawned.
- */
-public void levelEntitiesSpawned()
+public void gameStatusChanged(GameStatusEvent e)
 	{
-	// do nothing
+	if (e.getState() == GameStatusEvent.GAME_PRESPAWN)
+		{
+		// set the players HUDs
+		Engine.setConfigString (Engine.CS_STATUSBAR, ParanoiaPlayer.BOUNTY_STATUSBAR);
+	
+		// precache HUD icons
+		DirectionTracker.precacheImages();
+		RangeTracker.precacheImages();
+		SmartCrosshair.precacheImages();
+
+		// clear the victim list, will be refilled as players respawn
+		gVictimList.removeAllElements();		
+		}
+	}
+/**
+ * Get which Gamelet classes this Gamelet requires.
+ * @return java.lang.Class[]
+ */
+public String[] getGameletDependencies() 
+	{
+	String[] result = { "q2java.baseq2.BaseQ2" };
+	return result;
+	}
+/**
+ * Get which class (if any) this Gamelet wants to use for a Player class.
+ * @return java.lang.Class
+ */
+public Class getPlayerClass() 
+	{
+	return ParanoiaPlayer.class;
+	}
+/**
+ * Since we have our own player class, wait for level changes to load/unload.
+ * @return boolean
+ */
+public boolean isLevelChangeRequired() 
+	{
+	return true;
 	}
 /**
  * Remove a Player from the Game.
  * @param p barryp.contract.Player
  */
-public static void removePlayer(Player p) 
+public static void removePlayer(ParanoiaPlayer p) 
 	{
 	gVictimList.removeElement(p);
-	}
-/**
- * Called when a new level starts.
- */
-public void startLevel(String mapname, String entString, String spawnPoint)
-	{
-	// set the players HUDs
-	Engine.setConfigString (Engine.CS_STATUSBAR, Player.BOUNTY_STATUSBAR);
-
-	// precache HUD icons
-	DirectionTracker.precacheImages();
-	RangeTracker.precacheImages();
-	SmartCrosshair.precacheImages();
-
-	// clear the victim list, will be refilled as players respawn
-	gVictimList.removeAllElements();
 	}
 /**
  * Default help svcmd for a GameModule.
@@ -113,6 +132,6 @@ public void svcmd_help(String[] args)
 public void unload() 
 	{
 	// we no longer want to be notified of level changes
-	Game.removeLevelListener(this);	
+	Game.removeGameStatusListener(this);	
 	}
 }

@@ -2,7 +2,7 @@
 
 game_import_t   q2java_gi;
 game_export_t   q2java_ge;
-char *q2java_version = "0.8.0";
+char *q2java_version = "0.9.0";
 
 // to help with entity management
 int global_frameCount;
@@ -22,7 +22,7 @@ game_export_t *GetGameAPI(game_import_t *import)
         }
 
     q2java_gi.dprintf("=============================\nQ2Java Game Interface v%s\n", q2java_version);
-    q2java_gi.dprintf("(c) 1998 Barry Pederson\n<bpederson@geocities.com>\n");
+    q2java_gi.dprintf("(c) 1999 Barry Pederson\n<bpederson@geocities.com>\n");
     q2java_gi.dprintf("--------------\n");
     q2java_gi.dprintf("%s\n=============================\n", javalink_version);
 

@@ -1,9 +1,9 @@
-package baseq2;
+package q2java.baseq2;
 
 
 import javax.vecmath.*;
 import q2java.*;
-import q2jgame.*;
+import q2java.core.*;
 
 /**
  * Grenades that have been fired by a Grenadelauncher,
@@ -18,4 +18,4 @@ public void toss(GameObject owner, Point3f start, Vector3f aimdir, int damage, i
 	super.toss(owner, start, aimdir, damage, speed, timer, radiusDamage);
 	fEntity.setModelIndex(Engine.getModelIndex("models/objects/grenade/tris.md2"));
 	}
-}	
+}

@@ -1,8 +1,9 @@
-package q2java.gui;
+package q2java.core.gui;
 
 import javax.vecmath.*;
 import q2java.*;
-import q2jgame.*;
+import q2java.core.*;
+import q2java.gui.*;
 
 /**
  * Extend a BarGraph to be an active component that

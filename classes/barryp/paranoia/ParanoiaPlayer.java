@@ -5,22 +5,22 @@ import java.util.*;
 import javax.vecmath.*;
 
 import q2java.*;
-import q2java.gui.*;
-import q2jgame.*;
+import q2java.core.*;
+import q2java.core.gui.*;
 
-import baseq2.*;
-import baseq2.spawn.*;
+import q2java.baseq2.*;
+import q2java.baseq2.spawn.*;
 
 /**
- * BountyHunter player.  
+ * Paranoia player.  
  *
  * @author Barry Pederson
  */
 
-public class Player extends baseq2.Player 
+public class ParanoiaPlayer extends q2java.baseq2.Player 
 	{
-	protected Player fVictim;  // who we're after
-	protected Player fStalker; // who's after us
+	protected ParanoiaPlayer fVictim;  // who we're after
+	protected ParanoiaPlayer fStalker; // who's after us
 	
 	protected DirectionTracker fTracker;	// HUD widget for tracking victim
 	protected RangeTracker     fRange;		// HUD widget for range of victim
@@ -119,7 +119,7 @@ public class Player extends baseq2.Player
  * Create a new Player Game object, and associate it with a Player
  * native entity.
  */
-public Player(NativeEntity ent) throws GameException
+public ParanoiaPlayer(NativeEntity ent) throws GameException
 	{
 	super(ent);
 
@@ -151,7 +151,7 @@ protected void beginServerFrame()
 		
 	if (isLooseCannon())
 		// try to get the game to assign us a role
-		GameModule.assignRole(this);
+		Paranoia.assignRole(this);
 	}
 /**
  * Announce this player's death to the world.
@@ -170,7 +170,7 @@ public void broadcastObituary(GameObject attacker, String obitKey)
 		}
 	else
 		{
-		Player killer = (Player) attacker;
+		ParanoiaPlayer killer = (ParanoiaPlayer) attacker;
 		if (killer.fVictim == this)
 			Game.bprint(Engine.PRINT_HIGH, killer.getName() + " terminated " + getName() + "\n");
 		else if (killer == fVictim)
@@ -190,19 +190,19 @@ protected void clearContracts()
 	if (fVictim != null)
 		{ 
 		fVictim.setStalker(null);
-		GameModule.addPlayer(fVictim);
+		Paranoia.addPlayer(fVictim);
 		}
 
 	// we were being stalked, have the stalker get another assignment
 	if (fStalker != null) 
 		{
 		fStalker.setVictim(null);
-		GameModule.addPlayer(fStalker);
+		Paranoia.addPlayer(fStalker);
 		}
 
 	// we were waiting for an assignment, remove from list
 	if (isLooseCannon())
-		GameModule.removePlayer(this);
+		Paranoia.removePlayer(this);
 	}
 /**
  * Clear the player's settings so they are a fresh 
@@ -224,7 +224,7 @@ protected void clearSettings( )
  */
 public static void connect(NativeEntity ent) throws GameException
 	{
-	new Player(ent);
+	new ParanoiaPlayer(ent);
 	}
 /**
  * Handle dying.
@@ -261,7 +261,7 @@ public void dispose()
  * Get who's after this player.
  * @return barryp.contract.Player
  */
-public Player getStalker() 
+public ParanoiaPlayer getStalker() 
 	{
 	return fStalker;
 	}
@@ -269,7 +269,7 @@ public Player getStalker()
  * Get who this player's after.
  * @return barryp.contract.Player
  */
-public Player getVictim() 
+public ParanoiaPlayer getVictim() 
 	{
 	return fVictim;
 	}
@@ -285,7 +285,7 @@ public boolean isLooseCannon()
  * Override baseq2.Player.registerKill() to use different scoring scheme.
  * @param p baseq2.Player this player's victim, may be the player himself or null.
  */
-protected void registerKill(baseq2.Player p) 
+protected void registerKill(q2java.baseq2.Player p) 
 	{
 	// killed self
 	if ((p == this) || (p == null))
@@ -294,7 +294,7 @@ protected void registerKill(baseq2.Player p)
 		setScore(KILL_VICTIM_POINTS, false);
 	else if (p == getStalker())
 		setScore(KILL_STALKER_POINTS, false);
-	else if (isLooseCannon() || ((Player)p).isLooseCannon())
+	else if (isLooseCannon() || ((ParanoiaPlayer)p).isLooseCannon())
 		setScore(KILL_LOOSE_CANNON, false);
 	else
 		{
@@ -307,7 +307,7 @@ protected void registerKill(baseq2.Player p)
  * Set who's after this player.
  * @return barryp.contract.Player
  */
-public void setStalker(Player stalker) 
+public void setStalker(ParanoiaPlayer stalker) 
 	{
 	fStalker = stalker;
 
@@ -328,7 +328,7 @@ public void setStalker(Player stalker)
  * Set who this player is after.
  * @return barryp.contract.Player
  */
-public void setVictim(Player victim) 
+public void setVictim(ParanoiaPlayer victim) 
 	{
 	fVictim = victim;
 
@@ -359,7 +359,7 @@ protected void spawn()
 	super.spawn();
 
 	// make ourselves available for assignment
-	GameModule.addPlayer(this);
+	Paranoia.addPlayer(this);
 
 	fHasSpawned = true;
 	}
@@ -391,7 +391,7 @@ public void welcome()
 	Engine.multicast(fEntity.getOrigin(), Engine.MULTICAST_PVS);
 
 	Object[] args = {getName()};
-	Game.localecast("baseq2.Messages", "entered", args, Engine.PRINT_HIGH);
+	Game.localecast("q2java.baseq2.Messages", "entered", args, Engine.PRINT_HIGH);
 
 	fEntity.centerprint("Welcome to Paranoia\n");
 	}

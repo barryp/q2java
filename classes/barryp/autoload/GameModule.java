@@ -1,7 +1,7 @@
 package barryp.autoload;
 
 import q2java.*;
-import q2jgame.*;
+import q2java.core.*;
 
 /**
  * Simple module that automatically exec's a file
@@ -9,7 +9,7 @@ import q2jgame.*;
  * the game is running.
  * 
  */
-public class GameModule extends q2jgame.GameModule implements FrameListener, CrossLevel
+public class GameModule extends q2java.core.Gamelet implements FrameListener, CrossLevel
 	{
 	
 /**
@@ -28,6 +28,6 @@ public GameModule(String moduleName)
 public void runFrame(int phase)
 	{
 	Engine.addCommandString("exec autoload.cfg");
-	Game.removeModule(this);
+	Game.removeGamelet(this);
 	}
 }

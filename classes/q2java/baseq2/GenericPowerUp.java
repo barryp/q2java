@@ -1,8 +1,8 @@
-package baseq2;
+package q2java.baseq2;
 
 import q2java.*;
-import q2jgame.*;
-import baseq2.*;
+import q2java.core.*;
+import q2java.baseq2.*;
 
 /**
  * Super class of all power ups lying around
@@ -36,7 +36,7 @@ public float getRespawnTime()
  */
 public boolean isTouchable(Player p) 
 	{
-	if (GameModule.isDMFlagSet(GameModule.DF_INSTANT_ITEMS))
+	if (BaseQ2.isDMFlagSet(BaseQ2.DF_INSTANT_ITEMS))
 		return true;
 		
 	// let superclass nix the deal
@@ -63,7 +63,7 @@ protected void touchFinish(Player p, GenericItem itemTaken)
 	{
 	super.touchFinish(p, itemTaken);
 
-	if (GameModule.isDMFlagSet(GameModule.DF_INSTANT_ITEMS))
+	if (BaseQ2.isDMFlagSet(BaseQ2.DF_INSTANT_ITEMS))
 		itemTaken.use(p);
 	else
 		p.putInventory(itemTaken.getItemName(), itemTaken);	

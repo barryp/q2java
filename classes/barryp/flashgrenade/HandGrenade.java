@@ -1,16 +1,17 @@
 package barryp.flashgrenade;
 
+import java.util.Enumeration;
 import javax.vecmath.*;
 import q2java.*;
-import q2jgame.*;
-import baseq2.*;
+import q2java.core.*;
+import q2java.baseq2.*;
 
 /**
  * Grenades that have been thrown by a player,
  * and are flying through the air.
  */
   
-public class HandGrenade extends baseq2.HandGrenade
+public class HandGrenade extends q2java.baseq2.HandGrenade
 	{
 	
 /**
@@ -26,11 +27,11 @@ protected void explode( TraceResults tr )
 
 	// iterate through players to flash their screens and possibly
 	// blind them
-	java.util.Enumeration enum = NativeEntity.enumeratePlayers();
 	Point3f grenadeOrigin = fEntity.getOrigin();
 	Vector3f forward = new Vector3f();
 	Vector3f line = new Vector3f();
 	Angle3f pva;
+	Enumeration enum = NativeEntity.enumeratePlayerEntities();
 	while (enum.hasMoreElements())
 		{
 		NativeEntity playerEnt = (NativeEntity) enum.nextElement();

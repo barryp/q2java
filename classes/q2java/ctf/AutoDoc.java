@@ -1,4 +1,4 @@
-package menno.ctftech;
+package q2java.ctf;
 
 
 /*
@@ -16,11 +16,10 @@ package menno.ctftech;
 */
 
 
-import q2java.*;
-import q2jgame.*;
-//import baseq2.*;
 import javax.vecmath.*;
-import menno.ctf.*;
+import q2java.*;
+import q2java.core.*;
+import q2java.ctf.*;
 
 
 /**
@@ -84,13 +83,13 @@ public class AutoDoc extends GenericTech
 	public void runFrame(int phase) 
 	{
 		super.runFrame(phase);
-		baseq2.Player p = getOwner();
+		q2java.baseq2.Player p = getOwner();
 		
 		if ((phase == Game.FRAME_BEGINNING) && (p != null))
 		{
 			if ( fNextHealTime < Game.getGameTime() )
 			{
-				baseq2.ArmorDamageFilter adf = p.getArmor();
+				q2java.baseq2.ArmorDamageFilter adf = p.getArmor();
 				boolean noise  = false;
 				int     health = p.getHealth();
 				int     armor  = adf.getArmorCount();
@@ -119,7 +118,7 @@ public class AutoDoc extends GenericTech
 	 * Set which player is holding the tech.
 	 * @param p menno.ctf.Player
 	 */
-	public void setOwner(baseq2.Player p) 
+	public void setOwner(q2java.baseq2.Player p) 
 	{
 		super.setOwner(p);
 
