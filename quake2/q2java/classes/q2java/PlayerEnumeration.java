@@ -1,7 +1,7 @@
 
 package q2java;
 
-public class PlayerEnumeration implements java.util.Enumeration
+class PlayerEnumeration implements java.util.Enumeration
 	{
 	private NativeEntity fNext;
 	

@@ -33,6 +33,7 @@ void Engine_javaFinalize();
 void Entity_javaInit();
 void Entity_gameInit();
 void Entity_arrayInit();
+void Entity_arrayReset();
 jobject Entity_getEntity(int index);
 void	Entity_setEntity(int index, jobject value);
 int		Entity_get_fEntityIndex(jobject jent);

@@ -84,21 +84,23 @@ void Game_javaFinalize()
 
 static void java_init(void)
 	{
-	(*java_env)->CallVoidMethod(java_env, object_Game, method_Game_init);
-	if (CHECK_EXCEPTION())
-		return;
-
+//	debugLog("java_init() started\n");
 	Entity_arrayInit();
+	(*java_env)->CallVoidMethod(java_env, object_Game, method_Game_init);
+	CHECK_EXCEPTION();
+//	debugLog("java_init() finished\n");
 	}
 
 
 static void java_shutdown(void)
 	{
+//	debugLog("java_shutdown() started\n");
 	(*java_env)->CallVoidMethod(java_env, object_Game, method_Game_shutdown);
 	CHECK_EXCEPTION();
 
 	stopJava();
 	gi.FreeTags (TAG_GAME);
+//	debugLog("java_shutdown() finished\n");
 	}
 
 
@@ -108,6 +110,10 @@ static void java_spawnEntities(char *mapname, char *entString, char *spawnpoint)
 	jstring jentString;
 	jstring jspawnpoint;
 
+//	debugLog("java_spawnEntities() started\n");
+
+	Entity_arrayReset();
+
 	jmapname = (*java_env)->NewStringUTF(java_env, mapname);
 	jentString = (*java_env)->NewStringUTF(java_env, entString);
 	jspawnpoint = (*java_env)->NewStringUTF(java_env, spawnpoint);
@@ -116,6 +122,8 @@ static void java_spawnEntities(char *mapname, char *entString, char *spawnpoint)
 	CHECK_EXCEPTION();
 
 	global_frameCount = 0;
+
+//	debugLog("java_spawnEntities() finished\n");
 	}
 
 
@@ -123,9 +131,13 @@ static void java_writeGame(char *filename)
 	{
 	jstring jfilename;
 
+//	debugLog("java_writeGame() started\n");
+
 	jfilename = (*java_env)->NewStringUTF(java_env, filename);
 	(*java_env)->CallVoidMethod(java_env, object_Game, method_Game_writeGame, jfilename);
 	CHECK_EXCEPTION();
+
+//	debugLog("java_writeGame() finished\n");
 	}
 
 
@@ -133,19 +145,22 @@ static void java_readGame(char *filename)
 	{
 	jstring jfilename;
 
+//	debugLog("java_readGame() started\n");
 	jfilename = (*java_env)->NewStringUTF(java_env, filename);
 	(*java_env)->CallVoidMethod(java_env, object_Game, method_Game_readGame, jfilename);
 	CHECK_EXCEPTION();
+//	debugLog("java_readGame() finished\n");
 	}
 
 
 static void java_writeLevel(char *filename)
 	{
 	jstring jfilename;
-
+//	debugLog("java_writeLevel() started\n");
 	jfilename = (*java_env)->NewStringUTF(java_env, filename);
 	(*java_env)->CallVoidMethod(java_env, object_Game, method_Game_writeLevel, jfilename);
 	CHECK_EXCEPTION();
+//	debugLog("java_writeLevel() finished\n");
 	}
 
 
@@ -153,18 +168,22 @@ static void java_readLevel(char *filename)
 	{
 	jstring jfilename;
 
+//	debugLog("java_readLevel() started\n");
 	jfilename = (*java_env)->NewStringUTF(java_env, filename);
 	(*java_env)->CallVoidMethod(java_env, object_Game, method_Game_readLevel, jfilename);
 	CHECK_EXCEPTION();
+//	debugLog("java_readLevel() finished\n");
 	}
 
 static void java_runFrame(void)
 	{
+//	debugLog("java_runFrame() started\n");
 	// track the running time to help with entity management
 	global_frameCount++;
 
 	(*java_env)->CallVoidMethod(java_env, object_Game, method_Game_runFrame);
 	CHECK_EXCEPTION();
+//	debugLog("java_runFrame() finished\n");
 	}
 
 // -------- Hook us up with the Quake II program

@@ -26,7 +26,22 @@ private Q2JavaSecurityManager(int level, String gamePath)
 		File gameDir = new File(gamePath);
 		File sandboxDir = new File(gameDir, "sandbox");
 		fSandboxPrefix = sandboxDir.getPath() + File.separator;
+		fSandboxPrefix = fSandboxPrefix.toLowerCase(); // seems necessary for Win95
 		}
+	}
+/**
+ * This method was created by a SmartGuide.
+ * @param host java.lang.String
+ * @param port int
+ */
+public void checkConnect(String host, int port) 
+	{
+	if (fSecurityLevel >= 2)
+		throw new SecurityException("Network access not allowed");
+		
+	if ((fSecurityLevel == 1) 
+	&& (port > 0) && (port < 1024))
+		throw new SecurityException("No access allowed to ports 1..1023");
 	}
 /**
  * This method was created by a SmartGuide.
@@ -36,6 +51,20 @@ public void checkDelete(String filename)
 	{
 	Engine.debugLog("checkDelete(\"" + filename + "\")\n");
 	checkSandbox(filename);
+	}
+/**
+ * This method was created by a SmartGuide.
+ * @param host java.lang.String
+ * @param port int
+ */
+public void checkListen(int port) 
+	{
+	if (fSecurityLevel >= 2)
+		throw new SecurityException("Network access not allowed");
+		
+	if ((fSecurityLevel == 1) 
+	&& (port > 0) && (port < 1024))
+		throw new SecurityException("No access allowed to ports 1..1023");
 	}
 /**
  * This method was created by a SmartGuide.
@@ -82,7 +111,7 @@ private void checkSandbox(String filename)
 		throw new SecurityException(e.getMessage());
 		}
 				
-	if (!filename.startsWith(fSandboxPrefix))
+	if (!filename.toLowerCase().startsWith(fSandboxPrefix))
 		throw new SecurityException(filename + " is not in the protected sandbox: " + fSandboxPrefix);
 	}
 /**

@@ -93,10 +93,11 @@ void startJava()
 	char buffer[64];
 	cvar_t *q2java_security;
 
+	setupPaths();
+
 	q2java_debugLog = gi.cvar("q2java_debugLog", "0", 0);
 	q2java_security = gi.cvar("q2java_security", "2", CVAR_NOSET);
 
-	setupPaths();
 	debugLog("in startJava()\n");
 
 	java_error = NULL;
@@ -120,6 +121,8 @@ void startJava()
         sprintf(buffer, "%d", hJavaDLL);	
         gi.cvar_forceset("q2java_DLLHandle", buffer);
         }
+
+	debugLog("startJava() found DLL\n");
 
 	if (q2java_VMPointer->value)
         {
@@ -167,6 +170,7 @@ void startJava()
         gi.cvar_forceset("q2java_EnvPointer", buffer);
         }
 
+	debugLog("startJava() created VM\n");
 
 	// if Java's up and running, then get everything hooked up
     if (java_env)
@@ -186,7 +190,6 @@ void startJava()
 		if (!java_error)
 			Engine_javaInit();
 
-
 		if (!java_error)
 			Game_javaInit();
 
@@ -202,7 +205,6 @@ void startJava()
 		if (!java_error && !alreadyStarted && q2java_security->value)
 			enableSecurity((int)q2java_security->value);	
 		}
-	return;
     }
 
 

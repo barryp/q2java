@@ -15,6 +15,13 @@ abstract class GenericArmor extends GenericItem
 public GenericArmor(String[] spawnArgs, String modelName, String pickupSound, String icon, int count, int maxCount, float protection, float energyProtection) throws GameException
 	{
 	super(spawnArgs, pickupSound);
+	
+	if (Game.isDMFlagSet(Game.DF_NO_ARMOR))
+		{
+		freeEntity();
+		throw new GameException("armor items inhibited");
+		}	
+	
 	setEffects(EF_ROTATE); // all armor rotates
 	setModel(modelName);
 	linkEntity();

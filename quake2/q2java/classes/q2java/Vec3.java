@@ -1,8 +1,11 @@
 
 package q2java;
 
-
 import java.util.StringTokenizer;
+
+/**
+ * Vec3 is an equivalent to Quake2's vec3_t structure.
+ */
 
 public final class Vec3
 	{
@@ -10,9 +13,18 @@ public final class Vec3
 	public float y;
 	public float z;
 	
+/**
+ * Construct a new vector with values set to (0, 0, 0).
+ */
 public Vec3()
 	{
 	}
+/**
+ * Construct a new vector and set the x, y, and z fields to the specified values.
+ * @param newx x value for new vector
+ * @param newy y value for new vector
+ * @param newz z value for new vector
+ */
 public Vec3(float newx, float newy, float newz)
 	{
 	x = newx;
@@ -20,15 +32,12 @@ public Vec3(float newx, float newy, float newz)
 	z = newz;
 	}
 /**
- * Construct a vector from a String of three float values
+ * Construct a vector from a String of three float values.
  * The values can be separated by spaces and/or commas, 
- * can can be inside parentheses.  Some valid inputs are:
- *   "1 2 3"            -- like we'll get from spawn strings
- *   "(1.0, 2.0, 3.0)"  -- a nice-looking way to print vectors
- *   "(1    2.0,,,,3"   -- a really ugly string that should still work
- * 
- * I wonder why the java.lang.Float class doesn't have a 
- * parseFloat(String) method?
+ * can can be inside parentheses.  Some valid inputs are:<br>
+ *   "1 2 3"            -- like we'll get from spawn strings.<br>
+ *   "(1.0, 2.0, 3.0)"  -- a nice-looking way to print vectors.<br>
+ *   "(1    2.0,,,,3"   -- a really ugly string that should still work.
  */
 public Vec3(String s) throws NumberFormatException
 	{
@@ -52,10 +61,10 @@ public Vec3(String s) throws NumberFormatException
 	z = f.floatValue();
 	}
 /**
- * This method was created by a SmartGuide.
- * @param v Vec3
+ * Construct a new vector, copying values from another vector.
+ * @param v a vector to copy values from.
  */
-public Vec3( Vec3 v) 
+public Vec3(Vec3 v) 
 	{
 	x = v.x;
 	y = v.y;

@@ -5,9 +5,6 @@ import q2java.*;
 
 public class weapon_hyperblaster extends GenericWeapon
 	{
-	// all hyperblaster objects will share these arrays
-	private static int[] PAUSE_FRAMES = new int[] {0};
-	private static int[] FIRE_FRAMES = new int[] {6, 7, 8, 9, 10, 11, 0};		
 	
 public weapon_hyperblaster(String[] spawnArgs) throws GameException
 	{

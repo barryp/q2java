@@ -12,6 +12,13 @@ abstract class GenericHealth extends GenericItem
 public GenericHealth(String[] spawnArgs, String modelName, String pickupSound, int healthValue, boolean overrideMax) throws GameException
 	{
 	super(spawnArgs, pickupSound);
+	
+	if (Game.isDMFlagSet(Game.DF_NO_HEALTH))
+		{
+		freeEntity();
+		throw new GameException("health items inhibited");
+		}
+	
 	fHealthValue = healthValue;
 	fOverrideMax = overrideMax;
 	setModel(modelName);

@@ -1,12 +1,8 @@
 #include "globals.h"
 
-// handles to the java.lang.Class class
-static jclass class_Class;
-static jmethodID method_Class_getName;
-
 // handles to java.lang.Throwable class
 static jclass class_Throwable;
-static jmethodID method_Throwable_getMessage;
+//static jmethodID method_Throwable_getMessage;
 static jmethodID method_Throwable_printStackTrace;
 
 // handles to the q2java.Vec3 class
@@ -30,31 +26,12 @@ void Misc_javaInit()
 	{
 	jmethodID method_UserCmd_ctor;
 
-	class_Class = (*java_env)->FindClass(java_env, "java/lang/Class");
-	if (!class_Class)
-		{			
-		java_error = "Couldn't find java.lang.Class\n";
-		return;
-		}
-
-	method_Class_getName = (*java_env)->GetMethodID(java_env, class_Class, "getName", "()Ljava/lang/String;");		
-	if (!method_Class_getName)
-		{
-		java_error = "Couldn't find java.lang.Class.getName() method\n";
-		return;
-		}
+	debugLog("in Misc_javaInit()\n");
 
 	class_Throwable = (*java_env)->FindClass(java_env, "java/lang/Throwable");
 	if (!class_Throwable)
 		{			
 		java_error = "Couldn't find java.lang.Throwable\n";
-		return;
-		}
-
-	method_Throwable_getMessage = (*java_env)->GetMethodID(java_env, class_Throwable, "getMessage", "()Ljava/lang/String;");		
-	if (!method_Throwable_getMessage)
-		{
-		java_error = "Couldn't find java.lang.Throwable.getMessage() method\n";
 		return;
 		}
 

@@ -8,26 +8,26 @@ package q2java;
 public interface NativePlayer {
 
 /**
- * This method was created by a SmartGuide.
+ * Called by the DLL when the player should begin playing in the game.
  * @param loadgame boolean
  */
 public abstract void playerBegin(boolean loadgame);
 /**
- * This method was created by a SmartGuide.
+ * Called by the DLL when the player has typed, or initiated a command.
  */
 public abstract void playerCommand();
 /**
- * This method was created by a SmartGuide.
+ * Called by the DLL when the player is disconnecting. 
  */
 public abstract void playerDisconnect();
 /**
- * This method was created by a SmartGuide.
- * @param userinfo java.lang.String
+ * Called by the DLL when the player's userinfo has changed.
+ * @param userinfo the userinfo string, formatted as: "\keyword\value\keyword\value\....\keyword\value"
  */
 public abstract void playerInfoChanged(String userinfo);
 /**
- * This method was created by a SmartGuide.
- * @param cmd q2java.UserCmd
+ * Called by the DLL when the game should process a client frame.
+ * @param cmd commands indicating movement, jumping, firing weapons, etc.
  */
 public abstract void playerThink(UserCmd cmd);
 }
