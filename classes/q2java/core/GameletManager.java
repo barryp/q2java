@@ -94,7 +94,7 @@ public Gamelet addGamelet(String classname, String suggestedGameletName, Element
 		throw new ClassNotFoundException(classname + " doesn't have a compatible constructor\n");
 		}
 		
-	if (suggestedGameletName == null) 
+	if ((suggestedGameletName == null) || suggestedGameletName.equals(""))
 		suggestedGameletName = makeGameletName(classname);
 	else if (getGamelet(suggestedGameletName) != null)
 		suggestedGameletName = makeGameletName(suggestedGameletName);
