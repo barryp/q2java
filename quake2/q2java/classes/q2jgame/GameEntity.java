@@ -36,30 +36,28 @@ public GameEntity(String[] spawnArgs, boolean isWorld) throws GameException
 
 	// look for common spawn arguments
 
-	String s = getSpawnArg("origin");
+	String s = getSpawnArg("origin", null);
 	if (s != null)
 		setOrigin(new Vec3(s));
 
-	s = getSpawnArg("angles");
+	s = getSpawnArg("angles", null);
 	if (s != null)
 		setAngles(new Vec3(s));
 
-	s = getSpawnArg("angle");
+	s = getSpawnArg("angle", null);
 	if (s != null)
 		{
 		Float f = new Float(s);
 		setAngles(0, f.floatValue(), 0);
 		}
 		
-	s = getSpawnArg("spawnflags");
-	if (s != null)
-		fSpawnFlags = Integer.parseInt(s);
+	fSpawnFlags = getSpawnArg("spawnflags", 0);
 		
-	s = getSpawnArg("target");
+	s = getSpawnArg("target", null);
 	if (s != null)
 		fTarget = s.intern();		
 
-	s = getSpawnArg("targetname");
+	s = getSpawnArg("targetname", null);
 	if (s != null)
 		fTargetName = s.intern();		
 	}
@@ -88,17 +86,41 @@ public Enumeration enumerateTargets()
 	{
 	return new TargetEnumeration(fTarget);
 	}
-public String getSpawnArg(String keyword)
+/**
+ * Lookup an integer spawn argument.
+ * @return value found, or defaultValue.
+ * @param name name of spawn argument.
+ * @param defaultValue value to return if "name" is not found.
+ */
+public int getSpawnArg(String keyword, int defaultValue) 
 	{
 	if (fSpawnArgs == null)
-		return null;
+		return defaultValue;
+
+	keyword = keyword.intern();
+	for (int i = 0; i < fSpawnArgs.length; i+=2)
+		if (keyword == fSpawnArgs[i])
+			return Integer.parseInt(fSpawnArgs[i+1]);
+
+	return defaultValue;
+	}
+/**
+ * Lookup a string spawn argument.
+ * @return value found, or defaultValue.
+ * @param name name of spawn argument.
+ * @param defaultValue value to return if "name" is not found.
+ */
+public String getSpawnArg(String keyword, String defaultValue)
+	{
+	if (fSpawnArgs == null)
+		return defaultValue;
 
 	keyword = keyword.intern();
 	for (int i = 0; i < fSpawnArgs.length; i+=2)
 		if (keyword == fSpawnArgs[i])
 			return fSpawnArgs[i+1];
 
-	return null;
+	return defaultValue;
 	}
 /**
  * This method was created by a SmartGuide.

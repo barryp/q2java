@@ -20,17 +20,16 @@ public worldspawn(String[] spawnArgs) throws GameException
 	// deal with spawn args
 	//
 	
-	String s;
+	Engine.configString(Engine.CS_SKY, getSpawnArg("sky", "unit1_"));
+	Engine.configString(Engine.CS_CDTRACK, getSpawnArg("sounds", "0"));
 
-	s = getSpawnArg("sky");
-	Engine.configString(Engine.CS_SKY, (s == null ? "unit1_" : s));
-
-	s = getSpawnArg("sounds");
-	Engine.configString(Engine.CS_CDTRACK, (s == null ? "0" : s));
-
-	s = getSpawnArg("message");
+	String s = getSpawnArg("message", null);
 	if (s != null)
 		Engine.configString(Engine.CS_NAME, s);
+		
+	s = getSpawnArg("nextmap", null);
+	if (s != null)
+		Game.setNextMap(s);		
 
 	//
 	// cache some images and sounds

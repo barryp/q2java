@@ -12,9 +12,7 @@ public func_areaportal(String[] spawnArgs) throws GameException
 	{
 	super(spawnArgs);
 	
-	String s = getSpawnArg("style");
-	if (s != null)
-		fArea = Integer.parseInt(s);
+	fArea = getSpawnArg("style", 0);
 	}
 /**
  * This method was created by a SmartGuide.

@@ -16,6 +16,9 @@ public class Game implements NativeGame
 	public static double fGameTime;
 	
 	private static boolean fInIntermission;
+	private static double fIntermissionEndTime;
+	private static String fCurrentMap;
+	private static String fNextMap;
 
 	// handy random number generator
 	private static Random fRandom;
@@ -28,9 +31,24 @@ public class Game implements NativeGame
 	
 	private static CVar fFragLimit;
 	private static CVar fTimeLimit;
+	private static CVar fDMFlags;
 	
 	// reference to the world
 	public static GameEntity fWorld;
+	
+	// dmflags->value flags
+	public final static int DF_NO_HEALTH			= 1;
+	public final static int DF_NO_ITEMS			= 2;
+	public final static int DF_WEAPONS_STAY		= 4;
+	public final static int DF_NO_FALLING		= 8;
+	public final static int DF_INSTANT_ITEMS		= 16;
+	public final static int DF_SAME_LEVEL		= 32;
+	public final static int DF_SKINTEAMS			= 64;
+	public final static int DF_MODELTEAMS		= 128;
+	public final static int DF_FRIENDLY_FIRE		= 256;
+	public final static int DF_SPAWN_FARTHEST	= 512;
+	public final static int DF_FORCE_RESPAWN		= 1024;
+	public final static int DF_NO_ARMOR			= 2048;
 	
 /**
  * This method was created by a SmartGuide.
@@ -245,8 +263,7 @@ public static void fireShotgun(GameEntity p, Vec3 start, Vec3 aimDir, int damage
 		fireLead(p, start, aimDir, damage, kick, Engine.TE_SHOTGUN, hSpread, vSpread);
 	}
 /**
- * Select a random point, but NOT the two points closest
- * to other players.
+ * Select the spawnpoint farthest from other players.
  * @return q2jgame.GameEntity
  */
 public static GameEntity getFarthestSpawnpoint() 
@@ -255,7 +272,6 @@ public static GameEntity getFarthestSpawnpoint()
 	float bestDistance = 0;
 	Enumeration enum;
 	
-	// find the deathmatch spawnpoint farthest from any players
 	enum = NativeEntity.enumerateEntities("q2jgame.spawn.info_player_deathmatch");
 	while (enum.hasMoreElements())
 		{
@@ -272,7 +288,7 @@ public static GameEntity getFarthestSpawnpoint()
 	return result;
 	}
 /**
- * Select a random point, but NOT the two points closest
+ * Select a random spawnpoint, but exclude the two points closest
  * to other players.
  * @return q2jgame.GameEntity
  */
@@ -348,8 +364,6 @@ public void init()
 	// actually initialize the game
 	Engine.debugLog("Game.init()");
 	fRandom = new Random();
-	fFrameCount = 0;
-	fInIntermission = false;
 	
 	// load cvars
 	fBobUp = new CVar("bob_up", "0.005", 0);	
@@ -359,6 +373,17 @@ public void init()
 	
 	fFragLimit = new CVar("fraglimit", "0", CVar.CVAR_SERVERINFO);
 	fTimeLimit = new CVar("timelimit", "0", CVar.CVAR_SERVERINFO);
+	fDMFlags = new CVar("dmflags", "0", CVar.CVAR_SERVERINFO);
+
+	Engine.debugLog("Game.init() finished");
+	}
+/**
+ * Check whether a given deathmatch flag is set.  Use the Game.DF_* constants.
+ * @return true if the flag is set, false if not.
+ */
+public static boolean isDMFlagSet(int flag) 
+	{
+	return (((int)fDMFlags.getFloat()) & flag) != 0;
 	}
 /**
  * Calculate how far the nearest player away is from a given entity
@@ -462,33 +487,72 @@ public void runFrame()
 	fFrameCount++;
 	fGameTime = fFrameCount * Engine.SECONDS_PER_FRAME;
 
-	if (fInIntermission)
+	if (fInIntermission && (fGameTime > fIntermissionEndTime))
+		{
+		if (isDMFlagSet(DF_SAME_LEVEL))
+			Engine.addCommandString("gamemap \"" + fCurrentMap + "\"");
+		else
+			Engine.addCommandString("gamemap \"" + fNextMap + "\"");
 		return;
+		}
 
 	// notify all the players we're beginning a frame
-	enum = new PlayerEnumeration();
+	enum = NativeEntity.enumeratePlayers();
 	while (enum.hasMoreElements())
-		((Player) enum.nextElement()).beginFrame();
+		{
+		try
+			{
+			((Player) enum.nextElement()).beginServerFrame();
+			}
+		catch (Exception e)
+			{
+			e.printStackTrace();
+			}
+		}						
 				
 	// give each non-player entity a chance to run				
-	enum = new EntityEnumeration();
+	enum = NativeEntity.enumerateEntities();
 	while (enum.hasMoreElements())
 		{
 		obj = enum.nextElement();
 		if (!(obj instanceof Player))
-			((GameEntity) obj).runFrame();
+			{
+			try
+				{
+				((GameEntity) obj).runFrame();
+				}
+			catch (Exception e)
+				{
+				e.printStackTrace();
+				}				
+			}				
 		}
 
-	if (timeToQuit())
-		{
+	if (!fInIntermission && timeToQuit())
 		startIntermission();
-		return;
-		}
 
 	// notify all the players we're ending a frame
-	enum = new PlayerEnumeration();
+	enum = NativeEntity.enumeratePlayers();
 	while (enum.hasMoreElements())
-		((Player) enum.nextElement()).endFrame();
+		{
+		try
+			{
+			((Player) enum.nextElement()).endServerFrame();
+			}
+		catch (Exception e)
+			{
+			e.printStackTrace();
+			}			
+		}			
+	}
+/**
+ * This method was created by a SmartGuide.
+ * @param mapname java.lang.String
+ */
+public static void setNextMap(String mapname) 
+	{
+	if (mapname != null)
+		fNextMap = mapname;
 	}
 public void shutdown()
 	{
@@ -498,7 +562,11 @@ public void spawnEntities(String mapname, String entString, String spawnPoint)
 	{
 	Engine.debugLog("Game.spawnEntities(\"" + mapname + ", <entString>, \"" + spawnPoint + "\")");
 
-
+	fFrameCount = 0;
+	fInIntermission = false;
+	fCurrentMap = mapname;
+	fNextMap = mapname; // in case there isn't a target_changelevel entity in the entString
+	
 	try
 		{
 		StringReader sr = new StringReader(entString);
@@ -564,6 +632,10 @@ public void spawnEntities(String mapname, String entString, String spawnPoint)
 								}
 							}
 						ps.println(")");	
+						if (e instanceof java.lang.reflect.InvocationTargetException)
+							((java.lang.reflect.InvocationTargetException)e).getTargetException().printStackTrace(ps);
+						else						
+							e.printStackTrace(ps);
 						}
 
 					foundClassname = false;
@@ -582,6 +654,10 @@ public void spawnEntities(String mapname, String entString, String spawnPoint)
 		Engine.dprint(e.getMessage() + "\n");
 		Engine.debugLog(e.getMessage());
 		}
+		
+	// now, right before the game starts, is a good time to 
+	// force Java to do a garbage collection
+	System.gc();		
 	}
 /**
  * Pick an intermission spot, and notify each player.
@@ -624,7 +700,8 @@ public void startIntermission()
 		p.startIntermission(spot);
 		}
 		
-	fInIntermission = true;		
+	fInIntermission = true;	
+	fIntermissionEndTime = fGameTime + 5.0;	
 	}
 /**
  * Check the timelimit and fraglimit values and decide

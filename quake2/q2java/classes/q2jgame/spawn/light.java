@@ -11,10 +11,7 @@ public light(String[] spawnArgs) throws GameException
 	{
 	super(spawnArgs);
 
-	int style = 0;
-	String s = getSpawnArg("style");
-	if (s != null)	
-		style = Integer.parseInt(s);
+	int style = getSpawnArg("style", 0);
 /*		
 	if (style > 0)
 		Engine.debugLog("Styled Light: " + this + "\n");		

@@ -28,15 +28,11 @@ public func_plat(String[] spawnArgs) throws GameException
 	setAngles(0, 0, 0); // not sure why this is necessary, but it's in the original Game DLL
 	setSolid(SOLID_BSP);
 	
-	String s = getSpawnArg("model");
+	String s = getSpawnArg("model", null);
 	if (s != null)
 		setModel(s);
 
-	s = getSpawnArg("lip");
-	if (s != null)
-		fLip = Integer.parseInt(s);
-	else 
-		fLip = 8;		
+	fLip = getSpawnArg("lip", 8);
 		
 		
 	// setup for opening and closing

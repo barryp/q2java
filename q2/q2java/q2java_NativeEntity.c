@@ -118,7 +118,8 @@ void Entity_arrayInit()
 	cvar_t *cvar_maxentities;
 	int i;
 
-	// Create the C entity array
+	debugLog("Entity_arrayInit() start\n");
+
 	cvar_maxentities = gi.cvar("maxentities", "1024", CVAR_LATCH);
 	ge.max_edicts = (int)(cvar_maxentities->value);
 	ge.edicts = gi.TagMalloc(ge.max_edicts * sizeof(edict_t), TAG_GAME);
@@ -129,6 +130,7 @@ void Entity_arrayInit()
 	CHECK_EXCEPTION();
 
 	// make a C array for client info 
+	debugLog("Creating client array\n");
 	cvar_maxclients = gi.cvar ("maxclients", "4", CVAR_SERVERINFO | CVAR_LATCH);
 	global_maxClients = (int) (cvar_maxclients->value);
 	global_clients = gi.TagMalloc(global_maxClients * sizeof(gclient_t), TAG_GAME);
@@ -138,18 +140,49 @@ void Entity_arrayInit()
 	CHECK_EXCEPTION();
 
 	// link the two C arrays together
+	debugLog("Linking C arrays\n");
 	for (i = 0; i < global_maxClients; i++)
-		{
 		ge.edicts[i+1].client = global_clients + i;
 
-		// a little tweak to get things going
-//		global_clients[i].ps.fov = 90;
-		}
-
 	// note in C and Java how many entities are used so far
+	debugLog("setting counters\n");
 	ge.num_edicts = global_maxClients + 1; 
 	(*java_env)->SetStaticIntField(java_env, class_NativeEntity, field_NativeEntity_fNumEntities, ge.num_edicts);
 	CHECK_EXCEPTION();
+
+	debugLog("Entity_arrayInit() finished\n");
+	}
+
+// clear info from entity arrays..for a new level
+void Entity_arrayReset()
+	{
+	jobjectArray ja;
+	int inuse;
+	int i;
+
+	debugLog("Clearing existing arrays\n");
+
+	ja = (*java_env)->GetStaticObjectField(java_env, class_NativeEntity, field_NativeEntity_fEntityArray);
+
+	// clear worldspawn entity
+	memset(ge.edicts, 0, sizeof (ge.edicts[0])); 
+	(*java_env)->SetObjectArrayElement(java_env, ja, 0, 0);
+
+	// clear player entities, except for inuse flags
+	// (leave java objects alone)
+	for (i = 0; i < global_maxClients; i++)
+		{
+		inuse = ge.edicts[i+1].inuse;
+		memset(ge.edicts + i + 1, 0, sizeof(ge.edicts[0]));
+		memset(global_clients + i, 0, sizeof(global_clients[0]));
+		ge.edicts[i+1].inuse = inuse;
+		ge.edicts[i+1].client = global_clients + i;
+		}
+
+	// clear all other non-player entities
+	memset (ge.edicts + global_maxClients + 1, 0, (ge.max_edicts - global_maxClients - 1) * sizeof (ge.edicts[0]));
+	for (i = global_maxClients + 1; i < ge.max_edicts; i++)
+		(*java_env)->SetObjectArrayElement(java_env, ja, i, 0);
 	}
 
 

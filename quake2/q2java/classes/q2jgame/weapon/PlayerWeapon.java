@@ -49,7 +49,7 @@ public abstract class PlayerWeapon
 public PlayerWeapon(String ammoType, String weaponModelName, int lastActivate, int lastFire, int lastIdle, int lastDeactivate, int[] pauseFrames, int[] fireFrames)
 	{
 	fAmmoType = ammoType;
-Engine.debugLog("Created weapon with ammoType = " + fAmmoType);	
+
 	// animation settings
 	fWeaponModel = Engine.modelIndex(weaponModelName);
 	fFrameActivateLast = lastActivate;

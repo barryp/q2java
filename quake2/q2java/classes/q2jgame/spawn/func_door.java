@@ -7,6 +7,14 @@ import q2jgame.*;
 
 public class func_door extends GameEntity
 	{
+	// possible spawn args
+	private int fLip; 
+	private int fSpeed;
+	private int fAccel;
+	private int fDecel;
+	private int fWait;
+	private int fDmg;
+	
 	private int fState;
 	private Vec3 fCurrentPos;
 	private Vec3 fClosedPos;
@@ -14,34 +22,42 @@ public class func_door extends GameEntity
 	private Vec3 fMoveDir;
 	private float fCloseTime;
 	private float fOpenAmount;
-	private int fLip; //?
 	
-	private final static int STATE_CLOSED = 0;
-	private final static int STATE_OPENING = 1;
-	private final static int STATE_OPENED = 2;
-	private final static int STATE_CLOSING = 3;
+	private final static int STATE_CLOSED	= 0;
+	private final static int STATE_OPENING	= 1;
+	private final static int STATE_OPENED	= 2;
+	private final static int STATE_CLOSING	= 3;
+	
+	private final static int DOOR_START_OPEN		= 1;
+	private final static int DOOR_REVERSE		= 2;
+	private final static int DOOR_CRUSHER		= 4;
+	private final static int DOOR_NOMONSTER		= 8;
+	private final static int DOOR_TOGGLE			= 32;
+	private final static int DOOR_X_AXIS			= 64;
+	private final static int DOOR_Y_AXIS			= 128;
 	
 public func_door(String[] spawnArgs) throws GameException
 	{
 	super(spawnArgs);
 	
 	setSolid(SOLID_BSP);
-	
-	String s = getSpawnArg("model");
+	String s = getSpawnArg("model", null);
 	if (s != null)
 		setModel(s);
 		
-	s = getSpawnArg("lip");
-	if (s != null)
-		fLip = Integer.parseInt(s);
-	else 
-		fLip = 8;	
+	fSpeed = getSpawnArg("speed", 100);
+	fAccel = getSpawnArg("accel", fSpeed);
+	fDecel = getSpawnArg("decel", fSpeed);	
+	fWait = getSpawnArg("wait", 3);	
+	fLip = getSpawnArg("lip", 8);
+	fDmg = getSpawnArg("dmg", 2);
 					
 	// setup for opening and closing
 	fClosedPos = getOrigin();
 	fCurrentPos = getOrigin();
 	fOpenAmount = 0;
-	setMoveDir();
+	fMoveDir = getMoveDir();
+
 	Vec3 absMoveDir = (new Vec3(fMoveDir)).abs();
 	Vec3 size = getSize();
 	
@@ -49,11 +65,58 @@ public func_door(String[] spawnArgs) throws GameException
 	fMoveDir.scale(dist);
 	fOpenPos = (new Vec3(fClosedPos)).add(fMoveDir);	
 
+	// if it starts open, switch the positions
+	if ((fSpawnFlags & DOOR_START_OPEN) != 0)
+		{
+		Vec3 temp = fClosedPos;
+		fClosedPos = fOpenPos;
+		fOpenPos = temp;
+		setOrigin(fOpenPos);
+		}
+
+	int effect = 0;
+	if ((fSpawnFlags & 16) != 0)
+		effect |= EF_ANIM_ALL;
+	if ((fSpawnFlags & 64) != 0)
+		effect |= EF_ANIM_ALLFAST;
+	if (effect != 0)
+		setEffects(effect);
+
 	// create a trigger for this door
 	new DoorTrigger(this);
 
 	linkEntity();		
 	}
+/**
+ * Get the direction the door should move.
+ * When the entity is spawned, the "angles"
+ * indicates the direction the door should move,
+ * but the format is a little bizarre, and the
+ * value doesn't actually indicate the angles
+ * for the entity, so we -have- to clear it,
+ * once we get a copy, otherwise the doors
+ * will appear on the maps in all sorts of odd positions.
+ * @return a Vec3 pointing in the direction the door opens.
+ */
+private Vec3 getMoveDir() 
+	{
+	Vec3 angles = getAngles();
+	setAngles(0, 0, 0);
+		
+	// door goes up	
+	if (angles.equals(0, -1, 0))
+		return new Vec3(0, 0, 1);
+
+	// door goes down
+	if (angles.equals(0, -2, 0))
+		return new Vec3(0, 0, -1);
+
+	// some other direction?	
+	Vec3 result = new Vec3();	
+	angles.angleVectors(result, null, null);
+	return result;
+	}
+
 /**
  * This method was created by a SmartGuide.
  */
@@ -104,31 +167,6 @@ public void runFrame()
 			break;			
 		}
 	}
-/**
- * This method was created by a SmartGuide.
- */
-private void setMoveDir() 
-	{
-	Vec3 angles = getAngles();
-
-	// door goes up	
-	if (angles.equals(0, -1, 0))
-		{
-		fMoveDir = new Vec3(0, 0, 1);
-		return;
-		}
-
-	// door goes down
-	if (angles.equals(0, -2, 0))
-		{
-		fMoveDir = new Vec3(0, 0, -1);
-		return;
-		}
-
-	// some other direction?		
-	angles.angleVectors(fMoveDir, null, null);
-	}
-
 /**
  * This method was created by a SmartGuide.
  * @param isOpen boolean

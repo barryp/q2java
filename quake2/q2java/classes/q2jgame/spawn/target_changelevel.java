@@ -10,6 +10,6 @@ public class target_changelevel extends GameEntity
 public target_changelevel(String[] spawnArgs) throws GameException
 	{
 	super(spawnArgs);
-	Game.setNextMap(getSpawnArg("map"));
+	Game.setNextMap(getSpawnArg("map", null));
 	}
 }
