@@ -307,15 +307,14 @@ private boolean externalServerCommand(Gamelet g, String cmd, Class[] paramTypes,
 	if (g instanceof ServerCommandListener)
 		{
 		String[] sa = (String[]) params[0];
-	    ServerCommandEvent e = gServerCommandSupport.fireEvent(sa[1], sa); 
-	    if( e.isConsumed() )
-			return true;		
+		return gServerCommandSupport.fireEvent(sa[1], sa); 
 		}
-		
-	// reflection didn't find a method and the 
-	// gamelet didn't implement ServerCommandListener
-	// or it didn't consume the event	
-	return false;
+	else
+		{
+		// reflection didn't find a method and the 
+		// gamelet didn't implement ServerCommandListener
+		return false;
+		}
 	}
 /**
  * Get the name of the current map - may be null if the game is 
@@ -966,8 +965,7 @@ public void serverCommand()
 		// various places for something to handle the naked command
 
 		// try event-delegation
-	    ServerCommandEvent e = gServerCommandSupport.fireEvent(sa[1], sa); 
-	    if( e.isConsumed() )
+	    if (gServerCommandSupport.fireEvent(sa[1], sa))
 			return;
 		
 		// look for a method inside this class
