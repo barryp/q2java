@@ -101,12 +101,12 @@ public void runFrame(int phase)
 			break;
 			
 		case STATE_NORMAL:
-	fEntity.setSVFlags(fEntity.getSVFlags() & ~NativeEntity.SVF_NOCLIENT);
-	fEntity.setSolid(NativeEntity.SOLID_TRIGGER);
-	fEntity.setEvent(NativeEntity.EV_ITEM_RESPAWN);
-	fEntity.linkEntity();
+			fEntity.setSVFlags(fEntity.getSVFlags() & ~NativeEntity.SVF_NOCLIENT);
+			fEntity.setSolid(NativeEntity.SOLID_TRIGGER);
+			fEntity.setEvent(NativeEntity.EV_ITEM_RESPAWN);
+			fEntity.linkEntity();
 			break;
-	}
+		}
 	}
 /**
  * Schedule the item to be respawned.

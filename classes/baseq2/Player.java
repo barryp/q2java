@@ -286,6 +286,7 @@ public class Player extends GameObject implements FrameListener, PlayerListener,
 
 
 
+
 /**
  * Create a new Player Game object, and associate it with a Player
  * native entity.
@@ -492,8 +493,8 @@ public boolean addWeapon(Class weaponClass, boolean allowSwitch)
 		addAmmo(w.getAmmoName(), w.getAmmoCount());	
 		
 		putInventory(w.getItemName(), w);
-		if (!fWeaponOrder.contains(w.getItemName()))
-			fWeaponOrder.addElement(w.getItemName());
+		if (!fWeaponOrder.contains(w.getItemName().toLowerCase()))
+			fWeaponOrder.addElement(w.getItemName().toLowerCase());
 		w.setOwner(this);
 			
 		// switch weapons if we're currently using the blaster
@@ -885,8 +886,8 @@ protected void clearSettings( )
 		{
 		fWeapon = (GenericWeapon) Game.lookupClass(".spawn.weapon_blaster").newInstance();
 		putInventory("blaster", fWeapon);
-		if (!fWeaponOrder.contains(fWeapon.getItemName()))
-			fWeaponOrder.addElement(fWeapon.getItemName());
+		if (!fWeaponOrder.contains(fWeapon.getItemName().toLowerCase()))
+			fWeaponOrder.addElement(fWeapon.getItemName().toLowerCase());
 		fWeapon.setOwner(this);
 		fWeapon.activate();
 		}
@@ -1224,12 +1225,12 @@ public void cmd_weaplast(String[] args)
  */
 public void cmd_weapnext(String[] args) 
 	{
-	int i = (fWeaponOrder.indexOf(fWeapon.getItemName()) + 1) % fWeaponOrder.size();
+	int i = (fWeaponOrder.indexOf(fWeapon.getItemName().toLowerCase()) + 1) % fWeaponOrder.size();
 	int crashguard = i; // used to keep infinite loops from occuring
 	
 	do
 		{
-		fNextWeapon = (GenericWeapon) fInventory.get(((String) fWeaponOrder.elementAt(i)).toLowerCase());
+		fNextWeapon = (GenericWeapon) fInventory.get(((String) fWeaponOrder.elementAt(i)));
 		i = (i+1) % fWeaponOrder.size();
 		} while (((fNextWeapon == null) || !fNextWeapon.isEnoughAmmo() || fWeaponsExcluded.contains(fNextWeapon.getItemName().toLowerCase())) && (crashguard != i));
 		
@@ -1244,14 +1245,14 @@ public void cmd_weapnext(String[] args)
  */
 public void cmd_weapprev(String[] args) 
 	{
-	int i = fWeaponOrder.indexOf(fWeapon.getItemName()) - 1;
+	int i = fWeaponOrder.indexOf(fWeapon.getItemName().toLowerCase()) - 1;
 	if (i < 0)
 		i = fWeaponOrder.size() - 1;
 		
 	int crashguard = i; // used to keep infinite loops from occuring
 		
 	do {
-		fNextWeapon = (GenericWeapon) fInventory.get(((String) fWeaponOrder.elementAt(i)).toLowerCase());
+		fNextWeapon = (GenericWeapon) fInventory.get(((String) fWeaponOrder.elementAt(i)));
 		if (--i < 0)
 			i = fWeaponOrder.size() - 1;
 	} while (((fNextWeapon == null) || !fNextWeapon.isEnoughAmmo() || fWeaponsExcluded.contains(fNextWeapon.getItemName().toLowerCase())) && (i != crashguard));
@@ -1325,7 +1326,7 @@ public void cmd_weapsetorder(String[] args)
 	if (args.length > 1)
 		{
 		for (int i=1; i < args.length; i++)
-			fWeaponOrder.addElement(args[i]);
+			fWeaponOrder.addElement(args[i].toLowerCase());
 		}
 	else
 		{

@@ -170,7 +170,7 @@ public static void copyCorpse(NativeEntity ent)
  */
 public static String getVersion() 
 	{
-	return "Q2Java Base Game, v0.5.3";
+	return "Q2Java Base Game, v0.5.4";
 	}	
 /**
  * Check whether or not the Cheating option is on.

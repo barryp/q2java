@@ -28,7 +28,9 @@ public abstract class GenericPusher extends GameObject implements FrameListener
 	protected float fDecelDistance;
 	protected float fRemainingDistance;	
 	protected Point3f fCurrentDest;
+	protected Angle3f fCurrentDestAngle;
 	protected Vector3f fMoveDir;
+	protected Angle3f fMoveAngle;
 	protected Vector3f fLinearVelocity;
 	protected Angle3f fAngularVelocity;
 	
@@ -42,6 +44,10 @@ public abstract class GenericPusher extends GameObject implements FrameListener
 	protected final static int STATE_MOVING_CONSTANT = 2;
 	protected final static int STATE_MOVING_ACCELERATED = 3;
 	protected final static int STATE_FINALMOVE = 4;
+	protected final static int STATE_ROTATING_CONSTANT = 5;
+
+	protected final static int STATE_MOVING_ANGULAR_CONSTANT = 6;
+	protected final static int STATE_MOVING_ANGULAR_ACCELERATED = 7;	
 	
 /**
  * GenericMover constructor comment.
@@ -262,12 +268,25 @@ protected boolean push()
 	// setup if moving angularly		
 	if (isAngularMove)
 		{		
-		angularMove = new Angle3f(fAngularVelocity);
-		angularMove.scale(Engine.SECONDS_PER_FRAME);		
 		Angle3f currentAngle = fEntity.getAngles();
-		currentAngle.add(angularMove);
+		if (fState == STATE_FINALMOVE)
+			{
+			// snap to final position rather
+			// than rely on accumulated individual
+			// moves.		
+			angularMove = new Angle3f();
+			angularMove.sub(fCurrentDestAngle, pusherOrigin);
+			currentAngle.set(fCurrentDestAngle);
+			}
+		else
+			{	
+			angularMove = new Angle3f(fAngularVelocity);
+			angularMove.scale(Engine.SECONDS_PER_FRAME);		
+			currentAngle.add(angularMove);
+			}		
+			
 		fEntity.setAngles(currentAngle);
-		
+
 		// we need this for pushing things later			
 		Angle3f org = new Angle3f(-angularMove.x, -angularMove.y, -angularMove.z);
 		forward = new Vector3f();
@@ -376,6 +395,50 @@ protected boolean push()
 	}
 /**
  * This method was created by a SmartGuide.
+ * @param dest q2java.Angle3f
+ */
+protected void rotateTo(Angle3f dest) 
+	{
+	if (dest.equals(fCurrentDestAngle))
+		return;
+
+	// start getting continuous frame notifications
+	Game.addFrameListener(this, 0, 0);		
+			
+	fCurrentDestAngle = dest;		
+	fAngularVelocity.set(0,0,0);
+	fMoveAngle = new Angle3f(dest);
+	fMoveAngle.sub(fEntity.getAngles());
+	fRemainingDistance = Math.abs(fMoveAngle.x + fMoveAngle.y + fMoveAngle.z);
+	fMoveAngle.scale(1 / fRemainingDistance);
+	fCurrentSpeed = 0;		
+
+	if ((fSpeed * Engine.SECONDS_PER_FRAME) > fRemainingDistance)
+		{
+		setupFinalAngularMove();
+		fState = STATE_FINALMOVE;
+		return;
+		}
+
+	if ((fSpeed == fAccel) && (fSpeed == fDecel))
+		{
+		fAngularVelocity = new Angle3f(fMoveAngle);
+		fAngularVelocity.scale(fSpeed);		
+
+		float frames = (float) Math.floor((fRemainingDistance / fSpeed) / Engine.SECONDS_PER_FRAME);
+		fRemainingDistance -= frames * fSpeed * Engine.SECONDS_PER_FRAME;
+		fLastFrameTime = (float)(Game.getGameTime() + (frames * Engine.SECONDS_PER_FRAME));
+		fState = STATE_MOVING_ANGULAR_CONSTANT;
+		}
+	else
+		{
+		// accelerative
+		fCurrentSpeed = 0;
+		fState = STATE_MOVING_ANGULAR_ACCELERATED;
+		}
+	}
+/**
+ * This method was created by a SmartGuide.
  */
 public void runFrame(int phase) 
 	{
@@ -466,6 +529,22 @@ catch (Exception e)
 		}			
 	}
 /**
+ * Activate or deactivate areaportals associated with this object.
+ * @param isOpen boolean
+ */
+protected void setPortals(boolean state) 
+	{
+	if (fTargets == null)
+		return;
+		
+	for (int i = 0; i < fTargets.size(); i++)		
+		{
+		Object obj = fTargets.elementAt(i);
+		if (obj instanceof baseq2.spawn.func_areaportal)
+			((baseq2.spawn.func_areaportal) obj).setPortal(state);
+		}
+	}
+/**
  * This method was created by a SmartGuide.
  */
 protected void setupAcceleratedMove() 
@@ -497,11 +576,31 @@ protected void setupAcceleratedMove()
 /**
  * This method was created by a SmartGuide.
  */
+protected void setupFinalAngularMove() 
+	{
+	fAngularVelocity.set(fMoveAngle);
+	fAngularVelocity.scale(fRemainingDistance / Engine.SECONDS_PER_FRAME);
+	}	
+/**
+ * This method was created by a SmartGuide.
+ */
 protected void setupFinalMove() 
 	{
 	fLinearVelocity.set(fMoveDir);
 	fLinearVelocity.scale(fRemainingDistance / Engine.SECONDS_PER_FRAME);
 	}	
+/**
+ * This method was created by a SmartGuide.
+ * @param avelocity q2java.Angle3f
+ */
+protected void startRotating(Angle3f avelocity) 
+	{
+	fState = STATE_ROTATING_CONSTANT;
+	fAngularVelocity = new Angle3f(avelocity);
+
+	// start getting continuous frame notifications
+	Game.addFrameListener(this, 0, 0);		
+	}
 /**
  * Halt the object.  Useful for when trains are turned off.
  */
@@ -578,6 +677,7 @@ protected void think()
 			break;
 			
 		case STATE_IDLE:
+		case STATE_ROTATING_CONSTANT:
 			break;
 			
 		case STATE_MOVING_ACCELERATED:
@@ -595,19 +695,37 @@ protected void think()
 			fLinearVelocity.scale(fCurrentSpeed * 10);			
 			break;				
 			
-
+		case STATE_MOVING_ANGULAR_ACCELERATED:
+			fRemainingDistance -= fCurrentSpeed;
+			if (fCurrentSpeed == 0)
+				setupAcceleratedMove();
+			accelerate();
+			if (fRemainingDistance <= fCurrentSpeed)
+				{
+				setupFinalAngularMove();
+				fState = STATE_FINALMOVE;
+				break;
+				}		
+			fAngularVelocity.set(fMoveDir);
+			fAngularVelocity.scale(fCurrentSpeed * 10);			
+			break;
+			
 		case STATE_MOVING_CONSTANT:
+		case STATE_MOVING_ANGULAR_CONSTANT:
 			if (Game.getGameTime() < fLastFrameTime)
 				return;
 				
 			if (fRemainingDistance > 0)
 				{
-				setupFinalMove();
+				if (fState == STATE_MOVING_CONSTANT)
+					setupFinalMove();
+				else
+					setupFinalAngularMove();
 				fState = STATE_FINALMOVE;
 				break;
 				}
 			// fall through to STATE_FINALMOVE
-							
+									
 		case STATE_FINALMOVE:
 			fLinearVelocity.set(0, 0, 0);
 			fAngularVelocity.set(0, 0, 0);
