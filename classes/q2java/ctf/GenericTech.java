@@ -139,26 +139,10 @@ public void becomeExplosion(int tempEntity)
 		return super.isTouchable(bp);
 	}
 	/**
-	 * Set which player is holding the tech.
-	 * @param p q2java.baseq2.Player
-	 */
-	public void setOwner(Player p) 
-	{
-		fOwner = p;
-	}
-	/**
-	 * Setup this item's NativeEntity.
-	 */
-	public void setupEntity() 
-	{
-		super.setupEntity();
-		fEntity.setEffects(NativeEntity.EF_ROTATE); // all techs rotate
-	}
-	/**
 	 * Called when a player dies or disconnects.
 	 * @param wasDisconnected true on disconnects, false on normal deaths.
 	 */
-	public void stateChanged(PlayerStateEvent pse)
+	public void playerStateChanged(PlayerStateEvent pse)
 	{
 		switch (pse.getStateChanged())	
 		{
@@ -174,6 +158,22 @@ public void becomeExplosion(int tempEntity)
 				setOwner(null);
 			break;
 		}	
+	}
+	/**
+	 * Set which player is holding the tech.
+	 * @param p q2java.baseq2.Player
+	 */
+	public void setOwner(Player p) 
+	{
+		fOwner = p;
+	}
+	/**
+	 * Setup this item's NativeEntity.
+	 */
+	public void setupEntity() 
+	{
+		super.setupEntity();
+		fEntity.setEffects(NativeEntity.EF_ROTATE); // all techs rotate
 	}
 	/**
 	 * Called if item was actually taken.

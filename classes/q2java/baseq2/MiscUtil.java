@@ -74,6 +74,35 @@ public static boolean equals(Tuple3f t, float x, float y, float z)
 	return (t.x == x) && (t.y == y) && (t.z == z);
 	}
 /**
+ * Cause a general explosion in the world
+ */
+public static void explode(GameObject inflictor, GameObject attacker, NativeEntity ent, int damage, float radius)
+	{
+	int        effect;
+	Point3f explodeOrigin = ent.getOrigin();	
+	if ((Engine.getPointContents(explodeOrigin) & Engine.MASK_WATER) == 0)
+		{
+		if (ent.getGroundEntity() != null)
+			effect = Engine.TE_GRENADE_EXPLOSION;
+		else
+			effect = Engine.TE_ROCKET_EXPLOSION;
+		}
+	else
+		{
+		if (ent.getGroundEntity() != null)
+			effect = Engine.TE_GRENADE_EXPLOSION_WATER;
+		else
+			effect = Engine.TE_ROCKET_EXPLOSION_WATER;
+		}
+
+	MiscUtil.radiusDamage(inflictor, attacker, damage, ent, radius, "g_splash");
+
+	Engine.writeByte(Engine.SVC_TEMP_ENTITY);
+	Engine.writeByte(effect);
+	Engine.writePosition(explodeOrigin);
+	Engine.multicast(explodeOrigin, Engine.MULTICAST_PHS);
+	}
+/**
  * Fire a lead projectile.
  * @param p q2jgame.Player
  * @param start q2java.Vec3
@@ -486,15 +515,14 @@ public static float nearestPlayerDistance(GenericSpawnpoint ent)
 	return (float) Math.sqrt(result);
 	}
 /**
- * Inflict damage on all Players within a certain radius of the inflictor.
- * This is different from the stock DLL which inflicts damage on all entities, not just players.
+ * Inflict damage on all GameObjects within a certain radius of the inflictor.
  * @param inflictor q2jgame.GameEntity
  * @param attacker q2jgame.GameEntity
  * @param damage float
  * @param ignore q2jgame.GameEntity
  * @param radius float
  */
-public static void radiusDamage(GameObject inflictor, GameObject attacker, float damage, GameObject ignore, float radius, String obitKey) 
+public static void radiusDamage(GameObject inflictor, GameObject attacker, float damage, NativeEntity ignore, float radius, String obitKey) 
 	{
 	// get a few Vector3f objects we can use temporarily
 	Vector3f d = Q2Recycler.getVector3f();
@@ -505,32 +533,32 @@ public static void radiusDamage(GameObject inflictor, GameObject attacker, float
 	Point3f inflictorOrigin = inflictor.fEntity.getOrigin();
 	float radiusSquared = radius * radius;  // square the radius for faster checking
 
-	Enumeration enum = Player.enumeratePlayers();
-	while (enum.hasMoreElements())
-		{		
-		Player p  = (Player) enum.nextElement();
-
-		if (p == ignore)
+	NativeEntity[] nea = Engine.getRadiusEntities(inflictorOrigin, radius, false, false);
+	for (int i = 0; i < nea.length; i++)
+		{
+		if (nea[i] == ignore)
 			continue;
-
-		Point3f victimOrigin = p.fEntity.getOrigin();
+			
+		Object o = nea[i].getReference();
+		if (!(o instanceof GameObject))
+			continue;
+			
+		GameObject obj = (GameObject) o;
+		Point3f victimOrigin = obj.fEntity.getOrigin();
 		
-		if (inflictorOrigin.distanceSquared(victimOrigin) > radiusSquared)
-			continue;
-						
 		// I don't claim to understand these next 3 lines....
-		v.add(p.fEntity.getMins(), p.fEntity.getMaxs());
+		v.add(obj.fEntity.getMins(), obj.fEntity.getMaxs());
 		v.scaleAdd(0.5f, v, victimOrigin);
 		v.sub(inflictorOrigin, v);
 		
 		int damagePoints = (int)(damage - 0.5 * v.length());
-		if (p == attacker)
+		if (obj == attacker)
 			damagePoints = damagePoints / 2;
 			
 		if (damagePoints > 0)			
 			{
 			d.sub(victimOrigin, inflictorOrigin);
-			p.damage(inflictor, attacker, d, inflictorOrigin, zeroVec, damagePoints, damagePoints, GameObject.DAMAGE_RADIUS, Engine.TE_NONE, obitKey);			
+			obj.damage(inflictor, attacker, d, inflictorOrigin, zeroVec, damagePoints, damagePoints, GameObject.DAMAGE_RADIUS, Engine.TE_NONE, obitKey);			
 			}
 		}
 

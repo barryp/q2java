@@ -22,7 +22,7 @@ import q2java.core.*;
 import q2java.baseq2.event.*;
 
 
-public class DisruptorShield extends GenericTech implements q2java.baseq2.event.PlayerDamageListener
+public class DisruptorShield extends GenericTech implements q2java.baseq2.event.DamageListener
 {
 	protected final static float DAMAGE_MULTIPLIER = 0.5f;
 	public DisruptorShield(int hudStat) throws GameException
@@ -33,7 +33,7 @@ public class DisruptorShield extends GenericTech implements q2java.baseq2.event.
 	 * Method to implement in order to filter a player's damage.
 	 * @param DamageObject - damage to be filtered.
 	 */
-	public void damageOccured(PlayerDamageEvent damage)
+	public void damageOccured(DamageEvent damage)
 	{
 		float volume = 1f;
 		//if (self->owner->client->silencer_shots)
@@ -73,9 +73,9 @@ public class DisruptorShield extends GenericTech implements q2java.baseq2.event.
 	public void setOwner(q2java.baseq2.Player p) 
 	{
 		if (p == null)
-			getOwner().removePlayerDamageListener(this);
+			getOwner().removeDamageListener(this);
 		else
-			p.addPlayerDamageListener(this);
+			p.addDamageListener(this);
 			
 		super.setOwner(p);
 	}

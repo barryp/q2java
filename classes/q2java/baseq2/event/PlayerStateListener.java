@@ -7,5 +7,5 @@ package q2java.baseq2.event;
  */
 public interface PlayerStateListener  extends java.util.EventListener
 {
-  public void stateChanged(PlayerStateEvent e);    
+  public void playerStateChanged(PlayerStateEvent e);      
 }

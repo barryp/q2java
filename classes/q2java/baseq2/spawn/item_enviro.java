@@ -4,6 +4,7 @@ import org.w3c.dom.Element;
 
 import q2java.*;
 import q2java.core.*;
+import q2java.core.event.*;
 import q2java.core.gui.*;
 import q2java.baseq2.*;
 import q2java.baseq2.event.*;
@@ -13,7 +14,7 @@ import q2java.baseq2.event.*;
  * @author Brian Haskin
  */
 public class item_enviro extends GenericPowerUp 
-  implements PlayerStateListener, PlayerDamageListener
+  implements ServerFrameListener, PlayerStateListener, DamageListener
 	{	
 	protected Player fOwner;
 	protected IconCountdownTimer fHUDTimer;
@@ -34,7 +35,7 @@ public item_enviro(Element spawnArgs) throws GameException
 /**
  * Called by the carrying player when they take damage.
  */
-public void damageOccured(PlayerDamageEvent damage)
+public void damageOccured(DamageEvent damage)
 	{
 	if (damage.getInflictor() == BaseQ2.gWorld && 
 	    damage.getObitKey().equals("slime"))
@@ -72,6 +73,21 @@ public String getModelName()
 	return "models/items/enviro/tris.md2";
 	}
 /**
+ * Called by the carrying player when they die. This gives us the chance to reset 
+ * their effects if we were in use when they died.
+ */
+public void playerStateChanged(PlayerStateEvent pse)
+	{
+	switch (pse.getStateChanged())	
+		{
+		case PlayerStateEvent.STATE_DEAD:
+		case PlayerStateEvent.STATE_INVALID:
+		case PlayerStateEvent.STATE_SUSPENDEDSTART:
+			reset();
+			break;
+		}
+	}
+/**
  * Undo effects of enviroment suit.
  */
 protected void reset() 
@@ -83,7 +99,7 @@ protected void reset()
 		
 		// disassociate from the player
 		fOwner.removePlayerStateListener(this);		
-		fOwner.removePlayerDamageListener(this);
+		fOwner.removeDamageListener(this);
 		fOwner = null;
 		}
 		
@@ -100,13 +116,7 @@ protected void reset()
  * Play any sounds that we need to and clean up when time's up.
  */
 public void runFrame(int Phase)
-	{
-	if (fOwner == null)	// Someone above us must want it. - Is this really needed?
-		{
-		super.runFrame(Phase);
-		return;
-		}
-	
+	{	
 	if (fMillis-- > 30)
 		{
 		fOwner.addBlend(0f, 1f, 0f, 0.08f);
@@ -139,21 +149,6 @@ public void runFrame(int Phase)
 		fOwner.breath(1, false); // give them another little puff
 	}
 /**
- * Called by the carrying player when they die. This gives us the chance to reset 
- * their effects if we were in use when they died.
- */
-public void stateChanged(PlayerStateEvent pse)
-	{
-	switch (pse.getStateChanged())	
-		{
-		case PlayerStateEvent.STATE_DEAD:
-		case PlayerStateEvent.STATE_INVALID:
-		case PlayerStateEvent.STATE_SUSPENDEDSTART:
-			reset();
-			break;
-		}
-	}
-/**
  * When used filter the Player's damage for 30 seconds.
  */
 public void use(Player p)
@@ -162,7 +157,7 @@ public void use(Player p)
 	
 	Game.addServerFrameListener(this, 0, 0); // Call us every frame
 	fOwner.addPlayerStateListener(this);
-	fOwner.addPlayerDamageListener(this);
+	fOwner.addDamageListener(this);
 	
 	fMillis += 300;
 	

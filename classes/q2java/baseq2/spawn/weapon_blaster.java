@@ -20,6 +20,7 @@ public class weapon_blaster extends GenericBlaster
 public weapon_blaster()
 	{
 	super(NativeEntity.EF_BLASTER, 15, Engine.MZ_BLASTER, "blaster");
+	setDroppable(false);
 	}
 public weapon_blaster(Element spawnArgs) throws GameException
 	{
@@ -64,14 +65,6 @@ public String getModelName()
 public String getViewModelName() 
 	{
 	return "models/weapons/v_blast/tris.md2";
-	}
-/**
- * Plain hand-blaster can't be dropped.
- * @return boolean
- */
-public boolean isDroppable() 
-	{
-	return false;
 	}
 /**
  * Fill in the info specific to this type of weapon.

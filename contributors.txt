@@ -10,13 +10,18 @@ contributed Java or C code that's been incorporated in the game.
 
 Bernd Kreimeier's <bk@gamers.org>
 
-    Linux port, German translations of DM and CTF messages
+    Much work in getting Linux port working, German translations of 
+    DM and CTF messages.
 
 Brian "Badger" Haskin <haskin@ptway.com>
 
     Much work on the Player inventory, command, weapon-cycling, and 
     scoreboard systems.  Improvements to telnet server.  Damage filter
-    system
+    system. Bugfixes
+
+CheezHankrn <cheezhankrn@geocities.com>
+
+    Bugfixes and suggested improvements.
 
 gorilla <gorilla@pro-ns.net>
 
@@ -52,9 +57,9 @@ Thomas Winzig <thomas@winzig.com>
 
     Many Improvements to player effects, damage feedback, knockback.    
     
-Withnails <leigh@praxis.co.uk>
+Withnails <ldodds@ingenta.com>
 
-    More flexible GameFactory code    
+    Bugfixes and improvements to many of the q2java.core and other classes.
     
 --------------------------------------
 

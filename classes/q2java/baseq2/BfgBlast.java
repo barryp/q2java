@@ -149,7 +149,7 @@ protected void prepareExplosion(TraceResults tr)
 		victim.damage(this, fOwner, fEntity.getVelocity(), fEntity.getOrigin(), tr.fPlaneNormal, 200, 0, 0, Engine.TE_NONE, "bfg_blast");
 		}
 
-	MiscUtil.radiusDamage(this, fOwner, 200, victim, 100, "bfg_effect");
+	MiscUtil.radiusDamage(this, fOwner, 200, victim.fEntity, 100, "bfg_effect");
 
 	fEntity.sound(NativeEntity.CHAN_VOICE, Engine.getSoundIndex("weapons/bfg__x1b.wav"), 1, NativeEntity.ATTN_NORM, 0);
 	fEntity.setSolid(NativeEntity.SOLID_NOT);

@@ -4,11 +4,12 @@ import org.w3c.dom.Element;
 
 import q2java.*;
 import q2java.core.*;
+import q2java.core.event.*;
 import q2java.baseq2.*;
 import q2java.baseq2.event.*;
 
 public class item_health_mega extends GenericHealth
-  implements PlayerStateListener
+  implements ServerFrameListener, PlayerStateListener
 	{
 	protected Player fOwner;
 	
@@ -55,17 +56,28 @@ public boolean isOverridingMax()
 	return true;
 	}
 /**
+ * Watch for Player disconnect or level change.
+ */
+public void playerStateChanged(PlayerStateEvent pse)
+	{
+	switch (pse.getStateChanged())	
+		{
+		case PlayerStateEvent.STATE_DEAD:
+		case PlayerStateEvent.STATE_INVALID:
+		case PlayerStateEvent.STATE_SUSPENDEDSTART:
+			fOwner.removePlayerStateListener(this);
+			fOwner = null;
+		
+			Game.removeServerFrameListener(this);
+			setRespawn(20);
+			break;
+		}	
+	}
+/**
  * Decrease the player's health as the item wears out
  */
 public void runFrame(int phase) 
 	{
-	if (fOwner == null)
-		{
-		// one of the super classes must have called for this.
-		super.runFrame(phase);
-		return;
-		}
-
 	if (fOwner.getHealth() > fOwner.getHealthMax())		
 		{
 		fOwner.heal(-1, true);
@@ -85,24 +97,6 @@ public void runFrame(int phase)
 	
 	Game.removeServerFrameListener(this);
 	setRespawn(20);		
-	}
-/**
- * Watch for Player disconnect or level change.
- */
-public void stateChanged(PlayerStateEvent pse)
-	{
-	switch (pse.getStateChanged())	
-		{
-		case PlayerStateEvent.STATE_DEAD:
-		case PlayerStateEvent.STATE_INVALID:
-		case PlayerStateEvent.STATE_SUSPENDEDSTART:
-			fOwner.removePlayerStateListener(this);
-			fOwner = null;
-		
-			Game.removeServerFrameListener(this);
-			setRespawn(20);
-			break;
-		}	
 	}
 /**
  * React to being touched by boosting player health 

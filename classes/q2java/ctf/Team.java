@@ -29,7 +29,7 @@ import q2java.ctf.spawn.*;
  */
 
 
-public class Team implements GameStatusListener, PlayerStateListener, PlayerDamageListener
+public class Team implements GameStatusListener, PlayerStateListener, DamageListener
 {
 	public static final String CTF_TEAM1_SKIN = "ctf_r";
 	public static final String CTF_TEAM2_SKIN = "ctf_b";
@@ -98,7 +98,7 @@ public class Team implements GameStatusListener, PlayerStateListener, PlayerDama
 		p.addPlayerStateListener(this);
 
 		// act as a damage filter for this member
-		p.addPlayerDamageListener(this);
+		p.addDamageListener(this);
 
 		// assign new skin
 		assignSkinTo( p );
@@ -156,10 +156,10 @@ public class Team implements GameStatusListener, PlayerStateListener, PlayerDama
 	 * Filter a team member's damage.
 	 * @param DamageObject - damage to be filtered.
 	 */
-	public void damageOccured(PlayerDamageEvent damage)
+	public void damageOccured(DamageEvent damage)
 	{
 		// check for self-inflicted damage
-		if (damage.getPlayer() == damage.getAttacker())
+		if (damage.getVictim() == damage.getAttacker())
 			return; // they deserve what they get..no help from us
 			
 		// check if the attacker also belongs to this team
@@ -169,7 +169,7 @@ public class Team implements GameStatusListener, PlayerStateListener, PlayerDama
 			return;  // give the guy a break
 		}
 		
-		if ((damage.getAttacker() instanceof Player) && ((Player)damage.getPlayer()).isCarrying("flag"))
+		if ((damage.getAttacker() instanceof Player) && ((Player)damage.getVictim()).isCarrying("flag"))
 		{
 			// A CTF Player other than ourselves attacked us and we have the flag			
 			// mark the attacker that he was aggressive to the flag-carrier.
@@ -367,7 +367,7 @@ public class Team implements GameStatusListener, PlayerStateListener, PlayerDama
 	 */
 	public Integer getTeamIndex() 
 	{
-		return null;
+		return fTeamIndex;
 	}
 	/**
 	 * Check if a player belongs to this team.
@@ -377,6 +377,15 @@ public class Team implements GameStatusListener, PlayerStateListener, PlayerDama
 	public boolean isTeamMember(Object obj) 
 	{
 		return fPlayers.contains(obj);
+	}
+	/**
+	 * Called when a player dies or disconnects.
+	 * @param wasDisconnected true on disconnects, false on normal deaths.
+	 */
+	public void playerStateChanged(PlayerStateEvent pse)
+	{
+		if (pse.getStateChanged() == PlayerStateEvent.STATE_INVALID)
+			removePlayer((Player)pse.getPlayer());
 	}
 	public boolean removePlayer( Player p )
 	{
@@ -388,7 +397,7 @@ public class Team implements GameStatusListener, PlayerStateListener, PlayerDama
 		p.fEntity.setPlayerStat( STAT_CTF_JOINED_TEAM2_PIC, (short)0 );
 		
 		p.removePlayerStateListener(this);
-		p.removePlayerDamageListener(this);
+		p.removeDamageListener(this);
 		return fPlayers.removeElement( p );
 	}
 	//===================================================
@@ -398,27 +407,5 @@ public class Team implements GameStatusListener, PlayerStateListener, PlayerDama
 	public void setFlag( GenericFlag flag )
 	{
 		fFlag = flag;
-	}
-	//===================================================
-	// Method from LevelListener
-	//===================================================
-	/**
-	 * Start a new level.
-	 */
-	public void startLevel(String mapname, String entString, String spawnPoint)
-	{
-		// a new Level has been started, 
-		// reset the captures and the flags, cause every level has it's own flags...
-		fCaptures = 0;
-		fFlag     = null;
-	}
-	/**
-	 * Called when a player dies or disconnects.
-	 * @param wasDisconnected true on disconnects, false on normal deaths.
-	 */
-	public void stateChanged(PlayerStateEvent pse)
-	{
-		if (pse.getStateChanged() == PlayerStateEvent.STATE_INVALID)
-			removePlayer((Player)pse.getPlayer());
 	}
 }

@@ -26,7 +26,9 @@ Document readXMLDocument(Reader source, String sourceName) throws IOException;
 /**
  * Write a document to an output stream.
  * @param doc org.w3c.dom.Document
- * @param os java.io.OutputStream
+ * @param w java.io.Writer
+ * @param style a hint about whether we want pretty or compact XML
+ *   (one of the XMLTools.OUTPUT_* constants)
  */
-void writeXMLDocument(Document doc, Writer w) throws IOException;
+void writeXMLDocument(Document doc, Writer w, int style) throws IOException;
 }

@@ -56,6 +56,7 @@ public void fire()
 		}
 	catch (Exception e)
 		{
+		e.printStackTrace();
 		Game.dprint("Can't create Grenade " + e);
 		}		
 	

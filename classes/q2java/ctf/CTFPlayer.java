@@ -185,7 +185,7 @@ public class CTFPlayer extends q2java.baseq2.Player implements CameraListener
 	{
 		super( ent );
 		
-		fTeam     = null;
+		setTeam(null);
 		fViewer   = null;
 		fChaser   = new ChaseCam( this );
 

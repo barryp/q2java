@@ -14,27 +14,80 @@ import q2java.core.event.ServerFrameListener;
  *
  * @author Barry Pederson
  */
-public abstract class GenericItem extends GameObject implements ServerFrameListener
+public abstract class GenericItem extends GameObject implements DropHelper.Notify
 	{
 	public final static int DROP_TIMEOUT = 30; // default number of seconds before dropped items disappear
 	public final static int DEFAULT_RESPAWN = 30; // most items come back after this many seconds.
 	
 	private   int      fPickupSoundIndex; // privately used by the touch method
+	private   boolean  fIsDroppable = true;  // is this item droppable?
 	protected boolean  fIsDropped;        // privately used by the pick method
-	protected float    fDropTimeout;      // game time that a dropped item should reconsider it's fate
-
+	
+	// helper classes that control the timed behavior of the item
+	protected DropHelper  fDropHelper;		  // helper object actually animating the drop
+	protected TimeoutHelper fTimeoutHelper;
+	
 	// fields to help prevent droppers from touching too soon
 	protected Player   fDropper;          // Player dropping this item - if any.
-	protected float    fDropTime;         // time the item was dropped.
 
-	protected int fItemState;	
-	protected final static int STATE_SPAWN   = 0; // item was just spawned, needs to snap to ground
-	protected final static int STATE_NORMAL  = 1; // just sitting there, waiting to be touched
-	protected final static int STATE_FALLING = 2; // was dropped, is falling to ground
-	protected final static int STATE_AVOID_TOUCH = 3;  // avoid touching the dropper for a bit
-	protected final static int STATE_DROP_TIMEOUT = 4; // waiting to go POOF!
-	
-	static final float STOP_EPSILON = 0.1f;
+	private final class SpawnHelper implements ServerFrameListener
+		{
+		private boolean fIsRespawn;
+		public SpawnHelper(boolean respawn, float delay)
+			{
+			fIsRespawn = respawn;
+			
+			// schedule a one-shot call
+			Game.addServerFrameListener(this, delay, -1);
+			}
+
+		public void runFrame(int phase)
+			{
+			// this is what we do on our one-shot
+			if (fIsRespawn)
+				respawn();
+			else
+				spawn();
+			}
+		}
+
+	private final class NoTouch implements ServerFrameListener
+		{
+		public NoTouch()
+			{
+			// ask to be called back one time, one second from now
+			Game.addServerFrameListener(this, 1 ,-1);
+			}
+			
+		public void runFrame(int phase)
+			{
+			// forget who dropped us
+			fDropper = null;
+			}
+		}
+
+	private final class TimeoutHelper implements ServerFrameListener
+		{
+		public TimeoutHelper(float delay)
+			{
+			Game.addServerFrameListener(this, delay, -1);	
+			}
+
+		public void setDropTimeout(float delay) 
+			{
+			Game.addServerFrameListener(this, delay, -1);	
+			}
+			
+		public void dispose()
+			{
+			Game.removeServerFrameListener(this);
+			}
+			
+		public void runFrame(int phase)
+			{
+			dropTimeout();
+			}
+		}
 	
 /**
  * This method was created by a SmartGuide.
@@ -66,78 +119,24 @@ public GenericItem(Element spawnArgs) throws GameException
 	//precache icon
 	Engine.getImageIndex(getIconName());
 	
-	// schedule a one-shot runFrame() call so we can 
-	// drop to the floor
-	fItemState = STATE_SPAWN;
-	Game.addServerFrameListener(this, 0, -1);
-	}
-/** 
- * limit velocity components
- */
- 
-protected void checkVelocity()
-	{
-	Vector3f v = fEntity.getVelocity();
-	float maxv = BaseQ2.gMaxVelocity;
-	
-	if (v.x >  maxv)
-		v.x =  maxv;
-	else if (v.x < -maxv)
-		v.x = -maxv;
-
-	if (v.y >  maxv)
-		v.y =  maxv;
-	else if (v.y < -maxv)
-		v.y = -maxv;
-
-	if (v.z >  maxv)
-		v.z =  maxv;
-	else if (v.z < -maxv)
-		v.z = -maxv;
-
-	fEntity.setVelocity(v);
-	}
-/**
- * Alter the item's velocity based on something it's hit
- *
- * @param normal vector normal of the surface we hit?
- * @param overbounce ???
- * @return integer flags indicating what we hit?
- */ 
-protected int clipVelocity(Vector3f normal, float overbounce)
-	{
-	float	 backoff;
-	int		 i, blocked;
-	Vector3f v;
-	
-	blocked = 0;
-	if (normal.z > 0)
-		blocked |= 1;		// floor
-	if (normal.z == 0)
-		blocked |= 2;		// step
-	
-	v  = fEntity.getVelocity();
-	backoff = v.dot(normal) * overbounce;
-
-	v.x -= normal.x * backoff;
-	v.y -= normal.y * backoff;
-	v.z -= normal.z * backoff;
-
-	if (v.x > -STOP_EPSILON && v.x < STOP_EPSILON)
-		v.x = 0;
-	if (v.y > -STOP_EPSILON && v.y < STOP_EPSILON)
-		v.y = 0;
-	if (v.z > -STOP_EPSILON && v.z < STOP_EPSILON)
-		v.z = 0;
-
-	fEntity.setVelocity(v);
-
-	return blocked;
+	// Create a helper object to handle placing the object into the world
+	new SpawnHelper(false, 0);
 	}
 public void dispose() 
 	{
-	super.dispose();
-	Game.removeServerFrameListener(this);
+	if (fTimeoutHelper != null)
+		{
+		fTimeoutHelper.dispose();
+		fTimeoutHelper = null;
+		}
+
+	if (fDropHelper != null)
+		{
+		fDropHelper.dispose();
+		fDropHelper = null;
+		}
+
+	super.dispose();		
 	}
 /**
  * Drops the item on the ground
@@ -177,9 +176,10 @@ public void drop(Point3f spot, Angle3f direction, float speed, float timeout)
  */
 public void drop(Player dropper, float timeout)
 	{
-	// remember who dropped this
+	// remember who dropped this, and create a helper to forget in a second or so
 	fDropper = dropper;
-
+	new NoTouch();
+	
 	// setup the entity how we like it
 	setupEntity();
 
@@ -221,12 +221,6 @@ public void drop(Player dropper, float timeout)
 private void drop0(Point3f spot, Vector3f velocity, float timeout)
 	{
 	fIsDropped = true;
-	fDropTime = Game.getGameTime();
-
-	if (timeout > 0)
-		fDropTimeout = fDropTime + timeout;
-	else
-		fDropTimeout = 0;		
 
 	// stick it where we want it, and set it's velocity
 	fEntity.setOrigin(spot);	
@@ -234,8 +228,25 @@ private void drop0(Point3f spot, Vector3f velocity, float timeout)
 	fEntity.linkEntity();
 
 	// start continuous calls to runFrame to animate the item falling
-	fItemState = STATE_FALLING;
-	Game.addServerFrameListener(this, 0, 0);	
+	fDropHelper = new DropHelper();
+	fDropHelper.drop(this, this, null, 0);
+
+	// create another helper object if necessary that will
+	// cause something to happen when the item times out
+	if (timeout > 0)
+		setDropTimeout(timeout);
+	}
+/**
+ * This method was created in VisualAge.
+ * @param ok boolean
+ */
+public void dropFinished(boolean ok) 
+	{
+	fDropHelper = null;
+	
+	if (!ok)
+		// fell out of the world
+		dropTimeout(); // normal items will dispose, CTF Techs will reposition
 	}
 /**
  * What to do if we've dropped, and nobody's 
@@ -303,7 +314,7 @@ public float getRespawnTime()
  */
 public boolean isDroppable() 
 	{
-	return true;
+	return fIsDroppable;
 	}
 /**
  * Can a given player touch this item.
@@ -312,141 +323,49 @@ public boolean isDroppable()
  */
 public boolean isTouchable(Player p) 
 	{
-	// allow the touch if the player is not the one who
-	// dropped it, or it's been more than 1 second since it was dropped
-	return ((p != fDropper) || (Game.getGameTime() > (fDropTime + 1)));
+	// allow the touch if the player is not the one we remember as 
+	// having dropped it (the item forgets after a second, at which
+	// point the original dropper can pick it back up again)
+	return (p != fDropper);
 	}
 /**
- * Handle dropping items to the floor, respawning, destroying and bouncing
+ * This method was created in VisualAge.
  */
-public void runFrame(int phase) 
+public void respawn() 
 	{
-	// only deal with middle-phase calls.
-	if (phase != Game.FRAME_MIDDLE)
-		return;
+	NativeEntity ent = fEntity;
 		
-	TraceResults tr;
-	
-	switch (fItemState)
+	if (fGroup != null)
 		{
-		case STATE_SPAWN:  // was just spawned, needs to snap to ground
-			fItemState = STATE_NORMAL;
-			Point3f org = fEntity.getOrigin();
-			Point3f dest = new Point3f(org);
-			dest.add(new Vector3f(0, 0, -1024));			
-			tr = Engine.trace(org, fEntity.getMins(), fEntity.getMaxs(), dest, fEntity, Engine.MASK_SOLID);
-			
-			if (tr.fStartSolid)
-				{
-//				Engine.dprint("droptofloor: %s startsolid at %s\n", ent->classname, vtos(ent->s.origin));
-//				G_FreeEdict (ent);
-				return;
-				}
-
-			fEntity.setOrigin(tr.fEndPos);
-			
-			if (fGroup != null)
-				{
-				// make the item disappear
-				fEntity.setSolid(NativeEntity.SOLID_NOT);
-				fEntity.setSVFlags(fEntity.getSVFlags() | NativeEntity.SVF_NOCLIENT);
-
-				// cause the group master to respawn right away
-				if (!isGroupSlave())
-					setRespawn(0);
-				}
-			
-			fEntity.linkEntity();
-			fEntity.setGroundEntity(tr.fEntity);
-			break;
-			
-		case STATE_DROP_TIMEOUT: //do something with ourselves
-			dropTimeout();
-			break;
-			
-		case STATE_NORMAL: // handle respawn
-			NativeEntity ent = fEntity;
-		
-			if (fGroup != null)
-				{
-				// entity is member of a group, pick a member at random
-				int selection = (GameUtil.randomInt() & 0x0fff) % fGroup.size();
-				ent = ((GameObject)fGroup.elementAt(selection)).fEntity;
-				}
-
-			// make the hidden entity visible again
-			ent.setSVFlags(ent.getSVFlags() & ~NativeEntity.SVF_NOCLIENT);
-			ent.setSolid(NativeEntity.SOLID_TRIGGER);
-			ent.setEvent(NativeEntity.EV_ITEM_RESPAWN);
-			ent.linkEntity();
-			break;
-
-		case STATE_AVOID_TOUCH:
-			// forget about who dropped us
-			fDropper = null;
-			
-			// select a new state, based on whether
-			// there's a timeout or not.
-			if (fDropTimeout > 0)
-				{
-				fItemState = STATE_DROP_TIMEOUT;
-				// schedule a one-shot call for when we want to go poof!
-				Game.addServerFrameListener(this, fDropTimeout - Game.getGameTime(), -1);
-				}
-			else
-				{
-				// sit around indefinitely
-				fItemState = STATE_NORMAL;
-				Game.removeServerFrameListener(this); // shut off frame events
-				}
-			break;		
-			
-			
-		case STATE_FALLING: // was dropped, is falling to ground			
-			checkVelocity();
-			applyGravity();
-
-			tr = fEntity.traceMove(Engine.MASK_SOLID, 1.0F);
-			if (tr.fFraction == 1)
-				return;		// moved the entire distance without hitting anything
-
-			// 'scuse me while I kiss the sky...
-			if ((tr.fSurfaceName != null) && ((tr.fSurfaceFlags & Engine.SURF_SKY) != 0))
-				{
-				// fell out of the world
-				dropTimeout(); // normal items will dispose, CTF Techs will reposition
-				return;
-				}
-
-//			if (tr.fFraction < 0.01f)
-			if ( (clipVelocity(tr.fPlaneNormal, 1f) & 1) != 0 )
-				{
-				// came to a stop
-
-				// link it to whatever it came to a rest on, especially 
-				// important if it happens to be something like an 
-				// elevator, so that it rises and falls properly
-				fEntity.setGroundEntity(tr.fEntity);
-
-				// avoid touching the dropper for at least a second after dropping				
-				Game.addServerFrameListener(this, (fDropTime + 1) - Game.getGameTime(), -1);
-				fItemState = STATE_AVOID_TOUCH;
-				return;		
-				}
-			break;
+		// entity is member of a group, pick a member at random
+		int selection = (GameUtil.randomInt() & 0x0fff) % fGroup.size();
+		ent = ((GameObject)fGroup.elementAt(selection)).fEntity;
 		}
+
+	// make the hidden entity visible again
+	ent.setSVFlags(ent.getSVFlags() & ~NativeEntity.SVF_NOCLIENT);
+	ent.setSolid(NativeEntity.SOLID_TRIGGER);
+	ent.setEvent(NativeEntity.EV_ITEM_RESPAWN);
+	ent.linkEntity();
 	}
 /**
- * Cause the item to timeout after a given delay. Used to simulate
- * a timeout for an item that wasn't actually dropped, such as a CTF
- * tech powerup that's created at the beginning of a level.
- *
- * @param delay number of seconds before the item should timeout
+ * Set whether this item is droppable.
+ * @param b boolean
  */
-protected void setDropTimeout(float delay) 
+public void setDroppable(boolean b) 
 	{
-	fItemState = STATE_DROP_TIMEOUT;
-	Game.addServerFrameListener(this, delay, -1);
+	fIsDroppable = b;
+	}
+/**
+ * Cause the item to call its dropTimeout() method after a delay.
+ * @param delay float
+ */
+public void setDropTimeout(float delay) 
+	{
+	if (fTimeoutHelper == null)
+		fTimeoutHelper = new TimeoutHelper(delay);
+	else
+		fTimeoutHelper.setDropTimeout(delay);
 	}
 /**
  * Schedule the item to be respawned.
@@ -455,7 +374,7 @@ protected void setDropTimeout(float delay)
 public void setRespawn(float delay) 
 	{
 	// schedule a one-shot notification
-	Game.addServerFrameListener(this, delay, -1);
+	new SpawnHelper(true, delay);
 	}
 /**
  * Setup this item's NativeEntity.
@@ -485,6 +404,40 @@ public void setupEntity()
 	fEntity.setModel(getModelName());
 	fEntity.setClipmask(Engine.MASK_SHOT);
 	fEntity.setSVFlags(fEntity.getSVFlags() & ~NativeEntity.SVF_NOCLIENT);
+	}
+/**
+ * Handle the initial spawning of an item into the map, basically
+ * snapping it to the ground.
+ */
+public void spawn() 
+	{
+	Point3f org = fEntity.getOrigin();
+	Point3f dest = new Point3f(org);
+	dest.add(new Vector3f(0, 0, -1024));			
+	TraceResults tr = Engine.trace(org, fEntity.getMins(), fEntity.getMaxs(), dest, fEntity, Engine.MASK_SOLID);
+			
+	if (tr.fStartSolid)
+		{
+//		Engine.dprint("droptofloor: %s startsolid at %s\n", ent->classname, vtos(ent->s.origin));
+//		G_FreeEdict (ent);
+		return;
+		}
+
+	fEntity.setOrigin(tr.fEndPos);
+			
+	if (fGroup != null)
+		{
+		// make the item disappear
+		fEntity.setSolid(NativeEntity.SOLID_NOT);
+		fEntity.setSVFlags(fEntity.getSVFlags() | NativeEntity.SVF_NOCLIENT);
+
+		// cause the group master to respawn right away
+		if (!isGroupSlave())
+			setRespawn(0);
+		}
+			
+	fEntity.linkEntity();
+	fEntity.setGroundEntity(tr.fEntity);
 	}
 /**
  * See if the player wants to take this item.
@@ -537,8 +490,13 @@ public void touch(Player p)
 protected void touchFinish(Player p, GenericItem itemTaken) 
 	{
 	// cancel any timeouts or animations
-	Game.removeServerFrameListener(this);
-	fItemState = STATE_NORMAL;
+	if (fDropHelper != null)
+		{
+		fDropHelper.dispose();
+		fDropHelper = null;
+
+		
+		}
 		
 	// play the pickup sound
 	fEntity.sound(NativeEntity.CHAN_ITEM, fPickupSoundIndex, 1, NativeEntity.ATTN_NORM, 0);

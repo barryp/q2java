@@ -18,22 +18,21 @@ package q2java.ctf;
 
 import javax.vecmath.*;
 import q2java.*;
+import q2java.baseq2.GenericWeapon;
 import q2java.core.*;
+import q2java.core.event.*;
 import q2java.ctf.*;
 
 
 /**
- * A misc_ctf_banner is a giant flag that
- * just sits and flutters in the wind.
+ * Increase the amount of damage the carrier does.
  */
 
-public class PowerAmplifier extends GenericTech
+public class PowerAmplifier extends GenericTech implements ServerFrameListener
 {
 	protected final static float DAMAGE_MULTIPLIER = 2f;
 
 	protected float fNextSoundTime = 0;
-
-
 	public PowerAmplifier(int hudStat) throws GameException
 	{
 		super(hudStat);
@@ -99,14 +98,9 @@ public class PowerAmplifier extends GenericTech
 	 */
 	public void runFrame(int phase) 
 	{
-		super.runFrame(phase);
-
-		if ((phase == Game.FRAME_BEGINNING) && (getOwner() != null))
-		{
-			q2java.baseq2.GenericWeapon gw = getOwner().getCurrentWeapon();
-			if ( (!(gw instanceof GrappleWeapon)) &&  getOwner().getCurrentWeapon().isFiring() )
-				playSound();		
-		}
+		GenericWeapon gw = getOwner().getCurrentWeapon();
+		if ( (!(gw instanceof GrappleWeapon)) &&  getOwner().getCurrentWeapon().isFiring() )
+			playSound();		
 	}
 	/**
 	 * Set which player is holding the tech.

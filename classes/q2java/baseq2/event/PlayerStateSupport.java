@@ -25,7 +25,7 @@ final public class PlayerStateSupport
 	  try
 	{
 	  gInvokeMethod = PlayerStateListener.class.
-	    getMethod("stateChanged", new Class[] { PlayerStateEvent.class } );	
+	    getMethod("playerStateChanged", new Class[] { PlayerStateEvent.class } );	
 	}
 	  catch(NoSuchMethodException nsme) {}
 	}

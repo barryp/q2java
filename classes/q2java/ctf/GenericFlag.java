@@ -22,10 +22,12 @@ import org.w3c.dom.Element;
 
 import q2java.*;
 import q2java.core.*;
+import q2java.core.event.*;
+import q2java.baseq2.*;
 import q2java.baseq2.event.*;
 
 
-public abstract class GenericFlag extends q2java.baseq2.GenericItem implements q2java.baseq2.GameTarget, q2java.baseq2.event.PlayerStateListener
+public abstract class GenericFlag extends GenericItem implements ServerFrameListener, GameTarget, PlayerStateListener
 {
 	public static final int CTF_FLAG_STATE_STANDING = 0;
 	public static final int CTF_FLAG_STATE_DROPPED  = 1;
@@ -246,6 +248,23 @@ public void becomeExplosion(int tempEntity)
 		fEntity.sound(NativeEntity.CHAN_RELIABLE+NativeEntity.CHAN_NO_PHS_ADD+NativeEntity.CHAN_VOICE, fCaptureSoundIndex, 1, NativeEntity.ATTN_NONE, 0);	
 	}
 	/**
+	 * Called when a player dies or disconnects.
+	 * @param wasDisconnected true on disconnects, false on normal deaths.
+	 */
+	public void playerStateChanged(PlayerStateEvent pse)
+	{
+		switch (pse.getStateChanged())	
+		{
+		case PlayerStateEvent.STATE_DEAD:
+		case PlayerStateEvent.STATE_INVALID:
+		case PlayerStateEvent.STATE_SUSPENDEDSTART:
+			q2java.baseq2.Player p = pse.getPlayer();
+			drop(p, CTF_FLAG_AUTO_RETURN_TIME); // will handle removing listener			
+			p.removeInventory("flag");		
+			break;
+		}	
+	}
+	/**
 	 * Player the flag return sound.
 	 */
 	public void playReturnSound() 
@@ -283,43 +302,26 @@ public void becomeExplosion(int tempEntity)
 		updateAllStats(getIconName());
 	}
 	/**
-	 * Animate the banner.
+	 * Animate the banner, or flash an icon on the carrier's HUD
 	 * @param phase int
 	 */
 	public void runFrame(int phase) 
 	{
-		if ( fState == CTF_FLAG_STATE_STANDING )
+		switch (fState)
 		{
-			fCurrentFrame = 173 + (((fCurrentFrame - 173) + 1) % 16);
-			fEntity.setFrame(fCurrentFrame);
+			case CTF_FLAG_STATE_STANDING:
+				fCurrentFrame = 173 + (((fCurrentFrame - 173) + 1) % 16);
+				fEntity.setFrame(fCurrentFrame);
+				break;
+
+			case CTF_FLAG_STATE_CARRIED:
+				// called every 0.8 seconds, let's flash the carriers flag-icon...
+				if ( fIconFlash = !fIconFlash )
+					fCarrier.fEntity.setPlayerStat( STAT_CTF_FLAG_PIC, (short)0 );
+				else
+					fCarrier.fEntity.setPlayerStat( STAT_CTF_FLAG_PIC, (short)fIconIndex );
+				break;
 		}
-		else if ( fState == CTF_FLAG_STATE_CARRIED )
-		{
-			// called every 0.8 seconds, let's flash the carriers flag-icon...
-			if ( fIconFlash = !fIconFlash )
-				fCarrier.fEntity.setPlayerStat( STAT_CTF_FLAG_PIC, (short)0 );
-			else
-				fCarrier.fEntity.setPlayerStat( STAT_CTF_FLAG_PIC, (short)fIconIndex );
-		}
-		else
-			super.runFrame(phase);
-	}
-	/**
-	 * Called when a player dies or disconnects.
-	 * @param wasDisconnected true on disconnects, false on normal deaths.
-	 */
-	public void stateChanged(PlayerStateEvent pse)
-	{
-		switch (pse.getStateChanged())	
-		{
-		case PlayerStateEvent.STATE_DEAD:
-		case PlayerStateEvent.STATE_INVALID:
-		case PlayerStateEvent.STATE_SUSPENDEDSTART:
-			q2java.baseq2.Player p = pse.getPlayer();
-			drop(p, CTF_FLAG_AUTO_RETURN_TIME); // will handle removing listener			
-			p.removeInventory("flag");		
-			break;
-		}	
 	}
 	/**
 	 * Called if item was actually taken.

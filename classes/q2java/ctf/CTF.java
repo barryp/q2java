@@ -44,9 +44,6 @@ public class CTF extends q2java.core.Gamelet implements GameStatusListener
 		switch (gse.getState())
 		{
 			case GameStatusEvent.GAME_PRESPAWN:
-				// overrule the statbar
-				Engine.setConfigString (Engine.CS_STATUSBAR, CTFPlayer.CTF_STATUSBAR);
-
 				// do this stuff only once during the first level change we hear about
 				if (fBaseQ2Token == null)
 					{
@@ -66,6 +63,9 @@ public class CTF extends q2java.core.Gamelet implements GameStatusListener
 				break;
 
 			case GameStatusEvent.GAME_POSTSPAWN:
+				// overrule the statbar
+				Engine.setConfigString (Engine.CS_STATUSBAR, CTFPlayer.CTF_STATUSBAR);
+
 				// now it's time to spawn the techs.
 				try 
 				{

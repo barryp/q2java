@@ -1,6 +1,5 @@
 package q2java.baseq2;
 
-
 import q2java.Engine;
 
 /**
@@ -80,20 +79,15 @@ public class InventoryList
 /*
  * add an item to the list in first available slot after index i
  */
-protected static boolean addAfterIndex(int i, String item)
+protected static boolean addAfterIndex(int pos, String item)
 	{
-	if (i<0) return false;
-	
-	while (i < itemList.length)
+	for (int i = pos; i < itemList.length; i++)
 		{
 		if (itemList[i] == null)
 			{
 			itemList[i] = item;
+			Engine.setConfigString(Engine.CS_ITEMS + i, item);
 			return true;
-			} 
-		else
-			{
-			i++;
 			}
 		}
 
@@ -102,26 +96,19 @@ protected static boolean addAfterIndex(int i, String item)
 /*
  * add an item to the list in first available slot before index i
  */
-protected static boolean addBeforeIndex(int i, String item)
+protected static boolean addBeforeIndex(int pos, String item)
 	{
-	if (i > itemList.length) return false;
-	
-	while (i >= 0) 
+	for (int i = pos; i >= 0; i--)
 		{
 		if (itemList[i] == null)
 			{
 			itemList[i] = item;
+			Engine.setConfigString(Engine.CS_ITEMS + i, item);			
 			return true;
 			}
-		else
-			{
-			i++;
-			}
 		}
-	
-	Engine.setConfigString(Engine.CS_ITEMS + i, itemList[i]);
-	
-	return false;
+
+	return false;	
 	}
 /**
  * add an item to the list. Will be added after the weapons if not already in list.
@@ -239,10 +226,9 @@ public static void registerList()
 			}
 		} 
 	}
-//	InventoryList( 42, 84, 128, 172, 214, true);
-
-/*
+/**
  * Create and initiliaze the Inventory list. This is currently done in baseq2.GameModule.
+ *
  * @param int arI - starting index for the armor section.
  * @param int wI - starting index for the weapon section.
  * @param int amI - starting index for the ammo section.
@@ -253,12 +239,7 @@ public static void registerList()
 public static void setupList(int arI, int wI, int amI, int pI, int mI, boolean installId)
 	{
 	itemList = new String[256];
-/*	
-	for (int i=0; i<itemList.length; i++)
-	{
-		itemList[i] = "";
-	}
-*/		
+		
 	startOfArmor = arI;
 	startOfWeapon = wI;
 	startOfAmmo = amI;

@@ -12,7 +12,7 @@ import q2java.baseq2.Player;
  *
  * @author Peter Donald
  */
-final public class PlayerDamageSupport
+final public class DamageSupport
 {
   private static Method gInvokeMethod = null;
   private Vector fListeners = new Vector();
@@ -21,29 +21,28 @@ final public class PlayerDamageSupport
 	{
 	  try
 	{
-	  gInvokeMethod = PlayerDamageListener.class.
-	    getMethod("damageOccured", new Class[] { PlayerDamageEvent.class } );	
+	  gInvokeMethod = DamageListener.class.
+	    getMethod("damageOccured", new Class[] { DamageEvent.class } );	
 	}
 	  catch(NoSuchMethodException nsme) {}
 	}
 
-  public PlayerDamageSupport()
+  public DamageSupport()
 	{
 	}
-  public void addPlayerDamageListener(PlayerDamageListener l)
+  public void addDamageListener(DamageListener l)
 	{
 	  if( !fListeners.contains(l) ) fListeners.addElement(l);
 	}
-  public void fireEvent(Player p, PlayerDamageEvent e)
+  public void fireEvent(DamageEvent e)
 	{
 	if (fListeners.size() == 0)
 		return;
 		
-	  e.setPlayer( p );
 	  try { EventPack.fireEvent( e, gInvokeMethod, fListeners); }
 	  catch(PropertyVetoException pve) {}
 	}
-  public void removePlayerDamageListener(PlayerDamageListener l)
+  public void removeDamageListener(DamageListener l)
 	{
 	  fListeners.removeElement(l);
 	}

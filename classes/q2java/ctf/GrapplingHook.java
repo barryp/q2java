@@ -93,7 +93,7 @@ public void playerChanged(OccupancyEvent oe) throws PropertyVetoException
  * Called when a player state changes - we're interested in
  * players spawning - so we can tuck a weapon_grapple into their inventory.
  */
-public void stateChanged(PlayerStateEvent pse)
+public void playerStateChanged(PlayerStateEvent pse)
 	{
 	switch (pse.getStateChanged())	
 		{		

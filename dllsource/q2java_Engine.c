@@ -459,16 +459,16 @@ jobjectArray JNICALL Java_q2java_Engine_getRadiusEntities0
     int max;
     int i;
     edict_t *check;
-
-    edict_t **list = q2java_gi.TagMalloc(MAXTOUCH * sizeof(edict_t *), TAG_GAME);
-
-    radiusSquared = radius * radius;
+    edict_t **list;
 
     if (onlyPlayers)
         max = global_maxClients + 1;
     else
         max = q2java_ge.num_edicts;
 
+	list = q2java_gi.TagMalloc(max * sizeof(edict_t *), TAG_GAME);
+
+    radiusSquared = radius * radius;
     count = 0;
     for (i = 1; i < max; i++)
         {

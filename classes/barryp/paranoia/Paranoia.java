@@ -77,28 +77,32 @@ public static void assignRole(ParanoiaPlayer requestor)
 	}
 public void gameStatusChanged(GameStatusEvent e)
 	{
-	if (e.getState() == GameStatusEvent.GAME_PRESPAWN)
+	switch (e.getState())
 		{
-		// do this stuff only once during the first level change we hear about
-		if (fBaseQ2Token == null)
-			{
-			// make sure there's some environment for the GameObjects
-			// to operate in.
-			fBaseQ2Token = BaseQ2.getReference();	
-					
-			Game.addPackagePath("q2java.baseq2");	
-			}
-		
-		// set the players HUDs
-		Engine.setConfigString (Engine.CS_STATUSBAR, ParanoiaPlayer.BOUNTY_STATUSBAR);
+		case GameStatusEvent.GAME_PRESPAWN:
+			// do this stuff only once during the first level change we hear about
+			if (fBaseQ2Token == null)
+				{
+				// make sure there's some environment for the GameObjects
+				// to operate in.
+				fBaseQ2Token = BaseQ2.getReference();	
+						
+				Game.addPackagePath("q2java.baseq2");	
+				}
+			
+			// precache HUD icons
+			DirectionTracker.precacheImages();
+			RangeTracker.precacheImages();
+			SmartCrosshair.precacheImages();
 	
-		// precache HUD icons
-		DirectionTracker.precacheImages();
-		RangeTracker.precacheImages();
-		SmartCrosshair.precacheImages();
+			// clear the victim list, will be refilled as players respawn
+			gVictimList.removeAllElements();
+			break;
 
-		// clear the victim list, will be refilled as players respawn
-		gVictimList.removeAllElements();		
+		case GameStatusEvent.GAME_POSTSPAWN:
+			// set the players HUDs
+			Engine.setConfigString (Engine.CS_STATUSBAR, ParanoiaPlayer.BOUNTY_STATUSBAR);	
+			break;
 		}
 	}
 /**

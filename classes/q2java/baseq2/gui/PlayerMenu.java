@@ -108,22 +108,27 @@ public void commandIssued(PlayerCommandEvent e)
 	if( command.equals("inven") )
 	    {
 		cmd_inven( e.getPlayer(), null, e.getArgs() );
+		e.consume();
 	    }
 	else if( command.equals("putaway") )
 	    {
 		cmd_putaway( e.getPlayer(), null, e.getArgs() );
+		e.consume();
 	    }
 	else if( command.equals("invnext") )
 	    {
 		cmd_invnext( e.getPlayer(), null, e.getArgs() );
+		e.consume();
 	    }
 	else if( command.equals("invuse") )
 	    {
 		cmd_invuse( e.getPlayer(), null, e.getArgs() );
+		e.consume();
 	    }
 	else if( command.equals("invprev") )
 	    {
 		cmd_invprev( e.getPlayer(), null, e.getArgs() );
+		e.consume();
 	    }
 	}
 /**

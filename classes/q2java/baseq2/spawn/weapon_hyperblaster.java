@@ -46,7 +46,8 @@ public void fire()
 //				gi.sound(ent, CHAN_VOICE, gi.soundindex("weapons/noammo.wav"), 1, ATTN_NORM, 0);
 //				ent->pain_debounce_time = level.time + 1;
 //				}
-			fPlayer.changeWeapon();
+			if (isAutoSwitch())
+				fPlayer.changeWeapon();
 			}
 		else
 		

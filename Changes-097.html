@@ -1,0 +1,387 @@
+<HTML>
+<HEAD>
+<META CONTENT="text/html; charset=iso-8859-1" HTTP-EQUIV="Content-Type">
+<TITLE>Changes - v0.9.7</TITLE>
+</HEAD>
+<BODY>
+<font size="+2" face="Arial,Helvetica"><b><i>      
+        Changes in Q2Java 0.9.7</i></b></font>
+<p>
+</p>
+    
+      It's been a long time since the previous version, and this one contains many minor 
+      bugfixes and tweaks, along with some big reorganizations that made things cleaner and
+      clearer.
+    <p>
+</p>
+    
+      The damage event system was reworked to also function for non-Player objects. Everything
+      that was named *PlayerDamage* was renamed to just *Damage*.  All fields and methods
+      that were geared to the Player class were changed to work for the more
+      general GameObject class.   A huge number of classes were affected by these changes
+      but for the most part, they were of the search-and-replace type of thing that
+      can be fixed in a matter of minutes.  The q2java.baseq2.Player class in particular
+      had a slew of "PlayerDamage" fields and methods that were for the most part simply
+      renamed.
+    <p>
+</p>
+    
+      As part of the damage-system change, all objects had their damage() methods
+      replaced with versions that take a single DamageEvent object, instead of a
+      slew of parameters.   The GameObject class still has a method for initiating 
+      damage with a slew of parameters, but that simply creates a DamageEvent object
+	  and passes it on through the new event-system.
+    <p>
+</p>
+    
+      The q2java.baseq2.GenericItem class had a nice overhaul, simplifying its internal
+      structure greatly, and removing any potential conflicts with its subclasses that
+      wanted to receive ServerFrameListener.runFrame() calls (which the old GenericItem class
+      also wanted to do).
+    <p>
+</p>
+  <p>
+</p>
+<center>
+</center>
+<table border="0" cellspacing="2" cellpadding="8" width="100%">
+<tr>
+<td align="center" colspan="2"><font face="Arial,Helvetica"><b><i>Changes to DLL</i></b></font></td>
+</tr>
+    <tr valign="top">
+<td bgcolor="#aa0000"><font color="#ffffff">Fix<br>
+<font size="-2">Barry</font></font></td><td>
+      Fixed a pretty serious problem in the native implementation of Engine.getRadiusEntities()
+	  where if there were more than 32 "hits", you overran a buffer and potentially
+      could crash the game.  Even if you don't want to adopt the new Java code in
+      this version, at least use the new DLL so you can avoid this problem.
+    </td>
+</tr>  
+  <tr>
+<td align="center" colspan="2"><font face="Arial,Helvetica"><b><i>Changes in Java Classes</i></b></font></td>
+</tr>
+<tr>
+<td colspan="2"><b><font size="+1" face="Arial,Helvetica">q2java.NativeEntity</font></b></td>
+</tr>
+    <tr valign="top">
+<td bgcolor="#00aa00"><font color="#ffffff">Added<br>
+<font size="-2">Barry</font></font></td><td>
+		getMaxPlayers() to find out what is the max number of players the server is configured for.
+    </td>
+</tr>
+    <tr valign="top">
+<td bgcolor="#00aa00"><font color="#ffffff">Added<br>
+<font size="-2">Barry</font></font></td><td>
+		isValid() for finding out whether a NativeEntity is actually bound to the underlying engine,
+		or has been freed and is kind of a ghost.
+    </td>
+</tr>
+  <tr>
+<td colspan="2"></td>
+</tr>
+<tr>
+<td colspan="2"><b><font size="+1" face="Arial,Helvetica">q2java.baseq2.DamageObject</font></b></td>
+</tr>
+    <tr valign="top">
+<td bgcolor="#000000"><font color="#ffffff">Removed<br>
+<font size="-2">Barry</font></font></td><td>
+      This class was no longer being used, it was replaced back around version 0.9.0, but
+      I guess I forgot to delete this file.
+    </td>
+</tr>
+  <tr>
+<td colspan="2"></td>
+</tr>
+<tr>
+<td colspan="2"><b><font size="+1" face="Arial,Helvetica">q2java.baseq2.DropHelper</font></b></td>
+</tr>
+    <tr valign="top">
+<td bgcolor="#00aa00"><font color="#ffffff">Added<br>
+<font size="-2">Barry</font></font></td><td>
+       This is a new class, basically the code from GenericItem that caused 
+	   items to fall to the ground, separated out so it can be used by other
+       classes. 
+    </td>
+</tr>
+    <tr valign="top">
+<td bgcolor="#00aa00"><font color="#ffffff">Added<br>
+<font size="-2">Barry</font></font></td><td>
+		I messed around with the dropping code a bit, trying to make it a bit
+        more realistic when you drop items into water.  I tried to add some
+        splashing, slow down the item when it hit the surface, and caused it
+        to sink slower when in water.  This changes things a bit from stock Q2, 
+        but should be easy to take out if it's a problem.
+    </td>
+</tr>
+  <tr>
+<td colspan="2"></td>
+</tr>
+<tr>
+<td colspan="2"><b><font size="+1" face="Arial,Helvetica">q2java.baseq2.GenericGrenade</font></b></td>
+</tr>
+    <tr valign="top">
+<td bgcolor="#00aa00"><font color="#ffffff">Added<br>
+<font size="-2">Barry</font></font></td><td>
+		Another variation of the toss() method was added, to make it
+        easy for non-Player objects to toss Grenades.
+    </td>
+</tr>
+  <tr>
+<td colspan="2"></td>
+</tr>
+<tr>
+<td colspan="2"><b><font size="+1" face="Arial,Helvetica">q2java.baseq2.GenericItem</font></b></td>
+</tr>
+    <tr valign="top">
+<td bgcolor="#0000cc"><font color="#ffffff">Change<br>
+<font size="-2">Barry</font></font></td><td>
+        This class was heavily reworked, making it much easier to understand and maintain.
+        Basically, all code relating to time was stripped out and moved to helper classes,
+	    such as the DropHelper mentioned above, and some inner classes.  Previously an 
+        elaborate finite-state-machine managed a complex system of animations, drop timeouts, 
+        and (re)spawning timers - but that's all gone now.  This class no longer implements
+        ServerFrameListener, which means that subclasses that implement that interface
+        don't have to worry anymore about conflicting with this parent class (the powerups
+        such as the Quad and rebreather are examples of those subclasses).
+    </td>
+</tr>
+    <tr valign="top">
+<td bgcolor="#00aa00"><font color="#ffffff">Added<br>
+<font size="-2">Barry</font></font></td><td>
+        Added a "droppable" property to the class, with a setDroppable() method.  Previously
+        there was an isDroppable() method that always returned true, but was overridden
+        by some items such as the plain blaster and CTF grapple.  Now, those classes just
+        call setDroppable(false) in their constructors, and don't override isDroppable().  This made it
+        easy for a mod to make -all- weapons non-droppable, without having to change each weapon's code.
+        (this is one of those improvements where you wonder what the hell you were thinking when
+        you wrote the old code).
+    </td>
+</tr>
+  <tr>
+<td colspan="2"></td>
+</tr>
+<tr>
+<td colspan="2"><b><font size="+1" face="Arial,Helvetica">q2java.baseq2.GenericWeapon</font></b></td>
+</tr>
+    <tr valign="top">
+<td bgcolor="#00aa00"><font color="#ffffff">Added<br>
+<font size="-2">Barry</font></font></td><td>
+       Added isAutoSwitch() and setAutoSwitch() to control whether or not
+       a weapon automatically switches away when ammo runs out (the default is "true").
+    </td>
+</tr>
+  <tr>
+<td colspan="2"></td>
+</tr>
+<tr>
+<td colspan="2"><b><font size="+1" face="Arial,Helvetica">q2java.baseq2.InventoryList</font></b></td>
+</tr>
+    <tr valign="top">
+<td bgcolor="#aa0000"><font color="#ffffff">Fix<br>
+<font size="-2">Barry</font></font></td><td>
+       addAfterIndex() wasn't calling Engine.setConfigString(), which
+       meant additions weren't showing up on the clients if they didn't
+       happen at a certain time.  Reworked that method, and also changed
+       addBeforeIndex() to be just about identical.
+    </td>
+</tr>  
+  <tr>
+<td colspan="2"></td>
+</tr>
+<tr>
+<td colspan="2"><b><font size="+1" face="Arial,Helvetica">q2java.baseq2.InventoryPack</font></b></td>
+</tr>
+    <tr valign="top">
+<td bgcolor="#0000cc"><font color="#ffffff">Change<br>
+<font size="-2">Barry</font></font></td><td>
+      Changed field declarations to "public", used to be just default.
+   </td>
+</tr>
+  <tr>
+<td colspan="2"></td>
+</tr>
+<tr>
+<td colspan="2"><b><font size="+1" face="Arial,Helvetica">q2java.baseq2.MiscUtil</font></b></td>
+</tr>
+    <tr valign="top">
+<td bgcolor="#00aa00"><font color="#ffffff">Added<br>
+<font size="-2">Barry</font></font></td><td>
+		Added an explode() method, for a convenient way to make things go "boom".
+    </td>
+</tr>
+    <tr valign="top">
+<td bgcolor="#0000cc"><font color="#ffffff">Change<br>
+<font size="-2">Barry</font></font></td><td>
+      radiusDamage() takes a NativeEntity instead of a GameObject for its
+      "ignore" parameter
+    </td>
+</tr>
+    <tr valign="top">
+<td bgcolor="#aa0000"><font color="#ffffff">Fix<br>
+<font size="-2">Barry</font></font></td><td>
+      radiusDamage() now causes damage to all types of GameObjects, not just players
+    </td>
+</tr>
+  <tr>
+<td colspan="2"></td>
+</tr>
+<tr>
+<td colspan="2"><b><font size="+1" face="Arial,Helvetica">q2java.baseq2.Player</font></b></td>
+</tr>
+    <tr valign="top">
+<td bgcolor="#00aa00"><font color="#ffffff">Added<br>
+<font size="-2">Barry</font></font></td><td>
+		playerJumped() is now called when players jump - making it easy for subclasses
+        to do different things when players jump, without having to futz with playerThink()
+    </td>
+</tr>
+    <tr valign="top">
+<td bgcolor="#aa0000"><font color="#ffffff">Fix<br>
+<font size="-2">Barry</font></font></td><td>
+      cmd_drop() prints a warning if an argument is not supplied (used to throw an exception)
+    </td>
+</tr>
+    <tr valign="top">
+<td bgcolor="#0000cc"><font color="#ffffff">Change<br>
+<font size="-2">Barry</font></font></td><td>
+      The "health" property was changed from an integer to a floating-point
+      value - making it easy to make fractional changes to health.
+    </td>
+</tr>
+    <tr valign="top">
+<td bgcolor="#00aa00"><font color="#ffffff">Added<br>
+<font size="-2">Barry</font></font></td><td>
+      The player class now keeps copies of the last forwardMove, sideMove, and upMove
+      values from playerThink() - so other methods in Player and its subclasses can check
+      on how the player is moving.
+    </td>
+</tr>
+  <tr>
+<td colspan="2"></td>
+</tr>
+<tr>
+<td colspan="2"><b><font size="+1" face="Arial,Helvetica">q2java.baseq2.event.PlayerStateListener</font></b></td>
+</tr>
+    <tr valign="top">
+<td bgcolor="#0000cc"><font color="#ffffff">Change<br>
+<font size="-2">Barry</font></font></td><td>
+      stateChanged() renamed to playerStateChanged(), for consistency 
+	  and clarity.  A large number of classes had to be tweaked to use the 
+      new method name.
+    </td>
+</tr>
+  <tr>
+<td colspan="2"></td>
+</tr>
+<tr>
+<td colspan="2"><b><font size="+1" face="Arial,Helvetica">q2java.baseq2.gui.PlayerMenu</font></b></td>
+</tr>
+    <tr valign="top">
+<td bgcolor="#aa0000"><font color="#ffffff">Fix<br>
+<font size="-2">Barry</font></font></td><td>
+      The commandIssued() method was not consuming commands, which meant
+      that in menus such as in CTF, the TAB key wasn't causing the menu to
+      disappear (actually it was disappearing and instantly being brought back up again).
+    </td>
+</tr>
+  <tr>
+<td colspan="2"></td>
+</tr>
+<tr>
+<td colspan="2"><b><font size="+1" face="Arial,Helvetica">q2java.baseq2.spawn.item_*</font></b></td>
+</tr>
+    <tr valign="top">
+<td bgcolor="#0000cc"><font color="#ffffff">Change<br>
+<font size="-2">Barry</font></font></td><td>
+      Any classes such as the Quad, that implement ServerFrameListener, now 
+      do so by themselves without any interference from their parent "GenericItem" class.
+    </td>
+</tr>
+  <tr>
+<td colspan="2"></td>
+</tr>
+<tr>
+<td colspan="2"><b><font size="+1" face="Arial,Helvetica">q2java.baseq2.spawn.weapon_*</font></b></td>
+</tr>
+    <tr valign="top">
+<td bgcolor="#0000cc"><font color="#ffffff">Change<br>
+<font size="-2">Barry</font></font></td><td>
+      Most weapons now check their new "autoSwitch" property when they run out of ammo, before
+      initiating a weapon-switch.      
+    </td>
+</tr>
+  <tr>
+<td colspan="2"></td>
+</tr>
+<tr>
+<td colspan="2"><b><font size="+1" face="Arial,Helvetica">q2java.core.Game</font></b></td>
+</tr>
+    <tr valign="top">
+<td bgcolor="#0000cc"><font color="#ffffff">Change<br>
+<font size="-2">Barry</font></font></td><td>
+	  The "status" document now includes the name of the map and the name of the server.
+    </td>
+</tr>
+  <tr>
+<td colspan="2"></td>
+</tr>
+<tr>
+<td colspan="2"><b><font size="+1" face="Arial,Helvetica">q2java.core.XMLTools</font></b></td>
+</tr>
+    <tr valign="top">
+<td bgcolor="#0000cc"><font color="#ffffff">Change<br>
+<font size="-2">Barry</font></font></td><td>
+      another version of writeXMLDocument() takes a third parameter to give
+      a hint about how you want the output document formatted, XMLTools.OUTPUT_PRETTY for nice-looking
+      docs, or XMLTools.OUTPUT_COMPACT for ones where you don't want extra whitespace.
+    </td>
+</tr>
+  <tr>
+<td colspan="2"></td>
+</tr>
+<tr>
+<td colspan="2"><b><font size="+1" face="Arial,Helvetica">q2java.core.(Open)XMLFactory</font></b></td>
+</tr>
+    <tr valign="top">
+<td bgcolor="#0000cc"><font color="#ffffff">Change<br>
+<font size="-2">Barry</font></font></td><td>
+      XMLFactory interface and OpenXMLFactory class altered to take
+      the third output format hint mentioned above.
+    </td>
+</tr>
+  <tr>
+<td colspan="2"></td>
+</tr>
+<tr>
+<td colspan="2"><b><font size="+1" face="Arial,Helvetica">q2java.ctf.(Techs + GenericFlag)</font></b></td>
+</tr>
+    <tr valign="top">
+<td bgcolor="#0000cc"><font color="#ffffff">Change<br>
+<font size="-2">Barry</font></font></td><td>
+      The CTF techs and Flags also benefited from the changes to q2java.baseq2.GenericItem
+      in that they no longer have to worry runFrame() calls intended for their superclass.
+    </td>
+</tr>
+  <tr>
+<td colspan="2"></td>
+</tr>
+<tr>
+<td colspan="2"><b><font size="+1" face="Arial,Helvetica">q2java.ctf.CTF</font></b></td>
+</tr>
+    <tr valign="top">
+<td bgcolor="#aa0000"><font color="#ffffff">Fix<br>
+<font size="-2">Barry</font></font></td><td>
+      The HUD string is now set during the Game.POSTSPAWN phase instead of PRESPAWN, 
+	  so it's not overriden by the plain Deathmatch HUD.
+    </td>
+</tr>
+  <tr>
+<td colspan="2"></td>
+</tr>
+</table>
+<hr>
+<div align="right">
+<font size="-1"><a href="http://www.planetquake.com/q2java">Q2Java homepage</a></font>
+</div>
+</BODY>
+</HTML>

@@ -102,6 +102,7 @@ protected void explode( TraceResults tr )
 	{
 	int        effect;
 	GameObject victim = null;
+	NativeEntity victimEntity = null;
 
 	if ((Engine.getPointContents(fEntity.getOrigin()) & Engine.MASK_WATER) == 0)
 		{
@@ -123,16 +124,18 @@ protected void explode( TraceResults tr )
 		//TODO: move victim caused by impact...
 		victim = (GameObject)tr.fEntity.getReference();
 		if ( victim != null )
+			{
 			victim.damage(this, fOwner, fEntity.getVelocity(), fEntity.getOrigin(), tr.fPlaneNormal, fDamage, 0, 0, effect, "grenade");
+			victimEntity = victim.fEntity;
+			}
 		}
 
-	MiscUtil.radiusDamage(this, fOwner, fDamage, victim, fRadiusDamage, "g_splash");
+	MiscUtil.radiusDamage(this, fOwner, fDamage, victimEntity, fRadiusDamage, "g_splash");
 
 	Engine.writeByte(Engine.SVC_TEMP_ENTITY);
 	Engine.writeByte(effect);
 	Engine.writePosition( fEntity.getOrigin() );
 	Engine.multicast( fEntity.getOrigin(), Engine.MULTICAST_PHS);
-
 	}
 /**
  * Go away the first chance we get to think
@@ -155,10 +158,12 @@ public void runFrame(int phase)
 	
 	if (tr.fFraction == 1)
 		{
+		// moved the entire distance without hitting anything, just
+		// rotate and return.
 		Angle3f angles = fEntity.getAngles();
-		angles.scaleAdd( Engine.SECONDS_PER_FRAME, fAvelocity, angles );
+		angles.add(fAvelocity);
 		fEntity.setAngles(angles);
-		return;		// moved the entire distance without hitting anything
+		return;		
 		}
 
 	// 'scuse me while I kiss the sky...
@@ -194,30 +199,37 @@ public void runFrame(int phase)
  */
 public void toss(GameObject owner, Point3f start, Vector3f aimdir, int damage, int speed, float timer, float radiusDamage) throws q2java.GameException 
 	{
-	fEntity = new NativeEntity();
-	fEntity.setReference(this);
-
 	Vector3f forward = new Vector3f();
 	Vector3f right   = new Vector3f();
 	Vector3f up      = new Vector3f();
 	Angle3f dir      = new Angle3f(aimdir);
 	dir.getVectors( forward, right, up );
 	
-	fEntity.setOrigin(start);
 	aimdir.scale(speed); // this seems wrong...I would think the direction should be normalized first, like the blaster is.
 
 	Vector3f vel = new Vector3f(aimdir);
 	vel.scaleAdd( 200 + GameUtil.randomFloat()*10, up,    vel);
 	vel.scaleAdd(       GameUtil.randomFloat()*10, right, vel);
 
-	fEntity.setVelocity(vel);
+	toss(owner, owner.fEntity, start, vel, damage, timer, radiusDamage);
+	}
+/**
+ * Setup the grenade and start it running.
+ */
+public void toss(GameObject owner, NativeEntity ownerEntity, Point3f start, Vector3f velocity, int damage, float timer, float radiusDamage) throws q2java.GameException 
+	{
+	fEntity = new NativeEntity();
+	fEntity.setReference(this);
+	
+	fEntity.setOrigin(start);
+	fEntity.setVelocity(velocity);
 
-	fAvelocity = new Vector3f( 300, 300, 300 );
+	fAvelocity = new Vector3f( 30, 30, 30 );
 	fEntity.setClipmask(Engine.MASK_SHOT); 
-	fEntity.setSolid(NativeEntity.SOLID_BBOX);
+//	fEntity.setSolid(NativeEntity.SOLID_BBOX);
 	fEntity.setEffects(NativeEntity.EF_GRENADE);
 	fOwner = owner;
-	fEntity.setOwner(owner.fEntity);
+	fEntity.setOwner(ownerEntity);
 	fExpires = (float)Game.getGameTime() + timer; // explode after a while
 	fDamage = damage;
 	fRadiusDamage = radiusDamage;

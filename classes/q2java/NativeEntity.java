@@ -510,6 +510,17 @@ public int getLinkCount()
 	{
 	return getInt(fEntityIndex, INT_LINKCOUNT);
 	}
+/**
+ * Get the maximum number of players allowed in the game.
+ * This is controlled by the engine, so there's no equivalent "set"
+ * method.
+ *
+ * @return int
+ */
+public static int getMaxPlayers() 
+	{
+	return gMaxPlayers;
+	}
 public Point3f getMaxs()
 	{
 	return (Point3f) getVec3(fEntityIndex, VEC3_MAXS, TYPE_POINT);
@@ -615,7 +626,7 @@ public PlayerListener getPlayerListener()
  * Set which object responds to this player's events.
  * @param pl q2java.PlayerListener
  */
-public native static PlayerListener getPlayerListener0(int index);
+private native static PlayerListener getPlayerListener0(int index);
 /**
  * Get this player's number, needed for things like setting
  * skins with the Engine.configString() method.
@@ -753,6 +764,14 @@ public boolean isBot()
 public boolean isPlayer() 
 	{
 	return (fEntityIndex > 0) && (fEntityIndex <= gMaxPlayers);
+	}
+/**
+ * Is this entity active, or has it been freed.
+ * @return true if active, false if it's been freed.
+ */
+public boolean isValid() 
+	{
+	return (fEntityIndex >= 0);
 	}
 public void linkEntity()
 	{

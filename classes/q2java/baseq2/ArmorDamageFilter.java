@@ -9,7 +9,7 @@ import q2java.baseq2.event.*;
  *
  * @author Barry Pederson
  */
-public class ArmorDamageFilter implements PlayerDamageListener
+public class ArmorDamageFilter implements DamageListener
 	{
 	Player fOwner;
 	
@@ -79,14 +79,14 @@ protected boolean addArmor(GenericArmor armor)
 	// guess we don't need this armor
 	return false;		
 	}
-public void damageOccured(PlayerDamageEvent damage)
+public void damageOccured(DamageEvent damage)
 	{
 	int dflags = damage.getDamageFlags();
 	// decrease damage based on armor
-	if ((dflags & PlayerDamageEvent.DAMAGE_NO_ARMOR) != 0) return;
+	if ((dflags & DamageEvent.DAMAGE_NO_ARMOR) != 0) return;
 		
 	int save; // the amount of damage our armor protects us from
-	if ((dflags & PlayerDamageEvent.DAMAGE_ENERGY) != 0)
+	if ((dflags & DamageEvent.DAMAGE_ENERGY) != 0)
 		{
 		save = (int) Math.ceil(damage.getAmount() * fArmorEnergyProtection);
 		damage.setPowerArmorSave(damage.getPowerArmorSave() + save);

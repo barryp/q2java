@@ -18,7 +18,9 @@ package q2java.ctf;
 
 import javax.vecmath.*;
 import q2java.*;
+import q2java.baseq2.GenericWeapon;
 import q2java.core.*;
+import q2java.core.event.*;
 import q2java.ctf.*;
 
 
@@ -27,11 +29,9 @@ import q2java.ctf.*;
  * just sits and flutters in the wind.
  */
 
-public class TimeAccel extends GenericTech
+public class TimeAccel extends GenericTech implements ServerFrameListener
 {
 	protected float fNextSoundTime = 0;
-
-
 	public TimeAccel(int hudStat) throws GameException		
 	{
 		super(hudStat);
@@ -87,16 +87,11 @@ public class TimeAccel extends GenericTech
 	 */
 	public void runFrame(int phase) 
 	{
-		super.runFrame(phase);
-
-		if ((phase == Game.FRAME_BEGINNING) && (getOwner() != null))
+		GenericWeapon gw = getOwner().getCurrentWeapon();
+		if ((!(gw instanceof GrappleWeapon)) &&  getOwner().getCurrentWeapon().isFiring() )
 		{
-			q2java.baseq2.GenericWeapon gw = getOwner().getCurrentWeapon();
-			if ((!(gw instanceof GrappleWeapon)) &&  getOwner().getCurrentWeapon().isFiring() )
-			{
-				gw.weaponThink();
-				playSound();
-			}
+			gw.weaponThink();
+			playSound();
 		}
 	}
 	/**

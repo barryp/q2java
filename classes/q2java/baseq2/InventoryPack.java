@@ -8,16 +8,17 @@ import q2java.*;
  
 public class InventoryPack implements java.io.Serializable
 	{
-	int fAmount;
-	int fMaxAmount;
-	String fIconName;
-	Object fItem;
+	public int fAmount;
+	public int fMaxAmount;
+	public String fIconName;
+	public Object fItem;
 	
 /**
  * This method was created by a SmartGuide.
  */
-public InventoryPack ( ) {
-}
+public InventoryPack() 
+	{
+	}
 /**
  * This method was created by a SmartGuide.
  * @param maxAmount int

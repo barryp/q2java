@@ -21,6 +21,7 @@ implements OccupancyListener, PlayerInfoListener
 	{
 	protected Element fPlayersElement;
 	private NativeEntity fSkipPlayer;
+	private String fMaxPlayers;
 	
 /**
  * Create the gamelet.
@@ -34,6 +35,9 @@ public PlayerStatus(Document gameletInfo)
 	Game.addOccupancyListener(this);
 	Player.addAllPlayerInfoListener(this);
 
+	// only need to do this once, since it never changes
+	fMaxPlayers = Integer.toString(NativeEntity.getMaxPlayers());
+	
 	// update status doc to reflect current players
 	updateInfo();	
 	}
@@ -81,19 +85,7 @@ public void playerChanged(OccupancyEvent oe)
 	switch (oe.getState())
 		{
 		case OccupancyEvent.PLAYER_CONNECTED:
-			try	
-				{
-				NativeEntity ent = oe.getPlayerEntity();
-
-				// add new element to status document
-				addPlayerElement(oe.getPlayerEntity());
-				Game.notifyDocumentUpdated("q2java.status");
-				}
-			catch (Exception e)
-				{
-				// probably ClassCastException if the player wasn't
-				// a subclass of q2java.baseq2.Player
-				}
+			updateInfo();
 			break;
 
 		case OccupancyEvent.PLAYER_DISCONNECTED:
@@ -133,7 +125,9 @@ protected void updateInfo()
 	Element statusRoot = doc.getDocumentElement();
 	fPlayersElement = doc.createElement("players");
 	statusRoot.appendChild(fPlayersElement);
-
+	
+	fPlayersElement.setAttribute("maxPlayers", fMaxPlayers);
+	
 	// fill it with sub-elements describing the players
 	Enumeration players = NativeEntity.enumeratePlayerEntities();
 	while (players.hasMoreElements())

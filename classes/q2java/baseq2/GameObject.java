@@ -9,6 +9,7 @@ import org.w3c.dom.Element;
 
 import q2java.*;
 import q2java.core.*;
+import q2java.baseq2.event.*;
 
 /**
  * GameObject represents a "thing" in the Quake world, such
@@ -145,7 +146,18 @@ protected float calcAttackerYaw(GameObject inflictor, GameObject attacker)
 	return (float) ((180.0 / Math.PI) * Math.atan2(dir.y, dir.x));	
 	}
 /**
- * This method was created by a SmartGuide.
+ * Called when the object has damage inflicted on it.
+ *
+ */
+public void damage(DamageEvent de) 
+	{
+	if ((de.getDamageFlags() & DamageEvent.DAMAGE_RADIUS) == 0)
+		spawnDamage(de);
+	}
+/**
+ * Wrapper class for backwards compatibility - converts old-style
+ * damage call to an event-based one.
+ *
  * @param inflictor q2jgame.GameEntity
  * @param attacker q2jgame.GameEntity
  * @param dir q2java.Vec3
@@ -155,11 +167,15 @@ protected float calcAttackerYaw(GameObject inflictor, GameObject attacker)
  * @param knockback int
  * @param dflags int
  */
-public void damage(GameObject inflictor, GameObject attacker, 
+public final void damage(GameObject inflictor, GameObject attacker, 
 	Vector3f dir, Point3f point, Vector3f normal, 
 	int damage, int knockback, int dflags, int tempEvent, String obitKey) 
 	{
-	spawnDamage(tempEvent, point, normal, damage);
+	DamageEvent de = DamageEvent.getEvent(inflictor, attacker, this, dir, point, normal, damage,
+				       knockback, dflags, tempEvent, obitKey);
+	damage(de);
+
+	DamageEvent.releaseEvent(de);	
 	}
 /**
  * Clean a few things up before calling NativeEntity.freeEntity().
@@ -187,6 +203,8 @@ public void dispose()
 				
 	if (fEntity != null)				
 		fEntity.freeEntity();
+
+	fEntity = null;
 	}
 /**
  * Get the gravity vector for this object.
@@ -333,13 +351,14 @@ public final void setGravity(Vector3f g)
 	setGravity(g.x, g.y, g.z);
 	}
 /**
- * This method was created by a SmartGuide.
- * @param damageType int
- * @param origin q2java.Vec3
- * @param normal q2java.Vec3
- * @param damage int
+ * Cause some sign of damage to appear in the world.
+ *
+ * @param damageType what kind of damage is being done
+ * @param origin spot where damage is occuring
+ * @param normal direction damage is coming from
+ * @param damage how much damage is being done.
  */
-public static void spawnDamage(int damageType, Point3f origin, Vector3f normal, int damage ) 
+public static void spawnDamage(int damageType, Point3f origin, Vector3f normal, int damage) 
 	{
 	if (damageType != Engine.TE_NONE)
 		{
@@ -355,6 +374,13 @@ public static void spawnDamage(int damageType, Point3f origin, Vector3f normal, 
 			
 		Engine.multicast(origin, Engine.MULTICAST_PVS);
 		}
+	}
+/**
+ * Spawn damage based on the info in a DamageEvent.
+ */
+public static void spawnDamage(DamageEvent de) 
+	{
+	spawnDamage(de.getTempEvent(), de.getDamagePoint(), de.getDamageNormal(), de.getAmount());
 	}
 public String toString()
 	{

@@ -19,6 +19,7 @@ package q2java.ctf;
 import javax.vecmath.*;
 import q2java.*;
 import q2java.core.*;
+import q2java.core.event.*;
 import q2java.ctf.*;
 
 
@@ -27,12 +28,10 @@ import q2java.ctf.*;
  * just sits and flutters in the wind.
  */
 
-public class AutoDoc extends GenericTech
+public class AutoDoc extends GenericTech implements ServerFrameListener
 {
 	protected float fNextSoundTime = 0;
 	protected float fNextHealTime  = 0;
-
-
 	public AutoDoc(int hudStat) throws GameException
 	{
 		super(hudStat);
@@ -82,36 +81,32 @@ public class AutoDoc extends GenericTech
 	 */
 	public void runFrame(int phase) 
 	{
-		super.runFrame(phase);
 		q2java.baseq2.Player p = getOwner();
 		
-		if ((phase == Game.FRAME_BEGINNING) && (p != null))
+		if ( fNextHealTime < Game.getGameTime() )
 		{
-			if ( fNextHealTime < Game.getGameTime() )
-			{
-				q2java.baseq2.ArmorDamageFilter adf = p.getArmor();
-				boolean noise  = false;
-				int     health = p.getHealth();
-				int     armor  = adf.getArmorCount();
+			q2java.baseq2.ArmorDamageFilter adf = p.getArmor();
+			boolean noise  = false;
+			float   health = p.getHealth();
+			int     armor  = adf.getArmorCount();
 
-				fNextHealTime = Game.getGameTime();
-				if ( health < 150) 
-				{
-					p.setHealthMax( 150 );
-					p.heal( 5, false );
-					fNextHealTime += 0.5f;
-					noise = true;
-				}
-				if ( (armor > 0) && (armor < 150) )
-				{
-					adf.setArmorMaxCount( 150 );
-					adf.setArmorCount( Math.min(150, armor+5) );
-					fNextHealTime += 0.5f;
-					noise = true;
-				}
-				if ( noise )
-					playSound();
+			fNextHealTime = Game.getGameTime();
+			if ( health < 150) 
+			{
+				p.setHealthMax( 150 );
+				p.heal( 5, false );
+				fNextHealTime += 0.5f;
+				noise = true;
 			}
+			if ( (armor > 0) && (armor < 150) )
+			{
+				adf.setArmorMaxCount( 150 );
+				adf.setArmorCount( Math.min(150, armor+5) );
+				fNextHealTime += 0.5f;
+				noise = true;
+			}
+			if ( noise )
+				playSound();
 		}
 	}
 	/**

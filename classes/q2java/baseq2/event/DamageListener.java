@@ -6,7 +6,7 @@ package q2java.baseq2.event;
  * Updated to delegation event mode Peter Donald
  * @author Brian Haskin
  */
-public interface PlayerDamageListener  extends java.util.EventListener
+public interface DamageListener  extends java.util.EventListener
 {
-  public void damageOccured(PlayerDamageEvent e);    
+  public void damageOccured(DamageEvent e);        
 }

@@ -25,7 +25,7 @@ public GameModule(Document gameletInfo)
 	  p.addPlayerStateListener(this);
 	  }
 	  }  
-public void stateChanged(PlayerStateEvent e)
+public void playerStateChanged(PlayerStateEvent e)
 	  {
 	e.getPlayer().fEntity.centerprint("State changed");
 	  }  

@@ -9,6 +9,7 @@ import q2java.*;
 import q2java.core.*;
 import q2java.core.event.*;
 import q2java.baseq2.*;
+import q2java.baseq2.event.*;
 
 /**
  * Simple test bot
@@ -64,18 +65,16 @@ public void clearSettings()
  * @param knockback how much the player should be pushed around because of the damage.
  * @param dflags flags indicating the type of damage, corresponding to GameEntity.DAMAGE_* constants.
  */
-public void damage(GameObject inflictor, GameObject attacker,
-	Vector3f dir, Point3f point, Vector3f normal,
-	int damage, int knockback, int dflags, int tempEvent, String obitKey)
+public void damage(DamageEvent de)
 	{
 	// turn and face the attacker
 	Angle3f ang = fEntity.getAngles();
-	ang.y = calcAttackerYaw(inflictor, attacker);
+	ang.y = calcAttackerYaw((GameObject) de.getSource(), de.getAttacker());
 	fEntity.setAngles(ang);
 
-	if (attacker instanceof Player)
+	if (de.getAttacker() instanceof Player)
 		{
-		Player p = (Player) attacker;
+		Player p = (Player) de.getAttacker();
 		if (p != fLastAttacker)
 			{
 			// randomly pick a reaction message from the resource bundle
@@ -85,7 +84,7 @@ public void damage(GameObject inflictor, GameObject attacker,
 			}
 		}
 
-	super.damage(inflictor, attacker, dir, point, normal, damage, knockback, dflags, tempEvent, obitKey);
+	super.damage(de);
 	}
 /**
  * Work around a protected method.

@@ -7,6 +7,7 @@ import org.w3c.dom.Element;
 
 import q2java.*;
 import q2java.core.*;
+import q2java.baseq2.event.*;
 
 /**
  * Abstract class to handle both sliding and rotating doors
@@ -162,15 +163,13 @@ public void close()
  * @param knockback int
  * @param dflags int
  */
-public void damage(GameObject inflictor, GameObject attacker, 
-	Vector3f dir, Point3f point, Vector3f normal, 
-	int damage, int knockback, int dflags, int tempEvent) 
+public void damage(DamageEvent de) 
 	{
-	super.damage(inflictor, attacker, dir, point, normal, damage, knockback, dflags, tempEvent, null);
+	super.damage(de);
 
 	if (fMaxHealth != 0)
 		{
-		fHealth -= damage;
+		fHealth -= de.getAmount();
 		if (fHealth < 0)
 			{
 			fHealth = fMaxHealth;

@@ -31,8 +31,8 @@ implements ServerFrameListener, PlayerListener, PrintListener,
 	private int fScore;
 	protected float fStartTime;
 
-	private int fHealth;
-	private int fHealthMax;
+	private float fHealth;
+	private float fHealthMax;
 	protected boolean fIsFemale;
 	protected boolean fInIntermission;
 	
@@ -51,9 +51,9 @@ implements ServerFrameListener, PlayerListener, PrintListener,
 	protected PlayerStateSupport fPlayerStateSupport;
 	protected PlayerInfoSupport fPlayerInfoSupport;
 	protected InventorySupport fInventorySupport;
-	protected PlayerDamageSupport fPreArmorPlayerDamageSupport;
-	protected PlayerDamageSupport fArmorPlayerDamageSupport;
-	protected PlayerDamageSupport fPostArmorPlayerDamageSupport;
+	protected DamageSupport fPreArmorDamageSupport;
+	protected DamageSupport fArmorDamageSupport;
+	protected DamageSupport fPostArmorDamageSupport;
 	//END Declarations for Delegation Model
 
 	// CHANGES for static Listeners
@@ -63,9 +63,9 @@ implements ServerFrameListener, PlayerListener, PrintListener,
 	protected static PlayerStateSupport gPlayerStateSupport = new PlayerStateSupport();
 	protected static PlayerInfoSupport gPlayerInfoSupport = new PlayerInfoSupport();
 	protected static InventorySupport gInventorySupport = new InventorySupport();
-	protected static PlayerDamageSupport gPreArmorPlayerDamageSupport = new PlayerDamageSupport();
-	protected static PlayerDamageSupport gArmorPlayerDamageSupport = new  PlayerDamageSupport();
-	protected static PlayerDamageSupport gPostArmorPlayerDamageSupport = new PlayerDamageSupport();
+	protected static DamageSupport gPreArmorDamageSupport = new DamageSupport();
+	protected static DamageSupport gArmorDamageSupport = new DamageSupport();
+	protected static DamageSupport gPostArmorDamageSupport = new DamageSupport();
 	//END Declarations for static listeners
 
 	protected ArmorDamageFilter fArmor;
@@ -74,7 +74,7 @@ implements ServerFrameListener, PlayerListener, PrintListener,
 	public final static int DAMAGE_FILTER_PHASE_ARMOR = 1;
 	public final static int DAMAGE_FILTER_PHASE_POSTARMOR = 2;
 
-	/** have we given the current weapon a chance to think yet this frame? */
+	// have we given the current weapon a chance to think yet this frame? 
 	protected boolean fWeaponThunk;
 	protected GenericWeapon fWeapon;
 	protected GenericWeapon fLastWeapon;
@@ -86,16 +86,22 @@ implements ServerFrameListener, PlayerListener, PrintListener,
 	protected float fBobFracSin;
 	protected int fBobCycle;
 	protected float fBobMove;
+
+	// Saved input to and output from the PMove function
+	protected short fCmdForwardMove;
+	protected short fCmdUpMove;
+	protected short fCmdSideMove;
 	public int fButtons; 
 	public int fLatchedButtons;	
 	protected int fOldButtons;
-	protected Angle3f fCmdAngles;
+	protected Angle3f fCmdAngles;	
 	public float fViewHeight;
 	protected int fWaterType;
 	protected int fWaterLevel;
 	protected int fOldWaterLevel;
 	protected Vector3f fOldVelocity;
-	/** The mass of this Player. Use setMass(int) to set.*/
+	
+	// The mass of this Player. Use setMass(int) to set.
 	private int fMass;
 	
 	protected boolean fShowInventory;
@@ -181,11 +187,11 @@ implements ServerFrameListener, PlayerListener, PrintListener,
 	public final static Color4f COLOR_SLIME = new Color4f(0.0f, 0.1f, 0.05f, 0.6f);
 	public final static Color4f COLOR_WATER = new Color4f(0.5f, 0.3f, 0.2f, 0.4f);
 	// These colors refer to fFrameAlpha for their alpha, so they only have 3 floats (rgb). 
-	/** The color used for Power Armor blends. */
+	// The color used for Power Armor blends. 
 	public final static Color3f COLOR_GREEN = new Color3f(0.0f, 1.0f, 0.0f);
-	/** The color used for regular Armor blends. */
+	// The color used for regular Armor blends. 
 	public final static Color3f COLOR_WHITE = new Color3f(1.0f, 1.0f, 1.0f);
-	/** The color used for blood blends. */
+	// The color used for blood blends. 
 	public final static Color3f COLOR_RED = new Color3f(1.0f, 0.0f, 0.0f);
 	
 	// added from id code (g_local.h) for view kicks.
@@ -339,7 +345,6 @@ implements ServerFrameListener, PlayerListener, PrintListener,
 		ANIM_JUMP, 66, 67,		// flail around in the air
 		ANIM_WAVE, 68, 71		// land on the ground		
 		};
-
 /**
  * Create a new Player Game object, and associate it with a Player
  * native entity.
@@ -380,9 +385,9 @@ public Player(NativeEntity ent) throws GameException
 	fPlayerStateSupport = new PlayerStateSupport();
 	fPlayerInfoSupport = new PlayerInfoSupport();
 	fInventorySupport = new InventorySupport();
-	fPreArmorPlayerDamageSupport = new PlayerDamageSupport();
-	fArmorPlayerDamageSupport = new PlayerDamageSupport();
-	fPostArmorPlayerDamageSupport = new PlayerDamageSupport();
+	fPreArmorDamageSupport = new DamageSupport();
+	fArmorDamageSupport = new DamageSupport();
+	fPostArmorDamageSupport = new DamageSupport();
 	//END changes for delegation Model
 
 	fPlayerInfo = new Hashtable();
@@ -412,7 +417,7 @@ public Player(NativeEntity ent) throws GameException
 
 	// create the basic Player Armor
 	fArmor = new ArmorDamageFilter(this);
-	addPlayerDamageListener(fArmor, DAMAGE_FILTER_PHASE_ARMOR);
+	addDamageListener(fArmor, DAMAGE_FILTER_PHASE_ARMOR);
 	
 	// Setup default weapon ordering
 	fWeaponOrder.addElement("blaster");
@@ -433,38 +438,38 @@ public Player(NativeEntity ent) throws GameException
 	fDamagePitch = 0.0f;
 	fDamageTime = 0.0f;
 	}
-public static void addAllPlayerCommandListener(PlayerCommandListener l)
+public static void addAllDamageListener(DamageListener l)
 	{
-	gPlayerCommandSupport.addPlayerCommandListener(l);
-	}
-public static void addAllPlayerDamageListener(PlayerDamageListener l)
-	{
-	addAllPlayerDamageListener(l,DAMAGE_FILTER_PHASE_PREARMOR);
+	addAllDamageListener(l,DAMAGE_FILTER_PHASE_PREARMOR);
 	}
 /**
  * Add an object that wants to filter damage the player takes.
  * @param DamageFilter - The object to add as a damage filter
  * @param int - Phase at which it wants to filter.
  */
-public static void addAllPlayerDamageListener(PlayerDamageListener l, int phase)
+public static void addAllDamageListener(DamageListener l, int phase)
 	{
 	if (l == null)
 		return;
 	
 	if (phase == DAMAGE_FILTER_PHASE_PREARMOR)
 		{
-		gPreArmorPlayerDamageSupport.addPlayerDamageListener(l);
+		gPreArmorDamageSupport.addDamageListener(l);
 		}
 	else if (phase == DAMAGE_FILTER_PHASE_ARMOR)
 		{
-		gArmorPlayerDamageSupport.addPlayerDamageListener(l);
+		gArmorDamageSupport.addDamageListener(l);
 		}
 	else if (phase == DAMAGE_FILTER_PHASE_POSTARMOR)
 	        {
-		gPostArmorPlayerDamageSupport.addPlayerDamageListener(l);
+		gPostArmorDamageSupport.addDamageListener(l);
 		}
 	
 	return;
+	}
+public static void addAllPlayerCommandListener(PlayerCommandListener l)
+	{
+	gPlayerCommandSupport.addPlayerCommandListener(l);
 	}
 public static void addAllPlayerInfoListener(PlayerInfoListener l)
 	{
@@ -561,6 +566,35 @@ public void addBlend(Color4f color)
 	{
 	addBlend(color.x, color.y, color.z, color.w);
 	}
+public void addDamageListener(DamageListener dl)
+	{
+	addDamageListener(dl, DAMAGE_FILTER_PHASE_PREARMOR);
+	}
+/**
+ * Add an object that wants to filter damage the player takes.
+ * @param DamageFilter - The object to add as a damage filter
+ * @param int - Phase at which it wants to filter.
+ */
+public void addDamageListener(DamageListener dl, int phase)
+	{
+	if (dl == null)
+		return;
+	
+	if (phase == DAMAGE_FILTER_PHASE_PREARMOR)
+		{
+		fPreArmorDamageSupport.addDamageListener(dl);
+		}
+	else if (phase == DAMAGE_FILTER_PHASE_ARMOR)
+		{
+		fArmorDamageSupport.addDamageListener(dl);
+		}
+	else if (phase == DAMAGE_FILTER_PHASE_POSTARMOR)
+	    {
+		fPostArmorDamageSupport.addDamageListener(dl);
+		}
+	
+	return;
+	}
 /**
  * Add an item to the player's inventory.
  * @param item what we're trying to add.
@@ -613,35 +647,6 @@ public void addPlayerCommandListener(PlayerCommandListener l)
 public void addPlayerCvarListener(PlayerCvarListener l, String cvar)
 	{
 	fPlayerCvarSupport.addPlayerCvarListener(this,l,cvar);
-	}
-public void addPlayerDamageListener(PlayerDamageListener l)
-	{
-	addPlayerDamageListener(l,DAMAGE_FILTER_PHASE_PREARMOR);
-	}
-/**
- * Add an object that wants to filter damage the player takes.
- * @param DamageFilter - The object to add as a damage filter
- * @param int - Phase at which it wants to filter.
- */
-public void addPlayerDamageListener(PlayerDamageListener l, int phase)
-	{
-	if (l == null)
-		return;
-	
-	if (phase == DAMAGE_FILTER_PHASE_PREARMOR)
-		{
-		fPreArmorPlayerDamageSupport.addPlayerDamageListener(l);
-		}
-	else if (phase == DAMAGE_FILTER_PHASE_ARMOR)
-		{
-		fArmorPlayerDamageSupport.addPlayerDamageListener(l);
-		}
-	else if (phase == DAMAGE_FILTER_PHASE_POSTARMOR)
-	        {
-		fPostArmorPlayerDamageSupport.addPlayerDamageListener(l);
-		}
-	
-	return;
 	}
 public void addPlayerInfoListener(PlayerInfoListener l)
 	{
@@ -846,40 +851,6 @@ protected void calcBlend()
 	else if ((contents & Engine.CONTENTS_WATER) != 0)
 		addBlend(COLOR_WATER);
 
-/*	// add for powerups
-	if (ent->client->quad_framenum > level.framenum)
-	{
-		remaining = ent->client->quad_framenum - level.framenum;
-		if (remaining == 30)	// beginning to fade
-			gi.sound(ent, CHAN_ITEM, gi.soundindex("items/damage2.wav"), 1, ATTN_NORM, 0);
-		if (remaining > 30 || (remaining & 4) )
-			SV_AddBlend (0, 0, 1, 0.08, ent->client->ps.blend);
-	}
-	else if (ent->client->invincible_framenum > level.framenum)
-	{
-		remaining = ent->client->invincible_framenum - level.framenum;
-		if (remaining == 30)	// beginning to fade
-			gi.sound(ent, CHAN_ITEM, gi.soundindex("items/protect2.wav"), 1, ATTN_NORM, 0);
-		if (remaining > 30 || (remaining & 4) )
-			SV_AddBlend (1, 1, 0, 0.08, ent->client->ps.blend);
-	}
-	else if (ent->client->enviro_framenum > level.framenum)
-	{
-		remaining = ent->client->enviro_framenum - level.framenum;
-		if (remaining == 30)	// beginning to fade
-			gi.sound(ent, CHAN_ITEM, gi.soundindex("items/airout.wav"), 1, ATTN_NORM, 0);
-		if (remaining > 30 || (remaining & 4) )
-			SV_AddBlend (0, 1, 0, 0.08, ent->client->ps.blend);
-	}
-	else if (ent->client->breather_framenum > level.framenum)
-	{
-		remaining = ent->client->breather_framenum - level.framenum;
-		if (remaining == 30)	// beginning to fade
-			gi.sound(ent, CHAN_ITEM, gi.soundindex("items/airout.wav"), 1, ATTN_NORM, 0);
-		if (remaining > 30 || (remaining & 4) )
-			SV_AddBlend (0.4, 1, 0.4, 0.04, ent->client->ps.blend);
-	}
-*/
 	// add for damage if alpha level is present
 	if (damageBlend.w > 0)
 		addBlend(damageBlend);
@@ -1145,7 +1116,8 @@ protected void calcViewOffset()
 	fEntity.setPlayerViewOffset(fViewOffset);
 	}
 /**
- * This method was created by a SmartGuide.
+ * Called by the current weapon when it's done deactivating,
+ * letting us know it's time to bring up the next weapon.
  */
 public void changeWeapon() 
 	{
@@ -1257,6 +1229,12 @@ public void cmd_debug_setblend(String[] argv, String args)
  */
 public void cmd_drop(String[] argv, String args) 
 	{
+	if (argv.length < 2)		
+		{
+		fEntity.cprint(Engine.PRINT_HIGH, "Usage: drop <itemname>\n");
+		return;
+		}
+		
 	// build up the name of the item
 	String itemName = argv[1];
 	for (int i = 2; i < argv.length; i++)
@@ -1896,7 +1874,7 @@ public static void copyCorpse(NativeEntity ent)
  * If the player takes enough damage, this function will call the Player.die() function.
  * @param DamageObject - The damage we are taking.
  */
-public void damage(PlayerDamageEvent damage)
+public void damage(DamageEvent damage)
 	{
 
 	// don't take any more damage if already dead
@@ -1950,37 +1928,7 @@ public void damage(PlayerDamageEvent damage)
 	
 	// For view angle kicks this frame. (TSW)
 	fDamageKnockback += damage.fKnockback;
-	float[] f = {0,0,0};	// What in the world is this here for? - BH
 	damage.fPoint.get(fDamageFrom);	// set fDamageFrom to value of point
-	}
-/**
- * Inflict damage on the Player.
- * If the player takes enough damage, this function will call the Player.die() function.
- *
- * @param inflictor the entity that's causing the damage, such as a rocket.
- * @param attacker the entity that's gets credit for the damage, for example the player who fired the above example rocket.
- * @param dir the direction the damage is coming from.
- * @param point the point where the damage is being inflicted.
- * @param normal q2java.Vec3
- * @param damage how much damage the player is being hit with.
- * @param knockback how much the player should be pushed around because of the damage.
- * @param dflags flags indicating the type of damage, corresponding to GameEntity.DAMAGE_* constants.
- */
-public void damage(GameObject inflictor, GameObject attacker, 
-	Vector3f dir, Point3f point, Vector3f normal, 
-	int damage, int knockback, int dflags, int tempEvent, String obitKey)
-	{
-	// re-use our existing damage object
-	// fTempDamageObject.set(inflictor, attacker, this, dir, point, normal, damage,
-	  //					knockback, dflags, tempEvent, obitKey);
-	// call the new damage function.
-
-	  PlayerDamageEvent e = 
-	    PlayerDamageEvent.getEvent(inflictor, attacker, this, dir, point, normal, damage,
-				       knockback, dflags, tempEvent, obitKey);
-	  damage(e);
-
-	  PlayerDamageEvent.releaseEvent(e);
 	}
 /** 
  * Handles color blends and view kicks
@@ -2137,8 +2085,6 @@ protected void die(GameObject inflictor, GameObject attacker, int damage, Point3
 	// let interested objects know the player died.
 	fPlayerStateSupport.fireEvent( this, PlayerStateEvent.STATE_DEAD, attacker );
 	gPlayerStateSupport.fireEvent( this, PlayerStateEvent.STATE_DEAD, attacker );
-
-
 	
 	// remove the weapon from the POV
 	fEntity.setPlayerGunIndex(0);
@@ -2339,22 +2285,22 @@ protected void fallingDamage()
  * @param int - phase of filtering, one of DAMAGE_FILTER_PHASE_*
  * @return DamageObject - the modified damage
  */
-protected void filterDamage(PlayerDamageEvent damage, int phase) 
+protected void filterDamage(DamageEvent damage, int phase) 
 	{
 	if (phase == DAMAGE_FILTER_PHASE_PREARMOR)
 		{
-		fPreArmorPlayerDamageSupport.fireEvent(this,damage);
-		gPreArmorPlayerDamageSupport.fireEvent(this,damage);
+		fPreArmorDamageSupport.fireEvent(damage);
+		gPreArmorDamageSupport.fireEvent(damage);
 		}
 	else if (phase == DAMAGE_FILTER_PHASE_ARMOR)
 		{
-		fArmorPlayerDamageSupport.fireEvent(this,damage);
-		gArmorPlayerDamageSupport.fireEvent(this,damage);
+		fArmorDamageSupport.fireEvent(damage);
+		gArmorDamageSupport.fireEvent(damage);
 		}
 	else
 		{
-		fPostArmorPlayerDamageSupport.fireEvent(this,damage);
-		gPostArmorPlayerDamageSupport.fireEvent(this,damage);
+		fPostArmorDamageSupport.fireEvent(damage);
+		gPostArmorDamageSupport.fireEvent(damage);
 		}
 	}
 /**
@@ -2433,7 +2379,7 @@ public float getFrameAlpha()
  * Get the player's health.
  * @return int
  */
-public int getHealth() 
+public float getHealth() 
 	{
 	return fHealth;
 	}
@@ -2441,7 +2387,7 @@ public int getHealth()
  * Get the upper limit of the player's health range.
  * @return int
  */
-public int getHealthMax() 
+public float getHealthMax() 
 	{
 	return fHealthMax;
 	}
@@ -2613,7 +2559,7 @@ public Object getTeam()
 	return fTeam;
 	}
 /**
- * Find out if were underwater
+ * Find out if we're underwater
  * @return int - level of water. 0, we're out - 3, head is under.
  */
 public int getWaterLevel()
@@ -2624,7 +2570,7 @@ public int getWaterLevel()
  * This method was created by a SmartGuide.
  * @param amount int
  */
-public boolean heal(int amount, boolean overrideMax) 
+public boolean heal(float amount, boolean overrideMax) 
 	{
 	if (overrideMax)
 		{
@@ -2977,6 +2923,13 @@ public void playerInfoChanged(String playerInfo)
 		}					
 	}
 /**
+ * Called by playerThink() when it decides that the player has jumped.
+ */
+protected void playerJumped() 
+	{
+	fEntity.sound(NativeEntity.CHAN_VOICE, getSexedSoundIndex("jump1"), 1, NativeEntity.ATTN_NORM, 0);	
+	}
+/**
  * All player entities get a chance to think.  When
  * a player entity thinks, it has to handle the 
  * users movement commands by calling pMove().
@@ -2995,12 +2948,15 @@ public void playerThink(PlayerCmd cmd)
 //      return gi.trace (start, mins, maxs, end, pm_passent, MASK_PLAYERSOLID);
 //  else
 //      return gi.trace (start, mins, maxs, end, pm_passent, MASK_DEADSOLID);
- 	
+
+	fCmdForwardMove = cmd.fForwardMove;
+	fCmdUpMove = cmd.fUpMove;
+	fCmdSideMove = cmd.fSideMove;
  	fCmdAngles = cmd.getCmdAngles();
  	
 	if ((fEntity.getGroundEntity() != null) && (pm.fGroundEntity == null) && (cmd.fUpMove >= 10) && (pm.fWaterLevel == 0))
-		fEntity.sound(NativeEntity.CHAN_VOICE, getSexedSoundIndex("jump1"), 1, NativeEntity.ATTN_NORM, 0);
-			
+		playerJumped();
+		
 	fViewHeight = pm.fViewHeight;	
 	fWaterType = pm.fWaterType;
 	fWaterLevel = pm.fWaterLevel;	
@@ -3240,36 +3196,36 @@ protected void registerKill(Player p)
 	else
 		setScore(1, false);	
 	}
-public static void removeAllPlayerCommandListener(PlayerCommandListener l)
+public static void removeAllDamageListener(DamageListener l)
 	{
-	gPlayerCommandSupport.removePlayerCommandListener(l);
-	}
-public static void removeAllPlayerDamageListener(PlayerDamageListener l)
-	{
-	removeAllPlayerDamageListener(l,DAMAGE_FILTER_PHASE_PREARMOR);
+	removeAllDamageListener(l,DAMAGE_FILTER_PHASE_PREARMOR);
 	}
 /**
  * Remove an object that was registered to filter damage.
  * @param DamageFilter - filter to remove.
  * @param int - phase the filter was at.
  */
-public static void removeAllPlayerDamageListener(PlayerDamageListener l, int phase)
+public static void removeAllDamageListener(DamageListener l, int phase)
 	{
 	if (l == null)
 		return;
 		
 	if (phase == DAMAGE_FILTER_PHASE_PREARMOR)
 		{
-		gPreArmorPlayerDamageSupport.removePlayerDamageListener(l);
+		gPreArmorDamageSupport.removeDamageListener(l);
 		}
 	else if (phase == DAMAGE_FILTER_PHASE_ARMOR)
 		{
-		gArmorPlayerDamageSupport.removePlayerDamageListener(l);
+		gArmorDamageSupport.removeDamageListener(l);
 		}
 	else
 		{
-		gPostArmorPlayerDamageSupport.removePlayerDamageListener(l);
+		gPostArmorDamageSupport.removeDamageListener(l);
 		}
+	}
+public static void removeAllPlayerCommandListener(PlayerCommandListener l)
+	{
+	gPlayerCommandSupport.removePlayerCommandListener(l);
 	}
 public static void removeAllPlayerInfoListener(PlayerInfoListener l)
 	{
@@ -3286,6 +3242,33 @@ public static void removeAllPlayerMoveListener(PlayerMoveListener l)
 public static void removeAllPlayerStateListener(PlayerStateListener l)
 	{
 	gPlayerStateSupport.removePlayerStateListener(l);
+	}
+public void removeDamageListener(DamageListener l)
+	{
+	removeDamageListener(l,DAMAGE_FILTER_PHASE_PREARMOR);
+	}
+/**
+ * Remove an object that was registered to filter damage.
+ * @param DamageFilter - filter to remove.
+ * @param int - phase the filter was at.
+ */
+public void removeDamageListener(DamageListener l, int phase)
+	{
+	if (l == null)
+		return;
+		
+	if (phase == DAMAGE_FILTER_PHASE_PREARMOR)
+		{
+		fPreArmorDamageSupport.removeDamageListener(l);
+		}
+	else if (phase == DAMAGE_FILTER_PHASE_ARMOR)
+		{
+		fArmorDamageSupport.removeDamageListener(l);
+		}
+	else
+		{
+		fPostArmorDamageSupport.removeDamageListener(l);
+		}
 	}
 /**
  * Remove an object that was registered to filter damage.
@@ -3341,33 +3324,6 @@ public void removePlayerCommandListener(PlayerCommandListener l)
 public void removePlayerCvarListener(PlayerCvarListener l)
 	{
 	fPlayerCvarSupport.removePlayerCvarListener(this,l);
-	}
-public void removePlayerDamageListener(PlayerDamageListener l)
-	{
-	removePlayerDamageListener(l,DAMAGE_FILTER_PHASE_PREARMOR);
-	}
-/**
- * Remove an object that was registered to filter damage.
- * @param DamageFilter - filter to remove.
- * @param int - phase the filter was at.
- */
-public void removePlayerDamageListener(PlayerDamageListener l, int phase)
-	{
-	if (l == null)
-		return;
-		
-	if (phase == DAMAGE_FILTER_PHASE_PREARMOR)
-		{
-		fPreArmorPlayerDamageSupport.removePlayerDamageListener(l);
-		}
-	else if (phase == DAMAGE_FILTER_PHASE_ARMOR)
-		{
-		fArmorPlayerDamageSupport.removePlayerDamageListener(l);
-		}
-	else
-		{
-		fPostArmorPlayerDamageSupport.removePlayerDamageListener(l);
-		}
 	}
 public void removePlayerInfoListener(PlayerInfoListener l)
 	{
@@ -3605,7 +3561,7 @@ public void setGravity(float x, float y, float z)
  * This method was created by a SmartGuide.
  * @param val int
  */
-public void setHealth(int val) 
+public void setHealth(float val) 
 	{
 	fHealth = val;
 	fEntity.setPlayerStat(NativeEntity.STAT_HEALTH, (short)fHealth);
@@ -3782,10 +3738,10 @@ protected void spawn()
 		}
 		
 	closeDisplay();
-
+	
 	// let interested objects know the player spawnned.
 	fPlayerStateSupport.fireEvent(this, PlayerStateEvent.STATE_SPAWNED, BaseQ2.gWorld);	
-	gPlayerStateSupport.fireEvent(this,PlayerStateEvent.STATE_SPAWNED, BaseQ2.gWorld);	
+	gPlayerStateSupport.fireEvent(this, PlayerStateEvent.STATE_SPAWNED, BaseQ2.gWorld);	
 	}
 /**
  * Switch the player into intermission mode.  Their view should be from

@@ -42,6 +42,22 @@ public void dispose()
 	fPlayer.removePlayerStateListener(this);
 	}
 /**
+ * Called when the player dies, disconnects, or changes level.
+ * @param p baseq2.Player
+ * @param changeEvent int
+ */
+public void playerStateChanged(PlayerStateEvent pse) 
+	{
+	switch (pse.getStateChanged())	
+		{
+		case PlayerStateEvent.STATE_DEAD:
+		case PlayerStateEvent.STATE_INVALID:
+		case PlayerStateEvent.STATE_SUSPENDEDSTART:
+			dispose();
+			break;
+		}
+	}
+/**
  * Blind the player a bit.
  * @param phase int
  */
@@ -56,22 +72,6 @@ public void runFrame(int phase)
 		fPower *= CLEAR_RATE;
 		if (fPower < BLINDNESS_ENDS)
 			dispose();
-		}
-	}
-/**
- * Called when the player dies, disconnects, or changes level.
- * @param p baseq2.Player
- * @param changeEvent int
- */
-public void stateChanged(PlayerStateEvent pse) 
-	{
-	switch (pse.getStateChanged())	
-		{
-		case PlayerStateEvent.STATE_DEAD:
-		case PlayerStateEvent.STATE_INVALID:
-		case PlayerStateEvent.STATE_SUSPENDEDSTART:
-			dispose();
-			break;
 		}
 	}
 }

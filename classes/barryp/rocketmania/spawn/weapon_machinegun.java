@@ -63,7 +63,8 @@ public void fire()
 			fEntity.sound(NativeEntity.CHAN_VOICE, Engine.getSoundIndex("weapons/noammo.wav"), 1, NativeEntity.ATTN_NORM, 0);
 //			ent->pain_debounce_time = level.time + 1;
 			}
-		fPlayer.changeWeapon();
+		if (isAutoSwitch())
+	 		fPlayer.changeWeapon();
 		return;
 		}
 										

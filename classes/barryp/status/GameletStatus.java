@@ -52,8 +52,10 @@ public void gameletChanged(GameletEvent ge)
 	switch (ge.getState())
 		{
 		case GameletEvent.GAMELET_ADDED:
-			// fall through to do a full update - that
-			// way we list in the right order
+			// do a full update..so the correct order is displayed
+			updateInfo();
+			break;
+			
 		case GameletEvent.GAMELET_UNLOADING:
 			fSkipGamelet = ge.getGamelet();
 			updateInfo();

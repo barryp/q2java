@@ -4,6 +4,7 @@ import javax.vecmath.*;
 import q2java.*;
 import q2java.core.*;
 import q2java.core.event.ServerFrameListener;
+import q2java.baseq2.event.*;
 
 /**
  * Corpse lying on the ground.
@@ -44,20 +45,10 @@ public void copy(NativeEntity ent)
 /**
  * Cause the corpse to spray blood.
  *
- * @param inflictor q2jgame.GameEntity
- * @param attacker q2jgame.GameEntity
- * @param dir q2java.Vec3
- * @param point q2java.Vec3
- * @param normal q2java.Vec3
- * @param damage int
- * @param knockback int
- * @param dflags int
  */
-public void damage(GameObject inflictor, GameObject attacker, 
-	Vector3f dir, Point3f point, Vector3f normal, 
-	int damage, int knockback, int dflags, int tempEvent) 
+public void damage(DamageEvent de) 
 	{
-	spawnDamage(Engine.TE_BLOOD, point, normal, damage);	
+	spawnDamage(Engine.TE_BLOOD, de.getDamagePoint(), de.getDamageNormal(), de.getAmount());	
 	}
 /**
  * Hide the corpse.

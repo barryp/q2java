@@ -11,7 +11,11 @@ import org.w3c.dom.*;
 public class XMLTools 
 	{
 	// Object that actually provides the XML/DOM services
-	private static XMLFactory gXMLFactory;	
+	private static XMLFactory gXMLFactory;
+
+	// hints for how we want documents written
+	public final static int OUTPUT_PRETTY = 1;
+	public final static int OUTPUT_COMPACT = 2;
 	
 /**
  * Copy the source node into (inside) the destination element -
@@ -210,12 +214,27 @@ public static Document readXMLDocument(Reader r, String sourceName) throws IOExc
 	}
 /**
  * Write a DOM document as an XML stream.
+ *
+ * @param doc a DOM document
+ * @param w a java.io.Writer to write to
  */
 public static void writeXMLDocument(Document doc, Writer w) throws IOException
+	{
+	writeXMLDocument(doc, w, OUTPUT_PRETTY);
+	}
+/**
+ * Write a DOM document as an XML stream.
+ *
+ * @param doc a DOM document
+ * @param w a java.io.Writer to write to
+ * @param a hint about what format we'd like, one of the OUTPUT_* constants
+ *   (1=OUTPUT_PRETTY, 2=OUTPUT_COMPACT).
+ */
+public static void writeXMLDocument(Document doc, Writer w, int outputStyle) throws IOException
 	{
 	if (gXMLFactory == null)
 		init();
 	
-	gXMLFactory.writeXMLDocument(doc, w);
+	gXMLFactory.writeXMLDocument(doc, w, outputStyle);
 	}
 }

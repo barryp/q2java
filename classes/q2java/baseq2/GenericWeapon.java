@@ -23,14 +23,6 @@ public abstract class GenericWeapon extends AmmoHolder
 	
 	// Player Weapon fields	
 	protected Player fPlayer;
-
-	protected final static int DEFAULT_BULLET_HSPREAD		= 300;
-	protected final static int DEFAULT_BULLET_VSPREAD		= 500;
-	protected final static int DEFAULT_SHOTGUN_HSPREAD		= 1000;
-	protected final static int DEFAULT_SHOTGUN_VSPREAD		= 500;	
-	protected final static int DEFAULT_DEATHMATCH_SHOTGUN_COUNT		= 12;
-	protected final static int DEFAULT_SHOTGUN_COUNT				= 12;
-	protected final static int DEFAULT_SSHOTGUN_COUNT				= 20;	
 	
 	// keep our own copy of the animation frame, so
 	// we don't have to go back and forth to C so much
@@ -48,11 +40,22 @@ public abstract class GenericWeapon extends AmmoHolder
 	// its animation
 	protected int fWeaponState;
 	protected boolean fIsSwitching;
+	private boolean fIsAutoSwitch = true;  //does this weapon automatically switch away when ammo is too low?
 	
+	// ------- Static Constants ----------
+	
+	protected final static int DEFAULT_BULLET_HSPREAD		= 300;
+	protected final static int DEFAULT_BULLET_VSPREAD		= 500;
+	protected final static int DEFAULT_SHOTGUN_HSPREAD		= 1000;
+	protected final static int DEFAULT_SHOTGUN_VSPREAD		= 500;	
+	protected final static int DEFAULT_DEATHMATCH_SHOTGUN_COUNT		= 12;
+	protected final static int DEFAULT_SHOTGUN_COUNT				= 12;
+	protected final static int DEFAULT_SSHOTGUN_COUNT				= 20;	
+
 	protected final static int WEAPON_UNUSED		= 0;
-	protected final static int WEAPON_READY		= 1;
+	protected final static int WEAPON_READY			= 1;
 	protected final static int WEAPON_ACTIVATING	= 2;
-	protected final static int WEAPON_DROPPING	= 3;
+	protected final static int WEAPON_DROPPING		= 3;
 	protected final static int WEAPON_FIRING		= 4;	
 	
 /**
@@ -189,6 +192,14 @@ public final void incWeaponFrame()
 	fEntity.setPlayerGunFrame(++fGunFrame);
 	}
 /**
+ * Find out whether this weapon auto-switches away when ammo runs out.
+ * @return boolean
+ */
+public boolean isAutoSwitch() 
+	{
+	return fIsAutoSwitch;
+	}
+/**
  * Check whether this weapon has enough ammo to fire.  One unit of
  * ammo is good enough for most weapons.  Special weapons will 
  * override this.
@@ -211,6 +222,32 @@ public boolean isFiring()
 	return fWeaponState == WEAPON_FIRING;
 	}
 /**
+ * Called when a player dies or disconnects.
+ * @param wasDisconnected true on disconnects, false on normal deaths.
+ */
+public void playerStateChanged(PlayerStateEvent pse)
+	{
+	switch (pse.getStateChanged())	
+		{		
+		case PlayerStateEvent.STATE_SUSPENDEDSTART:	
+			fPlayer.removePlayerStateListener(this);
+			break;
+			
+		case PlayerStateEvent.STATE_DEAD:
+		case PlayerStateEvent.STATE_INVALID:
+			fPlayer.removePlayerStateListener(this);
+			if (isDroppable())
+				{
+				Player p = pse.getPlayer();
+				setAmmoCount(getDefaultAmmoCount());
+				p.removeInventory(getItemName()); // not really necessary, but you never know
+				drop(p, GenericItem.DROP_TIMEOUT);
+				}		
+			break;
+		}
+	
+	}
+/**
  * Make sure a weapon's VWep skin is precached.  Most useful
  * for weapons that aren't spawned in maps, like the blaster
  * and grapple hook.
@@ -227,6 +264,14 @@ public static void precacheVWep(String weaponClassSuffix)
 		{
 		// no weapon by this name? oh well, don't raise a stink about it.
 		}
+	}
+/**
+ * Set whether this weapon automatically switches away when ammo is too low.
+ * @param b boolean
+ */
+public void setAutoSwitch(boolean b) 
+	{
+	fIsAutoSwitch = b;
 	}
 /**
  * Fill in the info specific to this type of weapon.
@@ -255,32 +300,6 @@ public final void setWeaponFrame(int newFrame)
 	{
 	fGunFrame = newFrame;
 	fEntity.setPlayerGunFrame(fGunFrame);
-	}
-/**
- * Called when a player dies or disconnects.
- * @param wasDisconnected true on disconnects, false on normal deaths.
- */
-public void stateChanged(PlayerStateEvent pse)
-	{
-	switch (pse.getStateChanged())	
-		{		
-		case PlayerStateEvent.STATE_SUSPENDEDSTART:	
-			fPlayer.removePlayerStateListener(this);
-			break;
-			
-		case PlayerStateEvent.STATE_DEAD:
-		case PlayerStateEvent.STATE_INVALID:
-			fPlayer.removePlayerStateListener(this);
-			if (isDroppable())
-				{
-				Player p = pse.getPlayer();
-				setAmmoCount(getDefaultAmmoCount());
-				p.removeInventory(getItemName()); // not really necessary, but you never know
-				drop(p, GenericItem.DROP_TIMEOUT);
-				}		
-			break;
-		}
-	
 	}
 /**
  * This method was created by a SmartGuide.
@@ -347,7 +366,8 @@ public void weaponThink()
 			else
 				{
 				fEntity.sound(NativeEntity.CHAN_VOICE, Engine.getSoundIndex("weapons/noammo.wav"), 1, NativeEntity.ATTN_NORM, 0);
-				deactivate();
+				if (fIsAutoSwitch)
+  					deactivate();
 				return;
 				}				
 			}

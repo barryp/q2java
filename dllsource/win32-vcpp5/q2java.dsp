@@ -45,7 +45,7 @@ CFG=game - Win32 Debug Alpha
 # PROP Target_Dir "."
 CPP=cl.exe
 # ADD BASE CPP /nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /YX /c
-# ADD CPP /nologo /G5 /W3 /GX /Zd /O2 /I "d:\jdk1.2\include" /I "d:\jdk1.2\include\win32" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /FR /YX /FD /c
+# ADD CPP /nologo /G5 /W3 /GX /Zd /O2 /I "e:\jdk1.2.2\include" /I "e:\jdk1.2.2\include\win32" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /FR /YX /FD /c
 MTL=midl.exe
 # ADD BASE MTL /nologo /D "NDEBUG" /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32

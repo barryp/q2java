@@ -1,19 +1,17 @@
 <?xml version="1.0"?> 
-<xsl:stylesheet 
-    xmlns:xsl="http://www.w3.org/TR/WD-xsl"
-    xmlns="http://www.w3.org/TR/REC-html40"
-    result-ns=""
-    indent-result="yes">   
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+  <xsl:output method="html" indent="yes"/>
 
   <!-- Copy any unmatched elements exactly from the XML to the output file -->
-  <xsl:template match="*|@*|comment()|pi()|text()">
+<!--
+  <xsl:template match="*|@*|comment()|processing-instruction()|text()">
     <xsl:copy>
       BOGUS-START
-      <xsl:apply-templates select="*|@*|text()"/>
+      <xsl:apply-templates select="*|@*|comment()|processing-instruction()|text()"/>
       BOGUS-END
     </xsl:copy>
   </xsl:template>
-
+-->
   <xsl:template match="changelog">
     <HTML>
       <HEAD>

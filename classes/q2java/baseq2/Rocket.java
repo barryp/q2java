@@ -96,7 +96,7 @@ public void runFrame(int phase)
 		{
 		GameObject victim = (GameObject) tr.fEntity.getReference();
 		victim.damage(this, fOwner, fEntity.getVelocity(), fEntity.getOrigin(), tr.fPlaneNormal, fDamage, 0, 0, effect, "rocket");
-		MiscUtil.radiusDamage(this, fOwner, fRadiusDamage, victim, fDamageRadius, "r_splash");
+		MiscUtil.radiusDamage(this, fOwner, fRadiusDamage, victim.fEntity, fDamageRadius, "r_splash");
 		}
 	else
 		MiscUtil.radiusDamage(this, fOwner, fRadiusDamage, null, fDamageRadius, "r_splash");		

@@ -1143,9 +1143,11 @@ public void startLevel(String mapname, String entString, String spawnPoint)
 		gLevelStarted = false;
 		}	
 
-	// make a note of what map we're going to play
+	// make a note of what map we're going to play and update the server's name
 	gCurrentMapName = mapname;
-	getDocument("q2java.status").getDocumentElement().setAttribute("map", mapname);
+	Element statusRoot = getDocument("q2java.status").getDocumentElement();
+	statusRoot.setAttribute("map", mapname);
+	statusRoot.setAttribute("name", (new CVar("hostname", "noname", 0)).getString());
 	notifyDocumentUpdated("q2java.status");
 	
 	// create the inital, mostly empty level document (don't pass the entString)

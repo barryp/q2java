@@ -37,10 +37,12 @@ public class GrappleWeapon extends GenericWeapon implements PlayerMoveListener
 
 	public GrappleWeapon()
 	{
+		setDroppable(false);
 	}
 	public GrappleWeapon(Element spawnArgs) throws GameException
 	{
 		super(spawnArgs);
+		setDroppable(false);
 	}
 	/**
 	 * This method was created by a SmartGuide.
@@ -140,13 +142,6 @@ public class GrappleWeapon extends GenericWeapon implements PlayerMoveListener
 	{
 		return "models/weapons/grapple/tris.md2";
 	}
-	/**
-	 * Can't drop the grapple hook.
-	 */
-	public boolean isDroppable() 
-	{
-		return false;
-	}
 	public void playerMoved(PlayerMoveEvent pme)
 	{
 		if ( fHook != null )
@@ -154,6 +149,23 @@ public class GrappleWeapon extends GenericWeapon implements PlayerMoveListener
 			if ( fHook.getState() == GrappleHook.CTF_GRAPPLE_STATE_PULLING 
 			  || fHook.getState() == GrappleHook.CTF_GRAPPLE_STATE_HANGING )
 				 fHook.pull();
+		}	
+	}
+	/**
+	 * Called when a player dies, disconnects, or teleports.
+	 * @param wasDisconnected true on disconnects, false on normal deaths.
+	 */
+	public void playerStateChanged(PlayerStateEvent pse)
+	{
+		switch (pse.getStateChanged())	
+		{
+		case PlayerStateEvent.STATE_DEAD:
+		case PlayerStateEvent.STATE_INVALID:
+		case PlayerStateEvent.STATE_SUSPENDEDSTART:
+		case PlayerStateEvent.STATE_TELEPORTED:
+			reset();
+			super.playerStateChanged(pse);
+			break;
 		}	
 	}
 	public void reset()
@@ -178,22 +190,5 @@ public class GrappleWeapon extends GenericWeapon implements PlayerMoveListener
 
 		fPauseFrames = PAUSE_FRAMES;
 		fFireFrames  = FIRE_FRAMES;					
-	}
-	/**
-	 * Called when a player dies, disconnects, or teleports.
-	 * @param wasDisconnected true on disconnects, false on normal deaths.
-	 */
-	public void stateChanged(PlayerStateEvent pse)
-	{
-		switch (pse.getStateChanged())	
-		{
-		case PlayerStateEvent.STATE_DEAD:
-		case PlayerStateEvent.STATE_INVALID:
-		case PlayerStateEvent.STATE_SUSPENDEDSTART:
-		case PlayerStateEvent.STATE_TELEPORTED:
-			reset();
-			super.stateChanged(pse);
-			break;
-		}	
 	}
 }

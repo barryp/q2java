@@ -34,9 +34,23 @@ public Document readXMLDocument(Reader r, String sourceName) throws IOException
 /**
  * write a DOM document to an XML stream.
  */
-public void writeXMLDocument(Document doc, Writer w) throws IOException
+public void writeXMLDocument(Document doc, Writer w, int outputStyle) throws IOException
 	{
-	Publisher pub = PublisherFactory.createPublisher(w, StreamFormat.XML_PRETTY );
+	StreamFormat openXMLStyle = StreamFormat.XML_PRETTY;
+
+	// map XMLTools styles to OpenXML Styles
+	switch (outputStyle)
+		{
+		case XMLTools.OUTPUT_PRETTY:
+			openXMLStyle = StreamFormat.XML_PRETTY;
+			break;
+			
+		case XMLTools.OUTPUT_COMPACT:
+			openXMLStyle = StreamFormat.XML_COMPACT;
+			break;			
+		}
+		
+	Publisher pub = PublisherFactory.createPublisher(w, openXMLStyle );
 	pub.publish(doc);
 	pub.close();	
 	}

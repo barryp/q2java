@@ -4,6 +4,7 @@ import org.w3c.dom.Element;
 
 import q2java.*;
 import q2java.core.*;
+import q2java.core.event.*;
 import q2java.core.gui.*;
 import q2java.baseq2.*;
 import q2java.baseq2.event.*;
@@ -12,7 +13,8 @@ import q2java.baseq2.event.*;
  * The quad damage power up.
  * @author Brian Haskin
  */
-public class item_quad extends GenericPowerUp implements PlayerStateListener
+public class item_quad extends GenericPowerUp 
+implements ServerFrameListener, PlayerStateListener
 	{	
 	protected Player fOwner;
 	protected IconCountdownTimer fHUDTimer;
@@ -59,6 +61,21 @@ public String getModelName()
 	return "models/items/quaddama/tris.md2";
 	}
 /**
+ * called by the carrying player when they die to give us a chance to reset 
+ * there damage multiplier and effects if we were in use when they died.
+ */
+public void playerStateChanged(PlayerStateEvent pse)
+	{
+	switch (pse.getStateChanged())	
+		{
+		case PlayerStateEvent.STATE_DEAD:
+		case PlayerStateEvent.STATE_INVALID:
+		case PlayerStateEvent.STATE_SUSPENDEDSTART:
+			reset();
+			break;
+		}
+	}
+/**
  * Undo effects of quad.
  */
 protected void reset() 
@@ -89,12 +106,6 @@ protected void reset()
  */
 public void runFrame(int Phase)
 	{
-	if (fOwner == null)	// Someone above us must want it. Is this really needed?
-		{
-		super.runFrame(Phase);
-		return;
-		}
-	
 	GenericWeapon gw = fOwner.getCurrentWeapon();
 	if(gw != null && gw.isFiring()) // we really need a function to check if the weapon was just fired this frame.
 		{
@@ -136,21 +147,6 @@ public void runFrame(int Phase)
 	
 	if (fMillis == 0)
 		reset();
-	}
-/**
- * called by the carrying player when they die to give us a chance to reset 
- * there damage multiplier and effects if we were in use when they died.
- */
-public void stateChanged(PlayerStateEvent pse)
-	{
-	switch (pse.getStateChanged())	
-		{
-		case PlayerStateEvent.STATE_DEAD:
-		case PlayerStateEvent.STATE_INVALID:
-		case PlayerStateEvent.STATE_SUSPENDEDSTART:
-			reset();
-			break;
-		}
 	}
 /**
  * Increase the Players damage multiplier for 30 seconds when used.
