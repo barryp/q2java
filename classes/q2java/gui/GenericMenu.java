@@ -319,7 +319,7 @@ public class GenericMenu
 			s += " yv " + y + " string \"\u0015\u0017\"";
 			y += 8;
 		}
-		s += " yv " + (area.y+area.height-8) + " string \"\u0018\u001A\"";
+		s += " yv " + (area.y+area.height-8) + " string \"\u0018\032\"";
 		*/
 		// paint the scroller
 		// the scroller-character overlaps...
