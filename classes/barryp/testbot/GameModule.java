@@ -19,11 +19,18 @@ public class GameModule extends q2java.core.Gamelet
 public GameModule(Document gameletInfo) 
 	{
 	super(gameletInfo);
+
+	// get the name of this gamelet from the DOM Document - if we
+	// tried to use Game.getGameletManager().getGameletName(this), it
+	// would return null because we're in the middle of constructing
+	// the gamelet, and it hasn't had a chance to be registered in
+	// the GameletManager's list yet.
+	String gameletName = gameletInfo.getDocumentElement().getAttribute("name");
 	
 	try
 		{
 		NativeEntity botEnt = new NativeEntity(NativeEntity.ENTITY_PLAYER);
-		fTestBot = new TestBot(botEnt, Game.getGameletManager().getGameletName(this));
+		fTestBot = new TestBot(botEnt, gameletName);
 		}
 	catch (Exception e)
 		{
