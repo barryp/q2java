@@ -7,6 +7,8 @@ import org.w3c.dom.*;
 
 /**
  * Class for accessing basic XML/DOM methods.
+ *
+ * @author Barry Pederson
  */
 public class XMLTools 
 	{

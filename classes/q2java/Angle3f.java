@@ -5,7 +5,9 @@ import javax.vecmath.*;
 /**
  * A 3 element Quake2 angle that is represented by 
  * single precision floating point
- * pitch, yaw, roll coordinates. 
+ * pitch, yaw, roll coordinates.
+ *
+ * @author Barry Pederson
  */
 public class Angle3f extends Tuple3f 
 	{

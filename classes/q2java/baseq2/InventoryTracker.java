@@ -3,7 +3,8 @@ package q2java.baseq2;
 import java.util.Hashtable;
 
 /**
- * this class helps track a player's inventory
+ * This class helps track a player's inventory.
+ *
  * @author Brian Haskin
  */
 public class InventoryTracker implements java.io.Serializable

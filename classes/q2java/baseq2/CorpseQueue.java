@@ -4,7 +4,8 @@ import q2java.*;
 
 /**
  * Keep a pile of corpses lying around the level
- * 
+ *
+ * @author Barry Pederson
  */
 class CorpseQueue 
 	{

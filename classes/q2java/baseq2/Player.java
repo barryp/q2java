@@ -3728,7 +3728,7 @@ public void showVWep()
  * spawn the player into the game.
  */
 protected void spawn() 
-	{	
+	{
 	GenericSpawnpoint spawnPoint = getSpawnpoint();
 					
 	if (spawnPoint == null)

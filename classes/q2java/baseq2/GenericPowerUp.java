@@ -9,6 +9,7 @@ import q2java.baseq2.*;
 /**
  * Super class of all power ups lying around
  * in the world and being carried.
+ *
  * @author Brian Haskin
  */
 public abstract class GenericPowerUp extends GenericItem

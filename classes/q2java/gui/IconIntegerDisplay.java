@@ -3,7 +3,7 @@ package q2java.gui;
 import q2java.*;
 
 /**
- * Display an icon and an integer on the players hud.
+ * Display an icon and an integer on the player's HUD.
  */
 public class IconIntegerDisplay
 	{

@@ -3,7 +3,9 @@ package q2java.baseq2;
 import q2java.Engine;
 
 /**
- * This class keeps track of the items that are displayed in the inventory of a player.
+ * This class keeps track of the items that are displayed in the 
+ * inventory of a player.
+ *
  * @author Brian Haskin
  */
 public class InventoryList 

@@ -3,6 +3,8 @@ package q2java;
 /**
  * Interface for objects that want to register to receive calls
  * when the JVM sends output to stdout or stderr.
+ *
+ * @author Barry Pederson
  */
 public interface JavaConsoleListener 
 	{
