@@ -1,13 +1,11 @@
-package org.w3c.dom.html;
-
 /*
- * Copyright (c) 1998 World Wide Web Consortium, (Massachusetts Institute of
- * Technology, Institut National de Recherche en Informatique et en
- * Automatique, Keio University).
+ * Copyright (c) 1999 World Wide Web Consortium,
+ * (Massachusetts Institute of Technology, Institut National de Recherche
+ *  en Informatique et en Automatique, Keio University).
  * All Rights Reserved. http://www.w3.org/Consortium/Legal/
  */
 
-import org.w3c.dom.*;
+package org.w3c.dom.html;
 
 /**
  * The HTML document body. This element is always present in the DOM API,even 
@@ -20,37 +18,38 @@ public interface HTMLBodyElement extends HTMLElement {
    * up). See the alink attribute definition in HTML 4.0. This attribute is 
    * deprecated in HTML 4.0.
    */
-  public String             getALink();  
+  public String             getALink();
+  public void               setALink(String aLink);
   /**
    * URI of the background texture tile image. See the background attribute 
    * definition in HTML 4.0. This attribute is deprecated in HTML 4.0.
    */
-  public String             getBackground();  
+  public String             getBackground();
+  public void               setBackground(String background);
   /**
    * Document background color. See the bgcolor attribute definition in HTML 
    * 4.0. This attribute is deprecated in HTML 4.0.
    */
-  public String             getBgColor();  
+  public String             getBgColor();
+  public void               setBgColor(String bgColor);
   /**
    * Color of links that are not active and unvisited. See the link attribute 
    * definition in HTML 4.0. This attribute is deprecated in HTML 4.0.
    */
-  public String             getLink();  
+  public String             getLink();
+  public void               setLink(String link);
   /**
    * Document text color. See the text attribute definition in HTML 4.0. This 
    * attribute is deprecated in HTML 4.0.
    */
-  public String             getText();  
+  public String             getText();
+  public void               setText(String text);
   /**
    * Color of links that have been visited by the user. See the vlink 
    * attribute definition in HTML 4.0. This attribute is deprecated in HTML 
    * 4.0.
    */
-  public String             getVLink();  
-  public void               setALink(String aLink);  
-  public void               setBackground(String background);  
-  public void               setBgColor(String bgColor);  
-  public void               setLink(String link);  
-  public void               setText(String text);  
-  public void               setVLink(String vLink);  
+  public String             getVLink();
+  public void               setVLink(String vLink);
 }
+

@@ -1,13 +1,13 @@
-package org.w3c.dom.html;
-
 /*
- * Copyright (c) 1998 World Wide Web Consortium, (Massachusetts Institute of
- * Technology, Institut National de Recherche en Informatique et en
- * Automatique, Keio University).
+ * Copyright (c) 1999 World Wide Web Consortium,
+ * (Massachusetts Institute of Technology, Institut National de Recherche
+ *  en Informatique et en Automatique, Keio University).
  * All Rights Reserved. http://www.w3.org/Consortium/Legal/
  */
 
-import org.w3c.dom.*;
+package org.w3c.dom.html;
+
+import org.w3c.dom.Node;
 
 /**
  * An <code>HTMLCollection</code> is a list of nodes. An individual nodemay be 
@@ -20,7 +20,7 @@ public interface HTMLCollection {
   /**
    * This attribute specifies the length or size of the list. 
    */
-  public int                getLength();  
+  public int                getLength();
   /**
    * This method retrieves a node specified by ordinal index. Nodes are 
    * numbered in tree order (depth-first traversal order).
@@ -28,7 +28,7 @@ public interface HTMLCollection {
    * @return The <code>Node</code> at the corresponding position upon success. 
    *   A value of <code>null</code> is returned if the index is out of range. 
    */
-  public Node               item(int index);  
+  public Node               item(int index);
   /**
    * This method retrieves a <code>Node</code> using a name. It first searches 
    * for a <code>Node</code> with a matching <code>id</code> attribute. If it 
@@ -41,5 +41,6 @@ public interface HTMLCollection {
    *   failure (e.g., no node with this name exists), returns 
    *   <code>null</code>.
    */
-  public Node               namedItem(String name);  
+  public Node               namedItem(String name);
 }
+

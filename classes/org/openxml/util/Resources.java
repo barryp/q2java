@@ -1,5 +1,3 @@
-package org.openxml.util;
-
 /**
  * The contents of this file are subject to the OpenXML Public
  * License Version 1.0; you may not use this file except in
@@ -20,76 +18,98 @@ package org.openxml.util;
  */
 
 
+package org.openxml.util;
+
+
 import java.text.*;
 import java.util.*;
 
 
 public class Resources
 {
-	
+    
 
-	static
-	{
-		setLocale( Locale.getDefault() );
-	}
-	
-	
-	private static ResourceBundle   _messages;
-	
-	
-	private static Hashtable        _formats;
-	
+    public static String format( String message, Object arg1 )
+    {
+        return format( message, new Object[] { arg1 } );
+    }
 
-	public static String format( String message, Object[] args )
-	{
-		MessageFormat   mf;
-		String          msg;
-		
-		mf = (MessageFormat) _formats.get( message );
-		if ( mf == null )
-		{
-			try
-			{
-				msg = _messages.getString( message );
-			}
-			catch ( MissingResourceException except )
-			{
-				return message;
-			}
-			mf = new MessageFormat( msg );
-			_formats.put( message, msg );
-		}
-		return mf.format( args );
-	}
-	public static String format( String message, Object arg1 )
-	{
-		return format( message, new Object[] { arg1 } );
-	}
-	public static String format( String message, Object arg1, Object arg2 )
-	{
-		return format( message, new Object[] { arg1, arg2 } );
-	}
-	public static String format( String message, Object arg1, Object arg2, Object arg3 )
-	{
-		return format( message, new Object[] { arg1, arg2, arg3 } );
-	}
-	public static String message( String message )
-	{
-		try
-		{
-			return _messages.getString( message );
-		}
-		catch ( MissingResourceException except )
-		{
-			return message;
-		}
-	}
-	public static void setLocale( Locale locale )
-	{
-		if ( locale == null )
-			_messages = ResourceBundle.getBundle( "org.openxml.util.resources.messages" ); 
-		else
-			_messages = ResourceBundle.getBundle( "org.openxml.util.resources.messages", locale ); 
-		_formats = new Hashtable();
-	}
+    
+    public static String format( String message, Object arg1, Object arg2 )
+    {
+        return format( message, new Object[] { arg1, arg2 } );
+    }
+
+    
+    public static String format( String message, Object arg1, Object arg2, Object arg3 )
+    {
+        return format( message, new Object[] { arg1, arg2, arg3 } );
+    }
+
+    
+    public static String format( String message, Object[] args )
+    {
+        MessageFormat   mf;
+        String          msg;
+        
+        try
+        {
+            mf = (MessageFormat) _formats.get( message );
+            if ( mf == null )
+            {
+                try
+                {
+                    msg = _messages.getString( message );
+                }
+                catch ( MissingResourceException except )
+                {
+                    return message;
+                }
+                mf = new MessageFormat( msg );
+                _formats.put( message, mf );
+            }
+            return mf.format( args );
+        }
+        catch ( Exception except )
+        {
+            return "An internal error occured while processing message " + message;
+        }
+}
+    
+    
+    public static String message( String message )
+    {
+        try
+        {
+            return _messages.getString( message );
+        }
+        catch ( MissingResourceException except )
+        {
+            return message;
+        }
+    }
+
+    
+    public static void setLocale( Locale locale )
+    {
+        if ( locale == null )
+            _messages = ResourceBundle.getBundle( "org.openxml.util.resources.messages" ); 
+        else
+            _messages = ResourceBundle.getBundle( "org.openxml.util.resources.messages", locale ); 
+        _formats = new Hashtable();
+    }
+    
+    
+    static
+    {
+        setLocale( Locale.getDefault() );
+    }
+    
+    
+    private static ResourceBundle   _messages;
+    
+    
+    private static Hashtable        _formats;
+    
+
 }

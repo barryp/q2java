@@ -1,13 +1,11 @@
-package org.w3c.dom.html;
-
 /*
- * Copyright (c) 1998 World Wide Web Consortium, (Massachusetts Institute of
- * Technology, Institut National de Recherche en Informatique et en
- * Automatique, Keio University).
+ * Copyright (c) 1999 World Wide Web Consortium,
+ * (Massachusetts Institute of Technology, Institut National de Recherche
+ *  en Informatique et en Automatique, Keio University).
  * All Rights Reserved. http://www.w3.org/Consortium/Legal/
  */
 
-import org.w3c.dom.*;
+package org.w3c.dom.html;
 
 /**
  * Organizes form controls into logical groups. See the  FIELDSET  element 
@@ -15,8 +13,9 @@ import org.w3c.dom.*;
  */
 public interface HTMLFieldSetElement extends HTMLElement {
   /**
-   * Returns the <code>FORM</code> element containing this control.Returns 
-   * null if this control is not within the context of a form. 
+   * Returns the <code>FORM</code> element containing this control. Returns 
+   * <code>null</code> if this control is not within the context of a form. 
    */
-  public HTMLFormElement    getForm();  
+  public HTMLFormElement    getForm();
 }
+

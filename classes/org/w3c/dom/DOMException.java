@@ -1,11 +1,16 @@
-package org.w3c.dom;
-
 /*
- * Copyright (c) 1998 World Wide Web Consortium, (Massachusetts Institute of
- * Technology, Institut National de Recherche en Informatique et en
- * Automatique, Keio University).
- * All Rights Reserved. http://www.w3.org/Consortium/Legal/
+ * Copyright (c) 1999 World Wide Web Consortium,
+ * (Massachusetts Institute of Technology, Institut National de
+ * Recherche en Informatique et en Automatique, Keio University). All
+ * Rights Reserved. This program is distributed under the W3C's Software
+ * Intellectual Property License. This program is distributed in the
+ * hope that it will be useful, but WITHOUT ANY WARRANTY; without even
+ * the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
+ * PURPOSE. See W3C License http://www.w3.org/Consortium/Legal/ for more
+ * details.
  */
+
+package org.w3c.dom;
 
 /**
  * DOM operations only raise exceptions in "exceptional" circumstances, i.e., 
@@ -24,21 +29,27 @@ package org.w3c.dom;
  * descriptions.
  */
 public abstract class DOMException extends RuntimeException {
-  public short   code;
-  // ExceptionCode
-  public static final short           INDEX_SIZE_ERR       = 1;
-  public static final short           DOMSTRING_SIZE_ERR   = 2;
-  public static final short           HIERARCHY_REQUEST_ERR = 3;
-  public static final short           WRONG_DOCUMENT_ERR   = 4;
-  public static final short           INVALID_CHARACTER_ERR = 5;
-  public static final short           NO_DATA_ALLOWED_ERR  = 6;
-  public static final short           NO_MODIFICATION_ALLOWED_ERR = 7;
-  public static final short           NOT_FOUND_ERR        = 8;
-  public static final short           NOT_SUPPORTED_ERR    = 9;
-  public static final short           INUSE_ATTRIBUTE_ERR  = 10;
+    public DOMException(short code, String message) {
+       super(message);
+       this.code = code;
+    }
+    public short   code;
+    // ExceptionCode
+    public static final short   INDEX_SIZE_ERR            = 1;
+    public static final short   DOMSTRING_SIZE_ERR        = 2;
+    public static final short   HIERARCHY_REQUEST_ERR     = 3;
+    public static final short   WRONG_DOCUMENT_ERR        = 4;
+    public static final short   INVALID_CHARACTER_ERR     = 5;
+    public static final short   NO_DATA_ALLOWED_ERR       = 6;
+    public static final short   NO_MODIFICATION_ALLOWED_ERR = 7;
+    public static final short   NOT_FOUND_ERR             = 8;
+    public static final short   NOT_SUPPORTED_ERR         = 9;
+    public static final short   INUSE_ATTRIBUTE_ERR       = 10;
+    public static final short   INVALID_STATE_ERR         = 11;
+    public static final short   SYNTAX_ERR                = 12;
+    public static final short   INVALID_MODIFICATION_ERR  = 13;
+    public static final short   NAMESPACE_ERR             = 14;
+    public static final short   INVALID_ACCESS_ERR        = 15;
 
-  public DOMException(short code, String message) {
-	 super(message);
-	 this.code = code;
-  }  
 }
+

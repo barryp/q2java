@@ -1,24 +1,24 @@
-package org.openxml.dom.html;
-
 /**
- * org/openxml/dom/html/HTMLMetaElementImpl.java
- * 
  * The contents of this file are subject to the OpenXML Public
- * License Version 1.0; you may not use this file except in compliance
- * with the License. You may obtain a copy of the License at
- * http://www.openxml.org/license.html
+ * License Version 1.0; you may not use this file except in
+ * compliance with the License. You may obtain a copy of the
+ * License at http://www.openxml.org/license/
  *
- * THIS SOFTWARE IS DISTRIBUTED ON AN "AS IS" BASIS WITHOUT WARRANTY
- * OF ANY KIND, EITHER EXPRESSED OR IMPLIED. THE INITIAL DEVELOPER
- * AND ALL CONTRIBUTORS SHALL NOT BE LIABLE FOR ANY DAMAGES AS A
- * RESULT OF USING, MODIFYING OR DISTRIBUTING THIS SOFTWARE OR ITS
- * DERIVATIVES. SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING
- * RIGHTS AND LIMITATIONS UNDER THE LICENSE.
- * 
- * The Initial Developer of this code under the License is Assaf Arkin.
- * Portions created by Assaf Arkin are Copyright (C) 1998, 1999.
- * All Rights Reserved.
+ * THIS SOFTWARE AND DOCUMENTATION IS PROVIDED ON AN "AS IS" BASIS
+ * WITHOUT WARRANTY OF ANY KIND EITHER EXPRESSED OR IMPLIED,
+ * INCLUDING AND WITHOUT LIMITATION, WARRANTIES THAT THE SOFTWARE
+ * AND DOCUMENTATION IS FREE OF DEFECTS, MERCHANTABLE, FIT FOR A
+ * PARTICULAR PURPOSE OR NON-INFRINGING. SEE THE LICENSE FOR THE
+ * SPECIFIC LANGUAGE GOVERNING RIGHTS AND LIMITATIONS UNDER THE
+ * LICENSE.
+ *
+ * The Initial Developer of this code under the License is
+ * OpenXML.org. Portions created by OpenXML.org and/or Assaf Arkin
+ * are Copyright (C) 1998, 1999 OpenXML.org. All Rights Reserved.
  */
+
+
+package org.openxml.dom.html;
 
 
 import org.openxml.dom.*;
@@ -27,56 +27,76 @@ import org.w3c.dom.html.*;
 
 
 /**
- * @version $Revision: 1.1 $ $Date: 2000/01/02 02:32:58 $
- * @author <a href="mailto:arkin@trendline.co.il">Assaf Arkin</a>
+ * @version $Revision: 1.2 $ $Date: 2000/04/04 23:57:04 $
+ * @author <a href="mailto:arkin@openxml.org">Assaf Arkin</a>
  * @see org.w3c.dom.html.HTMLMetaElement
  * @see ElementImpl
  */
 public final class HTMLMetaElementImpl
-	extends HTMLElementImpl
-	implements HTMLMetaElement
+    extends HTMLElementImpl
+    implements HTMLMetaElement
 {
 
-	
-	/**
-	 * Constructor requires owner document.
-	 * 
-	 * @param owner The owner HTML document
-	 */
-	public HTMLMetaElementImpl( HTMLDocumentImpl owner, String name )
-	{
-		super( owner, "META" );
-	}
-	public String getContent()
-	{
-		return getAttribute( "content" );
-	}
-	  public String getHttpEquiv()
-	{
-		return getAttribute( "http-equiv" );
-	}
-	  public String getName()
-	{
-		return getAttribute( "name" );
-	}
-	  public String getScheme()
-	{
-		return getAttribute( "scheme" );
-	}
-	public void setContent( String content )
-	{
-		setAttribute( "content", content );
-	}
-	public void setHttpEquiv( String httpEquiv )
-	{
-		setAttribute( "http-equiv", httpEquiv );
-	}
-	public void setName( String name )
-	{
-		setAttribute( "name", name );
-	}
-	public void setScheme( String scheme )
-	{
-		setAttribute( "scheme", scheme );
-	}
+    
+    public String getContent()
+    {
+        return getAttribute( "content" );
+    }
+    
+    
+    public void setContent( String content )
+    {
+        setAttribute( "content", content );
+    }
+
+    
+    
+      public String getHttpEquiv()
+    {
+        return getAttribute( "http-equiv" );
+    }
+    
+    
+    public void setHttpEquiv( String httpEquiv )
+    {
+        setAttribute( "http-equiv", httpEquiv );
+    }
+
+  
+      public String getName()
+    {
+        return getAttribute( "name" );
+    }
+    
+    
+    public void setName( String name )
+    {
+        setAttribute( "name", name );
+    }
+
+    
+      public String getScheme()
+    {
+        return getAttribute( "scheme" );
+    }
+    
+    
+    public void setScheme( String scheme )
+    {
+        setAttribute( "scheme", scheme );
+    }
+    
+    
+    /**
+     * Constructor requires owner document.
+     * 
+     * @param owner The owner HTML document
+     */
+    public HTMLMetaElementImpl( HTMLDocumentImpl owner, String name )
+    {
+        super( owner, name );
+    }
+
+
 }
+
