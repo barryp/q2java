@@ -55,7 +55,7 @@ protected GenericGrenade(GameObject owner, Point3f start, Vector3f aimdir, int d
 	fEntity.setVelocity(vel);
 
 	fAvelocity = new Vector3f( 300, 300, 300 );
-	fEntity.setClipmask(Engine.MASK_SHOT);
+	fEntity.setClipmask(Engine.MASK_SHOT); 
 	fEntity.setSolid(NativeEntity.SOLID_BBOX);
 	fEntity.setEffects(NativeEntity.EF_GRENADE);
 	fOwner = owner;
@@ -195,8 +195,7 @@ public void runFrame(int phase)
 	checkVelocity();
 	applyGravity();
 
-
-	TraceResults tr = fEntity.traceMove(Engine.MASK_SHOT, 1.0F);
+	TraceResults tr = fEntity.traceMove(Engine.MASK_SOLID, 1.0F); // was MASK_SHOT
 	
 	if (tr.fFraction == 1)
 		{

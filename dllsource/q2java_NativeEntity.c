@@ -6,6 +6,11 @@
 // for setting player delta_angles
 #define ANGLE2SHORT(x)  ((short)((int)((x)*65536/360) & 65535))
 
+// types of entities we can create
+#define ENTITY_NORMAL 0
+#define ENTITY_WORLD  1
+#define ENTITY_PLAYER 2
+
 // handles to fields in a C entity
 // (same constants as in NativeEntity.java)
 #define BYTE_CLIENT_PS_PMOVE_PMFLAGS 100
@@ -71,7 +76,8 @@ static jfieldID  field_NativeEntity_gMaxPlayers;
 
 static JNINativeMethod Entity_methods[] = 
     {
-    {"allocateEntity",  "(Z)I",                     Java_q2java_NativeEntity_allocateEntity},
+    {"allocateEntity",  "(I)I",                     Java_q2java_NativeEntity_allocateEntity},
+    {"copySettings0",   "(II)V",                    Java_q2java_NativeEntity_copySettings0},
     {"freeEntity0",     "(I)V",                     Java_q2java_NativeEntity_freeEntity0},
     {"getByte",         "(II)B",                    Java_q2java_NativeEntity_getByte},  
     {"setByte",         "(IIB)V",                   Java_q2java_NativeEntity_setByte},
@@ -93,10 +99,10 @@ static JNINativeMethod Entity_methods[] =
     {"linkEntity0",     "(I)V",                     Java_q2java_NativeEntity_linkEntity0},
     {"unlinkEntity0",   "(I)V",                     Java_q2java_NativeEntity_unlinkEntity0},
     {"traceMove0",      "(IIF)Lq2java/TraceResults;",Java_q2java_NativeEntity_traceMove0},
-    {"getPotentialPushed0", "(IFFFFFF)[Lq2java/NativeEntity;", Java_q2java_NativeEntity_getPotentialPushed0},
+    {"getPotentialPushed0", "(IFFFFFFI)[Lq2java/NativeEntity;", Java_q2java_NativeEntity_getPotentialPushed0},
 
     // methods for players only
-    {"pMove0",          "(IBBSSSSSSBB)Lq2java/PMoveResults;",   Java_q2java_NativeEntity_pMove0},
+    {"pMove0",          "(IBBSSSSSSBBI)Lq2java/PMoveResults;",   Java_q2java_NativeEntity_pMove0},
     {"setFloat0",       "(IIFFFF)V",                Java_q2java_NativeEntity_setFloat0},
     {"setStat0",        "(IIS)V",                   Java_q2java_NativeEntity_setStat0},
     {"cprint0",         "(IILjava/lang/String;)V",  Java_q2java_NativeEntity_cprint0},
@@ -494,19 +500,41 @@ jobjectArray Entity_createArray(edict_t **ents, int count)
     }
 
 
-static jint JNICALL Java_q2java_NativeEntity_allocateEntity(JNIEnv *env, jclass cls, jboolean isWorld)
+static jint JNICALL Java_q2java_NativeEntity_allocateEntity(JNIEnv *env, jclass cls, jint entType)
     {
     int         i;
     edict_t     *ent;
 
     // handle special case of the world entity
-    if (isWorld)
+    if (entType == ENTITY_WORLD)
         {
         ent = ge.edicts;
         ent->inuse = 1;
         ent->s.number = 0;
         return 0;
         }
+
+    // handle special case of requesting a player entity (for bots)
+    if (entType == ENTITY_PLAYER)
+        {
+        for (i = global_maxClients; i > 0; i--)
+            {
+            if (!ge.edicts[i].inuse)
+                {
+                ge.edicts[i].inuse = 1;
+                ge.edicts[i].s.number = i;
+                return i;
+                }
+            }
+
+        // failed finding an unused player slot
+        return -1;
+        }
+
+    // all that's left are normal entities..make sure something
+    // weird wasn't requested.
+    if (entType != ENTITY_NORMAL)
+        return -1;
 
     i = global_maxClients + 1;  
     ent = ge.edicts + i;
@@ -540,8 +568,8 @@ static jint JNICALL Java_q2java_NativeEntity_allocateEntity(JNIEnv *env, jclass 
 
 static void JNICALL Java_q2java_NativeEntity_freeEntity0(JNIEnv *env, jclass cls, jint index)
     {
-    gclient_t *cli;
     edict_t *ent;
+    gclient_t *cli;
 
     // sanity check
     if ((index < 0) || (index >= ge.max_edicts))
@@ -554,16 +582,24 @@ static void JNICALL Java_q2java_NativeEntity_freeEntity0(JNIEnv *env, jclass cls
     gi.unlinkentity (ent);      
 
     // wipe the old entity info out
-    memset (ent, 0, sizeof(*ent));
+    memset(ent, 0, sizeof(*ent));
 
-    // was this a player entity? (this shouldn't happen..but if it does let's tidy things up)
-    if (cli)
+    // restore the client pointer
+    ent->client = cli;
+
+    // was this a player entity? (probably a bot)
+    if (ent->client)
         {
-        // wipe out the old client info
-        memset(cli, 0, sizeof(*cli));
+        // remove the global reference to the PlayerListener
+        if (ent->client->listener)
+            (*java_env)->DeleteGlobalRef(java_env, ent->client->listener);
 
-        // relink the entity structure to the client structure
-        ent->client = cli;
+        // remove the local reference to the player info
+        if (ent->client->playerInfo)
+            (*java_env)->DeleteLocalRef(java_env, ent->client->playerInfo);
+
+        // wipe the old entity and client info out
+        memset(ent->client, 0, sizeof(*(ent->client)));
         }
 
     // make a note of when this entity was freed
@@ -637,38 +673,53 @@ static jobject JNICALL Java_q2java_NativeEntity_getVec3(JNIEnv *env, jclass cls,
 
 static void JNICALL Java_q2java_NativeEntity_setVec3(JNIEnv *env, jclass cls, jint index, jint fieldNum, jfloat x, jfloat y, jfloat z)
     {
-    vec3_t *v = lookupVec3(index, fieldNum);
+    vec3_t *v;
+    edict_t *ent;
 
+    // sanity check
+    if ((index < 0) || (index >= ge.max_edicts))
+        return;
+
+    // normal vector setting
+    v = lookupVec3(index, fieldNum);
     if (v)
         {
         (*v)[0] = x;
         (*v)[1] = y;
         (*v)[2] = z;
-        return;
         }
     
-    // special case (I hate special cases)
+    // special player cases(I hate special cases)
     // it makes the C code more complicated, 
     // but keeps the Java code simpler
-    if (fieldNum == VEC3_CLIENT_PS_PMOVE_DELTA_ANGLES)
-        {       
-        edict_t *ent;
 
-        // sanity check
-        if ((index < 0) || (index >= ge.max_edicts))
-            return;
+    ent = ge.edicts + index;
 
-        ent = ge.edicts + index;
-
-        // bail if not a player entity
-        if (!(ent->client))
-            return;
-        
-        ent->client->ps.pmove.delta_angles[0] = ANGLE2SHORT(x);
-        ent->client->ps.pmove.delta_angles[1] = ANGLE2SHORT(y);
-        ent->client->ps.pmove.delta_angles[2] = ANGLE2SHORT(z);
+    // bail if not a player entity
+    if (!(ent->client))
         return;
+
+    switch (fieldNum)
+        {
+        case VEC3_S_ORIGIN:
+            ent->client->ps.pmove.origin[0] = (short) (x * 8);
+            ent->client->ps.pmove.origin[1] = (short) (y * 8);
+            ent->client->ps.pmove.origin[2] = (short) (z * 8);
+            break;
+
+        case VEC3_VELOCITY:
+            ent->client->ps.pmove.velocity[0] = (short) (x * 8);
+            ent->client->ps.pmove.velocity[1] = (short) (y * 8);
+            ent->client->ps.pmove.velocity[2] = (short) (z * 8);
+            break;
+
+        case VEC3_CLIENT_PS_PMOVE_DELTA_ANGLES:
+            ent->client->ps.pmove.delta_angles[0] = ANGLE2SHORT(x);
+            ent->client->ps.pmove.delta_angles[1] = ANGLE2SHORT(y);
+            ent->client->ps.pmove.delta_angles[2] = ANGLE2SHORT(z);
+            break;
         }
+    
     }
 
 
@@ -772,17 +823,15 @@ static void JNICALL Java_q2java_NativeEntity_unlinkEntity0(JNIEnv *env, jclass c
 // --------------- Player Methods ----------------------
 
 static edict_t  *pm_passent;
+static int pm_tracemask;
 
 // pmove doesn't need to know about passent and contentmask
 static trace_t  PM_trace(vec3_t start, vec3_t mins, vec3_t maxs, vec3_t end)
     {
-//  if (pm_passent->health > 0)
-        return gi.trace (start, mins, maxs, end, pm_passent, MASK_PLAYERSOLID);
-//  else
-//      return gi.trace (start, mins, maxs, end, pm_passent, MASK_DEADSOLID);
+    return gi.trace (start, mins, maxs, end, pm_passent, pm_tracemask);
     }
 
-static jobject JNICALL Java_q2java_NativeEntity_pMove0(JNIEnv *env, jclass cls, jint index, jbyte msec, jbyte buttons, jshort angle0, jshort angle1, jshort angle2, jshort forward, jshort side, jshort up, jbyte impulse, jbyte lightlevel)
+static jobject JNICALL Java_q2java_NativeEntity_pMove0(JNIEnv *env, jclass cls, jint index, jbyte msec, jbyte buttons, jshort angle0, jshort angle1, jshort angle2, jshort forward, jshort side, jshort up, jbyte impulse, jbyte lightlevel, jint traceMask)
     {
     int i;
     pmove_t pm;
@@ -799,12 +848,6 @@ static jobject JNICALL Java_q2java_NativeEntity_pMove0(JNIEnv *env, jclass cls, 
     memset (&pm, 0, sizeof(pm));
 
     pm.s = client->ps.pmove;
-
-    for (i=0 ; i<3 ; i++)
-        {
-        pm.s.origin[i] = (short)(ent->s.origin[i] * 8);
-        pm.s.velocity[i] = (short)(ent->velocity[i] * 8);
-        }
 
     if (memcmp(&client->old_pmove, &pm.s, sizeof(pm.s)))
         pm.snapinitial = 1;
@@ -823,6 +866,7 @@ static jobject JNICALL Java_q2java_NativeEntity_pMove0(JNIEnv *env, jclass cls, 
     pm.trace = PM_trace;    // adds default parms
     pm.pointcontents = gi.pointcontents;
     pm_passent = ent;
+    pm_tracemask = traceMask;
 
     gi.Pmove(&pm);
 
@@ -942,7 +986,8 @@ static jobject JNICALL Java_q2java_NativeEntity_traceMove0(JNIEnv *env, jclass c
 
 static jobjectArray JNICALL Java_q2java_NativeEntity_getPotentialPushed0(JNIEnv *env, jclass cls, jint index, 
     jfloat minx, jfloat miny, jfloat minz, 
-    jfloat maxx, jfloat maxy, jfloat maxz)
+    jfloat maxx, jfloat maxy, jfloat maxz,
+    jint defaultMask)
     {
     edict_t *hits[MAX_EDICTS];
     edict_t *check;
@@ -981,7 +1026,7 @@ static jobjectArray JNICALL Java_q2java_NativeEntity_getPotentialPushed0(JNIEnv 
             if (check->clipmask)
                 mask = check->clipmask;
             else
-                mask = MASK_SOLID;
+                mask = defaultMask;
 
             trace = gi.trace(check->s.origin, check->mins, check->maxs, check->s.origin, check, mask);
 
@@ -1041,4 +1086,38 @@ static jobjectArray JNICALL Java_q2java_NativeEntity_getRadiusEntities0
     edict_t *ent = ge.edicts + index;
     return Java_q2java_Engine_getRadiusEntities0(env, cls, ent->s.origin[0], ent->s.origin[1], ent->s.origin[2],
         radius, index, onlyPlayers, sortResults);
+    }
+
+static void JNICALL Java_q2java_NativeEntity_copySettings0(JNIEnv *env, jclass cls, jint sourceIndex, jint destIndex)
+    {
+    edict_t *source;
+    edict_t *dest;
+    int i;
+
+    // sanity check
+    if ((sourceIndex < 0) || (sourceIndex > global_maxClients))
+        return;
+    if ((destIndex < 0) || (destIndex > global_maxClients))
+        return;
+
+    source = ge.edicts + sourceIndex;
+    dest = ge.edicts + destIndex;
+
+	dest->s = source->s;
+	dest->s.number = destIndex;
+
+	dest->svflags = source->svflags;
+    for (i = 0; i < 3; i++)
+        {
+        dest->mins[i] = source->mins[i];
+        dest->maxs[i] = source->maxs[i];
+        dest->absmin[i] = source->absmin[i];
+        dest->absmax[i] = source->absmax[i];
+        dest->size[i] = source->size[i];
+        dest->velocity[i] = source->velocity[i];
+        }
+	dest->solid = source->solid;
+	dest->clipmask = source->clipmask;
+	dest->owner = source->owner;
+    dest->groundentity = source->groundentity;
     }

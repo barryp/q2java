@@ -74,6 +74,7 @@ public void fire()
 protected void setFields() 
 	{
 	fWeaponName = "rocket launcher";
+	fWeaponIconName = "w_rlauncher";	
 	fAmmoName = "rockets";
 	fAmmoCount = 10;
 	fEntityModel = "models/weapons/g_rocket/tris.md2";	

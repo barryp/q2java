@@ -9,7 +9,34 @@ import q2java.*;
  */
 public abstract class GameModule 
 	{
+	private String fModuleName;
 	
+/**
+ * Constructor for all GameModules.
+ * @param moduleName java.lang.String
+ */
+public GameModule(String moduleName) 
+	{
+	fModuleName = moduleName;
+	}
+/**
+ * Get the name of this module.
+ * @return java.lang.String
+ */
+public String getModuleName() 
+	{
+	return fModuleName;
+	}
+/**
+ * Get the name of the package this game module belongs to.
+ * @return java.lang.String
+ */
+public String getPackageName() 
+	{
+	String clsName = getClass().getName();
+	int i = clsName.lastIndexOf('.');
+	return clsName.substring(0, i);
+	}
 /**
  * Default help svcmd for a GameModule.
  * @param args java.lang.String[]

@@ -38,9 +38,9 @@ public GameObject()
 	}
 public GameObject(String[] spawnArgs) throws GameException
 	{
-	this(spawnArgs, false);
+	this(spawnArgs, NativeEntity.ENTITY_NORMAL);
 	}
-public GameObject(String[] spawnArgs, boolean isWorld) throws GameException
+public GameObject(String[] spawnArgs, int entityType) throws GameException
 	{	
 	fSpawnArgs = spawnArgs;
 
@@ -49,14 +49,14 @@ public GameObject(String[] spawnArgs, boolean isWorld) throws GameException
 
 	// The worldspawn is never inhibited..although
 	// on the jail1 map, it's flagged as if it is.
-	if (!isWorld)
+	if (entityType != NativeEntity.ENTITY_WORLD)
 		GameModule.checkInhibited(fSpawnFlags);
 				
 	// at this point, looks like the object will be sticking around
 	// so create the entity that represents it in the Quake world
 	// and set some basic properties.
 			
-	fEntity = new NativeEntity(isWorld);
+	fEntity = new NativeEntity(entityType);
 	fEntity.setReference(this);	
 		
 	String s = getSpawnArg("origin", null);
@@ -98,6 +98,30 @@ public void applyGravity()
 	//v.z -= getGravity() * GameModule.gGravity.getFloat() * Engine.SECONDS_PER_FRAME;
 	v.z -= 1 * GameModule.gGravity.getFloat() * Engine.SECONDS_PER_FRAME;
 	fEntity.setVelocity(v);
+	}
+/**
+ * This method points the Player view at it's killer. (?)
+ * @param inflictor The thing that killed the player. (?)
+ * @param attacker The player/monster/machine that used the <SAMP>inflictor</SAMP> to kill the Player. (?)
+ */
+protected float calcAttackerYaw(GameObject inflictor, GameObject attacker) 
+	{
+	Tuple3f	dir;
+	
+	if ((attacker != null) && (attacker != this))
+		{
+		dir = attacker.fEntity.getOrigin();
+		dir.sub(fEntity.getOrigin());
+		}
+	else if ((inflictor != null) && (inflictor != this))
+		{
+		dir = inflictor.fEntity.getOrigin();
+		dir.sub(fEntity.getOrigin());
+		}
+	else
+		return fEntity.getAngles().y;
+
+	return (float) ((180.0 / Math.PI) * Math.atan2(dir.y, dir.x));	
 	}
 /**
  * This method was created by a SmartGuide.

@@ -11,6 +11,6 @@ public class target_changelevel extends GameObject
 public target_changelevel(String[] spawnArgs) throws GameException
 	{
 	super(spawnArgs);
-	baseq2.GameModule.setNextMap(getSpawnArg("map", null));
+//	baseq2.GameModule.setNextMap(getSpawnArg("map", null));
 	}
 }

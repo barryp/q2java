@@ -52,11 +52,7 @@ public void fire()
 	float	radius = damage + 40;
 	int     speed;
 
-//	if (is_quad)
-//		{
-//		damage *= 4;
-//		}
-
+	damage *= fPlayer.getDamageMultiplier();
 
 	offset = new Vector3f(8, 8,  fPlayer.fViewHeight-8);
 	Angle3f ang = fEntity.getPlayerViewAngles();
@@ -80,6 +76,8 @@ public void fire()
 //	PlayerNoise(ent, start, PNOISE_WEAPON);
 	fPlayer.alterAmmoCount(-1);
 	fTimer = Game.getGameTime() + 1;
+	
+	fPlayer.setAnimation(Player.ANIMATE_VWEP_THROW);
 	}
 /**
  * Fill in the info specific to this type of weapon.
@@ -87,6 +85,7 @@ public void fire()
 protected void setFields() 
 	{
 	fWeaponName = "grenades";
+	fWeaponIconName = "a_grenades";
 	fAmmoName = "grenades";
 	fAmmoCount = 10;
 	fEntityModel = "models/items/ammo/grenades/medium/tris.md2";	

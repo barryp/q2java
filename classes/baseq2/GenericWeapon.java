@@ -12,8 +12,9 @@ import q2java.*;
 public abstract class GenericWeapon extends GenericItem
 	{
 	protected String fWeaponName;
+	protected String fWeaponIconName;
 	protected String fAmmoName;
-	protected int fAmmoCount;
+	protected int    fAmmoCount;
 	protected String fViewModel;
 	protected String fEntityModel;
 	
@@ -91,12 +92,43 @@ public void deactivate()
 public abstract void fire();
 
 /**
+ * Get how much ammo this weapon is carrying with it.
+ * @return int.
+ */
+public int getAmmoCount() 
+	{
+	return fAmmoCount;
+	}
+/**
+ * Get the name of the type of ammo this weapon uses.
+ * @return Name of kind of ammo, may be null if the weapon doesn't use ammo.
+ */
+public String getAmmoName() 
+	{
+	return fAmmoName;
+	}
+/**
+ * Get the name of the icon that represents this weapon.
+ * @return java.lang.String
+ */
+public String getIconName() 
+	{
+	return fWeaponIconName;
+	}
+/**
  * This method was created by a SmartGuide.
  * @return int
  */
 public final int getWeaponFrame() 
 	{
 	return fGunFrame;
+	}
+/**
+ * Get the name of this weapon.
+ */
+public String getWeaponName() 
+	{
+	return fWeaponName;
 	}
 /**
  * This method was created by a SmartGuide.
@@ -117,6 +149,14 @@ public boolean isEnoughAmmo()
 		return true;
 	else		
 		return (fPlayer.getAmmoCount(fAmmoName) >= 1);
+	}
+/**
+ * This method was created by a SmartGuide.
+ * @return int
+ */
+public boolean isFiring() 
+	{
+	return fWeaponState == WEAPON_FIRING;
 	}
 /**
  * This method was created by a SmartGuide.
@@ -144,7 +184,7 @@ public final void setWeaponFrame(int newFrame)
  */
 public void touch(Player p) 
 	{
-	if (p.addWeapon(getClass(), fWeaponName, fAmmoName, fAmmoCount))
+	if (p.addWeapon(getClass()))
 		{
 		super.touch(p);
 	
@@ -213,7 +253,7 @@ public void weaponThink()
 				{
 				fWeaponState = WEAPON_FIRING;
 				setWeaponFrame(fFrameActivateLast + 1); // FRAME_FIRE_FIRST = FRAME_ACTIVATE_LAST + 1
-				fPlayer.setAnimation(Player.ANIMATE_ATTACK, false);
+				fPlayer.setAnimation(Player.ANIMATE_ATTACK);
 				}
 			else
 				{

@@ -98,6 +98,7 @@ public void fire()
 protected void setFields() 
 	{
 	fWeaponName = "bfg10k";
+	fWeaponIconName = "w_bfg";	
 	fAmmoName = "cells";
 	fAmmoCount = 50;
 	fEntityModel = "models/weapons/g_bfg/tris.md2";	

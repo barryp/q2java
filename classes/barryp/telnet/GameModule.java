@@ -2,6 +2,7 @@
 package barryp.telnet;
 
 import java.io.*;
+import java.text.*;
 import java.util.*;
 
 import q2java.*;
@@ -16,14 +17,26 @@ import q2jgame.*;
 public class GameModule extends q2jgame.GameModule
 	{
 	private static Vector gServers;
+	private static boolean gIsLogging;
+	private static String gLogName;
+	private static SimpleDateFormat gTimestampFormat;
 	
 /**
  * Initialize a Telnet server module.
  */
-public GameModule ( ) 
+public GameModule(String moduleName) 
 	{
-	gServers = new Vector();
+	super(moduleName);
 	
+	gServers = new Vector();
+
+	File sandbox = new File(Engine.getGamePath(), "sandbox");
+	File logfile = new File(sandbox, "telnet.log");
+	gLogName = logfile.getPath();		
+
+	gTimestampFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");	
+	gTimestampFormat.setTimeZone(TimeZone.getDefault());
+
 	// check if we specified any telnet cvars on the command line
 	int port = (int) ((new CVar("telnet_port", "0", CVar.CVAR_NOSET)).getFloat());
 	if (port > 0)
@@ -40,6 +53,26 @@ public GameModule ( )
 			e.printStackTrace();
 			}		
 		}	
+	}
+/**
+ * Add a line of text to the telnet log.
+ * @param s java.lang.String
+ */
+static synchronized void addLog(String s) 
+	{
+	if (!gIsLogging)
+		return;
+		
+	try
+		{
+		FileOutputStream fos = new FileOutputStream(gLogName, true);
+		PrintStream ps = new PrintStream(fos);
+		ps.println(gTimestampFormat.format(new Date()) + " " + s);
+		ps.close();
+		}
+	catch (IOException e)
+		{
+		}
 	}
 /**
  * This method was created by a SmartGuide.
@@ -77,6 +110,23 @@ public void svcmd_help(String[] args)
 		TelnetServer t = (TelnetServer) gServers.elementAt(i);
 		Game.dprint("       port: " + t.getPort() + " connections: " + t.getConnectionCount() + "\n");
 		}
+	}
+/**
+ * Control the Logging option.
+ */
+public void svcmd_log(String[] args) 
+	{
+	if (args.length > 2)
+		{
+		if (args[2].equalsIgnoreCase("on"))
+			gIsLogging = true;		
+		else if (args[2].equalsIgnoreCase("off"))
+			gIsLogging = false;
+		else
+			Game.dprint("Usage: sv log [on | off]\n");
+		}
+
+	Game.dprint("Logging is " + (gIsLogging ? "on" : "off") + "\n");
 	}
 /**
  * Run the "sv start" command.

@@ -1,15 +1,15 @@
-Q2Java v0.4 -  Quake II Game programming in Java
+Q2Java v0.5 -  Quake II Game programming in Java
 
     Author:   Barry Pederson <bpederson@geocities.com>
     Homepage: http://www.openquake.org/jquake/q2java
-    Date:     April 21, 1998
+    Date:     May 5th, 1998
 
     Description: A DLL and Java classes that allow a QuakeII game
                  to be written in Java.
 
     Requirements: Win95 or WinNT 4.0
                   Quake II v 3.14 for Win32/Intel
-                  Sun Java JDK or JRE 1.1.5 (seems to work with 1.1.4 also)
+                  Sun Java JDK or JRE 1.1.4 or higher
 
 -------------------------------------
 
@@ -18,9 +18,9 @@ INSTALLING
 
     First, you need a working, registered copy of Quake II v3.14
 
-    Secondly, Sun's Java JDK or JRE 1.1.5.  If you downloaded the JDK, you can
-    test to see if it's installed properly by typing "java -version" at a
-    command prompt.  If it's installed correctly, you'll see a usage message.
+    Secondly, Sun's Java JDK or JRE 1.1.4 or higher.  If you downloaded the 
+    JDK, you can test to see if it's installed properly by typing "java -version" 
+    at a command prompt.  If it's installed correctly, you'll see a usage message.
     If you installed the JRE, test it by typing "jre -version"
 
     Make sure the contents of this zip file are extracted into a subdirectory
@@ -28,9 +28,10 @@ INSTALLING
     I'd recommend c:\quake2\q2java
 
     Assuming you unzipped this file into a game subdirectory named "q2java",
-    you can start the sample Q2Java game with this command.
+    you can start the sample Q2Java game and bring up the first map
+    with this command:
 
-        quake2 +set game q2java
+        quake2 +set game q2java +map base1
 
 OPTIONS
 

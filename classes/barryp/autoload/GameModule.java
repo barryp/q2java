@@ -17,8 +17,10 @@ public class GameModule extends q2jgame.GameModule implements FrameListener, Cro
  * Set ourselves up to be called one time, 10 seconds after 
  * the game starts.
  */
-public GameModule() 
+public GameModule(String moduleName) 
 	{
+	super(moduleName);
+	
 	Game.addFrameListener(this, Game.FRAME_BEGINNING, 10, -1);
 	}
 /**

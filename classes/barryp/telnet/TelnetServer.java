@@ -248,7 +248,7 @@ public void runFrame(int phase)
 	while ((s = getCommand()) != null)
 		{
 		if ((s.length() > 0) && (s.charAt(0) == '+'))
-			Engine.addCommandString(s.substring(1));
+			Engine.addCommandString(s.substring(1) + "\n");
 		else
 			Game.bprint(Engine.PRINT_CHAT, s + "\n");
 		}

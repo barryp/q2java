@@ -80,6 +80,7 @@ public void fire()
 protected void setFields() 
 	{
 	fWeaponName = "railgun";
+	fWeaponIconName = "w_railgun";	
 	fAmmoName = "slugs";
 	fAmmoCount = 10;
 	fEntityModel = "models/weapons/g_rail/tris.md2";	

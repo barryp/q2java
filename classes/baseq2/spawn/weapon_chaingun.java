@@ -131,6 +131,7 @@ public void fire()
 	Engine.multicast(fEntity.getOrigin(), Engine.MULTICAST_PVS);
 	
 //	PlayerNoise(ent, start, PNOISE_WEAPON);
+	fPlayer.setAnimation(Player.ANIMATE_ATTACK, false, getWeaponFrame() % 3);  // VWep
 	fPlayer.alterAmmoCount(-shots);
 	}
 /**
@@ -139,6 +140,7 @@ public void fire()
 protected void setFields() 
 	{
 	fWeaponName = "chaingun";
+	fWeaponIconName = "w_chaingun";	
 	fAmmoName = "bullets";
 	fAmmoCount = 50;
 	fEntityModel = "models/weapons/g_chain/tris.md2";	

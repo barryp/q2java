@@ -11,8 +11,6 @@ package baseq2;
  */
 public class WelcomeMessage 
 	{
-	private final static String gMsg = 
-		  "==== Q2Java Sample Game v0.4 ====\n\n";
 	
 /**
  * Return the message to display to new players.
@@ -25,6 +23,6 @@ public class WelcomeMessage
  */
 public static String getMessage() 
 	{
-	return gMsg;
+	return GameModule.getVersion() + "\nVWep is currently: " + (GameModule.isVWepOn() ? "ON" : "OFF");
 	}
 }

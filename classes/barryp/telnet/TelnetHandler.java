@@ -206,7 +206,10 @@ public void run()
 			return; // logon must have failed
 
 		fServer.pushCommand("<Telnet>: " + fNickname + " connected");
-			
+		
+		String clientAddr = fSocket.getInetAddress().getHostAddress() + ":" + fSocket.getLocalPort();
+		barryp.telnet.GameModule.addLog(clientAddr + " " + fNickname + " connected");			
+		
 		while (fServer.isRunning())
 			{
 			String s = readLine(0);
@@ -231,6 +234,7 @@ public void run()
 			}
 
 		fServer.pushCommand("<Telnet>: " + fNickname + " disconnected");
+		barryp.telnet.GameModule.addLog(clientAddr + " " + fNickname + " disconnected");			
 			
 		fOS.close();
 		fIS.close();							

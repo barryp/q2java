@@ -1,6 +1,7 @@
 
 package q2jgame;
 
+
 import java.io.*;
 import java.lang.reflect.*;
 import java.util.*;
@@ -14,6 +15,7 @@ import q2java.*;
  * to them without having to keep a reference to the solitary
  * Game object that's instantiated.
  *
+ * Updated by Withnails 04/22/98
  * @author Barry Pederson 
  */
 
@@ -36,17 +38,24 @@ public class Game implements GameListener
 		
 	// Manage PrintListeners
 	private static Vector gPrintListeners;	
+
+	//Withnails 04/23/98 - implements Barrys suggestion
+	//Manage PackageListeners
+	protected static Vector gModuleListeners;	
 	
 	// Manage mod packages
-	private static Vector gModList;
-	private static Hashtable gClassHash;
-	
+	//Withnails 04/22/98 - mods are now managed by GameClassFactory
+	protected static GameClassFactory gClassFactory;
+
 	// Allow objects to find each other
 	private static Hashtable gLevelRegistry;
 	
 	// game clocks
 	private static int gFrameCount;
 	private static float gGameTime;
+	
+	// performance clocks
+	private static int  gPerformanceFrames;
 	private static long gCPUTime;	
 	
 /**
@@ -127,33 +136,20 @@ public static Vector addLevelRegistry(Object key, Object value)
  * If a module has already been added, nothing happens.
  * @param packageName java.lang.String
  */
-public static void addPackage(String packageName, String alias) 
+public static void addModule(String packageName, String alias) 
 	{
-	LoadedPackage lp = getPackage(alias);
-	if (lp != null)
-		{
-		dprint("There is already a [" + alias + "] loaded\n");
-		return;
-		}
-			
-	try
-		{
-		lp = new LoadedPackage();
-		lp.fPackageName = packageName;
-		lp.fAlias = alias;
-		lp.fModuleClass = Class.forName(packageName + ".GameModule");
-		lp.fModule = (GameModule) lp.fModuleClass.newInstance();
-
-		gModList.insertElementAt(lp, 0);
-
-		// clear the cache so the new package will be 
-		// looked at when looking up classes
-		gClassHash.clear(); 
-		}
-	catch (Exception e)
-		{
-		e.printStackTrace();
-		}
+	//Withnails 04/22/98
+	gClassFactory.addModule(packageName, alias);
+	}
+/**
+ * Other packages or mods may wish to be notified when a package is added to 
+ * the game. This event based interface introduces a 'PackageListener'.
+ * @param pl The PackageListener to add
+ */
+public static void addModuleListener(ModuleListener pl) 
+	{
+	if (!gModuleListeners.contains(pl))
+		gModuleListeners.addElement(pl);	
 	}
 /**
  * Add a print listener.
@@ -232,11 +228,11 @@ public static void dprint(String msg)
  */
 private boolean externalServerCommand(String alias, String cmd, Class[] paramTypes, Object[] params) 
 	{
-	LoadedPackage lp = getPackage(alias);
-	if (lp == null)
+	GameModule gm = gClassFactory.getModule(alias);
+	if (gm == null)
 		return false;
 	else
-		return externalServerCommand(lp, cmd, paramTypes, params);
+		return externalServerCommand(gm, cmd, paramTypes, params);
 	}
 /**
  * This method was created by a SmartGuide.
@@ -245,12 +241,12 @@ private boolean externalServerCommand(String alias, String cmd, Class[] paramTyp
  * @param cmd java.lang.String
  * @param args java.lang.String[]
  */
-private boolean externalServerCommand(LoadedPackage lp, String cmd, Class[] paramTypes, Object[] params) 
+private boolean externalServerCommand(GameModule gm, String cmd, Class[] paramTypes, Object[] params) 
 	{
 	try
 		{
-		java.lang.reflect.Method meth = lp.fModuleClass.getMethod("svcmd_" + cmd, paramTypes);						
-		meth.invoke(lp.fModule, params);
+		java.lang.reflect.Method meth = gm.getClass().getMethod("svcmd_" + cmd, paramTypes);						
+		meth.invoke(gm, params);
 		}
 	catch (NoSuchMethodException nsme)
 		{
@@ -297,16 +293,10 @@ public static Vector getLevelRegistryList(Object key)
  * @return q2jgame.LoadedPackage, null if not found.
  * @param alias java.lang.String
  */
-public static LoadedPackage getPackage(String alias) 
+public static GameModule getModule(String alias) 
 	{
-	for (int i = 0; i < gModList.size(); i++)
-		{
-		LoadedPackage lp = (LoadedPackage) gModList.elementAt(i);
-		if (lp.fAlias.equals(alias))
-			return lp;
-		}
-		
-	return null;
+	//Withnails 04/22/98
+	return gClassFactory.getModule(alias);
 	}
 /**
  * Let the DLL know what class to use for new Players.
@@ -382,7 +372,7 @@ public void init()
 	{	
 	// actually initialize the game
 	Engine.debugLog("Game.init()");
-	
+//System.out.println("java.compiler = [" + System.getProperty("java.compiler") + "]");	
 	// setup to manage FrameListeners
 	gFrameBeginning = new FrameList(64, 16);
 	gFrameMiddle = new FrameList(512, 128);
@@ -397,56 +387,81 @@ public void init()
 	// setup to manage PrintListeners
 	gPrintListeners = new Vector();	
 	
+	// setup to manage PackageListeners
+	gModuleListeners = new Vector();
+	
 	// setup hashtable to let objects find each other in a level
 	gLevelRegistry = new Hashtable();
 		
 	// setup to manage Game mods
-	gModList = new Vector();
-	gClassHash = new Hashtable();		
+	//Withnails 04/22/98
+	//gModList = new Vector();
+	//gClassHash = new Hashtable();
+	setClassFactory(new DefaultClassFactory());
 				
 	gFrameCount = 0;
 	gGameTime = 0;				
 	
+	//Withnails 04/23/98 - get the packages cvar, defaulting to baseq2
 	CVar packages = new CVar("q2jgame_packages", "baseq2", 0);
+
+	//Withnails 04/23/98 - parses out multiple packages on command line, separated by ;,/\\+
 	StringTokenizer st = new StringTokenizer(packages.getString(), ";,/\\+");
 	Vector v = new Vector();
 	while (st.hasMoreTokens())
 		v.addElement(st.nextToken());
 
+	//Withnails 04/23/98 - now load each package
 	for (int i = v.size()-1; i >= 0; i--)
-		addPackage((String) v.elementAt(i), (String) v.elementAt(i));			
-
+		addModule((String) v.elementAt(i), (String) v.elementAt(i));			
 	Engine.debugLog("Game.init() finished");
 	}
 /**
  * Look through the game mod list, trying to find a class
  * that matches the classSuffix
- * 
- * @return java.lang.Class
- * @param classSuffix The end of a classname, for example ".spawn.weapon_shotgun";
+ * @param classSuffix Either a suffix, like ".spawn.weapon_shotgun", 
+ * 	or a whole classname like "baseq2.spawn.weapon_shotgun"
+ * @return The class matching the suffix/name
+ * @exception java.lang.ClassNotFoundException if there was no match.
  */
 public static Class lookupClass(String classSuffix) throws ClassNotFoundException
 	{
-	Class result = (Class) gClassHash.get(classSuffix);
-	if (result != null)
-		return result;
-		
-	Enumeration enum = gModList.elements();
+	//Withnails 04/22/98
+	return gClassFactory.lookupClass(classSuffix);
+	}
+/**
+ * Notifies all package listeners that a package has been added
+ */
+protected static void notifyModuleAdded(GameModule gm) 
+	{
+	Enumeration enum = gModuleListeners.elements();
 	while (enum.hasMoreElements())
 		{
-		LoadedPackage lp = (LoadedPackage) enum.nextElement();
 		try
 			{
-			result = Class.forName(lp.fPackageName + classSuffix);
-			gClassHash.put(classSuffix, result);
-			return result;
+			((ModuleListener) enum.nextElement()).moduleAdded(gm);
 			}
-		catch (ClassNotFoundException e)
+		catch (Exception e)
 			{
 			}
 		}
-		
-	throw new ClassNotFoundException("Couldn't find a match for [" + classSuffix + "]");
+	}
+/**
+ * Notifies all package listeners that a package has been removed
+ */
+protected static void notifyModuleRemoved(GameModule gm) 
+	{
+	Enumeration enum = gModuleListeners.elements();
+	while (enum.hasMoreElements())
+		{
+		try
+			{
+			((ModuleListener) enum.nextElement()).moduleRemoved(gm);
+			}
+		catch (Exception e)
+			{
+			}
+		}
 	}
 /**
  * Called by the DLL when a new player connects. Throw an exception to reject the connection.
@@ -458,7 +473,7 @@ public void playerConnect(NativeEntity playerEntity, boolean loadgame) throws Ex
 	{
 	try
 		{
-		Class playerClass = Game.lookupClass(".Player");
+		Class playerClass = gClassFactory.lookupClass(".Player");
 	
 		Class[] paramTypes = new Class[2];
 		paramTypes[0] = q2java.NativeEntity.class;
@@ -570,28 +585,26 @@ public static void removeLevelRegistry(Object key, Object value)
  * Remove a module from the game's package list
  * @param packageName java.lang.String
  */
-public static void removePackage(String alias) 
+public static void removeModule(String alias) 
 	{
-	LoadedPackage lp = getPackage(alias);
-	if (lp == null)
-		{
-		dprint("[" + alias + "] is not loaded\n");
-		return;
-		}
-	
-	// clear the cache so the old package won't be 
-	// looked at when looking up classes
-	gClassHash.clear(); 
-	
-	gModList.removeElement(lp);
-	try
-		{
-		lp.fModule.unload();
-		}
-	catch (Exception e)
-		{
-		e.printStackTrace();
-		}	
+	//Withnails 04/22/98
+	gClassFactory.removeModule(alias);
+	}
+/**
+ * Remove a module from the game's package list
+ * @param gm A loaded GameModule
+ */
+public static void removeModule(GameModule gm) 
+	{
+	gClassFactory.removeModule(gm);
+	}
+/**
+ * Removes a package listener
+ * @param pl the PackageListener to remove
+ */
+public static void removeModuleListener(ModuleListener pl) 
+	{
+	gModuleListeners.removeElement(pl);
 	}
 /**
  * Remove a listener.
@@ -620,7 +633,8 @@ public void runFrame()
 	gFrameEnd.runFrame(FRAME_END, gGameTime);
 		
 	long endTime = System.currentTimeMillis();
-	gCPUTime += (endTime - startTime);		
+	gCPUTime += (endTime - startTime);	
+	gPerformanceFrames++;	
 	}
 /**
  * Called by the DLL when the DLL's ServerCommand() function is called.
@@ -650,13 +664,13 @@ public void serverCommand()
 	// package (if any) should handle it.
 	String alias = null;
 	String cmd;
-	int colon = sa[1].indexOf(':');
-	if (colon < 0)
+	int dot = sa[1].lastIndexOf('.');
+	if (dot < 0)
 		cmd = sa[1].toLowerCase();
 	else
 		{
-		alias = sa[1].substring(0, colon);
-		cmd = sa[1].substring(colon+1).toLowerCase();
+		alias = sa[1].substring(0, dot);
+		cmd = sa[1].substring(dot+1).toLowerCase();
 		}
 
 	// run the command	
@@ -687,10 +701,12 @@ public void serverCommand()
 			}
 								
 		// look for a module command second
-		for (int i = 0; i < gModList.size(); i++)
+		//Withnails 04/22/98 - now makes use of an enumeration instead
+		Enumeration enum = gClassFactory.getModules();
+		while (enum.hasMoreElements()) 
 			{
-			LoadedPackage lp = (LoadedPackage) gModList.elementAt(i);
-			if (externalServerCommand(lp, cmd, paramTypes, params))
+			GameModule gm = (GameModule)enum.nextElement();
+			if (externalServerCommand(gm, cmd, paramTypes, params))
 				return;
 			}
 		}
@@ -701,6 +717,25 @@ public void serverCommand()
 	for (int i = 0; i < sa.length; i++)
 		dprint("    argv(" + i + "): [" + sa[i] + "]\n");
 	}	
+/**
+ * Withnails 04/22/98
+ * Sets the current ClassFactory. The init() method sets it to the default q2jgame.GameClassFactory
+ * initially. Any mod may replace the add/remove package functionality by providing a subclass
+ * of GameClassFactory and calling this method. This provides a 'boot-strapping' scheme which
+ * means a mod can be loaded by the default system (i.e. Barrys implementation), and then
+ * replace this with a custom system which is in place from then on.
+ * <P>
+ * Clashes between mods shouldn't be a problem, as long as any subclass of GameClassFactory
+ * still provides access to the default classes. i.e. A mod should try its custom system, and 
+ * if this fails, fall back to the original implementation.
+ * <P>
+ * @see GameClassFactory
+ */
+public static void setClassFactory(GameClassFactory gcf)
+	{
+	//Withnails 04/22/98
+	gClassFactory = gcf;
+	}
 /**
  * Called by the DLL when the DLL's Shutdown() function is called.
  */
@@ -718,6 +753,21 @@ public void shutdown()
 			}
 		}
 
+	// unload the packages
+	enum = gClassFactory.getModules();
+	while (enum.hasMoreElements()) 
+		{
+		GameModule gm = (GameModule) enum.nextElement();
+		try
+			{
+			gm.unload();
+			}
+		catch (Exception e)
+			{
+			e.printStackTrace();
+			}
+		}
+		
 	Engine.debugLog("Game.shutdown()");
 	}
 /**
@@ -773,7 +823,7 @@ private void spawnEntities(String entString)
 					params[0] = sa;
 					try
 						{
-						Class entClass = lookupClass(".spawn." + className.toLowerCase());
+						Class entClass = gClassFactory.lookupClass(".spawn." + className.toLowerCase());
 						Constructor ctor = entClass.getConstructor(paramTypes);							
 						ctor.newInstance(params);
 						}
@@ -846,23 +896,26 @@ public void startLevel(String mapname, String entString, String spawnPoint)
 					
 	// now, right before the game starts, is a good time to 
 	// force Java to do another garbage collection to tidy things up.
-	System.gc();		
+	System.gc();	
+
+	gPerformanceFrames = 0;
+	gCPUTime = 0;		
 	}
 /**
  * Let the user add a game module.
  */
-public static void svcmd_addpackage(String[] args) 
+public static void svcmd_addmodule(String[] args) 
 	{
 	if (args.length < 3)
 		{
-		dprint("Usage: sv addpackage <package-name> [<alias>]\n");
+		dprint("Usage: sv addmodule <package-name> [<alias>]\n");
 		return;
 		}
 	
 	if (args.length < 4)
-		addPackage(args[2], args[2]);		
+		addModule(args[2], args[2]);		
 	else
-		addPackage(args[2], args[3]);
+		addModule(args[2], args[3]);
 	}
 /**
  * Print timing info to the console.
@@ -871,19 +924,24 @@ public static void svcmd_help(String[] args)
 	{	
 	dprint("Q2Java Game Framework\n\n");
 	dprint("   commands:\n");
-	dprint("      sv addpackage <package-name> [<alias>]\n");
-	dprint("      sv removepackage <alias>\n");
+	dprint("      sv addmodule <package-name> [<alias>]\n");
+	dprint("      sv removemodule <alias>\n");
 	dprint("\n");
-	dprint("      sv javamem\n");
-	dprint("      sv javagc\n");
+	dprint("      sv javamem       // show Java menory usage\n");
+	dprint("      sv javagc        // force a Java GC\n");
 	dprint("\n");
-	dprint("      sv time\n");
-	dprint("      sv help (this screen)\n");
+	dprint("      sv time          // show performance timing\n");
+	dprint("      sv help          // this screen\n");
+	dprint("      sv <module>.help // help for a loaded module\n");
 	dprint("\n");
-	dprint("   loaded packages:\n");
+	dprint("   loaded modules:\n");
 
-	for (int i = 0; i < gModList.size(); i++)
-		dprint("      " + ((LoadedPackage) gModList.elementAt(i)).fAlias + "\n");		
+	//Withnails 04/22/98 - now makes use of an enumeration instead
+	Enumeration enum = gClassFactory.getModules();
+	while (enum.hasMoreElements()) 
+		{
+		dprint("      " + ((GameModule)enum.nextElement()).getModuleName() + "\n");        
+		}
 	}
 /**
  * Force the Java Garbage collector to run.
@@ -915,19 +973,19 @@ public static void svcmd_javamem(String[] args)
 /**
  * Let the user remove a game module.
  */
-public static void svcmd_removepackage(String[] args) 
+public static void svcmd_removemodule(String[] args) 
 	{
 	if (args.length < 3)
-		dprint("Usage: sv removepackage <package-name>\n");
+		dprint("Usage: sv removemodule <alias>\n");
 	else
-		removePackage(args[2]);		
+		removeModule(args[2]);		
 	}
 /**
- * Print timing info to the console.
+ * Print timing info to the console. and reset counters.
  */
 public static void svcmd_time(String[] args) 
 	{
-	dprint(gFrameCount + " server frames, " + gCPUTime + " milliseconds, " + (((double)gCPUTime) / ((double)gFrameCount)) + " msec/server frame\n");
+	dprint(gPerformanceFrames + " server frames, " + gCPUTime + " milliseconds, " + (((double)gCPUTime) / ((double)gPerformanceFrames)) + " msec/server frame\n");
 	}
 /**
  * Called by the DLL when the DLL's WriteGame() function is called.

@@ -32,6 +32,8 @@
 #include "globals.h" // mainly so we can call other Q2Java module's
                      // initialization and cleanup functions
 
+char *javalink_version = "Win32 Version";
+
 JNIEnv *java_env;    // Pointer to Java environment - used by other modules.
 char *java_error;    // used by other modules to indicate initialization errors
 

@@ -38,6 +38,7 @@ public void fire()
 protected void setFields() 
 	{
 	fWeaponName = "blaster";
+	fWeaponIconName = "w_blaster";
 	fAmmoName = null;
 	fAmmoCount = 0;
 	fEntityModel = "models/weapons/g_blast/tris.md2";	

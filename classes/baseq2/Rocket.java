@@ -41,11 +41,9 @@ public Rocket(GameObject owner, Point3f start, Vector3f dir, int damage, int spe
 	fRadiusDamage = radiusDamage;
 	fDamageRadius = damageRadius;
 	fEntity.linkEntity();
-/*
-	if (self->client)
-		check_dodge (self, bolt->s.origin, dir, speed);
-*/
 
+	// register to be called every server frame
+	// so we can animate the rocket's flight.
 	Game.addFrameListener(this, 0, 0);
 	}
 /**
@@ -67,7 +65,7 @@ public void runFrame(int phase)
 		return;
 		}
 
-	TraceResults tr = fEntity.traceMove(Engine.MASK_SHOT, 1.0F);
+	TraceResults tr = fEntity.traceMove(Engine.MASK_SOLID, 1.0F); // was MASK_SHOT
 	
 	if (tr.fFraction == 1)
 		return;		// moved the entire distance
@@ -79,23 +77,22 @@ public void runFrame(int phase)
 		return;
 		}
 
+	// we hit something other than the sky.
+
 	int effect;
 	if ((Engine.getPointContents(fEntity.getOrigin()) & Engine.MASK_WATER) == 0)
 		effect = Engine.TE_ROCKET_EXPLOSION;
 	else
 		effect = Engine.TE_ROCKET_EXPLOSION_WATER;
-
-	GameObject attacker = fOwner;
 				
-	// we hit something other than the sky.
 	if (tr.fEntity.getReference() instanceof GameObject)
 		{
 		GameObject victim = (GameObject) tr.fEntity.getReference();
-		victim.damage(this, attacker, fEntity.getVelocity(), fEntity.getOrigin(), tr.fPlaneNormal, fDamage, 0, 0, effect);
-		MiscUtil.radiusDamage(this, attacker, fRadiusDamage, victim, fDamageRadius);
+		victim.damage(this, fOwner, fEntity.getVelocity(), fEntity.getOrigin(), tr.fPlaneNormal, fDamage, 0, 0, effect);
+		MiscUtil.radiusDamage(this, fOwner, fRadiusDamage, victim, fDamageRadius);
 		}
 	else
-		MiscUtil.radiusDamage(this, attacker, fRadiusDamage, null, fDamageRadius);		
+		MiscUtil.radiusDamage(this, fOwner, fRadiusDamage, null, fDamageRadius);		
 	
 	dispose();
 	}

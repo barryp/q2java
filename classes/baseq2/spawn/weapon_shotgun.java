@@ -77,6 +77,7 @@ public void fire()
 protected void setFields() 
 	{
 	fWeaponName = "shotgun";
+	fWeaponIconName = "w_shotgun";	
 	fAmmoName = "shells";
 	fAmmoCount = 10;
 	fEntityModel = "models/weapons/g_shotg/tris.md2";	

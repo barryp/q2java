@@ -266,7 +266,7 @@ protected boolean push()
 	fEntity.linkEntity();
 	
 	// see if any solid entities are inside the final position
-	NativeEntity[] hits = fEntity.getPotentialPushed(mins, maxs);				
+	NativeEntity[] hits = fEntity.getPotentialPushed(mins, maxs, Engine.MASK_SOLID);				
 	for (int i = 0; (hits != null) && (i < hits.length); i++)
 		{
 		GameObject check = (GameObject) hits[i].getReference();

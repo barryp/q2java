@@ -5,6 +5,7 @@
 
 extern JNIEnv *java_env;
 extern char *java_error;
+extern char *javalink_version;
 
 // global functions
 extern char java_gameDirName[];

@@ -1,0 +1,125 @@
+CHANGES from v0.4.1 to v0.5
+
+---------------------------------------------------------------------------
+This file will just list changes in the core packages 
+(q2java, q2jgame, baseq2). Add-ons will have to list their own changes.
+---------------------------------------------------------------------------
+
+DLL CHANGES ===============================================================
+
+javalink_win32.c
+
+    Added:   Second version string: char *javalink_version;    
+
+q2java_NativeEntity.c
+
+    Added:   Support for the NativeEntity.copySettings() method..to quickly
+             copy the attributes (such as origin, orientation, etc) from
+             one entity to another (to help with the Body Queue)
+
+    Changed: Generalized the allocateEntity() and freeEntity native methods
+             to support requesting and freeing player entities (for bots)
+             
+             Removed hardcoded mask settings in getPotentialPushed0 and pMove0,
+             they're now passed as parameters from the Java code.
+             
+             Moved special handling of setting player origin and velocity from 
+             the pMove() function back to the setVec3() function..to fix the 
+             intermission problem and better support bots.
+             
+quake2.h
+    
+    Removed: All the collision detection #defines (MASK_* and CONSTANT_*)
+    
+    
+
+JAVA CHANGES ==============================================================
+
+
+q2java.NativeEntity
+
+    Added:   CopySettings() method - to quickly copy settings from one entity to
+             another (for use in maintaining a body queue)
+
+    Changed: Generalized creation of NativeEntity objects to support requesting
+             player entities (for bots).
+             
+             GetPotentialPushed() and pMove() now require a MASK parameter to pass
+             to the native code.
+
+q2jgame.GameModule
+
+    Added:   module name property, getModuleName() and getPackageName() methods.
+
+    Changed: Constructor now requires a string parameter - to pass the name of the
+             module..all modules will need their GameModule constructor altered
+             to accept this parameter and just pass it up to the superclasses 
+             constructor.
+             
+q2jgame.LoadedModule
+             
+    Was Removed. Since the GameModule now knows its own name and can find its 
+    package name, this wasn't necessary anymore.  Classes that used 
+    LoadedModule were altered to now just use GameModule..cleaned things 
+    up quit a bit.  Shouldn't affect anything outside the q2jgame package.
+
+
+baseq2.GameObject
+
+    Added:   calcAttackerYaw() {moved and renamed from the Player class}
+    
+             
+baseq2.BFGBlast
+baseq2.Rocket
+baseq2.GenericGrenade
+
+    Changed: runFrame() traceMask parameter to MASK_SOLID to fix 
+             shooting-through-walls bug (wish I knew how id's code manages 
+             to work with MASK_SHOT)
+             
+baseq2.GameModule
+
+    Changed: Switching maps now puts '\n' at end of command string. 
+    
+             Revised svcmd_scores() from _Quinn            
+    
+baseq2.GenericItem
+
+    Changed: dropped entities weren't relinking after changing their origin. 
+    
+baseq2.GenericWeapon
+
+    Added:   isFiring() method    
+    
+baseq2.Player
+
+    Added:   cmd_weaplast() method (thanks to Brian Haskin)
+    
+             new version of getUserInfo() that can accept a default value to
+             return instead of null.
+             
+             getName() method.
+             
+             setUserInfo() method - so bots can set their names, skins, etc
+    
+    Changed: Thomas Winzig supplied many more improvements to screen flashing, 
+             blending, damage feedback, damage knockback (rocket jumping!), 
+             armor/damage handling, pain sounds, probably other stuff I'm spacing
+             out.
+             
+             Scores are now cleared between levels
+             
+             Did away with the fName field (since it was a duplicate of what was
+             stored in the fUserInfo hashtable) - replaced all references to it
+             with calls to the new getName() method.
+             
+             Improved cmd_weapnext (but not weapprev) from Brian Haskin
+             
+    Moved:   Player.calcKillerYaw() was restructured to be 
+             GameObject.calcAttackerYaw() (there wasn't anything terribly 
+             player-specific about it, and may be useful to other game objects)
+
+             
+baseq2.spawn.target_changelevel
+
+    Changed: was improperly changing the name of the next map..disabled for now.             

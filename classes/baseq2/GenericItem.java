@@ -1,6 +1,7 @@
 
 package baseq2;
 
+
 import javax.vecmath.*;
 
 import q2java.*;
@@ -22,6 +23,7 @@ public abstract class GenericItem extends GameObject implements FrameListener
 	protected final static int STATE_DROPPED = 0;
 	protected final static int STATE_NORMAL = 1;
 	
+
 /**
  * This method was created by a SmartGuide.
  */
@@ -83,6 +85,7 @@ public void runFrame(int phase)
 				}
 
 			fEntity.setOrigin(tr.fEndPos);
+			fEntity.linkEntity();
 			fEntity.setGroundEntity(tr.fEntity);
 			break;
 			
@@ -113,7 +116,7 @@ public void touch(Player p)
 	fEntity.sound(NativeEntity.CHAN_ITEM, fPickupSoundIndex, 1, NativeEntity.ATTN_NORM, 0);
 
 	// flash the Player's screen
-	p.setBonusAlpha(0.25f);
+	p.setFrameAlpha(0.25f);
 
 	// make the item disappear
 	fEntity.setSolid(NativeEntity.SOLID_NOT);

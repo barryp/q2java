@@ -74,6 +74,7 @@ public void fire()
 protected void setFields() 
 	{
 	fWeaponName = "grenade launcher";
+	fWeaponIconName = "w_glauncher";	
 	fAmmoName = "grenades";
 	fAmmoCount = 10;
 	fEntityModel = "models/weapons/g_launch/tris.md2";	

@@ -10,7 +10,7 @@ public class worldspawn extends GameObject
 	
 public worldspawn(String[] spawnArgs) throws GameException
 	{
-	super(spawnArgs, true); 	// make sure we get a special spot in the array
+	super(spawnArgs, NativeEntity.ENTITY_WORLD); 	// make sure we get a special spot in the array
 
 	fEntity.setSolid(NativeEntity.SOLID_BSP);
 	fEntity.setModelIndex(1); 			// world model is always index 1

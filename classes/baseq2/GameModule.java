@@ -3,6 +3,7 @@ package baseq2;
 
 import java.io.*;
 import java.lang.reflect.*;
+import java.text.*;
 import java.util.*;
 import javax.vecmath.*;
 
@@ -77,8 +78,10 @@ public class GameModule extends q2jgame.GameModule implements GameStatusListener
 /**
  * This method was created by a SmartGuide.
  */
-public GameModule ( ) 
+public GameModule(String moduleName) 
 	{
+	super(moduleName);
+	
 	Game.addGameStatusListener(this);
 	Game.addFrameListener(this, 0, 0);
 	Game.addLevelListener(this);
@@ -152,7 +155,7 @@ public static void checkInhibited(int spawnFlags) throws InhibitedException
  */
 public static String getVersion() 
 	{
-	return "Quake2Java Test Game, v0.1";
+	return "Q2Java Base Game, v0.5";
 	}	
 /**
  * Check whether or not the Cheating option is on.
@@ -198,9 +201,9 @@ public void runFrame(int phase)
 	if (gInIntermission && (Game.getGameTime() > gIntermissionEndTime))
 		{
 		if (isDMFlagSet(DF_SAME_LEVEL))
-			Engine.addCommandString("gamemap \"" + gCurrentMap + "\"");
+			Engine.addCommandString("gamemap \"" + gCurrentMap + "\"\n");
 		else
-			Engine.addCommandString("gamemap \"" + gNextMap + "\"");
+			Engine.addCommandString("gamemap \"" + gNextMap + "\"\n");
 		return;
 		}
 
@@ -222,6 +225,22 @@ public static void setNextMap(String mapname)
 public void shutdown()
 	{
 	}
+/**
+ * Called by svcmd_scores
+ * @author _Quinn
+ * @param int num Number of spaces to return
+ */
+
+public String spaces( float spaces ) 
+	{
+	StringBuffer sb = new StringBuffer();
+	for ( int i = 0; i <= spaces; i++ ) 
+			{
+			sb.append(" ");
+			} // end for
+
+	return sb.toString();
+	} // end spaces
 /**
  * Pick an intermission spot, and notify each player.
  */
@@ -410,52 +429,109 @@ public void svcmd_help(String[] args)
  * Later: { ping score time ascend descend }
  * and so on.
  * @param args java.lang.String[]
+ * @author _Quinn <tmiller@haverford.edu>
+ * @version 2
  */
 
 public void svcmd_scores(String[] args) 
 	{
 	// _Quinn: 04/20/98: shamelessly looted from baseq2.Player
+	// _Quinn: 05.04.98: made pretty printing prettier
 
-	StringBuffer sb = new StringBuffer();
-	int i;
+	// Name           Score Ping Time Rate RelPing Rank
+	// Rate is Score/Time
+	// RelPing is relative ping, 0 to 1.0 with 1 the max.
+	// Rank is Rate times RPing
 
-	// generate a list of players sorted by score
-	Vector players = new Vector();
 	Enumeration enum = NativeEntity.enumeratePlayers();
+	Vector playerData = new Vector();
+	Vector players = new Vector();
+
+	float minPing = 25000;
+	float maxPing = 0;
+	int i = 0;
+
 	while (enum.hasMoreElements())
 		{
 		Player p = (Player) ((NativeEntity)enum.nextElement()).getPlayerListener();
-		boolean isInserted = false;
-		for (i = 0; i < players.size(); i++)
-			{
-			Player p2 = (Player) players.elementAt(i);
-			if (p.fScore > p2.fScore)
-				{
-				players.insertElementAt(p, i);
-				isInserted = true;
-				break;
-				}
-			}	
-		if (!isInserted)
-			players.addElement(p);				
-		}	
+		float playerD[] = new float[7];
+		playerD[0] = p.fScore; // score
+		playerD[1] = p.fEntity.getPlayerPing(); // ping
+		playerD[2] = ((Game.getGameTime() - p.fStartTime) / 60); //time
+		playerD[3] = playerD[0] / playerD[2]; // rate
+		playerD[4] = 0; // RelPing
+		playerD[5] = 0; // K/M * RelPing
+		playerD[6] = 15 - p.getName().length() - 1; // padding.
 
-	int playerCount = players.size();
+		if ( playerD[1] < minPing ) { minPing = playerD[1]; }
+		if ( playerD[1] > maxPing ) { maxPing = playerD[1]; }
+
+		// perform sorting based on playerD 0 to 6
+		// ( constants ) later.
+
+		playerData.addElement( playerD );
+		players.addElement( p.getName() );
+		} // end while loop.
+
+		int playerCount = players.size();
+
+	// calculate relPing.
+	float range = maxPing - minPing;
+	if ( range == 0 ) { range = 1; } // no division errors...
+	float difference = 0;
+	for ( i = 0; i < playerCount; i++ ) 
+		{
+		difference = ((float[])playerData.elementAt(i))[1] - minPing;
+		if ( difference == 0 ) { difference = 1; } // head off zeroresults.
+		((float[])playerData.elementAt(i))[4] = difference / range;
+		} // end calculating loop.
+
+	// calculate rank.
+	float pD[] = new float[7];
+	for ( i = 0; i < playerCount; i++ ) 
+		{
+		pD = (float[])playerData.elementAt(i);
+		pD[5] = pD[3] * pD[4];
+		playerData.setElementAt( pD, i);
+		} // end rank calculation
+
+	// later, sort based on args passed in.
+
+	// prepare to pretty print the numbers
+	DecimalFormat dfThree = new DecimalFormat( "##0" );
+	DecimalFormat dfTwoDotOne = new DecimalFormat( "##.0" );
+	DecimalFormat dfDotThree = new DecimalFormat( "#.0##" );
+	
+		// generate the pretty printing.
+	StringBuffer sb = new StringBuffer( "Name            Score Ping  Time Rate RelPing Rank\n" );
 	String s = "";
-
-	// generate the pretty printing.
-
 	for (i = 0; i < playerCount; i++)
 		{
-		Player p = (Player) players.elementAt(i);
-		s = p.fName + "    " + p.fScore + "    " + p.fEntity.getPlayerPing() + "    " + (int)((Game.getGameTime() - p.fStartTime) / 60) + "\n";        
-		// Last 0 should be elapsed time.  see Player for fix, when and if.
-		sb.append( s );
+		pD = (float[])playerData.elementAt(i);
+		// name
+		sb.append( players.elementAt(i).toString() + spaces(pD[6]) );
+		// score
+		s = dfThree.format(pD[0]);
+		sb.append( spaces( 5 - s.length() ) + s );
+		// ping
+		s = dfThree.format(pD[1]);
+		sb.append( spaces( 4 - s.length() ) + s );
+		// time
+		s = dfThree.format(pD[2]);
+		sb.append( spaces( 4 - s.length() ) + s );
+		// rate
+		s = dfTwoDotOne.format(pD[3]);
+		sb.append( spaces( 4 - s.length() ) + s );
+		// relping
+		s = dfDotThree.format(pD[4]);
+		sb.append( spaces( 7 - s.length() ) + s );
+		// rank
+		s = dfDotThree.format(pD[5]);
+		sb.append( spaces( 4 - s.length() ) + s + "\n" );
 		}
 
-	// there's probably a better way to do this...
 	System.out.print( sb );
-	} // end run ();
+	} // end scores ();
 /**
  * Control the VWep option
  */

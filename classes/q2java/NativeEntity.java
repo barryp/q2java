@@ -1,6 +1,7 @@
 
 package q2java;
 
+
 import java.io.*;
 import java.util.Enumeration;
 import java.util.Vector;
@@ -43,6 +44,11 @@ public class NativeEntity
 	private static NativeEntity[] gEntityArray;
 		
 	// --------------------- Constants -------------------------
+		
+	// types of entities we can create
+	public final static int ENTITY_NORMAL = 0;
+	public final static int ENTITY_WORLD  = 1;
+	public final static int ENTITY_PLAYER = 2;		
 		
 	// sound channels
 	// channel 0 never willingly overrides
@@ -222,9 +228,10 @@ public class NativeEntity
 	// Tuple types
 //	private final static int TYPE_TUPLE 		= 0;
 	private final static int TYPE_POINT 		= 1;
-	private final static int TYPE_VECTOR 	= 2;
+	private final static int TYPE_VECTOR 		= 2;
 	private final static int TYPE_ANGLE 		= 3;
 	
+
 /**
  * Create a NativeEntity, which corresponds 
  * to a single Quake2 edict_t structure.
@@ -233,22 +240,21 @@ public class NativeEntity
  */
 public NativeEntity () throws GameException
 	{
-	this(false);
+	this(ENTITY_NORMAL);
 	}
 /**
  * Create a NativeEntity, which corresponds 
  * to a single Quake2 edict_t structure.
  *
- * @param isWorld Whether or not this entity is the special
- *    "world" entity..there has to be one in the game (there can be only one!) 
+ * @param entType One of the ENTITY_* constants
  *
  * @exception q2java.GameException when there are no more entities available.
  */
-public NativeEntity(boolean isWorld) throws GameException
+public NativeEntity(int entType) throws GameException
 	{
 	if (fEntityIndex == 0) // players will already have this set to something > 0
 		{
-		fEntityIndex = allocateEntity(isWorld);
+		fEntityIndex = allocateEntity(entType);
 		if (fEntityIndex < 0)
 			throw new GameException("Can't allocate entity");
 		}
@@ -256,7 +262,7 @@ public NativeEntity(boolean isWorld) throws GameException
 	gEntityArray[fEntityIndex] = this;
 	}
 
-private native static int allocateEntity(boolean isWorld);
+private native static int allocateEntity(int entType);
 
 /** 
  * Print a message on the center of a player's screen.
@@ -273,6 +279,22 @@ public void centerprint(String s)
  * Player only
  */
 private native static void centerprint0(int index, String msg);
+
+/**
+ * Copy settings from another entity.
+ * @param source NativeEntity to copy settings from.
+ */
+public void copySettings(NativeEntity source) 
+	{
+	copySettings0(source.fEntityIndex, fEntityIndex);
+	}
+
+/**
+ * This method was created by a SmartGuide.
+ * @param sourceIndex int
+ * @param destIndex int
+ */
+private native static void copySettings0(int sourceIndex, int destIndex);
 
 /** 
  * Print a message on player's screen.
@@ -560,6 +582,10 @@ public Angle3f getPlayerViewAngles()
 	{
 	return (Angle3f) getVec3(fEntityIndex, VEC3_CLIENT_PS_VIEWANGLES, TYPE_ANGLE);
 	}
+public Vector3f getPlayerViewOffset()
+	{
+	return (Vector3f) getVec3(fEntityIndex, VEC3_CLIENT_PS_VIEWOFFSET, TYPE_VECTOR);
+	}
 /**
  * Get an array of entities that might need to be pushed.
  *
@@ -578,9 +604,12 @@ public Angle3f getPlayerViewAngles()
  * @return An array of entities that either might intersect 
  * this object, or have it as their ground entity.
  */
-public NativeEntity[] getPotentialPushed(Tuple3f mins, Tuple3f maxs)
+public NativeEntity[] getPotentialPushed(Tuple3f mins, Tuple3f maxs, int defaultMask)
 	{
-	return getPotentialPushed0(fEntityIndex, mins.x, mins.y, mins.z, maxs.x, maxs.y, maxs.z);
+	return getPotentialPushed0(fEntityIndex, 
+		mins.x, mins.y, mins.z, 
+		maxs.x, maxs.y, maxs.z, 
+		defaultMask);
 	}
 
 /**
@@ -588,7 +617,10 @@ public NativeEntity[] getPotentialPushed(Tuple3f mins, Tuple3f maxs)
  * @return q2java.NativeEntity[]
  * @param index int
  */
-private static native NativeEntity[] getPotentialPushed0(int index, float minx, float miny, float minz, float maxx, float maxy, float maxz);
+private static native NativeEntity[] getPotentialPushed0(int index, 
+	float minx, float miny, float minz, 
+	float maxx, float maxy, float maxz,
+	int defaultMask);
 
 /**
  * Get a list of entities who have their origin within
@@ -670,12 +702,12 @@ private native static void linkEntity0(int index);
  * @param cmd A PlayerCmd usually received by a class implementing
  *   the NativePlayer.playerThink() method
  */
-public PMoveResults pMove(PlayerCmd cmd) 
+public PMoveResults pMove(PlayerCmd cmd, int traceMask) 
 	{
 	return pMove0(getEntityIndex(), cmd.fMsec, cmd.fButtons, 
 		cmd.fPitch, cmd.fYaw, cmd.fRoll, 
 		cmd.fForwardMove, cmd.fSideMove, cmd.fUpMove,
-		cmd.fImpulse, cmd.fLightLevel);
+		cmd.fImpulse, cmd.fLightLevel, traceMask);
 	}
 
 /**
@@ -684,7 +716,7 @@ public PMoveResults pMove(PlayerCmd cmd)
 private static native PMoveResults pMove0(int index, byte msec, byte buttons,
 	short angle0, short angle1, short angle2,
 	short forward, short side, short up,
-	byte impulse, byte lightlevel);
+	byte impulse, byte lightlevel, int traceMask);
 
 public void positionedSound(Point3f origin, int channel, int soundindex, float volume, float attenuation, float timeofs)
 	{   

@@ -83,6 +83,7 @@ public boolean isEnoughAmmo()
 protected void setFields() 
 	{
 	fWeaponName = "super shotgun";
+	fWeaponIconName = "w_sshotgun";	
 	fAmmoName = "shells";
 	fAmmoCount = 10;
 	fEntityModel = "models/weapons/g_shotg2/tris.md2";	

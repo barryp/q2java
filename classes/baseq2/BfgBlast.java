@@ -174,7 +174,7 @@ public void runFrame(int phase)
 	if (fState == EXPLODING)
 		explode();
 
-	TraceResults tr = fEntity.traceMove(Engine.MASK_SHOT, 1.0F);
+	TraceResults tr = fEntity.traceMove(Engine.MASK_SOLID, 1.0F); // was MASK_SHOT
 
 	if (tr.fFraction < 1)	// We have hit an object...let's explode..
 		{

@@ -87,6 +87,8 @@ public void fire()
 	start = fPlayer.projectSource(offset, forward, right);
 	MiscUtil.fireLead(fPlayer, start, forward, damage, kick, Engine.TE_GUNSHOT, DEFAULT_BULLET_HSPREAD, DEFAULT_BULLET_VSPREAD);
 	
+	fPlayer.setAnimation(Player.ANIMATE_ATTACK, false,(int)(MiscUtil.randomFloat() + 0.25f));  //VWep
+	
 	Engine.writeByte(Engine.SVC_MUZZLEFLASH);
 	Engine.writeShort(fEntity.getEntityIndex());
 	Engine.writeByte(Engine.MZ_MACHINEGUN /*| is_silenced */);
@@ -101,6 +103,7 @@ public void fire()
 protected void setFields() 
 	{
 	fWeaponName = "machinegun";
+	fWeaponIconName = "w_machinegun";	
 	fAmmoName = "bullets";
 	fAmmoCount = 50;
 	fEntityModel = "models/weapons/g_machn/tris.md2";	

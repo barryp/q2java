@@ -119,7 +119,7 @@ public void playerBegin(boolean loadgame)
 	Engine.writeByte(Engine.MZ_LOGIN);
 	Engine.multicast(fEntity.getOrigin(), Engine.MULTICAST_PVS);
 
-	Game.bprint(Engine.PRINT_HIGH, fName + " entered the game\n");
+	Game.bprint(Engine.PRINT_HIGH, getName() + " entered the game\n");
 	fEntity.centerprint(WelcomeMessage.getMessage());
 	// make sure all view stuff is valid
 	endServerFrame();	
@@ -135,7 +135,7 @@ public void playerDisconnect()
 	try
 		{
 		File sandbox = new File(Engine.getGamePath(), "sandbox");
-		File pfile = new File(sandbox, fName + ".player");
+		File pfile = new File(sandbox, getName() + ".player");
 		FileOutputStream fos = new FileOutputStream(pfile);
 		ObjectOutputStream oos = new ObjectOutputStream(fos);
 		oos.writeObject(this);

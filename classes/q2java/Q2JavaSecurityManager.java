@@ -84,6 +84,12 @@ public void checkConnect(String host, int port)
 		throw new SecurityException("No access allowed to ports less than 1024");
 	}
 /**
+ * Let the game create its own classloader
+ */
+public void checkCreateClassLoader() 
+	{
+	}
+/**
  * This method was created by a SmartGuide.
  * @param file java.lang.String
  */

@@ -1,6 +1,7 @@
 
 package baseq2;
 
+
 import java.util.*;
 import javax.vecmath.*;
 
@@ -19,7 +20,7 @@ import baseq2.spawn.*;
 public class Player extends GameObject implements FrameListener, PlayerListener, CrossLevel
 	{	
 	// ---- Instance fields ------------------------
-	protected String fName;
+//	protected String fName;
 	protected int fScore;
 	protected float fStartTime;
 
@@ -33,16 +34,22 @@ public class Player extends GameObject implements FrameListener, PlayerListener,
 	protected Hashtable fUserInfo;
 	protected Hashtable fInventory;
 	protected Vector fWeaponList;
+	protected Vector fWeaponOrder;
+	protected Vector fWeaponsExcluded;
 	protected Hashtable fAmmoBelt;
 
 	// Armor 
 	protected int fArmorCount;
-	protected int fArmorMaxCount;				
-	protected float fArmorProtection; 		// what fraction of normal damage the player's armor absorbs
-	protected float fArmorEnergyProtection; 	// fraction of energy damage the player's armor absorbs	
+	protected int fArmorMaxCount;
+	/** what fraction of normal damage the player's armor absorbs. */
+	protected float fArmorProtection;
+	/** fraction of energy damage the player's armor absorbs. */
+	protected float fArmorEnergyProtection;
 
-	protected boolean fWeaponThunk; // have we given the current weapon a chance to think yet this frame?
+	/** have we given the current weapon a chance to think yet this frame? */
+	protected boolean fWeaponThunk;
 	protected GenericWeapon fWeapon;
+	protected GenericWeapon fLastWeapon;
 	protected GenericWeapon fNextWeapon;	
 	protected AmmoPack fAmmo;
 	
@@ -56,54 +63,95 @@ public class Player extends GameObject implements FrameListener, PlayerListener,
 	protected int fWaterLevel;
 	protected int fOldWaterLevel;
 	protected Vector3f fOldVelocity;
+	/** The mass of this Player. Use setMass(int) to set.*/
+	private int fMass;
 	
 	protected boolean fShowScore;
+	protected float fShowScoreTime;
+	
 	protected boolean fIsDead;
+	protected transient GameObject fKiller;
 	protected float fKillerYaw;
 	protected float fRespawnTime;
 		
 	// animation variables
-	private int fAnimationFrame;
+	protected int fAnimationFrame;
 	protected int fAnimationPriority;
 	protected int fAnimationEnd;
+	protected boolean fAnimationReversed;
 	protected boolean fIsRunning;
 	protected boolean fIsDucking;
 	
 	public Angle3f fKickAngles;
 	public Point3f fKickOrigin;
 	
+	// Color/blend/"kick" related variables (TSW)
+	private Color4f fBlend;			// The blend (player view tint) for the current server frame.
+	private Color4f fDamageBlend;	// The blend for the damage in the current frame.
+	private float fFrameAlpha;		// The alpha level for the current server frame (usually bonus flashes).
+	private int fDamageArmor;		// regular armor (hits)
+	private int fDamageBlood;		// blood (regular damage hits)
+	private int fDamagePArmor;		// power armor (hits)
+	private int fDamageKnockback;	// How much "kick" should be visible this frame
+	private Point3f fDamageFrom;	// id: "origin for vector calculation"
+	private float fDamageRoll;		// how much roll inflicted by damage
+	private float fDamagePitch;		// how much pitch inflicted by damage
+	private float fDamageTime;		// for fading out of damage kicks (?) 
+	
+	// Debounce variables to make sure sounds don't collide (?)
+	// This seems like a hack, but I can't think of a way to improve it. (TSW)
+	private float fPainDebounceTime;
+	
 	// temp vectors for endFrame()
+	protected Vector3f fViewOffset;
 	protected Vector3f fRight;
 	protected Vector3f fForward;
 	protected Vector3f fUp;
 	protected float fXYSpeed;
 
 	// ------- Public constants ---------------------------------	
+
+	public final static Color4f COLOR_LAVA  = new Color4f(1.0f, 0.3f, 0.0f, 0.6f);
+	public final static Color4f COLOR_SLIME = new Color4f(0.0f, 0.1f, 0.05f, 0.6f);
+	public final static Color4f COLOR_WATER = new Color4f(0.5f, 0.3f, 0.2f, 0.4f);
+	// These colors refer to fFrameAlpha for their alpha, so they only have 3 floats (rgb). 
+	/** The color used for Power Armor blends. */
+	public final static Color3f COLOR_GREEN = new Color3f(0.0f, 1.0f, 0.0f);
+	/** The color used for regular Armor blends. */
+	public final static Color3f COLOR_WHITE = new Color3f(1.0f, 1.0f, 1.0f);
+	/** The color used for blood blends. */
+	public final static Color3f COLOR_RED = new Color3f(1.0f, 0.0f, 0.0f);
+	
+	// added from id code (g_local.h) for view kicks.
+	public final static float DAMAGE_TIME = 0.5f;
 	
 	// Constants for setAnimation()
 
 	// basic animations
 	public final static int ANIMATE_NORMAL	= 0; // normal = stand, normal+1 = run
 	public final static int ANIMATE_ATTACK	= 2;
-	public final static int ANIMATE_PAIN		= 3;
+	public final static int ANIMATE_PAIN	= 3;
 	public final static int ANIMATE_DEATH	= 6;
+	public final static int ANIMATE_VWEP_THROW	= 9; 
+	public final static int ANIMATE_VWEP_ACTIVATE		= 10;
+	public final static int ANIMATE_VWEP_DEACTIVATE	= 11;
 		
 	// gesture animations
-	public final static int ANIMATE_FLIPOFF	= 18;
-	public final static int ANIMATE_SALUTE	= 19;
-	public final static int ANIMATE_TAUNT	= 20;
-	public final static int ANIMATE_WAVE		= 21;
-	public final static int ANIMATE_POINT	= 22;
+	public final static int ANIMATE_FLIPOFF	= 24;
+	public final static int ANIMATE_SALUTE	= 25;
+	public final static int ANIMATE_TAUNT	= 26;
+	public final static int ANIMATE_WAVE	= 27;
+	public final static int ANIMATE_POINT	= 28;
 
 	// jumping animations
-	public final static int ANIMATE_JUMP		= 23;
-	public final static int ANIMATE_FLAIL	= 24;
-	public final static int ANIMATE_LAND		= 25;
+	public final static int ANIMATE_JUMP	= 29;
+	public final static int ANIMATE_FLAIL	= 30;
+	public final static int ANIMATE_LAND	= 31;
 	
 
 	
 	// handedness values
-	public final static int RIGHT_HANDED		= 0;
+	public final static int RIGHT_HANDED	= 0;
 	public final static int LEFT_HANDED		= 1;
 	public final static int CENTER_HANDED	= 2;
 		
@@ -191,10 +239,13 @@ public class Player extends GameObject implements FrameListener, PlayerListener,
 		ANIM_ATTACK, 46, 53,	// attack
 		ANIM_PAIN, 54, 57,		// pain1
 		ANIM_PAIN, 58, 61,		// pain2
-		ANIM_PAIN, 62, 65,		// pain3
+		ANIM_PAIN, 62, 65,		// pain3 
 		ANIM_DEATH, 178, 183,	// death1
 		ANIM_DEATH, 184, 189,	// death2
 		ANIM_DEATH, 190, 197,	// death3
+		ANIM_ATTACK, 119, 112, // VWeap grenade toss
+		ANIM_PAIN, 62, 65,		// VWeap activate
+		ANIM_PAIN, 65, 62,		// VWeap deactivate
 		
 		// croutching animations
 		ANIM_BASIC, 135, 153,	// crstnd
@@ -206,6 +257,9 @@ public class Player extends GameObject implements FrameListener, PlayerListener,
 		ANIM_DEATH, 173, 177,	// crdeath
 		ANIM_DEATH, 173, 177,	// crdeath
 		ANIM_DEATH, 173, 177,	// crdeath
+		ANIM_ATTACK, 160, 162,	// VWeap grenade toss
+		ANIM_PAIN, 169, 172,	// VWeap activate
+		ANIM_PAIN, 172, 169,	// VWeap deactivate
 		
 		// gesture animations
 		ANIM_WAVE, 72, 83,		// flip
@@ -220,6 +274,11 @@ public class Player extends GameObject implements FrameListener, PlayerListener,
 		ANIM_WAVE, 68, 71		// land on the ground		
 		};
 	
+
+
+
+
+
 /**
  * Create a new Player Game object, and associate it with a Player
  * native entity.
@@ -233,11 +292,25 @@ public Player(NativeEntity ent, boolean loadgame) throws GameException
 	parsePlayerInfo(fEntity.getPlayerInfo());
 	
 	// create temporary vectors
+	fViewOffset = new Vector3f();
 	fRight = new Vector3f();
 	fForward = new Vector3f();
 	fUp = new Vector3f();
+	
+	// Set default values
 	fKickAngles = new Angle3f();
-	fKickOrigin = new Point3f();	
+	fKickOrigin = new Point3f();
+	fDamageFrom = new Point3f();
+	fBlend = new Color4f(0.0f, 0.0f, 0.0f, 0.0f);
+	fDamageBlend = new Color4f(0.0f, 0.0f, 0.0f, 0.0f);
+	setFrameAlpha(0.0f);
+	setMass(200);
+	
+	// Do we need to init values of zero? (TSW)
+	fPainDebounceTime = 0.0f;
+	fDamageRoll = 0.0f;
+	fDamagePitch = 0.0f;
+	fDamageTime = 0.0f;
 
 	// sign up to receive server frame notices at the beginning and end of server frames
 	Game.addFrameListener(this, Game.FRAME_BEGINNING + Game.FRAME_END, 0, 0);
@@ -282,6 +355,12 @@ public boolean addArmor(int amount, int maxAmount, float protection, float energ
 	// handle shards differently
 	if (maxAmount == 0) 
 		{
+		if (fArmorCount == 0)
+			{
+			fEntity.setPlayerStat(NativeEntity.STAT_ARMOR_ICON, (short) icon);
+			fArmorMaxCount = 50;
+			fArmorProtection = 0.3F;			
+			}
 		fArmorCount += amount;
 		fEntity.setPlayerStat(NativeEntity.STAT_ARMOR, (short)fArmorCount);
 		return true;
@@ -312,46 +391,102 @@ public boolean addArmor(int amount, int maxAmount, float protection, float energ
 	return false;		
 	}
 /**
- * This method was created by a SmartGuide.
- * @return boolean
- * @param weaponName java.lang.String
- * @param ammoName java.lang.String
- * @param ammoCount int
+ * This method adds a color to fBlend, via RGBA (given as
+ * xyzw to match the Color4f class).
+ *
+ * @param x		Red
+ * @param y		Green
+ * @param z		Blue
+ * @param w		Alpha
+ * @see			#addBlend(java.vecmath.Color4f color)
  */
-public boolean addWeapon(Class weaponClass, String weaponName, String ammoName, int ammoCount) 
+public void addBlend(float x, float y, float z, float w)
 	{
+	float	w2, w3;
+
+	if (w <= 0)	// When alpha is zero, blend is invisible.
+		return;
+
+	w2 = fBlend.w + (1 - fBlend.w) * w;	// new total alpha
+	w3 = fBlend.w / w2;					// fraction of color from old
+
+	fBlend.x = (fBlend.x * w3) + (x * (1 - w3));
+	fBlend.y = (fBlend.y * w3) + (y * (1 - w3));
+	fBlend.z = (fBlend.z * w3) + (z * (1 - w3));
+	fBlend.w = w2;
+	}
+/**
+ * This method adds the <SAMP>color</SAMP> to fBlend.
+ *
+ * @param color	The color to add to fBlend.
+ */
+public void addBlend(Color4f color)
+	{
+	addBlend(color.x, color.y, color.z, color.w);
+	}
+/**
+ * Add a class of weapon to a player's inventory.
+ * @return boolean true if the player took the weapon (or its ammo)
+ * @param weaponClass class of the weapon.
+ */
+public boolean addWeapon(Class weaponClass) 
+	{
+	GenericWeapon w;
+	try
+		{
+		w = (GenericWeapon) weaponClass.newInstance();
+		}
+	catch (Exception e)
+		{
+		e.printStackTrace();
+		return false;
+		}
+
 	boolean weaponStay = GameModule.isDMFlagSet(GameModule.DF_WEAPONS_STAY);
 
-	if (isCarrying(weaponName))
+	if (isCarrying(w.getWeaponName()))
 		{
 		if (weaponStay)
 			return false;
 		else			
-			return addAmmo(ammoName, ammoCount);
+			return addAmmo(w.getAmmoName(), w.getAmmoCount());
 		}
 	else
 		{		
-		try
-			{
-			GenericWeapon w = (GenericWeapon) weaponClass.newInstance();
-			putInventory(weaponName, w);
-			fWeaponList.addElement(w);
-			w.setOwner(this);
-			fEntity.cprint(Engine.PRINT_HIGH, "You picked up a " + weaponName + "\n");
+		putInventory(w.getWeaponName(), w);
+		fWeaponList.addElement(w);
+		if (!fWeaponOrder.contains(w.getWeaponName()) && !fWeaponsExcluded.contains(w.getWeaponName()))
+			fWeaponOrder.addElement(w.getWeaponName());
+		w.setOwner(this);
+		fEntity.cprint(Engine.PRINT_HIGH, "You picked up a " + w.getWeaponName() + "\n");
 			
-			// switch weapons if we're currently using the blaster
-			if (fWeapon == getInventory("blaster"))
-				{
-				fNextWeapon = w;
-				fWeapon.deactivate();
-				}
-			}
-		catch (Exception e)
+		// switch weapons if we're currently using the blaster
+		if (fWeapon == getInventory("blaster"))
 			{
-			e.printStackTrace();
-			}							
-		addAmmo(ammoName, ammoCount);		
+			fNextWeapon = w;
+			fWeapon.deactivate();
+			}
+			
+		addAmmo(w.getAmmoName(), w.getAmmoCount());		
 		return !weaponStay;
+		}		
+	}
+/**
+ * Add a class of weapon to a player's inventory.
+ * @param weaponClassSuffix class of the weapon, either a whole classname or a suffix.
+ * @return boolean true if the player took the weapon (or its ammo)
+ */
+public boolean addWeapon(String weaponClassSuffix) 
+	{
+	try
+		{
+		Class cls = Game.lookupClass(weaponClassSuffix);
+		return addWeapon(cls);
+		}
+	catch (Exception e)
+		{
+		e.printStackTrace();		
+		return false;
 		}		
 	}
 /**
@@ -371,10 +506,9 @@ public void alterAmmoCount(int amount)
  */
 protected void applyPlayerInfo()
 	{
-	fName = getUserInfo("name");
 	String s = getUserInfo("skin");
 
-	Engine.setConfigString(Engine.CS_PLAYERSKINS + fEntity.getPlayerNum(), fName + "\\" + s);			
+	Engine.setConfigString(Engine.CS_PLAYERSKINS + fEntity.getPlayerNum(), getName() + "\\" + s);			
 	
 	// id's C code just checks the first letter of the skin for a 'f' or 'F'
 	fIsFemale = (s != null) &&  s.toLowerCase().startsWith("female");
@@ -386,6 +520,23 @@ protected void applyPlayerInfo()
 	s = getUserInfo("fov");
 	if (s != null)
 		fEntity.setPlayerFOV((new Float(s)).floatValue());	
+		
+	fWeaponOrder = new Vector();
+	fWeaponsExcluded = new Vector();
+	
+	fWeaponOrder.addElement("blaster");
+	fWeaponOrder.addElement("shotgun");
+	fWeaponOrder.addElement("super shotgun");
+	fWeaponOrder.addElement("machinegun");
+	fWeaponOrder.addElement("chaingun");
+	fWeaponOrder.addElement("grenades");
+	fWeaponOrder.addElement("grenade launcher");
+	fWeaponOrder.addElement("rocket launcher");
+	fWeaponOrder.addElement("hyperblaster");
+	fWeaponOrder.addElement("railgun");
+	fWeaponOrder.addElement("bfg10k");
+		
+	showVWep();
 	}
 /**
  * This method was created by a SmartGuide.
@@ -413,6 +564,97 @@ protected void beginServerFrame()
 	fLatchedButtons = 0;		
 	}
 /**
+ * This method calculates the "blend" that should affect this
+ * Player's view (e.g. when you go in lava, a reddish "blend"
+ * is applied). This is normally called once per frame, during
+ * endServerFrame().
+ */
+protected void calcBlend()
+{
+	int			contents;
+	Point3f		vieworg;
+	int			remaining;
+	float		frameAlpha = getFrameAlpha();
+	Color4f		damageBlend = getDamageBlend();
+
+	// We reset the blend first
+	fBlend.x = 0.0f;	// red
+	fBlend.y = 0.0f;	// green
+	fBlend.z = 0.0f;	// blue
+	fBlend.w = 0.0f;	// alpha
+
+	// add vectors to locate what contents the Player is in: air, water, slime, solid or lava.
+	vieworg = fEntity.getOrigin();
+	vieworg.add(fViewOffset);
+	contents = Engine.getPointContents(vieworg);
+	
+	if ((contents & (Engine.CONTENTS_LAVA|Engine.CONTENTS_SLIME|Engine.CONTENTS_WATER)) != 0)
+		fEntity.setPlayerRDFlags(fEntity.getPlayerRDFlags() | NativeEntity.RDF_UNDERWATER);
+	else
+		fEntity.setPlayerRDFlags(fEntity.getPlayerRDFlags() & ~NativeEntity.RDF_UNDERWATER);
+
+	if ((contents & (Engine.CONTENTS_SOLID|Engine.CONTENTS_LAVA)) != 0)
+		addBlend(COLOR_LAVA);
+	else if ((contents & Engine.CONTENTS_SLIME) != 0)
+		addBlend(COLOR_SLIME);
+	else if ((contents & Engine.CONTENTS_WATER) != 0)
+		addBlend(COLOR_WATER);
+
+/*	// add for powerups
+	if (ent->client->quad_framenum > level.framenum)
+	{
+		remaining = ent->client->quad_framenum - level.framenum;
+		if (remaining == 30)	// beginning to fade
+			gi.sound(ent, CHAN_ITEM, gi.soundindex("items/damage2.wav"), 1, ATTN_NORM, 0);
+		if (remaining > 30 || (remaining & 4) )
+			SV_AddBlend (0, 0, 1, 0.08, ent->client->ps.blend);
+	}
+	else if (ent->client->invincible_framenum > level.framenum)
+	{
+		remaining = ent->client->invincible_framenum - level.framenum;
+		if (remaining == 30)	// beginning to fade
+			gi.sound(ent, CHAN_ITEM, gi.soundindex("items/protect2.wav"), 1, ATTN_NORM, 0);
+		if (remaining > 30 || (remaining & 4) )
+			SV_AddBlend (1, 1, 0, 0.08, ent->client->ps.blend);
+	}
+	else if (ent->client->enviro_framenum > level.framenum)
+	{
+		remaining = ent->client->enviro_framenum - level.framenum;
+		if (remaining == 30)	// beginning to fade
+			gi.sound(ent, CHAN_ITEM, gi.soundindex("items/airout.wav"), 1, ATTN_NORM, 0);
+		if (remaining > 30 || (remaining & 4) )
+			SV_AddBlend (0, 1, 0, 0.08, ent->client->ps.blend);
+	}
+	else if (ent->client->breather_framenum > level.framenum)
+	{
+		remaining = ent->client->breather_framenum - level.framenum;
+		if (remaining == 30)	// beginning to fade
+			gi.sound(ent, CHAN_ITEM, gi.soundindex("items/airout.wav"), 1, ATTN_NORM, 0);
+		if (remaining > 30 || (remaining & 4) )
+			SV_AddBlend (0.4, 1, 0.4, 0.04, ent->client->ps.blend);
+	}
+*/
+	// add for damage if alpha level is present
+	if (damageBlend.w > 0)
+		addBlend(damageBlend);
+
+	if (frameAlpha > 0)
+		addBlend(0.85f, 0.7f, 0.3f, frameAlpha);
+
+	// drop the damage alpha value a notch (for fade effect)
+	damageBlend.w -= 0.06;
+	if (damageBlend.w < 0)
+		damageBlend.w = 0;
+
+	// drop the frame alpha value a notch (for fade effect)
+	frameAlpha -= 0.1;
+	if (frameAlpha < 0)
+		frameAlpha = 0;
+	
+	setFrameAlpha(frameAlpha);
+	fEntity.setPlayerBlend(fBlend);
+}
+/**
  * This method was created by a SmartGuide.
  */
 protected void calcClientFrame() 
@@ -433,10 +675,21 @@ protected void calcClientFrame()
 		  ||	((fEntity.getGroundEntity() == null)	 && (fAnimationPriority <= ANIM_WAVE))
 	     ))
 		{		
-		if (fAnimationFrame < fAnimationEnd)
+		if (fAnimationReversed)
 			{
-			incFrame();
-			return;
+			if (fAnimationFrame > fAnimationEnd)
+				{
+				decFrame();
+				return;
+				}
+			}
+		else
+			{
+			if (fAnimationFrame < fAnimationEnd)
+				{
+				incFrame();
+				return;
+				}
 			}
 		
 		if (fAnimationPriority == ANIM_DEATH)
@@ -445,7 +698,7 @@ protected void calcClientFrame()
 		if (fAnimationPriority == ANIM_JUMP)
 			{
 			if (fEntity.getGroundEntity() != null)
-				setAnimation(ANIMATE_LAND, true);	
+				setAnimation(ANIMATE_LAND, true, 0);	
 			return;
 			}
 		}
@@ -458,36 +711,9 @@ protected void calcClientFrame()
 	fIsRunning = isRunning;
 
 	if (fEntity.getGroundEntity() == null)
-		setAnimation(ANIMATE_FLAIL, true);
+		setAnimation(ANIMATE_FLAIL, true, 0);
 	else
-		setAnimation(ANIMATE_NORMAL, true);	
-	}
-/**
- * This method was created by a SmartGuide.
- * @param inflictor q2jgame.GameEntity
- * @param attacker q2jgame.GameEntity
- */
-protected void calcKillerYaw(GameObject inflictor, GameObject attacker) 
-	{
-	Tuple3f	dir;
-	
-	if ((attacker != null) && (attacker != this))
-		{
-		dir = attacker.fEntity.getOrigin();
-		dir.sub(fEntity.getOrigin());
-		}
-	else if ((inflictor != null) && (inflictor != this))
-		{
-		dir = inflictor.fEntity.getOrigin();
-		dir.sub(fEntity.getOrigin());
-		}
-	else
-		{
-		fKillerYaw = fEntity.getAngles().y;
-		return;
-		}
-
-	fKillerYaw = (float) ((180.0 / Math.PI) * Math.atan2(dir.y, dir.x));	
+		setAnimation(ANIMATE_NORMAL, true, 0);	
 	}
 /**
  * This method was created by a SmartGuide.
@@ -519,13 +745,46 @@ protected float calcRoll(Vector3f velocity)
  */
 protected void calcViewOffset() 
 	{
-	Vector3f v = new Vector3f(0, 0, fViewHeight);
+	fViewOffset.set(0, 0, fViewHeight);
 	float bobMove = 0.0F;
+	float ratio;
 
+	// add angles based on weapon kick
 	fEntity.setPlayerKickAngles(fKickAngles);	
 	
-	// add fall height
-	// ---FIXME---
+	// add angles based on damage kick
+	
+	ratio = (fDamageTime - Game.getGameTime()) / DAMAGE_TIME;
+	if (ratio < 0)
+		{
+		ratio = 0;
+		fDamagePitch = 0;
+		fDamageRoll = 0;
+		}
+	else
+		{
+		Angle3f angles = fEntity.getPlayerKickAngles();
+		angles.x += ratio * fDamagePitch;
+		angles.z += ratio * fDamageRoll;
+		fEntity.setPlayerKickAngles(angles);
+		}
+	
+	// add pitch based on fall kick
+	/*
+	ratio = (ent->client->fall_time - level.time) / FALL_TIME;
+	if (ratio < 0)
+		ratio = 0;
+	angles[PITCH] += ratio * ent->client->fall_value;
+	*/
+	
+	// add angles based on velocity
+	/*
+	delta = DotProduct (ent->velocity, forward);
+	angles[PITCH] += delta*run_pitch->value;
+	
+	delta = DotProduct (ent->velocity, right);
+	angles[ROLL] += delta*run_roll->value;
+	*/
 	
 	// setup bob calculations
 	Vector3f velocity = fEntity.getVelocity();
@@ -554,42 +813,46 @@ protected void calcViewOffset()
 	float bob = bobfracsin * fXYSpeed * GameModule.gBobUp.getFloat(); // *3 added to magnify effect
 	if (bob > 6)
 		bob = 6.0F;
-	v.z += bob;	
+	fViewOffset.z += bob;	
 		
 	// add kick offset
-	v.add(fKickOrigin);
+	fViewOffset.add(fKickOrigin);
 	
 	// absolutely bound offsets
 	// so the view can never be outside the player box		
-	if (v.x < -14)
-		v.x = -14;
-	else if (v.x > 14)
-		v.x = 14;
+	if (fViewOffset.x < -14)
+		fViewOffset.x = -14;
+	else if (fViewOffset.x > 14)
+		fViewOffset.x = 14;
 		
-	if (v.y < -14)
-		v.y = -14;
-	else if (v.y > 14)
-		v.y = 14;
+	if (fViewOffset.y < -14)
+		fViewOffset.y = -14;
+	else if (fViewOffset.y > 14)
+		fViewOffset.y = 14;
 		
-	if (v.z < -22)
-		v.z = -22;
-	else if (v.z > 30)
-		v.z = 30;
+	if (fViewOffset.z < -22)
+		fViewOffset.z = -22;
+	else if (fViewOffset.z > 30)
+		fViewOffset.z = 30;
 		
-	fEntity.setPlayerViewOffset(v);
+	fEntity.setPlayerViewOffset(fViewOffset);
 	}
 /**
  * This method was created by a SmartGuide.
  */
 public void changeWeapon() 
 	{
+	fLastWeapon = fWeapon;
+	
 	if (fNextWeapon != null) 
 		fWeapon = fNextWeapon;
 	else
 		fWeapon = nextAvailableWeapon();
 						
 	fNextWeapon = null;
-	fWeapon.activate();		
+	fWeapon.activate();
+	showVWep();	
+	setAnimation(ANIMATE_VWEP_ACTIVATE);	
 	}
 /**
  * Clear the player's settings so they are a fresh 
@@ -626,19 +889,55 @@ protected void clearSettings( )
 
 	// initialize the armor settings (jacket_armor quality protection)
 	fArmorCount = 0;
-	fArmorMaxCount =  50;
-	fArmorProtection = 0.30F;
+	fArmorMaxCount =  0;
+	fArmorProtection = 0; // almost, but not quite as good as jacket_armor
 	fArmorEnergyProtection = 0.0F;
+	fEntity.setPlayerStat(NativeEntity.STAT_ARMOR_ICON, (short) 0);
+
 
 	fIsDead = false;		
-	fInIntermission = false;
+	fKiller = null;
+	if (fInIntermission)
+		{
+		fScore = 0;
+		fInIntermission = false;
+		}
+
+	fOldWaterLevel = 0;
+	fOldButtons = 0;
+	fLatchedButtons = 0;
 	fViewHeight = 22;
 
 	setHealth(100);
 	fHealthMax = 100;
-	setAnimation(ANIMATE_NORMAL, true);
+	setAnimation(ANIMATE_NORMAL, true, 0);
 	fOldVelocity = new Vector3f();
 	}
+/**
+ * This allows us to test different blend modes.
+ *
+ * @param args java.lang.String[]
+ */
+ 
+public void cmd_debug_setblend(String[] args)
+{
+	if (args.length != 5)
+	{
+		Game.bprint(Engine.PRINT_HIGH, "Usage: debug_setblend <red> <green> <blue> <alpha>\n");
+		return;
+	}
+	try
+	{
+		fEntity.setPlayerBlend(Float.valueOf(args[1]).floatValue(), 
+							   Float.valueOf(args[2]).floatValue(), 
+							   Float.valueOf(args[3]).floatValue(), 
+							   Float.valueOf(args[4]).floatValue());
+	}
+	catch (NumberFormatException nfe)
+	{
+		Game.bprint(Engine.PRINT_HIGH, nfe.toString());
+	}
+}
 /**
  * Change field-of-view.
  * @param args java.lang.String[]
@@ -670,6 +969,30 @@ public void cmd_gameversion(String[] args)
 	fEntity.cprint(Engine.PRINT_HIGH, GameModule.getVersion() + "\n");
 	}
 /**
+ * Give the player one of each weapon.  Good for debugging.
+ * @param args java.lang.String[]
+ */
+public void cmd_giveall(String[] args)
+	{
+	if (!baseq2.GameModule.isCheating())
+		{
+		fEntity.cprint(Engine.PRINT_HIGH, "cheating not turned on\n");
+		return;
+		}
+		
+	addWeapon(".spawn.ammo_grenades");		
+	addWeapon(".spawn.weapon_shotgun");
+	addWeapon(".spawn.weapon_supershotgun");
+	addWeapon(".spawn.weapon_machinegun");
+	addWeapon(".spawn.weapon_chaingun");
+	addWeapon(".spawn.weapon_grenadelauncher");
+	addWeapon(".spawn.weapon_rocketlauncher");
+	addWeapon(".spawn.weapon_hyperblaster");
+	addWeapon(".spawn.weapon_railgun");
+	addWeapon(".spawn.weapon_bfg");
+	use("blaster");
+	}
+/**
  * Draw the help computer.
  * Only works for drawing the scoreboard in a deathmatch right now.
  * @param args java.lang.String[]
@@ -678,6 +1001,26 @@ public void cmd_help(String[] args)
 	{
  	if (GameModule.gIsDeathmatch)
   		cmd_score(args);
+	}
+/**
+ * Identify the player in your crosshairs.
+ * @param args java.lang.String[]
+ */
+public void cmd_id(String[] args) 
+	{
+	Point3f start = fEntity.getOrigin();
+	start.z += fViewHeight;
+
+	Vector3f forward = new Vector3f();
+	Angle3f ang = fEntity.getPlayerViewAngles();
+	ang.getVectors(forward, null, null);
+
+	Point3f end = new Point3f();
+	end.scaleAdd(8192, forward, start);
+
+	TraceResults tr = Engine.trace(start, end, fEntity, Engine.MASK_SHOT|Engine.CONTENTS_SLIME|Engine.CONTENTS_LAVA);
+	if ((tr.fEntity != null) && (tr.fEntity.isPlayer()))
+		fEntity.centerprint(((Player)tr.fEntity.getPlayerListener()).getName());		
 	}
 /**
  * Suicide.
@@ -691,6 +1034,17 @@ public void cmd_kill(String[] args)
 		die(this, this, 0, fEntity.getOrigin());
 	}
 /**
+ * Put's away the scorboard
+ * when the scoreboard is displayed and the esc key is hit the cmd is called
+ * when the help computer or inventory display is implemented this needs to shut those off also
+ * @param args java.lang.String[]
+ */
+public void cmd_putaway(String[] args)
+	{
+	fEntity.setPlayerStat(NativeEntity.STAT_LAYOUTS, (short)0);
+	fShowScore = false;
+	}
+/**
  * Send a chat message to all players.
  * @param (Ignored, uses the Engine.args() value instead)
  */
@@ -702,7 +1056,7 @@ public void cmd_say(String[] args)
 	if (msg.charAt(0) == '"')
 		msg = msg.substring(1, msg.length()-1);
 		
-	msg = fName + ": " + msg;		
+	msg = getName() + ": " + msg;		
 	
 	// keep the message down to a reasonable length
 	if (msg.length() > 150)
@@ -760,64 +1114,72 @@ public void cmd_use(String[] args)
  */
 public void cmd_wave(String[] args) 
 	{
-	if (args.length < 1)
-		{
-		fEntity.cprint(Engine.PRINT_HIGH, "wave called with no arguments\n");
-		return;
-		}
+	int i = 0;
 		
-	int i = Integer.parseInt(args[1]);
+	if (args.length > 1)
+		i = Integer.parseInt(args[1]);
 			
 	switch(i)
 		{
 		case 0: 
-			setAnimation(ANIMATE_FLIPOFF, false);
+			setAnimation(ANIMATE_FLIPOFF);
 			fEntity.cprint(Engine.PRINT_HIGH, "flipoff\n");
 			break;
 
   		case 1: 
-  			setAnimation(ANIMATE_SALUTE, false);
+  			setAnimation(ANIMATE_SALUTE);
 			fEntity.cprint(Engine.PRINT_HIGH, "salute\n");
 			break;
 
   		case 2: 
-  			setAnimation(ANIMATE_TAUNT, false);
+  			setAnimation(ANIMATE_TAUNT);
 			fEntity.cprint(Engine.PRINT_HIGH, "taunt\n");
 			break;
 
   		case 3: 
-  			setAnimation(ANIMATE_WAVE, false);
+  			setAnimation(ANIMATE_WAVE);
 			fEntity.cprint(Engine.PRINT_HIGH, "wave\n");
 			break;
 
 	  	default: 
-	  		setAnimation(ANIMATE_POINT, false);
+	  		setAnimation(ANIMATE_POINT);
 			fEntity.cprint(Engine.PRINT_HIGH, "point\n");
 			break;		
 		}			
 	}
+/**
+ * Switch to the last weapon used
+ * @param args java.lang.String[] - not used
+ */
+public void cmd_weaplast(String args[])
+	{
+	if ((fLastWeapon != null) && (fLastWeapon.isEnoughAmmo()))
+		{
+		fNextWeapon = fLastWeapon;
+		fWeapon.deactivate();
+		}
+	 }
 /**
  * Switch to the next available weapon.
  * @param args java.lang.String[]
  */
 public void cmd_weapnext(String[] args) 
 	{
-	int i = fWeaponList.indexOf(fWeapon);
-	while (true)
+	GenericWeapon tempWeapon = fWeapon;
+	int i = (fWeaponOrder.indexOf(fWeapon.getWeaponName()) + 1) % fWeaponOrder.size();
+	
+	do
 		{
-		i++;		
-		if (i >= fWeaponList.size())
-			i = 0;
+		tempWeapon = (GenericWeapon) getInventory((String) fWeaponOrder.elementAt(i));
+		i = (i+1) % fWeaponOrder.size();
+		} while (((tempWeapon == null) || !tempWeapon.isEnoughAmmo()) && (tempWeapon != fWeapon));
 			
-		fNextWeapon = (GenericWeapon) fWeaponList.elementAt(i);
-		if (fNextWeapon.isEnoughAmmo() || (fNextWeapon == fWeapon))
-			break;
-		}
 		
-	if (fNextWeapon == fWeapon)
-		fNextWeapon = null;
-	else					
+	if (tempWeapon != fWeapon)
+		{
+		fNextWeapon = tempWeapon;
 		fWeapon.deactivate();						
+		}
 	}
 /**
  * Switch to the previous available weapon.
@@ -869,26 +1231,76 @@ public void damage(GameObject inflictor, GameObject attacker,
 	Vector3f dir, Point3f point, Vector3f normal, 
 	int damage, int knockback, int dflags, int tempEvent) 
 	{
+
+	int armorSave = 0;		// for calculating blends later (TSW)
+	int powerArmorSave = 0;	// for calculating blends later (TSW)
+	int takeDamage = 0;		// for calculating blends later (TSW)
+	
 	// don't take any more damage if already dead
 	if (fIsDead)
 		return;
-		
+
+	if ((dflags & DAMAGE_NO_KNOCKBACK) == 0)
+		{
+		if (knockback != 0)
+			{
+			Vector3f	kickVelocity = new Vector3f();
+			int			mass = getMass();
+
+			if (mass < 50)
+				mass = 50;
+				
+			// If you don't normalize this, you'll get insane amounts of kickback!
+			dir.normalize();
+
+			// If we are our own attacker, do id's "rocket jump hack"
+			if (this == attacker)
+				kickVelocity.scale(1600 * knockback / mass, dir);
+			else
+				kickVelocity.scale(500 * knockback / mass, dir);
+
+			// Add the new kick velocity to our current velocity.
+			Vector3f v = new Vector3f(fEntity.getVelocity());
+			v.add(kickVelocity);
+			fEntity.setVelocity(v);
+			}
+		}
+
 	// decrease damage based on armor
 	if ((dflags & DAMAGE_NO_ARMOR) == 0)
 		{
 		int save; // the amount of damage our armor protects us from
 		if ((dflags & DAMAGE_ENERGY) != 0)
+			{
 			save = (int) Math.ceil(damage * fArmorEnergyProtection);
+			powerArmorSave = save;
+			}
 		else
+			{
 			save = (int) Math.ceil(damage * fArmorProtection);			
+			armorSave = save;
+			}
 			
-		save = Math.min(save, fArmorCount);		
+		save = Math.min(save, fArmorCount);
+		
+		// FIXME: Do we need to do any adjustments here for armorSave or
+		// powerArmorSave based on fArmorCount? (TSW)
+		takeDamage = damage;				// for blends (TSW)
 
 		if (save > 0)
 			{
 			damage -= save;
+			takeDamage -= armorSave;		// for blends (TSW)
+			takeDamage -= powerArmorSave;	// for blends (TSW)
 			fArmorCount -= save;
 			fEntity.setPlayerStat(NativeEntity.STAT_ARMOR, (short)fArmorCount);
+			if (fArmorCount == 0) // if armor is depleted we need to reset it
+				{
+				fArmorProtection = 0.3F;
+				fArmorEnergyProtection = 0.0F;
+				fArmorMaxCount = 50;
+				fEntity.setPlayerStat(NativeEntity.STAT_ARMOR_ICON, (short) 0);
+				}
 			spawnDamage(Engine.TE_SPARKS, point, normal, save);
 			}	
 		}
@@ -900,6 +1312,135 @@ public void damage(GameObject inflictor, GameObject attacker,
 	setHealth(fHealth - damage);
 	if (fHealth < 0)
 		die(inflictor, attacker, damage, point);
+	
+	// These are used to determine the blend for this frame. (TSW)
+	fDamageBlood += takeDamage;
+	fDamageArmor += armorSave;
+	fDamagePArmor += powerArmorSave;
+	
+	// For view angle kicks this frame. (TSW)
+	fDamageKnockback += knockback;
+	float[] f = {0,0,0};
+	point.get(fDamageFrom);	// set fDamageFrom to value of point
+	}
+/** 
+ * Handles color blends and view kicks
+ * for this Player's damage this frame.
+ * Called during endServerFrame().
+ */
+protected void damageFeedback()
+{
+	Color3f		color;
+	Vector3f	v;
+	float		realcount, count, kick;
+	float		side;
+	int			n;						// Which pain sound to play
+
+	Color4f	damageBlend	= getDamageBlend();
+	short	statFlashes	= 0;
+
+	// flash the backgrounds behind the status numbers (health = 1/armor = 2)
+	if (fDamageBlood != 0)
+		statFlashes |= 1;
+	if (fDamageArmor != 0 /*&& !(player->flags & FL_GODMODE) && (client->invincible_framenum <= level.framenum)*/)
+		statFlashes |= 2;
+
+	fEntity.setPlayerStat(NativeEntity.STAT_FLASHES, statFlashes);
+
+	// total points of damage shot at the player this frame
+	count = (fDamageBlood + fDamageArmor + fDamagePArmor);
+	
+	if (count == 0)
+		return;		// didn't take any damage
+
+	// start a pain animation if still in the player model
+//	if (fAnimationPriority < ANIM_PAIN /*&& player->s.modelindex == 255*/)
+	setAnimation(ANIMATE_PAIN);
+	
+	realcount = count;
+	if (count < 10)
+		count = 10;	// always make a visible effect
+
+	// play an apropriate pain sound
+	if (Game.getGameTime() > fPainDebounceTime /* && !(player->flags & FL_GODMODE) && (client->invincible_framenum <= level.framenum)*/)
+		{
+		fPainDebounceTime = Game.getGameTime() + 0.7f;	// Wait .7 seconds before starting another pain sound. (?)
+		if (fHealth < 25)
+			n = 25;
+		else if (fHealth < 50)
+			n = 50;
+		else if (fHealth < 75)
+			n = 75;
+		else
+			n = 100;
+		fEntity.sound(NativeEntity.CHAN_VOICE, getSexedSoundIndex( "pain" + Integer.toString(n) + "_" + Integer.toString((1 + ((int)Math.random() & 1))) ), 1, NativeEntity.ATTN_NORM, 0);
+		}
+
+	if (damageBlend.w < 0)
+		damageBlend.w = 0;	// redundant with calcBlend?
+		
+	// the total alpha of the blend is always proportional to count
+	damageBlend.w += count * 0.01;
+	
+	if (damageBlend.w < 0.2)
+		damageBlend.w = 0.2f;
+		
+	if (damageBlend.w > 0.6)
+		damageBlend.w = 0.6f;		// don't go too saturated
+
+	// the color of the blend will vary based on how much was absorbed by different armors
+	color = new Color3f();	// the alpha is not stored in this color, so we'll use a Color3f instead of 4f
+	
+	if (fDamagePArmor != 0)
+		color.scaleAdd(fDamagePArmor / realcount, COLOR_GREEN, color);
+	if (fDamageArmor != 0)
+		color.scaleAdd(fDamageArmor / realcount, COLOR_WHITE, color);
+	if (fDamageBlood != 0)
+		color.scaleAdd(fDamageBlood / realcount, COLOR_RED, color);
+	
+	setDamageBlend(color.x, color.y, color.z, damageBlend.w);
+
+	//
+	// calculate view angle kicks
+	//
+	kick = Math.abs(fDamageKnockback);
+	if (kick != 0 && getHealth() > 0)	// kick of 0 means no view adjust at all
+		{
+		kick = kick * 100 / getHealth();
+
+		if (kick < count*0.5)
+			kick = count*0.5f;
+		if (kick > 50)
+			kick = 50;
+
+		v = new Vector3f();
+
+		v.sub(fDamageFrom, fEntity.getOrigin());
+		v.normalize();
+		
+		side = v.dot(fRight);
+		fDamageRoll = kick*side*0.3f;
+		
+		side = -v.dot(fForward);
+		fDamagePitch = kick*side*0.3f;
+
+		fDamageTime = Game.getGameTime() + DAMAGE_TIME;
+		}
+
+	//
+	// clear totals
+	//
+	fDamageBlood = 0;
+	fDamageArmor = 0;
+	fDamagePArmor = 0;
+	fDamageKnockback = 0;
+}
+/**
+ * Advance the player's animation frame.
+ */
+protected void decFrame() 
+	{
+	fEntity.setFrame(--fAnimationFrame);
 	}
 /**
  * This method was created by a SmartGuide.
@@ -909,6 +1450,8 @@ protected void die(GameObject inflictor, GameObject attacker, int damage, Point3
 	if (fIsDead)
 		return;	// already dead
 		
+	fKiller = attacker;
+	
 	fIsDead = true;
 	fRespawnTime = (float)(Game.getGameTime() + 1);  // the player can respawn after this time
 	
@@ -919,10 +1462,11 @@ protected void die(GameObject inflictor, GameObject attacker, int damage, Point3
 	fWeapon = null;
 	fEntity.setSolid(NativeEntity.SOLID_NOT);
 	fEntity.setPlayerPMType(NativeEntity.PM_DEAD);
-	calcKillerYaw(inflictor, attacker);
+	fKillerYaw = calcAttackerYaw(inflictor, attacker);
 	writeDeathmatchScoreboardMessage(attacker);
 	Engine.unicast(fEntity, true);
 	fEntity.setPlayerStat(NativeEntity.STAT_LAYOUTS, (short)1);
+	fShowScore = true;
 	
 	if (fHealth < -40)
 		{	// gib
@@ -932,11 +1476,14 @@ protected void die(GameObject inflictor, GameObject attacker, int damage, Point3
 //		ThrowClientHead (self, damage);
 
 //		self->takedamage = DAMAGE_NO;
+
+		// workaround until full gib code is implemented
+		setAnimation(ANIMATE_DEATH);
 		}
 	else
 		{	// normal death
-		setAnimation(ANIMATE_DEATH, false);
-		fEntity.sound(NativeEntity.CHAN_VOICE, sexedSoundIndex("death"+((MiscUtil.randomInt() & 0x03) + 1)), 1, NativeEntity.ATTN_NORM, 0);
+		setAnimation(ANIMATE_DEATH);
+		fEntity.sound(NativeEntity.CHAN_VOICE, getSexedSoundIndex("death"+((MiscUtil.randomInt() & 0x03) + 1)), 1, NativeEntity.ATTN_NORM, 0);
 		}
 	}
 /**
@@ -947,7 +1494,7 @@ protected void endServerFrame()
 	{	
 	if (fInIntermission)
 		return;
-		
+	
 	//
 	// set model angles from view angles so other things in
 	// the world can tell which direction you are looking
@@ -962,11 +1509,27 @@ protected void endServerFrame()
 	
 	worldEffects();
 	fallingDamage();
+	damageFeedback();
 	calcViewOffset();	
 	calcClientFrame();
 	
+	// determine the full screen color blend
+	// must be after viewoffset, so eye contents can be
+	// accurately determined
+	// FIXME: with client prediction, the contents
+	// should be determined by the client
+	calcBlend();
+	
 	fKickAngles.set(0,0,0);
 	fKickOrigin.set(0,0,0);
+	
+	// if the scoreboard is being diplayed update it
+	if (fShowScore && (Game.getGameTime() > fShowScoreTime))
+		{
+		writeDeathmatchScoreboardMessage(fKiller);
+		Engine.unicast(fEntity, false);
+		fShowScoreTime = Game.getGameTime() + 3; // refresh at 3 second intervals
+		}
 	}
 /**
  * This method was created by a SmartGuide.
@@ -1063,6 +1626,14 @@ public int getAmmoCount(String ammoName)
 		return p.fAmount;				
 	}
 /**
+ * Returns the current damage blend color for this frame.
+ * @return float
+ */
+public Color4f getDamageBlend() 
+	{
+	return fDamageBlend;
+	}
+/**
  * How much damage should be scaled for this player. 
  * For example, normally this method would return 1.0, but if a
  * Quad was being used, it would return 4.0.
@@ -1072,6 +1643,14 @@ public int getAmmoCount(String ammoName)
 public float getDamageMultiplier() 
 	{
 	return fDamageMultiplier;
+	}
+/**
+ * Returns the current alpha level for this frame.
+ * @return float
+ */
+public float getFrameAlpha() 
+	{
+	return fFrameAlpha;
 	}
 /**
  * This method was created by a SmartGuide.
@@ -1091,6 +1670,14 @@ public Object getInventory(String itemName)
 	return fInventory.get(itemName.toLowerCase());
 	}
 /**
+ * Returns the mass of the player (normally 200).
+ * @return	The player's mass.
+ */
+public int getMass()
+	{
+	return fMass;
+	}
+/**
  * This method was created by a SmartGuide.
  * @return int
  * @param itemname java.lang.String
@@ -1108,6 +1695,14 @@ protected int getMaxAmmoCount(String ammoName)
 		return p.fMaxAmount;				
 	}
 /**
+ * Get the Player's name
+ * @return The player's name.
+ */
+public String getName()
+	{
+	return getUserInfo("name");
+	}
+/**
  * This method was created by a SmartGuide.
  * @return int
  */
@@ -1116,15 +1711,39 @@ public int getScore()
 	return fScore;
 	}
 /**
- * This method was created by a SmartGuide.
- * @return java.lang.String
- * @param key java.lang.String
+ * Get the index of a sound, based on the sex of the player.
+ * @return int
+ * @param base java.lang.String
+ */
+protected int getSexedSoundIndex(String base) 
+	{
+	return Engine.getSoundIndex((fIsFemale ? "player/female/" : "player/male/") + base + ".wav");
+	}
+/**
+ * Lookup a value from the userinfo string.
+ * @param key name of the value we're looking for.
+ * @return value if key is found, null otherwise.
  */
 protected String getUserInfo(String key) 
 	{
+	return getUserInfo(key, null);
+	}
+/**
+ * Lookup a value from the userinfo string.
+ * @param key name of the value we're looking for.
+ * @param defaultValue what to return if key isn't found.
+ * @return java.lang.String
+ */
+protected String getUserInfo(String key, String defaultValue) 
+	{
 	if (fUserInfo == null)
-		return null;
-	return (String) fUserInfo.get(key);		
+		return defaultValue;
+
+	String result = (String) fUserInfo.get(key);		
+	if (result == null)
+		return defaultValue;
+	else
+		return result;
 	}
 /**
  * This method was created by a SmartGuide.
@@ -1206,7 +1825,7 @@ protected void obituary(GameObject inflictor, GameObject attacker)
 	{
 	if (attacker == this)
 		{
-		Game.bprint(Engine.PRINT_MEDIUM, fName + " killed " + (fIsFemale ? "her" : "him") + "self.\n");
+		Game.bprint(Engine.PRINT_MEDIUM, getName() + " killed " + (fIsFemale ? "her" : "him") + "self.\n");
 		fScore--;
 //		self->enemy = NULL;
 		return;
@@ -1216,12 +1835,12 @@ protected void obituary(GameObject inflictor, GameObject attacker)
 	if (attacker instanceof Player)
 		{
 		Player p = (Player) attacker;
-		Game.bprint(Engine.PRINT_MEDIUM, fName + " was killed by " + p.fName + "\n");
+		Game.bprint(Engine.PRINT_MEDIUM, getName() + " was killed by " + p.getName() + "\n");
 		p.fScore++;
 		return;
 		}
 
-	Game.bprint(Engine.PRINT_MEDIUM, fName + " died.\n");
+	Game.bprint(Engine.PRINT_MEDIUM, getName() + " died.\n");
 	fScore--;
 	}
 /**
@@ -1231,6 +1850,10 @@ protected void obituary(GameObject inflictor, GameObject attacker)
 protected void parsePlayerInfo(String playerInfo)
 	{
 	fUserInfo = new Hashtable();
+
+	if (playerInfo == null)
+		return;
+		
 	StringTokenizer st = new StringTokenizer(playerInfo, "\\");
 	while (st.hasMoreTokens())
 		{
@@ -1262,7 +1885,7 @@ public void playerBegin(boolean loadgame)
 	Engine.writeByte(Engine.MZ_LOGIN);
 	Engine.multicast(fEntity.getOrigin(), Engine.MULTICAST_PVS);
 
-	Game.bprint(Engine.PRINT_HIGH, fName + " entered the game\n");
+	Game.bprint(Engine.PRINT_HIGH, getName() + " entered the game\n");
 	fEntity.centerprint(WelcomeMessage.getMessage());
 	// make sure all view stuff is valid
 	endServerFrame();	
@@ -1293,7 +1916,7 @@ public void playerCommand()
 	catch (NoSuchMethodException e1)
 		{
 		// treat unrecognized input as a chat
-		String msg = fName + ": " + Engine.getArgv(0) + " " + Engine.getArgs();
+		String msg = getName() + ": " + Engine.getArgv(0) + " " + Engine.getArgs();
 		if (msg.length() > 150)
 			msg = msg.substring(0, 150);		
 		msg += "\n";
@@ -1317,7 +1940,7 @@ public void playerCommand()
 public void playerDisconnect()
 	{
 	Engine.debugLog("Player.disconnect()");
-	Game.bprint(Engine.PRINT_HIGH, fName + " disconnected\n");
+	Game.bprint(Engine.PRINT_HIGH, getName() + " disconnected\n");
 
 	Game.removeFrameListener(this, Game.FRAME_BEGINNING + Game.FRAME_END);	
 	// send effect
@@ -1354,10 +1977,15 @@ public void playerThink(PlayerCmd cmd)
 		
 	fOldVelocity = fEntity.getVelocity();
 
-	PMoveResults pm = fEntity.pMove(cmd);
-	
+	PMoveResults pm = fEntity.pMove(cmd, Engine.MASK_PLAYERSOLID);
+
+//  if (pm_passent->health > 0)
+//      return gi.trace (start, mins, maxs, end, pm_passent, MASK_PLAYERSOLID);
+//  else
+//      return gi.trace (start, mins, maxs, end, pm_passent, MASK_DEADSOLID);
+ 	
 	if ((fEntity.getGroundEntity() != null) && (pm.fGroundEntity == null) && (cmd.fUpMove >= 10) && (pm.fWaterLevel == 0))
-		fEntity.sound(NativeEntity.CHAN_VOICE, sexedSoundIndex("jump1"), 1, NativeEntity.ATTN_NORM, 0);
+		fEntity.sound(NativeEntity.CHAN_VOICE, getSexedSoundIndex("jump1"), 1, NativeEntity.ATTN_NORM, 0);
 			
 	fViewHeight = pm.fViewHeight;	
 	fWaterType = pm.fWaterType;
@@ -1481,10 +2109,23 @@ public void setAmmoType(String ammoType)
 /**
  * Set which animation cycle the player will run through.
  * @param animation one of the Player.ANIMATE_* constants.
- * @param ignorePriority true if you want to force the player to start this new animation no matter what is already running, otherwise false.
  */
-public void setAnimation(int animation, boolean ignorePriority) 
+public void setAnimation(int animation) 
 	{
+	setAnimation(animation, false, 0);
+	}
+/**
+ * Set which animation cycle the player will run through.
+ * @param animation			one of the Player.ANIMATE_* constants.
+ * @param ignorePriority	true if you want to force the player to start this new animation no matter what is already running, otherwise false.
+ * @param frameOffset		frame offset for animation (?)
+ */
+public void setAnimation(int animation, boolean ignorePriority, int frameOffset) 
+	{
+	// Ignore VWep animations when option is off
+	if (!baseq2.GameModule.isVWepOn() && (animation >= ANIMATE_VWEP_THROW) && (animation <= ANIMATE_VWEP_DEACTIVATE))
+		return;
+		
 	boolean ducking = ((fEntity.getPlayerPMFlags() & NativeEntity.PMF_DUCKED) != 0);
 	
 	// don't allow gestures when crouching
@@ -1501,15 +2142,40 @@ public void setAnimation(int animation, boolean ignorePriority)
 		
 	// use different animations when crouching		
 	if ((animation < ANIMATE_FLIPOFF) && ducking)
-		animation += 9;
+		animation += 12;
 		
 	int newPriority = fAnims[animation * 3];
 	if (ignorePriority || (newPriority >= fAnimationPriority))
 		{
 		fAnimationPriority = newPriority;
-		setFrame(fAnims[(animation*3) + 1]);
-		fAnimationEnd = fAnims[(animation*3)+2];
+		int start = fAnims[(animation*3) + 1];
+		int end = fAnims[(animation*3) + 2];
+		fAnimationReversed = (end < start);
+		if (fAnimationReversed)
+			{
+			setFrame(end + frameOffset);
+			fAnimationEnd = start;
+			}
+		else
+			{
+			setFrame(start + frameOffset);
+			fAnimationEnd = end;
+			}
 		}
+	}
+/**
+ * Set the damage color blend for this frame.
+ * @param x	Red value of damage color.
+ * @param y Green value of damage color.
+ * @param z Blue value of damage color.
+ * @param w Alpha value of damage color.
+ */
+public void setDamageBlend(float x, float y, float z, float w) 
+	{
+	fDamageBlend.x = x;
+	fDamageBlend.y = y;
+	fDamageBlend.z = z;
+	fDamageBlend.w = w;
 	}
 /**
  * Set how much damage should be scaled for this player. 
@@ -1525,10 +2191,18 @@ public void setDamageMultiplier(float f)
  * This method was created by a SmartGuide.
  * @param n int
  */
-public void setFrame(int n) 
+public void setFrame(int n) 	// Should this be renamed to setAnimationFrame()? (TSW)
 	{
 	fAnimationFrame = n;
 	fEntity.setFrame(n);
+	}
+/**
+ * Set the alpha level for this frame, in the range 0.0 to 1.0.
+ * @param f The level, 0.0 to 1.0, to set the alpha.
+ */
+public void setFrameAlpha(float f) 
+	{
+	fFrameAlpha = f;
 	}
 /**
  * This method was created by a SmartGuide.
@@ -1540,13 +2214,49 @@ public void setHealth(int val)
 	fEntity.setPlayerStat(NativeEntity.STAT_HEALTH, (short)fHealth);
 	}
 /**
- * This method was created by a SmartGuide.
- * @return int
- * @param base java.lang.String
+ * Sets this player's mass. Used in determining physics, knockback, etc.
+ * @param	mass	The mass to set. Normal player mass is 200.
  */
-protected int sexedSoundIndex(String base) 
+public void setMass(int mass)
 	{
-	return Engine.getSoundIndex((fIsFemale ? "player/female/" : "player/male/") + base + ".wav");
+	fMass = mass;
+	}
+/**
+ * Put a value into the userinfo hashtable.
+ * @param key name of the value we're storing.
+ * @para  value the value to store
+ */
+protected void setUserInfo(String key, String value) 
+	{
+	fUserInfo.put(key, value);
+	}
+/**
+ * VWeap support...show the right weapon to the rest of the world.
+ */
+public void showVWep() 
+	{
+	if (!baseq2.GameModule.isVWepOn())
+		{
+		fEntity.setModelIndex2(255);
+		return;
+		}
+		
+	if (fWeapon == null)
+		{
+		fEntity.setModelIndex2(0);
+		return;		
+		}
+		
+	String weaponIcon = fWeapon.getIconName();		
+	if (weaponIcon == null)
+		fEntity.setModelIndex2(255);
+	else
+		{
+		String playerSkin = getUserInfo("skin");
+		int p = playerSkin.indexOf('/');
+		String weaponModel = "players/" + playerSkin.substring(0, p+1) + fWeapon.getIconName() + ".md2";
+		fEntity.setModelIndex2(Engine.getModelIndex(weaponModel));	
+		}
 	}
 /**
  * spawn the player into the game.
@@ -1583,7 +2293,8 @@ protected void spawn()
 	fEntity.setEffects(0);
 	fEntity.setSkinNum(fEntity.getPlayerNum());
 	fEntity.setModelIndex(255);	// will use the skin specified model
-	fEntity.setModelIndex2(255);	// custom gun model	
+//	fEntity.setModelIndex2(255);	// custom gun model	
+	showVWep();
 	fEntity.setMins(-16, -16, 24);
 	fEntity.setMaxs(16, 16, 32);
 	fEntity.setPlayerStat(NativeEntity.STAT_LAYOUTS, (short) 0); // turn off any scoreboards		
@@ -1603,14 +2314,23 @@ public void startIntermission(GenericSpawnpoint intermissionSpot)
 	fEntity.setAngles(intermissionSpot.getAngles());
 	fEntity.setPlayerViewAngles(intermissionSpot.getAngles());
 	fEntity.setPlayerPMType(NativeEntity.PM_FREEZE);
+	fEntity.setPlayerRDFlags(0);
+	fEntity.setModelIndex(0);
+	fEntity.setModelIndex2(0);
+	fEntity.setModelIndex3(0);
+	fEntity.setModelIndex4(0);
+	fEntity.setSolid(NativeEntity.SOLID_NOT);
 	fEntity.setPlayerGunIndex(0);	
 	fEntity.setPlayerBlend(0, 0, 0, 0);
 	fEntity.setPlayerFOV(90);
+	fEntity.setEffects(0);
+	fEntity.setSound(0);
 	fEntity.linkEntity();
 	
 	writeDeathmatchScoreboardMessage(null);
 	Engine.unicast(fEntity, true);
 	fEntity.setPlayerStat(NativeEntity.STAT_LAYOUTS, (short)1);	
+	fShowScore = true;
 	fInIntermission = true;
 	}
 /**
@@ -1664,7 +2384,7 @@ public void use(String itemName)
 		// done deactivating, it will signal back to the player to 
 		// changeWeapon() and we'll use() the next weapon		
 		fWeapon.deactivate();	
-
+		setAnimation(ANIMATE_VWEP_DEACTIVATE);
 		return;
 		}
 			

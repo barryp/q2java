@@ -45,19 +45,22 @@ public void addModule(String packageName, String alias)
 		
 	try 
 		{
-		LoadedModule lp = new LoadedModule();
-		lp.fPackageName = packageName;
-		lp.fAlias = alias;
-		lp.fModule = (GameModule) Class.forName(packageName + ".GameModule").newInstance();
+		Class cls = Class.forName(packageName + ".GameModule");
+		Object[] args = new Object[1];
+		args[0] = alias;
+		Class[] argTypes = new Class[1];
+		argTypes[0] = alias.getClass();
+		java.lang.reflect.Constructor ctor = cls.getConstructor(argTypes);		
+		GameModule gm = (GameModule) ctor.newInstance(args);
 
-		gModList.insertElementAt(lp, 0);
+		gModList.insertElementAt(gm, 0);
 
 		// clear the cache so the new package will be 
 		// looked at when looking up classes
 		gClassHash.clear(); 
 
 		//Withnails 04/22/98
-		Game.notifyModuleAdded(lp.fModule);
+		Game.notifyModuleAdded(gm);
 		} 
 	catch (Exception e) 
 		{
@@ -73,9 +76,9 @@ public void addModule(String packageName, String alias)
 		{
 		for (int i = 0; i < gModList.size(); i++)
 			{
-			LoadedModule lp = (LoadedModule) gModList.elementAt(i);
-			if (lp.fAlias.equals(alias))
-				return lp.fModule;
+			GameModule gm = (GameModule) gModList.elementAt(i);
+			if (gm.getModuleName().equalsIgnoreCase(alias))
+				return gm;
 			}
 		
 		return null;
@@ -110,10 +113,10 @@ public Class lookupClass(String classSuffix) throws ClassNotFoundException
 
 	while (enum.hasMoreElements())
 		{
-		LoadedModule lp = (LoadedModule) enum.nextElement();
+		GameModule gm = (GameModule) enum.nextElement();
 		try
 			{
-			result = Class.forName(lp.fPackageName + classSuffix);
+			result = Class.forName(gm.getPackageName() + classSuffix);
 			gClassHash.put(classSuffix, result);
 			return result;
 			}
@@ -138,8 +141,8 @@ public Class lookupClass(String classSuffix) throws ClassNotFoundException
 		int i;
 		for (i = 0; i < gModList.size(); i++)
 			{
-			LoadedModule lp = (LoadedModule) gModList.elementAt(i);
-			if (lp.fAlias.equalsIgnoreCase(alias))
+			GameModule gm = (GameModule) gModList.elementAt(i);
+			if (gm.getModuleName().equalsIgnoreCase(alias))
 				{
 				gModList.removeElementAt(i);
 				// clear the cache so the old package won't be 
@@ -147,13 +150,13 @@ public Class lookupClass(String classSuffix) throws ClassNotFoundException
 				gClassHash.clear();
 				try
 					{
-					lp.fModule.unload();
+					gm.unload();
 					}
 				catch (Exception e)
 					{
 					e.printStackTrace();
 					}	
-				Game.notifyModuleRemoved(lp.fModule);
+				Game.notifyModuleRemoved(gm);
 				return;
 				}
 			}
@@ -162,13 +165,13 @@ public Class lookupClass(String classSuffix) throws ClassNotFoundException
 	/**
 	 * Removes a package from a running game.
 	 */
-	public void removeModule(GameModule gm)  
+	public void removeModule(GameModule mod)  
 		{
 		int i;
 		for (i = 0; i < gModList.size(); i++)
 			{
-			LoadedModule lp = (LoadedModule) gModList.elementAt(i);
-			if (lp.fModule == gm)
+			GameModule gm = (GameModule) gModList.elementAt(i);
+			if (gm == mod)
 				{
 				gModList.removeElementAt(i);
 				// clear the cache so the old package won't be 
@@ -176,16 +179,16 @@ public Class lookupClass(String classSuffix) throws ClassNotFoundException
 				gClassHash.clear();
 				try
 					{
-					lp.fModule.unload();
+					gm.unload();
 					}
 				catch (Exception e)
 					{
 					e.printStackTrace();
 					}	
-				Game.notifyModuleRemoved(lp.fModule);
+				Game.notifyModuleRemoved(gm);
 				return;
 				}
 			}
-		Game.dprint("GameModule: " + gm + "wasn't loaded\n");
+		Game.dprint("GameModule: " + mod + "wasn't loaded\n");
 		}
 }

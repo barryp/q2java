@@ -14,6 +14,13 @@ public class GameModule extends q2jgame.GameModule
 /**
  * This method was created by a SmartGuide.
  */
+public GameModule(String moduleName) 
+	{
+	super(moduleName);
+	}
+/**
+ * This method was created by a SmartGuide.
+ */
 public void svcmd_help(String[] args) 
 	{
 	Game.dprint("Changes hand blaster and machine gun to fire rockets,\n");

@@ -61,6 +61,7 @@ public void fire()
 				fEffect = 0;
 
 			super.fire();			
+			fPlayer.setAnimation(Player.ANIMATE_ATTACK); // VWep
 			fPlayer.alterAmmoCount(-1);				
 			}
 
@@ -81,6 +82,7 @@ public void fire()
 protected void setFields() 
 	{
 	fWeaponName = "hyperblaster";
+	fWeaponIconName = "w_hyperblaster";	
 	fAmmoName = "cells";
 	fAmmoCount = 50;
 	fEntityModel = "models/weapons/g_hyperb/tris.md2";	

@@ -9,6 +9,22 @@ extern "C" {
 #endif
 /*
  * Class:     q2java_NativeEntity
+ * Method:    getPotentialPushed0
+ * Signature: (IFFFFFFI)[Lq2java/NativeEntity;
+ */
+static jobjectArray JNICALL Java_q2java_NativeEntity_getPotentialPushed0
+  (JNIEnv *, jclass, jint, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jint);
+
+/*
+ * Class:     q2java_NativeEntity
+ * Method:    pMove0
+ * Signature: (IBBSSSSSSBBI)Lq2java/PMoveResults;
+ */
+static jobject JNICALL Java_q2java_NativeEntity_pMove0
+  (JNIEnv *, jclass, jint, jbyte, jbyte, jshort, jshort, jshort, jshort, jshort, jshort, jbyte, jbyte, jint);
+
+/*
+ * Class:     q2java_NativeEntity
  * Method:    getRadiusEntities0
  * Signature: (IFZZ)[Lq2java/NativeEntity;
  */
@@ -130,10 +146,10 @@ static void JNICALL Java_q2java_NativeEntity_setVec3
 /*
  * Class:     q2java_NativeEntity
  * Method:    allocateEntity
- * Signature: (Z)I
+ * Signature: (I)I
  */
 static jint JNICALL Java_q2java_NativeEntity_allocateEntity
-  (JNIEnv *, jclass, jboolean);
+  (JNIEnv *, jclass, jint);
 
 /*
  * Class:     q2java_NativeEntity
@@ -193,19 +209,11 @@ static jobjectArray JNICALL Java_q2java_NativeEntity_getBoxEntities0
 
 /*
  * Class:     q2java_NativeEntity
- * Method:    getPotentialPushed0
- * Signature: (IFFFFFF)[Lq2java/NativeEntity;
+ * Method:    copySettings0
+ * Signature: (II)V
  */
-static jobjectArray JNICALL Java_q2java_NativeEntity_getPotentialPushed0
-  (JNIEnv *, jclass, jint, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat);
-
-/*
- * Class:     q2java_NativeEntity
- * Method:    pMove0
- * Signature: (IBBSSSSSSBB)Lq2java/PMoveResults;
- */
-static jobject JNICALL Java_q2java_NativeEntity_pMove0
-  (JNIEnv *, jclass, jint, jbyte, jbyte, jshort, jshort, jshort, jshort, jshort, jshort, jbyte, jbyte);
+static void JNICALL Java_q2java_NativeEntity_copySettings0
+  (JNIEnv *, jclass, jint, jint);
 
 /*
  * Class:     q2java_NativeEntity
