@@ -136,6 +136,21 @@ public class weapon_grapple extends GenericWeapon
 	{
 		return fPlayer;
 	}
+/**
+ * Get the name of the model used to show the weapon from the player's POV.
+ * @return java.lang.String
+ */
+public String getViewModelName() 
+	{
+	return "models/weapons/grapple/tris.md2";
+	}
+/**
+ * Can't drop the grapple hook.
+ */
+public boolean isDroppable() 
+	{
+	return false;
+	}
 	public void reset()
 	{
 		fEntity.sound(NativeEntity.CHAN_RELIABLE+NativeEntity.CHAN_WEAPON, Engine.getSoundIndex("weapons/grapple/grreset.wav"), 1, NativeEntity.ATTN_NORM, 0);
@@ -150,10 +165,6 @@ public class weapon_grapple extends GenericWeapon
 	 **/
 	protected void setFields() 
 	{
-		fAmmoName       = null;
-		fAmmoCount      = 0;
-		fViewModel      = "models/weapons/grapple/tris.md2";
-		
 		fFrameActivateLast   = 5;
 		fFrameFireLast       = 9;
 		fFrameIdleLast       = 31;

@@ -54,7 +54,7 @@ public void fire()
 
 	// cells can go down during windup (from power armor hits), so
 	// check again and abort firing if we don't have enough now
-	if (fPlayer.getAmmoCount(fAmmoName) < 50)
+	if (fPlayer.getAmmoCount(getAmmoName()) < 50)
 	{
 		incWeaponFrame();
 		return;
@@ -91,6 +91,14 @@ public void fire()
 
 	}
 /**
+ * Get the name of the type of ammo this weapon uses.
+ * @return Name of kind of ammo, may be null if the weapon doesn't use ammo.
+ */
+public String getAmmoName() 
+	{
+	return "cells";
+	}
+/**
  * Get the name of this item's icon.
  * @return java.lang.String
  */
@@ -115,6 +123,14 @@ public String getModelName()
 	return "models/weapons/g_bfg/tris.md2";
 	}
 /**
+ * Get the name of the model used to show the weapon from the player's POV.
+ * @return java.lang.String
+ */
+public String getViewModelName() 
+	{
+	return "models/weapons/v_bfg/tris.md2";
+	}
+/**
  * Replace the sound
  */
 public String getWeaponSound() 
@@ -126,9 +142,7 @@ public String getWeaponSound()
  */
 protected void setFields() 
 	{
-	fAmmoName = "cells";
-	fAmmoCount = 50;
-	fViewModel = "models/weapons/v_bfg/tris.md2";
+	setAmmoCount(50);
 	
 	fFrameActivateLast		= 8;
 	fFrameFireLast 		= 32;

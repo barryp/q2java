@@ -3,8 +3,9 @@
 
 #include <string.h> // for memset()
 
-// for setting player delta_angles
+// for getting/setting player delta_angles
 #define ANGLE2SHORT(x)  ((short)((int)((x)*65536/360) & 65535))
+#define	SHORT2ANGLE(x)	((float)((x)*(360.0/65536)))
 
 // types of entities we can create
 #define ENTITY_NORMAL 0
@@ -669,8 +670,28 @@ static void JNICALL Java_q2java_NativeEntity_setInt(JNIEnv *env, jclass cls, jin
 
 static jobject JNICALL Java_q2java_NativeEntity_getVec3(JNIEnv *env, jclass cls, jint index, jint fieldNum, jint vecType)
     {
-    vec3_t *v = lookupVec3(index, fieldNum);
-    return newJavaVec3(v, vecType);
+    // Another @#$% special case
+    if (fieldNum == VEC3_CLIENT_PS_PMOVE_DELTA_ANGLES)
+        {
+        vec3_t result;
+        edict_t *ent;
+
+        // sanity check
+        if ((index < 0) || (index >= ge.max_edicts))
+            return 0;
+
+        ent = ge.edicts + index;
+
+        result[0] = SHORT2ANGLE(ent->client->ps.pmove.delta_angles[0]);
+        result[1] = SHORT2ANGLE(ent->client->ps.pmove.delta_angles[1]);
+        result[2] = SHORT2ANGLE(ent->client->ps.pmove.delta_angles[2]);
+        return newJavaVec3(&result, vecType);
+        }
+    else
+        {
+        vec3_t *v = lookupVec3(index, fieldNum);
+        return newJavaVec3(v, vecType);
+        }
     }
 
 

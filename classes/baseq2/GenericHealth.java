@@ -10,10 +10,15 @@ import q2jgame.*;
  */
 public abstract class GenericHealth extends GenericItem
 	{
-	protected int fHealthValue;
-	protected boolean fOverrideMax;
 	
-public GenericHealth(String[] spawnArgs, int healthValue, boolean overrideMax) throws GameException
+/**
+ * No-arg constructor for health items.
+ */
+public GenericHealth() 
+	{
+	super();
+	}
+public GenericHealth(String[] spawnArgs) throws GameException
 	{
 	super(spawnArgs);
 	
@@ -22,12 +27,12 @@ public GenericHealth(String[] spawnArgs, int healthValue, boolean overrideMax) t
 		dispose();
 		throw new InhibitedException("health items inhibited");
 		}
-	
-	fHealthValue = healthValue;
-	fOverrideMax = overrideMax;
-	fEntity.setModel(getModelName());
-	fEntity.linkEntity();		
 	}
+/**
+ * Get how much your health goes up when picking up this item.
+ * @return int
+ */
+public abstract int getHealthValue();
 /**
  * All health items share the same icon.
  * @return java.lang.String
@@ -45,17 +50,11 @@ public String getItemName()
 	return "Health";
 	}
 /**
- * This method was created by a SmartGuide.
- * @param mob q2jgame.GenericMobile
+ * Can this item boost you past your max health?
+ * @return boolean
  */
-public void touch(Player p) 
+public boolean isOverridingMax() 
 	{
-	if (p.heal(fHealthValue, fOverrideMax))
-		{
-		super.touch(p);
-	
-		// bring the health back in 30 seconds
-		setRespawn(30);
-		}
+	return false;
 	}
 }

@@ -7,9 +7,23 @@ import baseq2.*;
 public class item_health_small extends GenericHealth
 	{
 	
+/**
+ * No-arg constructor.
+ */
+public item_health_small() 
+	{
+	}
 public item_health_small(String[] spawnArgs) throws GameException
 	{
-	super(spawnArgs, 2, true);
+	super(spawnArgs);
+	}
+/**
+ * Get how much your health goes up when picking up this item.
+ * @return int
+ */
+public int getHealthValue() 
+	{
+	return 2;
 	}
 /**
  * Get the name of this item's model.
@@ -26,5 +40,13 @@ public String getModelName()
 public String getPickupSound() 
 	{
 	return "items/s_health.wav";
+	}
+/**
+ * Can this item boost you past your max?
+ * @return boolean
+ */
+public boolean isOverridingMax() 
+	{
+	return true;
 	}
 }

@@ -76,7 +76,7 @@ public class GameModule extends baseq2.GameModule
 	public void svcmd_help(String[] args) 
 	{
 		Game.dprint("A Capture The Flag conversion,\n");
-		Game.dprint("the populair Q2 mod from Zoid.\n");
+		Game.dprint("the popular Q2 mod from Zoid.\n");
 		Game.dprint("   no commands available\n");
 	}
 	/**

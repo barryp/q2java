@@ -76,6 +76,14 @@ public void fire()
 		}		
 	}
 /**
+ * Get the name of the type of ammo this weapon uses.
+ * @return Name of kind of ammo, may be null if the weapon doesn't use ammo.
+ */
+public String getAmmoName() 
+	{
+	return "cells";
+	}
+/**
  * Get the name of this item's icon.
  * @return java.lang.String
  */
@@ -100,13 +108,19 @@ public String getModelName()
 	return "models/weapons/g_hyperb/tris.md2";	
 	}
 /**
+ * Get the name of the model used to show the weapon from the player's POV.
+ * @return java.lang.String
+ */
+public String getViewModelName() 
+	{
+	return "models/weapons/v_hyperb/tris.md2";
+	}
+/**
  * Fill in the info specific to this type of weapon.
  */
 protected void setFields() 
 	{
-	fAmmoName = "cells";
-	fAmmoCount = 50;
-	fViewModel = "models/weapons/v_hyperb/tris.md2";
+	setAmmoCount(50);
 	
 	fFrameActivateLast		= 5;
 	fFrameFireLast 		= 20;

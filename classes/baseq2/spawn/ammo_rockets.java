@@ -13,6 +13,10 @@ import baseq2.*;
 public class ammo_rockets extends GenericAmmo
 	{
 	
+public ammo_rockets() throws GameException
+	{
+	super(5);
+	}
 public ammo_rockets(String[] spawnArgs) throws GameException
 	{
 	super(spawnArgs, 5);

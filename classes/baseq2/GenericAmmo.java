@@ -7,16 +7,35 @@ import q2java.*;
  *
  * @author Barry Pederson
  */
-public abstract class GenericAmmo extends GenericItem
+public abstract class GenericAmmo extends AmmoHolder
 	{
-	int fCount;
 	
 public GenericAmmo(String[] spawnArgs, int count) throws GameException
 	{
 	super(spawnArgs);
-	fEntity.setModel(getModelName());
-	fCount = count;
-	fEntity.linkEntity();
+	setAmmoCount(count);
+	}
+public GenericAmmo(int count) throws GameException
+	{
+	super();
+	setAmmoCount(count);
+	}
+/**
+ * Get the class that represents the type of ammo-box used to hold this ammo.
+ * @return java.lang.Class 
+ */
+public Class getAmmoBoxClass()
+	{
+	// override with a much-simpler implementation
+	return getClass();
+	}
+/**
+ * Get the name of the type of ammo this class carries.
+ * @return Name of kind of ammo.
+ */
+public String getAmmoName()
+	{
+	return getItemName();
 	}
 /**
  * All ammo shares the same pickup sound.
@@ -25,19 +44,5 @@ public GenericAmmo(String[] spawnArgs, int count) throws GameException
 public String getPickupSound() 
 	{
 	return "misc/am_pkup.wav";
-	}
-/**
- * This method was created by a SmartGuide.
- * @param p q2jgame.Player
- */
-public void touch(Player p) 
-	{	
-	if (p.addAmmo(getItemName(), fCount))
-		{		
-		super.touch(p);
-
-		// bring the ammo back in 30 seconds
-		setRespawn(30);	
-		}
 	}
 }

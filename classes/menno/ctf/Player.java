@@ -223,24 +223,41 @@ public class Player extends baseq2.Player implements CameraListener
 		return true;
 	}
 	/**
+	 * Add item to the player's inventory.
+	 * @param item Item we're trying to add.
+	 * @return boolean true if the item was taken.
+	 */
+	public boolean addItem(baseq2.GenericItem item) 
+	{
+		if (item == null)
+			return false;
+
+		if (item instanceof GenericTech)
+			return addTech((GenericTech) item);
+
+		return super.addItem(item);
+	}
+	/**
 	* Add a tech to the players inventory
 	**/
-	public boolean addTech( GenericTech tech, int icon )
+	public boolean addTech( GenericTech tech )
 	{
 		// Don't add tech if already have one
 		if ( isCarrying("tech") )
 		{
-			if ( Game.getGameTime() > (fLastTechMessage+2) )
+//			if ( Game.getGameTime() > (fLastTechMessage+2) )
 			{
-				fEntity.centerprint( "You already have a TECH powerup." );
-				fLastTechMessage = Game.getGameTime();
+				fEntity.centerprint(fResourceGroup.getRandomString("menno.ctf.CTFMessages", "have_tech"));
+//				fLastTechMessage = Game.getGameTime();
 			}
 			return false;
 		}
 
 		// add tech to inventory
+		int icon = Engine.getImageIndex(tech.getIconName());
 		fEntity.setPlayerStat( GenericTech.STAT_CTF_TECH, (short)icon );
 		putInventory( "tech", tech );
+		tech.setOwner(this);
 
 		// If tech is Power Amplifier, set the damage-multiplier (>1.0)
 		if ( tech instanceof item_tech2 )
@@ -425,20 +442,7 @@ public class Player extends baseq2.Player implements CameraListener
 
 		// put the grapple in inventory
 		addWeapon( ".spawn.weapon_grapple", false );
-	/*	try
-		{
-			weapon = (baseq2.GenericWeapon)Game.lookupClass(".spawn.weapon_grapple").newInstance();
-			putInventory("grapple", weapon);
-			fWeaponList.addElement(weapon);
-			if (!fWeaponOrder.contains(weapon.getWeaponName()))
-				fWeaponOrder.addElement(weapon.getWeaponName());
-			weapon.setOwner(this);
-		}
-		catch ( Exception e )
-		{
-			e.printStackTrace();
-		}
-	*/
+
 		// remove any techs and flags, if we changed to another level
 		fInventory.remove( "tech" );
 		fInventory.remove( "flag" );
@@ -503,14 +507,10 @@ public class Player extends baseq2.Player implements CameraListener
 		
 		if ( itemName.equals("flag") )
 			dropFlag();
-
 		else if ( itemName.equals("tech") )
 			dropTech();
 		else
-		{
-			// TODO: super.cmd_drop( args );
-			fEntity.cprint(Engine.PRINT_MEDIUM, "Unknown item: " + itemName + "\n");
-		}
+			super.cmd_drop( args );
 	}
 	public void cmd_inven(String[] args)
 	{
@@ -740,10 +740,6 @@ public class Player extends baseq2.Player implements CameraListener
 			( (weapon_grapple)fWeapon ).reset();
 
 		super.die( inflictor, attacker, damage, point, obitKey );
-		
-		// drop flag and tech if carrying
-		dropFlag();
-		dropTech();
 	}
 	/**
 	 * Disassociate the CTF player object from the rest 
@@ -786,6 +782,18 @@ public class Player extends baseq2.Player implements CameraListener
 			fEntity.setPlayerStat( GenericFlag.STAT_CTF_FLAG_PIC, (short)0 );
 		}
 	}
+	/**
+	 * Drop things on the ground when dead.
+	 */
+	protected void dropInventory() 
+	{
+		// handle dropping the basic stuff
+		super.dropInventory();
+		
+		// drop flag and tech if carrying
+		dropFlag();
+		dropTech();	
+	}
 	private void dropTech()
 	{
 		// drop tech if carrying
@@ -793,7 +801,28 @@ public class Player extends baseq2.Player implements CameraListener
 		if ( tech != null )
 		{
 			fInventory.remove( "tech" );
-			tech.drop();
+
+/* Original tossing calculations from GenericTech
+		// Make sure we won't be touched by our tosser
+		Angle3f  angle   = fOwner.fEntity.getAngles();
+		Vector3f forward = new Vector3f();
+		Vector3f right   = new Vector3f();
+		Vector3f offset  = new Vector3f( 40, 0, 0 );
+		angle.getVectors( forward, right, null );
+		Point3f  point = fOwner.projectSource( offset, forward, right );
+		tr = Engine.trace( fOwner.fEntity.getOrigin(), fEntity.getMins(), fEntity.getMaxs(), point, fOwner.fEntity, Engine.CONTENTS_SOLID );
+		fEntity.setOrigin( tr.fEndPos );
+
+		// hack the velocity to make it bounce away from the tosser
+		forward.x *= 100;
+		forward.y *= 100;
+		forward.z  = 100;
+		fEntity.setVelocity( forward );
+*/
+
+			tech.setOwner(null);
+			tech.drop(this, GenericTech.CTF_TECH_TIMEOUT);
+			
 			fEntity.setPlayerStat( GenericTech.STAT_CTF_TECH, (short)0 );
 
 			// If tech is Power Amplifier, set the damage-multiplier
@@ -824,7 +853,8 @@ public class Player extends baseq2.Player implements CameraListener
 		// did the victim carry the flag?
 		if ( victim.getInventory("flag") != null )
 		{
-			fEntity.centerprint( "BONUS: " + CTF_FRAG_CARRIER_BONUS + " points for fragging enemy flag carrier.\n" );
+			Object[] args = {new Integer(CTF_FRAG_CARRIER_BONUS)};
+			fEntity.centerprint(fResourceGroup.format("menno.ctf.CTFMessages", "bonus_points", args) + "\n");
 
 			// The victim had the flag, clear the hurt carrier field on our team
 			Player[] players = fTeam.getPlayers();
@@ -839,7 +869,9 @@ public class Player extends baseq2.Player implements CameraListener
 		if ( Game.getGameTime() < (victim.fLastCarrierHurt+CTF_CARRIER_DANGER_PROTECT_TIMEOUT)
 				&& getInventory("flag") == null )
 		{
-			Game.bprint( Engine.PRINT_MEDIUM, getName() + " defends " + fTeam.getName() + "'s flag carrier against an agressive enemy\n" );
+			Object[] args = {getName(), fTeam.getTeamIndex()};
+			Game.localecast("menno.ctf.CTFMessages", "defend_aggressive", args, Engine.PRINT_MEDIUM);	
+		
 			return CTF_CARRIER_DANGER_PROTECT_BONUS;
 		}
 
@@ -862,10 +894,12 @@ public class Player extends baseq2.Player implements CameraListener
 		{
 			// OK, either we or our victim is in sight of our base.
 			// Send message based on if the flag is at base or not...
+			Object[] args = {getName(), fTeam.getTeamIndex()};
+			
 			if ( ourFlag.getState() == GenericFlag.CTF_FLAG_STATE_STANDING )
-				Game.bprint( Engine.PRINT_MEDIUM, getName() + " defends the " + fTeam.getName() + " flag.\n" );
+				Game.localecast("menno.ctf.CTFMessages", "defend_flag", args, Engine.PRINT_MEDIUM);	
 			else
-				Game.bprint( Engine.PRINT_MEDIUM, getName() + " defends the " + fTeam.getName() + " base.\n" );
+				Game.localecast("menno.ctf.CTFMessages", "defend_base", args, Engine.PRINT_MEDIUM);	
 
 			return CTF_FLAG_DEFENSE_BONUS;
 		}
@@ -888,7 +922,9 @@ public class Player extends baseq2.Player implements CameraListener
 			if ( v1.length() < CTF_ATTACKER_PROTECT_RADIUS || v2.length() < CTF_ATTACKER_PROTECT_RADIUS 
 				|| this.canSee(carrier.fEntity.getOrigin()) || victim.canSee(carrier.fEntity.getOrigin()) )
 			{
-				Game.bprint( Engine.PRINT_MEDIUM, getName() + " defends the " + fTeam.getName() + "'s flag carrier.\n" );
+				Object[] args = {getName(), fTeam.getTeamIndex()};
+				Game.localecast("menno.ctf.CTFMessages", "defend_carrier", args, Engine.PRINT_MEDIUM);	
+			
 				return CTF_CARRIER_PROTECT_BONUS;
 			}
 		}
@@ -903,34 +939,6 @@ public class Player extends baseq2.Player implements CameraListener
 	public boolean isChasing()
 	{
 		return fIsChasing;
-	}
-	/**
-	 * Broadcast a message announcing the player's demise.
-	 * @param inflictor the thing that killed the player.
-	 * @param attacker the player responsible.
-	 */
-	protected void obituary( baseq2.GameObject inflictor, baseq2.GameObject attacker) 
-	{
-		if (attacker == this)
-		{
-			Game.bprint(Engine.PRINT_MEDIUM, getName() + " killed " + (fIsFemale ? "her" : "him") + "self.\n");
-			setScore( -1, false );
-			return;
-		}
-
-		if (attacker instanceof Player)
-		{
-			Player p = (Player) attacker;
-			Game.bprint(Engine.PRINT_MEDIUM, getName() + " was killed by " + p.getName() + "\n");
-
-			if ( p.fTeam != fTeam )
-				p.setScore( p.getScore() + 1 + p.getFragBonus(this) );
-
-			return;
-		}
-
-		Game.bprint(Engine.PRINT_MEDIUM, getName() + " died.\n");
-		setScore( -1, false );
 	}
 	/**
 	 * All player entities get a chance to think.  When
@@ -1065,6 +1073,8 @@ public class Player extends baseq2.Player implements CameraListener
 	}
 	/**
 	 * Welcome the player to the game.
+	 * (same as baseq2.Player.welcome() except that it omits
+	 * the centerprint call that baseq2 makes)
 	 */
 	public void welcome() 
 	{
@@ -1074,7 +1084,8 @@ public class Player extends baseq2.Player implements CameraListener
 		Engine.writeByte(Engine.MZ_LOGIN);
 		Engine.multicast(fEntity.getOrigin(), Engine.MULTICAST_PVS);
 
-		Game.bprint(Engine.PRINT_HIGH, getName() + " entered the game\n");
+		Object[] args = {getName()};
+		Game.localecast("baseq2.Messages", "entered", args, Engine.PRINT_HIGH);		
 	}
 	/**
 	 * This method was created by a SmartGuide.

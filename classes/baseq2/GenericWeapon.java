@@ -2,6 +2,8 @@ package baseq2;
 
 import q2java.*;
 import q2jgame.*;
+import javax.vecmath.*;
+
 
 /**
  * Superclass for all weapons lying 
@@ -10,16 +12,13 @@ import q2jgame.*;
  * @author Barry Pederson
  */
  
-public abstract class GenericWeapon extends GenericItem
+public abstract class GenericWeapon extends AmmoHolder
 	{
-	protected String fAmmoName;
-	protected int    fAmmoCount;
-	protected String fViewModel;
 	protected int    fVWepIndex;
 	
 	// Player Weapon fields	
 	protected Player fPlayer;
-						
+
 	protected final static int DEFAULT_BULLET_HSPREAD		= 300;
 	protected final static int DEFAULT_BULLET_VSPREAD		= 500;
 	protected final static int DEFAULT_SHOTGUN_HSPREAD		= 1000;
@@ -56,6 +55,7 @@ public abstract class GenericWeapon extends GenericItem
  */
 public GenericWeapon() 
 	{
+	super();
 	setFields();
 
 	// precache VWep
@@ -73,10 +73,8 @@ public GenericWeapon(String[] spawnArgs) throws GameException
 	String ws = getWeaponSound();
 	if (ws != null)
 		Engine.getSoundIndex(ws);
-	
-	fEntity.setModel(getModelName());	
-	fEntity.setEffects(NativeEntity.EF_ROTATE); // all weapons rotate
-	fEntity.linkEntity();
+
+	setupEntity();
 	}
 /**
  * This method was created by a SmartGuide.
@@ -87,7 +85,7 @@ public void activate()
 	fIsSwitching = true;
 	fWeaponState = WEAPON_ACTIVATING;
 	setWeaponFrame(0);
-	fPlayer.setAmmoType(fAmmoName);
+	fPlayer.setAmmoType(getAmmoName());
 	}
 /**
  * This method was created by a SmartGuide.
@@ -101,20 +99,13 @@ public void deactivate()
  */
 public abstract void fire();
 /**
- * Get how much ammo this weapon is carrying with it.
- * @return int.
- */
-public int getAmmoCount() 
-	{
-	return fAmmoCount;
-	}
-/**
  * Get the name of the type of ammo this weapon uses.
- * @return Name of kind of ammo, may be null if the weapon doesn't use ammo.
+ * @return Name of kind of ammo, may be null if the 
+ *   weapon doesn't use ammo.
  */
 public String getAmmoName() 
 	{
-	return fAmmoName;
+	return null;
 	}
 /**
  * All weapons share the same pickup sound.
@@ -124,6 +115,11 @@ public String getPickupSound()
 	{
 	return "misc/w_pkup.wav";
 	}
+/**
+ * Get the name of the model used for displaying from the player's POV.
+ * @return java.lang.String
+ */
+public abstract String getViewModelName();
 /**
  * Get the VWep index of this weapon.
  * @return int
@@ -164,10 +160,11 @@ public final void incWeaponFrame()
  */
 public boolean isEnoughAmmo() 
 	{
-	if (fAmmoName == null)
+	String ammo = getAmmoName();
+	if (ammo == null)
 		return true;
 	else		
-		return (fPlayer.getAmmoCount(fAmmoName) >= 1);
+		return (fPlayer.getAmmoCount(ammo) >= 1);
 	}
 /**
  * This method was created by a SmartGuide.
@@ -208,26 +205,20 @@ public void setOwner(Player p)
 	fPlayer = p;
 	}
 /**
+ * Setup this item's NativeEntity.
+ */
+public void setupEntity() 
+	{
+	super.setupEntity();
+	fEntity.setEffects(NativeEntity.EF_ROTATE); // all weapons rotate
+	}
+/**
  * This method was created by a SmartGuide.
  */
 public final void setWeaponFrame(int newFrame) 
 	{
 	fGunFrame = newFrame;
 	fEntity.setPlayerGunFrame(fGunFrame);
-	}
-/**
- * This method was created by a SmartGuide.
- * @param mob q2jgame.GenericCharacter
- */
-public void touch(Player p) 
-	{
-	if (p.addWeapon(getClass(), true))
-		{
-		super.touch(p);
-	
-		// bring the weapon back in 30 seconds
-		setRespawn(30);	
-		}
 	}
 /**
  * This method was created by a SmartGuide.
@@ -259,7 +250,7 @@ public void weaponThink()
 		{
 		if (fIsSwitching)
 			{
-			fEntity.setPlayerGunIndex(Engine.getModelIndex(fViewModel));
+			fEntity.setPlayerGunIndex(Engine.getModelIndex(getViewModelName()));
 			fIsSwitching = false;
 			}
 			

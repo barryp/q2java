@@ -7,9 +7,39 @@ import baseq2.*;
 public class item_armor_combat extends GenericArmor
 	{
 	
+/**
+ * No-arg constructor.
+ */
+public item_armor_combat() 
+	{
+	}
 public item_armor_combat(String[] spawnArgs) throws GameException
 	{
-	super(spawnArgs, 50, 100, 0.6F, 0.3F);
+	super(spawnArgs);
+	}
+/**
+ * Get the max value of this armor.
+ * @return int
+ */
+public int getArmorMaxValue()
+	{
+	return 100;
+	}
+/**
+ * Get the value of this armor.
+ * @return int
+ */
+public int getArmorValue()
+	{
+	return 50;
+	}
+/**
+ * Get the strength of this armor against energy weapons.
+ * @return float
+ */
+public float getEnergyProtectionFactor()
+	{
+	return 0.3F;
 	}
 /**
  * Get the name of this item's icon.
@@ -34,5 +64,13 @@ public String getItemName()
 public String getModelName() 
 	{
 	return "models/items/armor/combat/tris.md2";
+	}
+/**
+ * Get the strength of this armor.
+ * @return float
+ */
+public float getProtectionFactor()
+	{
+	return 0.6F;
 	}
 }

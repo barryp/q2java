@@ -41,6 +41,7 @@ public class item_flag_team1 extends GenericFlag
 		fSmallIconName = "sbfctf1";
 		fEffects       = NativeEntity.EF_FLAG1;
 		fName          = "Red Flag";
+		fFlagIndex     = new Integer(1);  // red flag is "1" in messages
 		fTeam          = Team.TEAM1;
 	}
 }

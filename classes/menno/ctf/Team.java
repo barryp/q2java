@@ -41,10 +41,10 @@ public class Team implements LevelListener
 	public static final int STAT_CTF_TEAM1_HEADER     = 24;
 	public static final int STAT_CTF_TEAM2_HEADER     = 25;
 
-	public  static Team    TEAM1 = new Team( "Red Team" );
-	public  static Team    TEAM2 = new Team( "Blue Team");
+	public  static Team    TEAM1 = new Team( 1 );
+	public  static Team    TEAM2 = new Team( 2 );
 
-	protected String      fName;
+	protected Integer     fTeamIndex;
 	protected GenericFlag fFlag;
 	protected Vector      fPlayers;
 
@@ -53,9 +53,9 @@ public class Team implements LevelListener
 	//===================================================
 	// Constructor (private, so cannot be instanciated)
 	//===================================================
-	private Team( String name )
+	private Team( int teamIndex )
 	{
-		fName           = name;
+		fTeamIndex      = new Integer(teamIndex);
 		fPlayers        = new Vector();
 		Game.addLevelListener( this );
 	}
@@ -91,8 +91,9 @@ public class Team implements LevelListener
 
 		// assign new skin
 		assignSkinTo( p );
-		Game.bprint( Engine.PRINT_HIGH, p.getName() + " joined the " + fName + "\n" );
-
+		Object[] args = {p.getName(), fTeamIndex};
+		Game.localecast("menno.ctf.CTFMessages", "join_team", args, Engine.PRINT_HIGH);	
+		
 		//update players stats that he joined this team (the yellow line around team-icon)
 		int index1 = ( this == Team.TEAM1 ? STAT_CTF_JOINED_TEAM1_PIC : STAT_CTF_JOINED_TEAM2_PIC );
 		int index2 = ( this == Team.TEAM1 ? STAT_CTF_JOINED_TEAM2_PIC : STAT_CTF_JOINED_TEAM1_PIC );
@@ -229,10 +230,6 @@ public class Team implements LevelListener
 	{
 		return fFlag;
 	}
-	public String getName()
-	{
-		return fName;
-	}
 	public int getNumPlayers()
 	{
 		return fPlayers.size();
@@ -317,6 +314,14 @@ public class Team implements LevelListener
 				break;
 		}
 		return spawnPoint;
+	}
+	/**
+	 * Get the index number of this team (1=Red, 2=Blue).
+	 * @return java.lang.Integer
+	 */
+	public Integer getTeamIndex() 
+	{
+		return null;
 	}
 /**
  * Called when a new map is starting, after entities have been spawned.

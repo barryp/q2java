@@ -41,6 +41,7 @@ public class item_flag_team2 extends GenericFlag
 		fSmallIconName = "sbfctf2";
 		fEffects       = NativeEntity.EF_FLAG2;
 		fName          = "Blue Flag";
+		fFlagIndex     = new Integer(2);  // blue flag is "2" in messages
 		fTeam          = Team.TEAM2;
 	}
 }

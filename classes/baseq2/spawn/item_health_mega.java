@@ -8,9 +8,23 @@ public class item_health_mega extends GenericHealth
 	{
 	protected Player fOwner;
 	
+/**
+ * No-arg constructor.
+ */
+public item_health_mega() 
+	{
+	}
 public item_health_mega(String[] spawnArgs) throws GameException
 	{
-	super(spawnArgs, 100, true);
+	super(spawnArgs);
+	}
+/**
+ * Get how much your health goes up when picking up this item.
+ * @return int
+ */
+public int getHealthValue() 
+	{
+	return 100;
 	}
 /**
  * Get the name of this item's model.
@@ -27,6 +41,14 @@ public String getModelName()
 public String getPickupSound() 
 	{
 	return "items/m_health.wav";
+	}
+/**
+ * Can this item boost you past your max?
+ * @return boolean
+ */
+public boolean isOverridingMax() 
+	{
+	return true;
 	}
 /**
  * Decrease the player's health as the item wears out

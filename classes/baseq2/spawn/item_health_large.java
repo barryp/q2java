@@ -7,9 +7,23 @@ import baseq2.*;
 public class item_health_large extends GenericHealth
 	{
 	
+/**
+ * No-arg constructor.
+ */
+public item_health_large() 
+	{
+	}
 public item_health_large(String[] spawnArgs) throws GameException
 	{
-	super(spawnArgs, 25, false);
+	super(spawnArgs);
+	}
+/**
+ * Get how much your health goes up when picking up this item.
+ * @return int
+ */
+public int getHealthValue() 
+	{
+	return 25;
 	}
 /**
  * Get the name of this item's model.

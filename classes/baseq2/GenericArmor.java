@@ -10,13 +10,14 @@ import q2jgame.*;
  */
 public abstract class GenericArmor extends GenericItem
 	{
-	protected int fCount;
-	protected int fMaxCount;
-	protected float fProtection;
-	protected float fEnergyProtection;
-//	protected int fIcon;
 	
-public GenericArmor(String[] spawnArgs, int count, int maxCount, float protection, float energyProtection) throws GameException
+/**
+ * No-arg constructor.
+ */
+public GenericArmor() 
+	{
+	}
+public GenericArmor(String[] spawnArgs) throws GameException
 	{
 	super(spawnArgs);
 	
@@ -24,39 +25,45 @@ public GenericArmor(String[] spawnArgs, int count, int maxCount, float protectio
 		{
 		dispose();
 		throw new InhibitedException("armor items inhibited");
-		}	
-	
-	fEntity.setEffects(NativeEntity.EF_ROTATE); // all armor rotates
-	fEntity.setModel(getModelName());
-	fEntity.linkEntity();
-	
-	fCount = count;
-	fMaxCount = maxCount;
-	fProtection = protection;
-	fEnergyProtection = energyProtection;
+		}		
 	}
+/**
+ * Get the max value of this armor.
+ * @return int
+ */
+public abstract int getArmorMaxValue();
+/**
+ * Get the value of this armor.
+ * @return int
+ */
+public abstract int getArmorValue();
+/**
+ * Get the strength of this armor against energy weapons.
+ * @return float
+ */
+public abstract float getEnergyProtectionFactor();
 /**
  * Heavier armor has a different sound from light armor.
  * @return java.lang.String
  */
 public String getPickupSound() 
 	{
-	if (fEnergyProtection > 1)
+	if (getEnergyProtectionFactor() > 1)
 		return "misc/ar1_pkup.wav";
 	else
 		return "misc/ar2_pkup.wav";
 	}
 /**
- * This method was created by a SmartGuide.
- * @param mob q2jgame.GenericCharacter
+ * Get the strength of this armor.
+ * @return float
  */
-public void touch(Player p) 
+public abstract float getProtectionFactor();
+/**
+ * Setup this item's NativeEntity.
+ */
+public void setupEntity() 
 	{
-	if (p.addArmor(fCount, fMaxCount, fProtection, fEnergyProtection, Engine.getImageIndex(getIconName())))
-		{
-		super.touch(p);	
-		// bring the weapon back in 30 seconds
-		setRespawn(30);	
-		}	
+	super.setupEntity();
+	fEntity.setEffects(NativeEntity.EF_ROTATE); // all armor rotates
 	}
 }

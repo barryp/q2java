@@ -96,6 +96,14 @@ public void fire()
 	fPlayer.setAmmoCount(-1, false);
 	}
 /**
+ * Get the name of the type of ammo this weapon uses.
+ * @return Name of kind of ammo, may be null if the weapon doesn't use ammo.
+ */
+public String getAmmoName() 
+	{
+	return "bullets";
+	}
+/**
  * Get the name of this item's icon.
  * @return java.lang.String
  */
@@ -120,13 +128,19 @@ public String getModelName()
 	return "models/weapons/g_machn/tris.md2";	
 	}
 /**
+ * Get the name of the model used to show the weapon from the player's POV.
+ * @return java.lang.String
+ */
+public String getViewModelName() 
+	{
+	return "models/weapons/v_machn/tris.md2";
+	}
+/**
  * Fill in the info specific to this type of weapon.
  */
 protected void setFields() 
 	{
-	fAmmoName = "bullets";
-	fAmmoCount = 50;
-	fViewModel = "models/weapons/v_machn/tris.md2";
+	setAmmoCount(50);
 	
 	fFrameActivateLast		= 3;
 	fFrameFireLast 		= 5;

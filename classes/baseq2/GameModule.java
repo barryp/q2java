@@ -28,7 +28,11 @@ public class GameModule extends q2jgame.GameModule implements GameStatusListener
 	protected static CorpseQueue gCorpseQueue;
 
 	// various CVars
-	public static CVar gBobUp;	
+	public static CVar gRunRoll;
+	public static CVar gRunPitch;	
+	public static CVar gBobUp;
+	public static CVar gBobRoll;	
+	public static CVar gBobPitch;	
 	public static CVar gRollAngle;
 	public static CVar gRollSpeed;
 	public static CVar gGravity;
@@ -90,7 +94,11 @@ public GameModule(String moduleName)
 	Game.addLevelListener(this);
 	
 	// load cvars
+	gRunRoll = new CVar("run_roll", "0.005", 0);	
+	gRunPitch = new CVar("run_pitch", "0.002", 0);	
 	gBobUp = new CVar("bob_up", "0.005", 0);	
+	gBobRoll = new CVar("bob_roll", "0.002", 0);	
+	gBobPitch = new CVar("bob_pitch", "0.002", 0);	
 	gRollAngle = new CVar("sv_rollangle", "2", 0);
 	gRollSpeed = new CVar("sv_rollspeed", "200", 0);	
 	gGravity = new CVar("sv_gravity", "800", 0);	
@@ -177,7 +185,7 @@ public static String getSpawnpoint()
  */
 public static String getVersion() 
 	{
-	return "Q2Java Base Game, v0.6.3";
+	return "Q2Java Base Game, v0.6.4";
 	}	
 /**
  * Check whether or not the Cheating option is on.

@@ -1,6 +1,5 @@
 package baseq2;
 
-
 import java.util.*;
 import javax.vecmath.*;
 
@@ -52,6 +51,9 @@ public class Player extends GameObject implements FrameListener, PlayerListener,
 	
 	protected int fHand;
 	protected float fBobTime;
+	protected float fBobFracSin;
+	protected int fBobCycle;
+	protected float fBobMove;
 	public int fButtons; 
 	public int fLatchedButtons;	
 	protected int fOldButtons;
@@ -323,7 +325,6 @@ public Player(NativeEntity ent, boolean loadgame) throws GameException
 	fOldVelocity = new Vector3f();
 		
 	// Set default values
-	fCmdAngles  = new Angle3f();
 	fKickAngles = new Angle3f();
 	fKickOrigin = new Point3f();
 	fDamageFrom = new Point3f();
@@ -359,37 +360,46 @@ public Player(NativeEntity ent, boolean loadgame) throws GameException
 	}
 /**
  * Add ammo to the player's inventory.
- * @param ammoType Name of the kind of ammo we're adding, do nothing if this is null.
- * @param count amount of ammo being offered to the player
+ * @param ah something that holds ammo, either a weapon or an ammobox.
  * @return boolean true if some or all of the ammo was taken.
  */
-public boolean addAmmo(String ammoType, int count) 
+protected boolean addAmmo(AmmoHolder ah) 
 	{
+	String ammoType = ah.getAmmoName();
 	if (ammoType == null)
 		return false;
-		
+
+	int count = ah.getAmmoCount();
+	
 	InventoryPack pack = (InventoryPack) fInventory.getPack(ammoType);
 	if (pack == null)
 		{
+		// create a new inventory pack and add it to the inventory
 		pack = new InventoryPack();
-		pack.fAmount = count;
 		pack.fMaxAmount = Integer.MAX_VALUE;
-		fInventory.addPack(ammoType, pack);		
+		fInventory.addPack(ammoType, pack);
 		}
-	else
-		{
-		// make sure we don't overfill the ammo pack
-		count = Math.min(count, pack.fMaxAmount - pack.fAmount);
-
-		// don't do anything if the player is already maxed out on this ammo
-		if (count < 1)
-			return false;
 		
-		if (pack == fAmmo)
-			setAmmoCount(count, false);  // will also update HUD
-		else			
-			pack.fAmount += count;
-		}
+	// make sure we don't overfill the ammo pack, figure
+	// how how much more we can take
+	count = Math.min(count, pack.fMaxAmount - pack.fAmount);
+
+	// don't do anything if the player is already maxed out on this ammo
+	if (count < 1)
+		return false;
+		
+	if (pack == fAmmo)
+		setAmmoCount(count, false);  // will also update HUD
+	else			
+		pack.fAmount += count;
+
+	// clear out the object's ammo count in case it was a weapon
+	ah.setAmmoCount(0); 
+
+	// make sure we have the class this ammo belongs to
+	// (in case the InventoryPack was initialized without it)
+	if (pack.fItem == null)
+		pack.fItem = ah.getAmmoBoxClass();
 		
 	return true;		
 	}
@@ -400,14 +410,17 @@ public boolean addAmmo(String ammoType, int count)
  * @param protection float
  * @param energyProtection float
  */
-public boolean addArmor(int amount, int maxAmount, float protection, float energyProtection, int icon) 
+protected boolean addArmor(GenericArmor armor) 
 	{
+	int amount = armor.getArmorValue();
+	int maxAmount = armor.getArmorMaxValue();
+	
 	// handle shards differently
 	if (maxAmount == 0) 
 		{
 		if (fArmorCount == 0)
 			{
-			fEntity.setPlayerStat(NativeEntity.STAT_ARMOR_ICON, (short) icon);
+			fEntity.setPlayerStat(NativeEntity.STAT_ARMOR_ICON, (short) Engine.getImageIndex(armor.getIconName()));
 			fArmorMaxCount = 50;
 			fArmorProtection = 0.3F;			
 			}
@@ -417,15 +430,16 @@ public boolean addArmor(int amount, int maxAmount, float protection, float energ
 		}
 
 	// is this an armor upgrade?
+	float protection = armor.getProtectionFactor();
 	if (protection > fArmorProtection)
 		{ 
 		int salvage = (int)((fArmorProtection / protection) * fArmorCount);
 		fArmorCount = amount + salvage;
 		fArmorMaxCount = maxAmount;
 		fArmorProtection = protection;
-		fArmorEnergyProtection = energyProtection;		
+		fArmorEnergyProtection = armor.getEnergyProtectionFactor();		
 		fEntity.setPlayerStat(NativeEntity.STAT_ARMOR, (short)fArmorCount);
-		fEntity.setPlayerStat(NativeEntity.STAT_ARMOR_ICON, (short) icon);
+		fEntity.setPlayerStat(NativeEntity.STAT_ARMOR_ICON, (short) Engine.getImageIndex(armor.getIconName()));
 		return true;
 		}		
 
@@ -475,57 +489,89 @@ public void addBlend(Color4f color)
 	addBlend(color.x, color.y, color.z, color.w);
 	}
 /**
- * Add a class of weapon to a player's inventory.
- * @return boolean true if the player took the weapon (or its ammo)
- * @param weaponClass class of the weapon.
- * @param allowSwitch Have the player switch weapons if they're currently using just a blaster.
+ * Add an item to the player's inventory.
+ * @param item what we're trying to add.
+ * @return boolean true if the item was taken.
  */
-public boolean addWeapon(Class weaponClass, boolean allowSwitch) 
+public boolean addItem(GenericItem item) 
 	{
-	GenericWeapon w;
-	try
-		{
-		w = (GenericWeapon) weaponClass.newInstance();
-		}
-	catch (Exception e)
-		{
-		e.printStackTrace();
+	if (item == null)
 		return false;
+
+	if (item instanceof GenericWeapon)
+		return addWeapon((GenericWeapon)item, true);
+
+	if (item instanceof GenericAmmo)
+		return addAmmo((GenericAmmo)item);
+
+	if (item instanceof GenericHealth)
+		{
+		GenericHealth health = (GenericHealth) item;
+		return heal(health.getHealthValue(), health.isOverridingMax());
 		}
 
+	if (item instanceof GenericArmor)
+		return addArmor((GenericArmor)item);
+		
+	// don't know what to do with the item, so reject it.
+	return false;
+	}
+/**
+ * Add an actual instance of a weapon to a player's inventory.
+ * @param weapon baseq2.GenericWeapon
+ * @param allowSwitch boolean
+ */
+protected boolean addWeapon(GenericWeapon w, boolean allowSwitch) 
+	{
 	boolean weaponStay = GameModule.isDMFlagSet(GameModule.DF_WEAPONS_STAY);
 
 	InventoryPack p = fInventory.getPack(w.getItemName());
-	if (p != null)
+
+	// check if we already have one of these weapons
+	if ((p != null) && (p.fAmount > 0))
 		{
-		// we already have one of these weapons
 		if (weaponStay)
 			return false; // don't pick it up
 		else
 			{
-			addAmmo(w.getAmmoName(), w.getAmmoCount());
-			p.fAmount++; // inc weapon count				
-			return true; // we picked it up.
+			addAmmo(w); // take the ammo
+			if (w.getAmmoBoxClass() != w.getClass())
+				p.fAmount++; // inc weapon count if it's not its own ammo
+			return true; // we picked it up 
 			}
 		}
-	else
-		{
-		addAmmo(w.getAmmoName(), w.getAmmoCount());	
-		
-		putInventory(w.getItemName(), w);
-		if (!fWeaponOrder.contains(w.getItemName().toLowerCase()))
-			fWeaponOrder.addElement(w.getItemName().toLowerCase());
-		w.setOwner(this);
+
+	// must be a new weapon at this point		
+
+	// transfer the ammo inside the weapon to the player's inventory
+	addAmmo(w);	
+	
+	// add the weapon to the inventory
+	putInventory(w.getItemName(), w);
+	
+	// make a note of who owns this weapon
+	w.setOwner(this);
 			
-		// switch weapons if we're currently using the blaster
-		if (allowSwitch && (fWeapon == fInventory.get("blaster")))
+	// add the weapon to the weapon order
+	if (!fWeaponOrder.contains(w.getItemName().toLowerCase()))
+		fWeaponOrder.addElement(w.getItemName().toLowerCase());
+
+	// switch weapons if we dont have a weapon or are currently using the blaster
+	if ((fWeapon == null) || (allowSwitch && (fWeapon == fInventory.get("blaster"))))
+		{
+		if (fWeapon == null)
+			{
+			fWeapon = w;
+			fWeapon.activate();
+			}
+		else
 			{
 			fNextWeapon = w;
 			fWeapon.deactivate();
 			}
+		}
 				
-		return !weaponStay;
-		}		
+	return !weaponStay;
 	}
 /**
  * Add a class of weapon to a player's inventory.
@@ -533,12 +579,13 @@ public boolean addWeapon(Class weaponClass, boolean allowSwitch)
  * @param allowSwitch Have the player switch weapons if they're currently using just a blaster.
  * @return boolean true if the player took the weapon (or its ammo)
  */
-public boolean addWeapon(String weaponClassSuffix, boolean allowSwitch) 
+protected boolean addWeapon(String weaponClassSuffix, boolean allowSwitch) 
 	{
 	try
 		{
 		Class cls = Game.lookupClass(weaponClassSuffix);
-		return addWeapon(cls, allowSwitch);
+		GenericWeapon w = (GenericWeapon) cls.newInstance();		
+		return addWeapon(w, allowSwitch);
 		}
 	catch (Exception e)
 		{
@@ -662,6 +709,46 @@ protected void calcBlend()
 	setFrameAlpha(frameAlpha);
 	fEntity.setPlayerBlend(fBlend);
 }
+protected void calcBob()
+	{
+	// setup bob calculations (we save off quite a few of the values for the other functions.
+	Vector3f velocity = fEntity.getVelocity();
+	fXYSpeed = (float)Math.sqrt((velocity.x*velocity.x) + (velocity.y*velocity.y));
+	
+	if (fXYSpeed < 5.0)
+		{
+		fBobMove = 0;
+		fBobTime = 0;
+		}
+	else if (fEntity.getGroundEntity() != null)
+		{
+		if (fXYSpeed > 210)
+			fBobMove = 0.25F;
+		else if (fXYSpeed > 100)
+			fBobMove = 0.125F;
+		else
+			fBobMove = 0.0625F;		
+		}		
+		
+	fBobTime += fBobMove;
+
+	float bobtime = fBobTime;
+
+	if (fIsDucking)
+		bobtime *= 4;
+
+	fBobCycle = (int) bobtime;
+	fBobFracSin = (float) Math.abs(Math.sin(bobtime*Math.PI));			
+	}
+protected void calcClientEvent()
+	{
+	if (fEntity.getEvent() != 0)
+		return;
+	
+	if ((fEntity.getGroundEntity() != null) && (fXYSpeed > 225))
+		if ((int)(fBobTime + fBobMove) != fBobCycle)
+			fEntity.setEvent(NativeEntity.EV_FOOTSTEP);
+	}
 /**
  * This method was created by a SmartGuide.
  */
@@ -734,9 +821,9 @@ protected void calcClientSound()
 	if (fWeapon != null)
 		weapsound = fWeapon.getWeaponSound();
 		
-/*	if ((fWaterLevel != 0) && ((fWaterType & (Engine.CONTENTS_LAVA | Engine.CONTENTS_SLIME)) != 0))
+	if ((fWaterLevel != 0) && ((fWaterType & (Engine.CONTENTS_LAVA | Engine.CONTENTS_SLIME)) != 0))
 		fEntity.setSound(Engine.getSoundIndex("player/fry.wav"));
-	else */ if (weapsound != null)
+	else if (weapsound != null)
 		fEntity.setSound(Engine.getSoundIndex(weapsound));
 	else
 		fEntity.setSound(0);
@@ -752,7 +839,7 @@ protected float calcRoll(Vector3f velocity)
 	float	sign;
 	float	side;
 	float	value;
-	
+
 	side = velocity.dot(fRight);
 	sign = side < 0 ? -1 : 1;
 	side = Math.abs(side);
@@ -772,8 +859,9 @@ protected float calcRoll(Vector3f velocity)
 protected void calcViewOffset() 
 	{
 	fViewOffset.set(0, 0, fViewHeight);
-	float bobMove = 0.0F;
 	float ratio;
+	Angle3f angles;	
+	float delta;
 
 	// add angles based on weapon kick
 	fEntity.setPlayerKickAngles(fKickAngles);	
@@ -789,7 +877,7 @@ protected void calcViewOffset()
 		}
 	else
 		{
-		Angle3f angles = fEntity.getPlayerKickAngles();
+		angles = fEntity.getPlayerKickAngles();
 		angles.x += ratio * fDamagePitch;
 		angles.z += ratio * fDamageRoll;
 		fEntity.setPlayerKickAngles(angles);
@@ -802,41 +890,36 @@ protected void calcViewOffset()
 		ratio = 0;
 	angles[PITCH] += ratio * ent->client->fall_value;
 	*/
-	
+
+	angles = fEntity.getPlayerKickAngles();
+
 	// add angles based on velocity
-	/*
-	delta = DotProduct (ent->velocity, forward);
-	angles[PITCH] += delta*run_pitch->value;
+	Angle3f  angle   = fEntity.getAngles();
+	Vector3f forward = new Vector3f();
+	Vector3f right = new Vector3f();
+	angle.getVectors( forward, right, null );
+	delta = (fEntity.getVelocity()).dot(forward);
+	angles.x += delta*GameModule.gRunPitch.getFloat();
+
+	delta = (fEntity.getVelocity()).dot(right);
+	angles.z += delta*GameModule.gRunRoll.getFloat();
+
+	// add angles based on bob
+	delta = fBobFracSin * GameModule.gBobPitch.getFloat() * fXYSpeed;
+	if (fIsDucking)
+			delta *= 6;             // crouching
+	angles.x += delta;
+	delta = fBobFracSin * GameModule.gBobRoll.getFloat() * fXYSpeed;
+	if (fIsDucking)
+			delta *= 6;             // crouching
+	if ((fBobCycle & 1) > 0)
+			delta = -delta;
+	angles.z += delta;
+	fEntity.setPlayerKickAngles(angles);
 	
-	delta = DotProduct (ent->velocity, right);
-	angles[ROLL] += delta*run_roll->value;
-	*/
-	
-	// setup bob calculations
-	Vector3f velocity = fEntity.getVelocity();
-	fXYSpeed = (float)Math.sqrt((velocity.x*velocity.x) + (velocity.y*velocity.y));
-	
-	if (fXYSpeed < 5.0)
-		{
-		bobMove = 0;
-		fBobTime = 0;
-		}
-	else if (fEntity.getGroundEntity() != null)
-		{
-		if (fXYSpeed > 210)
-			bobMove = 0.25F;
-		else if (fXYSpeed > 100)
-			bobMove = 0.125F;
-		else
-			bobMove = 0.0625F;		
-		}		
-		
-	fBobTime += bobMove;
-	
-	float bobfracsin = (float) Math.abs(Math.sin(fBobTime*Math.PI));			
 
 	// add bob height
-	float bob = bobfracsin * fXYSpeed * GameModule.gBobUp.getFloat(); // *3 added to magnify effect
+	float bob = fBobFracSin * fXYSpeed * GameModule.gBobUp.getFloat(); // *3 added to magnify effect
 	if (bob > 6)
 		bob = 6.0F;
 	fViewOffset.z += bob;	
@@ -886,10 +969,13 @@ public void changeWeapon()
  */
 protected void clearSettings( ) 
 	{
+	// remove any quad-type powerup effects
 	setDamageMultiplier(1.0F);
 	
-	// initialize the AmmoBelt
+	// throw out everything the player was carrying
 	fInventory.clear();
+
+	// initialize the AmmoBelt with the max amounts of each type of ammo
 	fInventory.addPack("shells", new InventoryPack(100, "a_shells"));
 	fInventory.addPack("bullets", new InventoryPack(200, "a_bullets"));
 	fInventory.addPack("grenades", new InventoryPack(50, "a_grenades"));
@@ -897,20 +983,14 @@ protected void clearSettings( )
 	fInventory.addPack("cells", new InventoryPack(200, "a_cells"));
 	fInventory.addPack("slugs", new InventoryPack(50, "a_slugs"));
 
-	
-	try
-		{
-		fWeapon = (GenericWeapon) Game.lookupClass(".spawn.weapon_blaster").newInstance();
-		putInventory("blaster", fWeapon);
-		if (!fWeaponOrder.contains(fWeapon.getItemName().toLowerCase()))
-			fWeaponOrder.addElement(fWeapon.getItemName().toLowerCase());
-		fWeapon.setOwner(this);
-		fWeapon.activate();
-		}
-	catch (Exception e)
-		{
-		e.printStackTrace();
-		}
+	// give the player a hand blaster
+	addWeapon(".spawn.weapon_blaster", true);
+
+	// setup the inventory to support hand grenade weapons, but 
+	// don't actually give any.  Necessary for hand grenades
+	// to work if a grenade launcher is picked up first.
+	addWeapon(".spawn.ammo_grenades", false);
+	setAmmoCount("grenades", 0, true);
 
 	// initialize the armor settings (jacket_armor quality protection)
 	fArmorCount = 0;
@@ -920,6 +1000,7 @@ protected void clearSettings( )
 	fEntity.setPlayerStat(NativeEntity.STAT_ARMOR_ICON, (short) 0);
 
 
+	// set various other bits to a normal setting
 	fIsDead = false;		
 	fKiller = null;
 	if (fInIntermission)
@@ -972,6 +1053,132 @@ public void cmd_debug_setblend(String[] args)
 		{
 		fEntity.cprint(Engine.PRINT_HIGH, nfe.toString());
 		}
+	}
+/**
+ * Drop an item in our inventory.
+ */
+public void cmd_drop(String[] args) 
+	{
+	// build up the name of the item
+	String itemName = args[1];
+	for (int i = 2; i < args.length; i++)
+		itemName = itemName + " " + args[i];
+	itemName = itemName.toLowerCase();
+
+	// get it from our inventory
+	InventoryPack ip = fInventory.getPack(itemName);
+
+	// empty handed
+	if ((ip == null) || (ip.fAmount < 1))
+		{
+		Object[] msgArgs = {itemName};
+		fEntity.cprint(Engine.PRINT_HIGH, fResourceGroup.format("baseq2.Messages", "dont_have", msgArgs) + "\n");
+		return;
+		}		
+
+	// deal with dropping GenericItems
+	if (ip.fItem instanceof GenericItem)
+		{
+		GenericItem item = (GenericItem) ip.fItem;
+
+		// check whether the item is willing
+		if (!item.isDroppable())
+			{
+			fEntity.cprint(Engine.PRINT_HIGH, fResourceGroup.format("baseq2.Messages", "item_not_droppable", null) + "\n");
+			return;
+			}
+
+		// handle the subcase of GenericWeapons
+		if (item instanceof GenericWeapon)
+			{
+			// don't let them drop their current weapon if its the only one they have
+			if ((item == fWeapon) && (ip.fAmount < 2))
+				{
+				fEntity.cprint(Engine.PRINT_HIGH, fResourceGroup.format("baseq2.Messages", "no_current_weapon_drop", null) + "\n");
+				return;
+				}
+				
+			// if they have more than one of these weapons, create
+			// a new instance to toss
+			if (ip.fAmount > 1)
+				{
+				try
+					{
+					item = (GenericItem) item.getClass().newInstance();
+					}
+				catch (Exception e)
+					{
+					e.printStackTrace();
+					return;
+					}
+				}
+				
+			// get a weapon reference
+			GenericWeapon weapon = (GenericWeapon) item;
+
+			// check for weird case where a weapon is its own ammo
+			// (grenades)
+			if (weapon.getAmmoBoxClass() == weapon.getClass())
+				{
+				// figure out how much ammo goes into the ammo/weapon
+				int amount = Math.max(1, Math.min(ip.fAmount, weapon.getAmmoCount()));
+										
+				// transfer that much from the player to the (grenade)
+				setAmmoCount(weapon.getItemName(), -amount, false);
+				weapon.setAmmoCount(amount);
+
+				// drop it
+				weapon.drop(this, GenericItem.DROP_TIMEOUT);
+				return;
+				}
+
+			// normal weapon - set it to have no ammo
+			weapon.setAmmoCount(0);
+			}
+
+		// go ahead and chuck the item
+		fInventory.remove(itemName);
+		item.drop(this, GenericItem.DROP_TIMEOUT);
+		return;
+		}
+		
+	// deal with dropping ammo
+	if (ip.fItem instanceof Class)
+		{
+		Class cls = (Class) ip.fItem;
+		if (AmmoHolder.class.isAssignableFrom(cls))
+			{
+			try
+				{
+				// create an ammo box
+				AmmoHolder ammo = (AmmoHolder) cls.newInstance();
+				
+				// figure out how much ammo goes into the box
+				int amount = Math.min(getAmmoCount(ammo.getItemName()), ammo.getAmmoCount());
+
+				if (amount > 0)
+					{
+					// transfer that much from the player to the box
+					setAmmoCount(ammo.getItemName(), -amount, false);
+					ammo.setAmmoCount(amount);
+	
+					// chuck it
+					ammo.drop(this, GenericItem.DROP_TIMEOUT);
+					}
+				}
+			catch (Exception e)
+				{
+				e.printStackTrace();
+				}
+			return;
+			}
+
+		System.out.println("Don't know how to drop class: " + cls);
+		}
+		
+		
+	// wimp out
+	fEntity.cprint(Engine.PRINT_MEDIUM, "Dropping " + itemName + " not implemented\n");
 	}
 /**
  * Change field-of-view.
@@ -1215,10 +1422,43 @@ public void cmd_score(String[] args)
  */
 public void cmd_use(String[] args) 
 	{
-	String item = args[1];
+	String itemName = args[1];
 	for (int i = 2; i < args.length; i++)
-		item = item + " " + args[i];
-	use(item);
+		itemName = itemName + " " + args[i];
+	
+	Object ent = fInventory.get(itemName.toLowerCase());
+	if (ent == null)
+		{
+		Object[] msgArgs = {itemName};
+		fEntity.cprint(Engine.PRINT_HIGH, fResourceGroup.format("baseq2.Messages", "dont_have", msgArgs) + "\n");
+		return;
+		}
+
+	// handle weapons a little differently
+	if (ent instanceof GenericWeapon)
+		{
+		if (ent == fWeapon)
+			return; // do nothing if we're already using the weapon
+		
+		// make a note of what the next weapon will be	
+		fNextWeapon = (GenericWeapon) ent;
+		if (!fNextWeapon.isEnoughAmmo())
+			{
+			Object[] msgArgs = {itemName};
+			fEntity.cprint(Engine.PRINT_HIGH, fResourceGroup.format("baseq2.Messages", "no_ammo", msgArgs) + "\n");
+			fNextWeapon = null;
+			return;
+			}
+		
+		// signal the current weapon to deactivate..when it's
+		// done deactivating, it will signal back to the player to 
+		// changeWeapon() and we'll use() the next weapon		
+		fWeapon.deactivate();	
+		setAnimation(ANIMATE_VWEP_DEACTIVATE);
+		return;
+		}
+			
+//	ent.use(this);	---FIXME--
 	}
 /**
  * Invoke player gestures.
@@ -1497,7 +1737,7 @@ public void damage(GameObject inflictor, GameObject attacker,
 			
 	spawnDamage(Engine.TE_BLOOD, point, normal, damage);
 	setHealth(fHealth - damage);
-	if (fHealth < 0)
+	if (fHealth <= 0)
 		die(inflictor, attacker, damage, point, obitKey);
 	
 	// These are used to determine the blend for this frame. (TSW)
@@ -1634,6 +1874,7 @@ protected void decFrame()
  */
 protected void die(GameObject inflictor, GameObject attacker, int damage, Point3f point, String obitKey)
 	{
+	Vector3f forward = new Vector3f();
 	if (fIsDead)
 		return;	// already dead
 		
@@ -1660,9 +1901,9 @@ protected void die(GameObject inflictor, GameObject attacker, int damage, Point3
 	
 	// either give the attacker a point or take one away from the deceased
 	if ((attacker != this) && (attacker instanceof Player))
-		((Player)attacker).fScore++;
+		((Player)attacker).setScore(1, false);
 	else
-		fScore--;
+		setScore(-1, false);
 		
 	fEntity.setModelIndex2(0); // remove linked weapon model
 	fEntity.setSound(0);
@@ -1672,7 +1913,11 @@ protected void die(GameObject inflictor, GameObject attacker, int damage, Point3
 	
 //	fEntity.setSolid(NativeEntity.SOLID_NOT);
 	fEntity.setSVFlags(fEntity.getSVFlags() | NativeEntity.SVF_DEADMONSTER);
-	
+
+	// drop some things from the inventory onto the ground.
+	dropInventory();
+
+	// remove the weapon from the POV
 	fEntity.setPlayerGunIndex(0);
 	fWeapon = null;
 	
@@ -1717,6 +1962,30 @@ public void dispose()
 	fEntity = null;
 	}
 /**
+ * Drop the player's inventory onto the ground, usually called on death.
+ * A good thing to override if you want to drop more or fewer things
+ * in a mod.
+ */
+protected void dropInventory() 
+	{
+	// drop the current weapon along with some ammo if possible
+	if ((fWeapon != null) && fWeapon.isDroppable())
+		{
+		try
+			{
+			// transfer ammo into the weapon
+			fWeapon.setAmmoCount(getAmmoCount(fWeapon.getAmmoName()));
+
+			// toss it
+			fWeapon.drop(this, GenericItem.DROP_TIMEOUT);
+			}
+		catch (Exception e)
+			{
+			e.printStackTrace();
+			}
+		}
+	}
+/**
  * Called for each player after all the entities have 
  * had a chance to runFrame()
  */
@@ -1739,11 +2008,14 @@ protected void endServerFrame()
 	newAngles.z = calcRoll(fEntity.getVelocity());
 	fEntity.setAngles(newAngles);
 	
+	//Must calc the bob before anything else
+	calcBob();
 	fallingDamage();
 	damageFeedback();
 	calcViewOffset();	
 	calcClientFrame();
 	calcClientSound();
+	calcClientEvent();
 	
 	// determine the full screen color blend
 	// must be after viewoffset, so eye contents can be
@@ -1983,6 +2255,14 @@ protected String getPlayerInfo(String key, String defaultValue)
 		return result;
 	}
 /**
+ * Get the ResourceGroup this player belongs to.
+ * @return q2jgame.ResourceGroup
+ */
+public ResourceGroup getResourceGroup() 
+	{
+	return fResourceGroup;
+	}
+/**
  * This method was created by a SmartGuide.
  * @return int
  */
@@ -2035,6 +2315,14 @@ protected void incFrame()
 public boolean isCarrying(String itemName) 
 	{
 	return fInventory.isCarrying(itemName);
+	}
+/**
+ * Is this player pining for the fjords?
+ * @return boolean
+ */
+public boolean isDead() 
+	{
+	return fIsDead;
 	}
 /** 
  * Is this guy really a chick?
@@ -2150,8 +2438,16 @@ public void playerBegin(boolean loadgame)
 	fEntity.setPlayerGravity((short)GameModule.gGravity.getFloat());
 	Engine.setConfigString(Engine.CS_PLAYERSKINS + fEntity.getPlayerNum(), getName() + "\\" + getPlayerInfo("skin"));			
 		
+	// things that need to be reset on map changes
+	fCmdAngles  = new Angle3f();		
+
+	// things that need to be reset on map changes or respawn
 	clearSettings();
+
+	// place in game
 	spawn();	
+
+	// greet the player
 	welcome();
 
 	// make sure all view stuff is valid
@@ -2377,9 +2673,9 @@ public Point3f projectSource(Vector3f offset, Vector3f forward, Vector3f right)
 	return result;		
 	}
 /**
- * This method was created by a SmartGuide.
- * @param itemName java.lang.String
- * @param ent q2jgame.GameEntity
+ * Put an object into our inventory under a given name.
+ * @param itemName key for storing the object
+ * @param ent some arbitrary object
  */
 public void putInventory(String itemName, Object ent) 
 	{
@@ -2464,7 +2760,7 @@ public void sayTeam(String msg)
 	say(msg);		
 	}
 /**
- * Set the ammo count, or alter it by some amount.
+ * Set the current ammo count, or alter it by some amount.
  * @param amount int
  * @param isAbsolute is the amount an absolute value, or a relative one?
  */
@@ -2478,6 +2774,26 @@ public void setAmmoCount(int amount, boolean isAbsolute)
 			fAmmo.fAmount += amount;
 			
 		fEntity.setPlayerStat(NativeEntity.STAT_AMMO, (short) fAmmo.fAmount);
+		}
+	}
+/**
+ * Set the ammo count, or alter it by some amount.
+ * @param ammoType name of a kind of ammo
+ * @param amount int
+ * @param isAbsolute is the amount an absolute value, or a relative one?
+ */
+public void setAmmoCount(String ammoType, int amount, boolean isAbsolute) 
+	{
+	InventoryPack ip = fInventory.getPack(ammoType);
+	if (ip == fAmmo)
+		// we're changing the current ammo
+		setAmmoCount(amount, isAbsolute);
+	else
+		{
+		if (isAbsolute)
+			ip.fAmount = amount;
+		else
+			ip.fAmount += amount;
 		}
 	}
 /**
@@ -2742,10 +3058,13 @@ protected void spawn()
 		Game.dprint("Couldn't pick spawnpoint\n");
 	else
 		{							
+		// set player origin
 		Point3f origin = spawnPoint.getOrigin();
-		Angle3f ang = spawnPoint.getAngles();
-		origin.z += 9;
+		origin.z += 9; // is 1 in C code?
 		fEntity.setOrigin(origin);
+
+		// set player angles
+		Angle3f ang = spawnPoint.getAngles();
 		fEntity.setAngles(0, ang.y, 0);
 		fEntity.setPlayerViewAngles(0, ang.y, 0);
 		
@@ -2753,19 +3072,23 @@ protected void spawn()
 		fEntity.setPlayerDeltaAngles(ang);
 		}
 	
+	// clear entity values
 	fEntity.setSolid(NativeEntity.SOLID_BBOX);
+	fEntity.setClipmask(Engine.MASK_PLAYERSOLID);	
 	fEntity.setSVFlags(fEntity.getSVFlags() & ~NativeEntity.SVF_DEADMONSTER);
 	fEntity.setPlayerPMType(NativeEntity.PM_NORMAL);	
-	fEntity.setClipmask(Engine.MASK_PLAYERSOLID);	
+	fEntity.setMins(-16, -16, 24);
+	fEntity.setMaxs(16, 16, 32);
+	
+	// clear entity state values
 	fEntity.setEffects(0);
 	fEntity.setSkinNum(fEntity.getPlayerNum());
 	fEntity.setModelIndex(255);	// will use the skin specified model
 	showVWep();
-	fEntity.setMins(-16, -16, 24);
-	fEntity.setMaxs(16, 16, 32);
 	
-	closeDisplay();
 	fEntity.linkEntity();			
+
+	closeDisplay();
 	}
 /**
  * Switch the player into intermission mode.  Their view should be from
@@ -2844,50 +3167,11 @@ public void touchTriggers()
 		{
 		for (int i = 0; i < triggers.length; i++)
 			{
-			if (triggers[i].getReference() instanceof GameObject)	
-				((GameObject)triggers[i].getReference()).touch(this);
+			Object obj = triggers[i].getReference();
+			if (obj instanceof GameObject)
+				((GameObject)obj).touch(this);
 			}
 		}
-	}
-/**
- * This method was created by a SmartGuide.
- * @param itemName java.lang.String
- */
-public void use(String itemName) 
-	{
-	Object ent = fInventory.get(itemName.toLowerCase());
-	if (ent == null)
-		{
-		Object[] args = {itemName};
-		fEntity.cprint(Engine.PRINT_HIGH, fResourceGroup.format("baseq2.Messages", "dont_have", args) + "\n");
-		return;
-		}
-
-	// handle weapons a little differently
-	if (ent instanceof GenericWeapon)
-		{
-		if (ent == fWeapon)
-			return; // do nothing if we're already using the weapon
-		
-		// make a note of what the next weapon will be	
-		fNextWeapon = (GenericWeapon) ent;
-		if (!fNextWeapon.isEnoughAmmo())
-			{
-			Object[] args = {itemName};
-			fEntity.cprint(Engine.PRINT_HIGH, fResourceGroup.format("baseq2.Messages", "no_ammo", args) + "\n");
-			fNextWeapon = null;
-			return;
-			}
-		
-		// signal the current weapon to deactivate..when it's
-		// done deactivating, it will signal back to the player to 
-		// changeWeapon() and we'll use() the next weapon		
-		fWeapon.deactivate();	
-		setAnimation(ANIMATE_VWEP_DEACTIVATE);
-		return;
-		}
-			
-//	ent.use(this);	---FIXME--
 	}
 /**
  * Welcome the player to the game.
@@ -3035,7 +3319,7 @@ protected void worldEffects()
 			damage(GameModule.gWorld, GameModule.gWorld, origin, fEntity.getOrigin(), origin, fWaterLevel, 0, 0, Engine.TE_NONE, "slime");
 			}
 		}
-	}	
+	}
 /**
  * This method was created by a SmartGuide.
  * @param killer q2jgame.Player

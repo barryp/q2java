@@ -56,14 +56,26 @@ public String getModelName()
 	return "models/weapons/g_blast/tris.md2";
 	}
 /**
+ * Get the name of the model used to show the weapon from the player's POV.
+ * @return java.lang.String
+ */
+public String getViewModelName() 
+	{
+	return "models/weapons/v_blast/tris.md2";
+	}
+/**
+ * Plain hand-blaster can't be dropped.
+ * @return boolean
+ */
+public boolean isDroppable() 
+	{
+	return false;
+	}
+/**
  * Fill in the info specific to this type of weapon.
  */
 protected void setFields() 
 	{
-	fAmmoName = null;
-	fAmmoCount = 0;
-	fViewModel = "models/weapons/v_blast/tris.md2";
-	
 	fFrameActivateLast		= 4;
 	fFrameFireLast 		= 8;
 	fFrameIdleLast 		= 52;

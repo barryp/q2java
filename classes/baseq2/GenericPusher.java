@@ -303,6 +303,13 @@ protected boolean push()
 			org2.z = up.dot(org);
 			org2.sub(org);
 			checkOrigin.add(org2);
+
+			if (isPlayer)
+				{
+				Angle3f da = check.fEntity.getPlayerDeltaAngles();
+				da.y += angularMove.y;
+				check.fEntity.setPlayerDeltaAngles(da);
+				}
 			}
 			
 		check.fEntity.setOrigin(checkOrigin);			

@@ -1,0 +1,318 @@
+CHANGES from v0.6.3 to v0.6.4
+
+---------------------------------------------------------------------------
+This file will just list changes in the core packages 
+(q2java, q2jgame, baseq2, menno.ctf). Add-ons will have to list their own changes.
+---------------------------------------------------------------------------
+
+DLL CHANGES ===============================================================
+
+q2java_NativeEntity.c
+
+    Added:   support for getting client->ps.pmove.delta_angles
+    
+JAVA CHANGES ==============================================================
+
+q2java.NativeEntity
+
+    Added:   getPlayerDeltaAngles() - will return a zero-angle if we're
+             running under an older shared library that doesn't have 
+             the ability to get client->ps.pmove.delta_angles.  The only
+             place this will cause trouble is if a player is standing
+             on a rotating surface - otherwise, older shared libraries 
+             will work fine.
+
+baseq2.AmmoHolder
+
+    (New subclass of GenericItem to be common superclass of 
+    GenericAmmo and GenericWeapon)
+    
+    Added:   getAmmoCount() and setAmmoCount() methods, which were
+             present in both GenericAmmo and GenericWeapon, but
+             not technically compatible until now.
+             
+             getAmmoName() and getAmmoBoxClass() moved up from GenericWeapon.
+    
+
+baseq2.GameModule
+
+    Added:   support for run_roll, run_pitch, bob_roll, bob_pitch CVars
+             (James Bielby)
+             
+baseq2.GenericAmmo
+
+    Added:   support for no-arg constructors in subclasses                 
+    
+             getAmmoName() and getAmmoBoxClass() as required by the new
+             AmmoHolder superclass.
+
+    Changed: class is now subclass of AmmoHolder
+    
+    Removed: touch() method, now handled by GenericItem
+    
+    
+baseq2.GenericArmor
+
+    Added:   support for no-arg constructors in subclasses
+        
+             getArmorValue(), getArmorMaxValue(), getProtectionFactor(), 
+             getEnergyProtectionFactor() to access armor properties
+            
+             setupEntity() - overrides GenericItem.setupEntitiy() to add
+             a rotation flag to the entity.
+            
+    Removed: touch() method, now handled by GenericItem
+    
+             all instance variables removed, in favor of the accessor methods
+    
+baseq2.GenericHealth
+
+    Added:   support for no-arg constructors in subclasses
+        
+             getHealthValue(), isOverridingMax() to access health properties
+            
+    Removed: touch() method, now handled by GenericItem
+    
+             all instance variables removed, in favor of the accessor methods
+    
+baseq2.GenericItem
+
+    (This class was worked over quite a bit to support players dropping items.
+     James Bielby got the ball rolling, and much of the code came from things
+     Menno had done in CTF)    
+    
+    Added:   checkVelocity(), clipVelocity() - lifted from menno.ctf.GenericTech
+    
+             dispose() - for getting rid of items 
+             
+             dropTimeout() and two versions of drop() - for dropping items into 
+             the world.  One drop() is used by players, the other is used by 
+             just specifying a starting point and initial direction and speed.  
+             Both drop methods allow a timeout value to be specified - if 
+             nobody picks up the item after that time, the dropTimeout() 
+             method is called.  dropTimeout() by default calls dispose(), 
+             but things like menno.ctf.GenericTech can override dropTimeout() 
+             to do something different, such as re-drop the item at some 
+             random spot on the map.
+             
+             isDroppable() - tells whether items are willing to be dropped.
+             default is true, but things like handblaster and grapple hook
+             can override and return false.
+             
+             isTouchable(Player p) - tells whether an item is willing to be
+             touched by a given player.  Returns true unless the specified 
+             player just dropped this item within the last second or so.
+             
+             setDropTimeout() - forces an item to set it's timeout value,
+             was useful in placing menno.ctf.GenericTech objects in the map
+             at the beginning of a level.
+             
+             setupEntity() - makes sure the item has an associated 
+             NativeEntity, and configures it properly.  Subclasses like 
+             GenericWeapon and GenericArmor override this to add a rotation
+             flag.
+                 
+             touchFinish() - finishes the process of an item being touched,
+             was part of the old touch() code, but was split off so it 
+             could be called from a couple different points.                 
+                 
+    Changed: runFrame() was heavily reworked to support items being dropped
+             and timed out.                 
+             
+             touch() reworked to handle regular and dropped items, and is
+             general enough to work for most subclasses.  Part of
+             the old touch() code was split off into touchFinish().
+             
+             
+baseq2.GenericPusher
+
+    Changed: push() method rotates players standing on rotating surfaces,
+             this was what required the NativeEntity.getPlayerDeltaAngles()
+             method.         
+             
+baseq2.GenericWeapon
+
+    Added:   getAmmoBoxClass() - get the class used to represent the box
+             holding the type of ammo this weapon uses.
+             
+             getViewModelName() - get the name of the model used to show
+             the weapon from the players POV.
+             
+             setAmmoCount() - sets how much ammo is inside the weapon, was
+             needed to put ammo into weapons being dropped by dead players.
+             
+             setupEntity() - overrides GenericItem.setupEntitiy() to add
+             a rotation flag to the entity.
+    
+    Changed: class is now subclass of AmmoHolder
+             
+    Removed: touch() method, now handled by GenericItem
+    
+             fAmmoName, fViewModel fields - now handled by accessor methods
+                   
+             getAmmoCount() and setAmmoCount() - now handled by AmmoHolder
+                   
+baseq2.Player
+
+    (another class that was heavily reworked to support item dropping)
+    
+    Added:   addItem() - generic entry point for adding items to a player's
+             inventory.  The GenericItem.touch() methods calls this.
+                 
+             calcBob(), calcClientEvent() - supports bobbing 
+             and pitching, improving sense of player movement (James Bielby)
+             
+             cmd_drop() - allows dropping of weapons and ammo.         
+             
+             dropInventory() - drops the player's weapon if possible.  Is 
+             overridden in menno.ctf.Player to also drop flag and tech.                    
+             
+             getResourceGroup() - fetches which ResourceGroup a player belongs
+             to. 
+             
+             isDead() - tells if a player is dead or not.
+             
+             setAmmoCount() - second version added that let's you add an ammo
+             type of a specified name (old version just added the kind of ammo
+             you happened to be using at the moment)
+             
+    Changed: addAmmo() not just takes an AmmoHolder object. Before it was 
+             called with just a name and a count.            
+    
+             addArmor() was reworked to take actual items rather than a series
+             of parameters as was done before.
+             
+             addWeapon() worked over quite a bit to handle both spawned weapons
+             and weapons that were dropped.
+             
+             calcClientSound() - now plays sound of players sizzling in lava
+             or slime (James Bielby)
+             
+             calcRoll(), calcViewOffset() - supports better bobbing 
+             and pitching, improving sense of player movement (James Bielby)
+             
+             clearSettings() - simplified method for giving the player a 
+             blaster. configure the player to handle hand grenade weapons
+             without actually giving them one.             
+             
+             cmd_use() merged with use() 
+                                      
+             damage() - now kills player when they reach zero health.
+             
+             die() - now calls dropInventory() to toss things when dead.  Calls
+             setScore() instead of manipulating the fScore field directly, 
+             fixing the no-score-in-deathmatch HUD bug.
+             
+             endServerFrame() calls more rolling and bobbing methods (James Bielby)
+             
+             playerBegin() now resets the player's cmd angles, fixing the bug 
+             that caused players to spawn facing strange directions when the 
+             map changed.
+                                
+             spawn() rearranged a bit to do things in an order more similar
+             to the C code, but no real functional change.      
+             
+             touchTriggers() - slightly modified to make one less call to
+             NativeEntity.getReference().       
+             
+baseq2.spawn.ammo_* (except ammo_grenades)
+
+    Added:   no-arg constructors 
+    
+baseq2.spawn.item_armor_*
+    
+    Added:   no-arg constructors
+    
+             getArmorValue(), getArmorMaxValue(), getProtectionFactor(), 
+             getEnergyProtectionFactor() to access armor properties
+            
+baseq2.spawn.item_health_*            
+
+    Added:   no-arg constructors
+    
+             getHealthValue(), isOverridingMax() to access health properties
+
+baseq2.spawn.ammo_grenades
+baseq2.spawn.weapon_*
+
+    Added:   getAmmoName(), getViewModelName() to access weapon properties
+    
+    Changed: setFields() no longer deals with ammo and view model names, can't
+             directly access the fAmmoCount anymore and must use setAmmoCount()
+             instead.
+    
+    
+menno.ctf.CTFMenu
+
+    Changed: Internationalized - most strings moved into a ResourceBundle 
+             property file    
+             
+menno.ctf.GenericFlag             
+
+    Added:   fFlagIndex field to hold number of team each flag belongs to.
+    
+    Changed: Internationalized - most strings moved into a ResourceBundle 
+             property file.  Broadcast calls replaced with localecast    
+             calls, so that each player sees flag messages in their own 
+             language.
+             
+menno.ctf.GenericTech
+
+    Added:   dropTimeout() overrides GenericItem.dropTimeout() to reposition
+             the tech in a random spot if nobody's touched it in a while.
+             
+             setOwner() - for remembering which player is using the tech
+    
+             setupEntity() - overrides GenericItem.setupEntitiy() to add
+             a rotation flag to the entity.             
+
+    Removed: changePosition(), reworked into the new dropTimeout()
+    
+             clipVelocity(), dispose(), drop(), dropToFloor(), runFrame(), 
+             touch() - all now handled by baseq2.GenericItem.
+             
+menno.ctf.Player
+
+    Added:   addItem() - overrides baseq2.Player.addItem() to also accept
+             GenericTech items.
+             
+             dropInventory() - overrides baseq2.Player.dropInventory() to also
+             drop techs and flags
+
+    Changed: Internationalized - most strings moved into a ResourceBundle 
+             property file    
+    
+             cmd_drop() - now calls superclass cmd_drop() if we're not dealing
+             with techs or flags.
+             
+             die() - simplified, now that dropInventory() takes care of dropping
+             flags and techs.
+             
+             dropTech() - changed to make use of new GenericItem dropping support     
+             
+    Removed: obituary() - wasn't being used anyhow          
+    
+menno.ctf.Team
+
+    Added:   getTeamIndex() returns a java.lang.Integer() with a value of 1
+             for red and 2 for blue - useful for internationalization.
+             
+    Changed: Internationalized - most strings moved into a ResourceBundle 
+             property file          
+             
+    Removed: getName() - everything goes by team number now, names are only
+             stored in the localized bundles.
+           
+           
+menno.ctf.spawn.item_flag_team*   
+
+    Changed: setFields() updated to associate a team number with each flag
+              
+menno.ctf.spawn.weapon_grapple
+
+    Added:   getViewModelName() - as required by baseq2.GenericWeapon
+    
+             isDroppable() - overrides baseq2.GenericWeapon.isDroppable()
+             to return false.             
+                 
+----------- End of List -------------------------------------------------------             

@@ -9,7 +9,6 @@ import baseq2.*;
 
 public class ammo_grenades extends GenericWeapon
 	{
-
 	protected final static float GRENADE_TIMER    = 3F;
 	protected final static int   GRENADE_MINSPEED = 400;
 	protected final static int GRENADE_MAXSPEED   = 800;
@@ -34,7 +33,7 @@ public void activate()
 	setWeaponFrame(16);
 	fWeaponState = WEAPON_READY;
 	fIsSwitching = false;
-	fEntity.setPlayerGunIndex(Engine.getModelIndex(fViewModel));
+	fEntity.setPlayerGunIndex(Engine.getModelIndex(getViewModelName()));
 	}
 /**
  * This method was created by a SmartGuide.
@@ -78,6 +77,14 @@ public void fire()
 	fPlayer.setAnimation(Player.ANIMATE_VWEP_THROW);
 	}
 /**
+ * Get the name of the type of ammo this weapon uses.
+ * @return Name of kind of ammo, may be null if the weapon doesn't use ammo.
+ */
+public String getAmmoName() 
+	{
+	return "grenades";
+	}
+/**
  * Get the name of this item's icon.
  * @return java.lang.String
  */
@@ -102,13 +109,19 @@ public String getModelName()
 	return "models/items/ammo/grenades/medium/tris.md2";	
 	}
 /**
+ * Get the name of the model used to show the weapon from the player's POV.
+ * @return java.lang.String
+ */
+public String getViewModelName() 
+	{
+	return "models/weapons/v_handgr/tris.md2";
+	}
+/**
  * Fill in the info specific to this type of weapon.
  */
 protected void setFields() 
 	{
-	fAmmoName = "grenades";
-	fAmmoCount = 5;
-	fViewModel = "models/weapons/v_handgr/tris.md2";
+	setAmmoCount(5);
 	
 	// The frames of weapon_grenade are different of GenericWeapon..
 	// 0 - 15 = throw

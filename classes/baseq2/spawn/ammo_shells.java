@@ -7,6 +7,10 @@ import baseq2.*;
 public class ammo_shells extends GenericAmmo
 	{
 	
+public ammo_shells() throws GameException
+	{
+	super(10);
+	}
 public ammo_shells(String[] spawnArgs) throws GameException
 	{
 	super(spawnArgs, 10);

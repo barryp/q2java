@@ -45,7 +45,8 @@ public abstract class GenericFlag extends baseq2.GameObject implements FrameList
 	protected int     fModelIndex;
 	protected int     fIconIndex;
 	protected int     fEffects;
-	protected String  fName;
+	protected String  fName;           // name of flag, for debugging messages
+	protected Integer fFlagIndex;      // 1 for Red Flag, 2 for Blue flag, used in localized messages
 	protected String  fSmallIconName;
 	protected Team    fTeam;
 
@@ -146,7 +147,8 @@ public abstract class GenericFlag extends baseq2.GameObject implements FrameList
 		fCarrier.fEntity.setModelIndex3( 0 );
 		fCarrier.fEntity.setPlayerStat( STAT_CTF_FLAG_PIC, (short)0 );
 
-		Game.bprint( Engine.PRINT_HIGH, fCarrier.getName() + " lost the " + fName + "\n" );
+		Object[] args = {fCarrier.getName(), fFlagIndex};
+		Game.localecast("menno.ctf.CTFMessages", "lost_flag", args, Engine.PRINT_HIGH);	
 	
 		//update all stats (also from spectators) that our flag is dropped
 		int index  = ( fTeam == Team.TEAM1 ? Team.STAT_CTF_TEAM1_PIC         : Team.STAT_CTF_TEAM2_PIC         );
@@ -180,7 +182,8 @@ public abstract class GenericFlag extends baseq2.GameObject implements FrameList
 		if ((tr.fSurfaceName != null) && ((tr.fSurfaceFlags & Engine.SURF_SKY) != 0))
 		{
 			reset();
-			Game.bprint( Engine.PRINT_HIGH, "The " + fName + " has returned!\n" );
+			Object[] args = {fFlagIndex};
+			Game.localecast("menno.ctf.CTFMessages", "reset_flag", args, Engine.PRINT_HIGH);				
 			return;
 		}
 		
@@ -222,8 +225,10 @@ public abstract class GenericFlag extends baseq2.GameObject implements FrameList
 		// set the carrier
 		fCarrier = p;
 		fCarrier.addFlag( this, fIconIndex, fModelIndex, fEffects );
-		Game.bprint( Engine.PRINT_HIGH, fCarrier.getName() + " got the " + fName + "\n" );
 
+		Object[] args = {fCarrier.getName(), fFlagIndex};
+		Game.localecast("menno.ctf.CTFMessages", "got_flag", args, Engine.PRINT_HIGH);	
+		
 		// setup the listener so, that it's called every 0.8 seconds to flash the carriers flag-icon
 		Game.addFrameListener( this, 0, 0.8F );
 
@@ -281,7 +286,8 @@ public abstract class GenericFlag extends baseq2.GameObject implements FrameList
 			if ( Game.getGameTime() > fReturnTime )
 			{
 				reset();
-				Game.bprint( Engine.PRINT_HIGH, "The " + fName + " has returned!\n" );
+				Object[] args = {fFlagIndex};
+				Game.localecast("menno.ctf.CTFMessages", "reset_flag", args, Engine.PRINT_HIGH);	
 			}
 			else
 			{
@@ -319,7 +325,7 @@ public abstract class GenericFlag extends baseq2.GameObject implements FrameList
 		// make sure player is a CTF player
 		if (!(bp instanceof Player))
 		{
-			bp.fEntity.centerprint("You're not a CTF player");
+			bp.fEntity.centerprint(bp.getResourceGroup().getRandomString("menno.ctf.CTFMessages", "not_CTF"));
 			return;
 		}
 			
@@ -327,9 +333,7 @@ public abstract class GenericFlag extends baseq2.GameObject implements FrameList
 
 		if ( p.getTeam() == null )
 		{
-			p.fEntity.centerprint( "You didn't join a team yet...\n\n" +
-									"Type 'team red' or 'team blue'\n" +
-									"to join a team.");
+			p.fEntity.centerprint(p.getResourceGroup().getRandomString("menno.ctf.CTFMessages", "no_team"));
 			return;
 		}
 
@@ -351,7 +355,9 @@ public abstract class GenericFlag extends baseq2.GameObject implements FrameList
 			// on same team, so return the flag
 			p.setScore( p.getScore() + Player.CTF_RECOVERY_BONUS );
 			reset();
-			Game.bprint( Engine.PRINT_HIGH, p.getName() + " has returned the " + fName + "!\n" );
+			Object[] args = {p.getName(), fFlagIndex};
+			Game.localecast("menno.ctf.CTFMessages", "return_flag", args, Engine.PRINT_HIGH);	
+
 			fEntity.sound(NativeEntity.CHAN_RELIABLE+NativeEntity.CHAN_NO_PHS_ADD+NativeEntity.CHAN_VOICE, fReturnSoundIndex, 1, NativeEntity.ATTN_NONE, 0);
 			return;
 		}
@@ -360,7 +366,7 @@ public abstract class GenericFlag extends baseq2.GameObject implements FrameList
 			// not on same team
 			if ( fCarrier == p && Game.getGameTime() < (fDroppedTime + 2) )
 			{
-				p.fEntity.centerprint( "you cannot touch the flag\nwithin 2 seconds of dropping it\n" );
+				p.fEntity.centerprint(p.getResourceGroup().getRandomString("menno.ctf.CTFMessages", "no_touch"));
 				return;		// a player cannot touch us within 2 seconds that he dropped us...
 			}
 			else
@@ -375,7 +381,9 @@ public abstract class GenericFlag extends baseq2.GameObject implements FrameList
 			if ( otherFlag != null )
 			{
 				// WE HAVE A CAPTURE !!!!!
-				Game.bprint( Engine.PRINT_HIGH, p.getName() + " captured the " + otherFlag.fName + "!\n" );
+				Object[] args = {p.getName(), otherFlag.fFlagIndex};
+				Game.localecast("menno.ctf.CTFMessages", "capture_flag", args, Engine.PRINT_HIGH);	
+
 				fEntity.sound(NativeEntity.CHAN_RELIABLE+NativeEntity.CHAN_NO_PHS_ADD+NativeEntity.CHAN_VOICE, fCaptureSoundIndex, 1, NativeEntity.ATTN_NONE, 0);
 
 

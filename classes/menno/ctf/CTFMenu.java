@@ -29,40 +29,55 @@ public class CTFMenu extends GenericMenu
 	static String[] cmdChasecam  = { "chasecam"     };
 	static String[] cmdSpectator = { "spectator"    };
 
-	static String[] header = { "===== Q2JAVA CTF v0.5 =====",
-	                           ""
-							 };
-	static String[] footer = { "",
-	                           "Press:",
-							   "[ and ] to move cursor",
-							   "ENTER to select",
-							   "TAB to return",
-							   "",
-							   "Author: Menno van Gangelen",
-							  };
-
-
+	final static String[] header = { "===== Q2Java CTF v0.6 =====", ""};
+	final static String author = "Menno van Gangelen";
 	public CTFMenu( Player owner, GenericMenu lastMenu )
 	{
 		super( owner, lastMenu );
 		setHeader( header );
 
-		String[] item0  = { "Join Red Team",  "  Players: " + Team.TEAM1.getNumPlayers() };
-		String[] item1  = { "Join Blue Team", "  Players: " + Team.TEAM2.getNumPlayers() };
-		String[] item21 = { "Chase Camera", "  (leaves team)" };
-		String[] item22 = { "Leave Chase Camera" };
-		String[] item3  = { "Spectator",    "  (leaves team)" };
-		String[] item4  = { "Credits" };
+		ResourceGroup rg = owner.getResourceGroup();
+		Object[] msgArgs = new Object[1];
+
+		msgArgs[0] = new Integer(Team.TEAM1.getNumPlayers());
+		String[] item0  = { rg.getRandomString("menno.ctf.CTFMessages", "menu_join_red"),  
+						    rg.format("menno.ctf.CTFMessages", "menu_playercount", msgArgs)};
+
+		msgArgs[0] = new Integer(Team.TEAM2.getNumPlayers());
+		String[] item1  = { rg.getRandomString("menno.ctf.CTFMessages", "menu_join_blue"),  
+						    rg.format("menno.ctf.CTFMessages", "menu_playercount", msgArgs)};
+						    
+		String leavesTeam = rg.getRandomString("menno.ctf.CTFMessages", "menu_leaves_team");
+		
+		String[] item3  = { rg.getRandomString("menno.ctf.CTFMessages", "menu_spectator"), leavesTeam};
+		String[] item4  = { rg.getRandomString("menno.ctf.CTFMessages", "menu_credits") };
 
 		addMenuItem( item0 );
 		addMenuItem( item1 );
 		if ( owner.isChasing() )
+			{
+			String[] item22 = { rg.getRandomString("menno.ctf.CTFMessages", "menu_stop_chase") };
 			addMenuItem( item22 );
+			}
 		else
+			{
+			String[] item21 = { rg.getRandomString("menno.ctf.CTFMessages", "menu_start_chase"), leavesTeam};
 			addMenuItem( item21 );
+			}
 		addMenuItem( item3 );
 		addMenuItem( item4 );
 
+
+		msgArgs[0] = author;
+	    String[] footer = { "",
+	                        rg.getRandomString("menno.ctf.CTFMessages", "menu_footer_press"),
+							rg.getRandomString("menno.ctf.CTFMessages", "menu_footer_cursor"),
+							rg.getRandomString("menno.ctf.CTFMessages", "menu_footer_enter"),
+							rg.getRandomString("menno.ctf.CTFMessages", "menu_footer_tab"),
+							"",
+							rg.format("menno.ctf.CTFMessages", "menu_footer_author", msgArgs)
+						  };
+						  
 		setFooter( footer );
 	}
 	public void select()

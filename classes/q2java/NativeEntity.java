@@ -504,6 +504,16 @@ public NativeEntity getOwner()
 	{
 	return getEntity(fEntityIndex, ENTITY_OWNER);
 	}
+public Angle3f getPlayerDeltaAngles()
+	{
+	Angle3f result = (Angle3f) getVec3(fEntityIndex, VEC3_CLIENT_PS_PMOVE_DELTA_ANGLES, TYPE_ANGLE);
+
+	// temporary workaround to keep the game semi-backwards-compatible with older DLLs
+	if (result == null)
+		return new Angle3f();
+	else
+		return result;
+	}
 public int getPlayerGunFrame()
 	{
 	return getInt(fEntityIndex, INT_CLIENT_PS_GUNFRAME);

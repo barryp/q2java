@@ -43,7 +43,7 @@ INSTALLING
 
 You can start the CTF game with this command:
 
-  quake2 +set game q2java +set q2jgame_packages menno.ctf+baseq2 +map q2ctf1
+  quake2 +set game q2java +set q2jgame_modules menno.ctf+baseq2 +map q2ctf1
   
 If a game has already started, you can switch from DM to CTF  
 with these console commands:
