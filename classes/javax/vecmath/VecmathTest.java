@@ -1,4 +1,3 @@
-
 package javax.vecmath;
 
 /*
@@ -40,7 +39,6 @@ public class VecmathTest {
 
 	static public String NL = System.getProperty("line.separator"); 
 	static public float epsilon = 1.0e-5f;
-
 	static public void ASSERT(boolean condition) {
 	if (!condition)
 	    throw new InternalError("Vecmath Test Failed!");

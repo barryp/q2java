@@ -1,4 +1,3 @@
-
 package baseq2;
 
 
@@ -287,7 +286,6 @@ public class Player extends GameObject implements FrameListener, PlayerListener,
 
 
 
-
 /**
  * Create a new Player Game object, and associate it with a Player
  * native entity.
@@ -299,6 +297,14 @@ public Player(NativeEntity ent, boolean loadgame) throws GameException
 	fEntity = ent;
 	fEntity.setPlayerListener(this);
 	fEntity.setReference(this);
+
+	// make sure the blaster VWep skin is cached before we set the player's skin
+	// kind of lame, but if we don't do this, the first player connecting to a 
+	// server won't see the blaster VWep properly. Other VWep weapons look ok because
+	// they're spawned with the map - it's the blaster that get's its VWep cache
+	// entry set very late. (Grappling hook will have the same problem, so CTF needs
+	// to do the same thing). 
+	GenericWeapon.precacheVWep(".spawn.weapon_blaster");
 
 	// sign up to receive server frame notices at the beginning and end of server frames
 	Game.addFrameListener(this, Game.FRAME_BEGINNING + Game.FRAME_END, 0, 0);
@@ -716,6 +722,24 @@ protected void calcClientFrame()
 		setAnimation(ANIMATE_FLAIL, true, 0);
 	else
 		setAnimation(ANIMATE_NORMAL, true, 0);	
+	}
+/**
+ * Set sound for client
+ */
+protected void calcClientSound() 
+	{
+	String weapsound = null;
+
+	//Help beep goes here
+	if (fWeapon != null)
+		weapsound = fWeapon.getWeaponSound();
+		
+/*	if ((fWaterLevel != 0) && ((fWaterType & (Engine.CONTENTS_LAVA | Engine.CONTENTS_SLIME)) != 0))
+		fEntity.setSound(Engine.getSoundIndex("player/fry.wav"));
+	else */ if (weapsound != null)
+		fEntity.setSound(Engine.getSoundIndex(weapsound));
+	else
+		fEntity.setSound(0);
 	}
 /**
  * This method was created by a SmartGuide.
@@ -1715,11 +1739,11 @@ protected void endServerFrame()
 	newAngles.z = calcRoll(fEntity.getVelocity());
 	fEntity.setAngles(newAngles);
 	
-//	worldEffects(); was moved higher
 	fallingDamage();
 	damageFeedback();
 	calcViewOffset();	
 	calcClientFrame();
+	calcClientSound();
 	
 	// determine the full screen color blend
 	// must be after viewoffset, so eye contents can be
@@ -1727,7 +1751,11 @@ protected void endServerFrame()
 	// FIXME: with client prediction, the contents
 	// should be determined by the client
 	calcBlend();
+
+	// remember our velocity from this frame
+	fOldVelocity = fEntity.getVelocity();
 	
+	// clear weapon kicks
 	fKickAngles.set(0,0,0);
 	fKickOrigin.set(0,0,0);
 	
@@ -2054,7 +2082,7 @@ public void knockback(GameObject attacker, Vector3f dir, int knockback, int dfla
  * @param printLevel int
  * @param msg java.lang.String
  */
-public void localecast(int printLevel, String msg) 
+public void localecast(Locale loc, int printLevel, String msg) 
 	{
 	fEntity.cprint(printLevel, msg);
 	}
@@ -2236,8 +2264,6 @@ public void playerThink(PlayerCmd cmd)
 	if (fInIntermission)
 		return;
 		
-	fOldVelocity = fEntity.getVelocity();
-
 	PMoveResults pm = fEntity.pMove(cmd, Engine.MASK_PLAYERSOLID);
 
 //  if (pm_passent->health > 0)
@@ -2318,6 +2344,11 @@ protected void playerVariableChanged(String key, String oldValue, String newValu
 
 	if (key.equalsIgnoreCase("locale"))
 		{
+		// stop receiving messages for the old locale
+		if (fResourceGroup != null)
+			fResourceGroup.removeLocaleListener(this);
+			
+		// sign up to receive messages formatted for the new locale
 		fResourceGroup = Game.addLocaleListener(this, newValue);
 		return;
 		}
@@ -2483,10 +2514,6 @@ public void setAnimation(int animation)
  */
 public void setAnimation(int animation, boolean ignorePriority, int frameOffset) 
 	{
-	// Ignore VWep animations when option is off
-	if (!baseq2.GameModule.isVWepOn() && (animation >= ANIMATE_VWEP_THROW) && (animation <= ANIMATE_VWEP_DEACTIVATE))
-		return;
-		
 	boolean ducking = ((fEntity.getPlayerPMFlags() & NativeEntity.PMF_DUCKED) != 0);
 	
 	// don't allow gestures when crouching
@@ -2672,7 +2699,7 @@ public void showVWep()
 		}
 	
 	// ---- Old-style VWep support
-			
+/*			
 	if (!baseq2.GameModule.isVWepOn())
 		{
 		fEntity.setModelIndex2(255);
@@ -2689,10 +2716,10 @@ public void showVWep()
 		String weaponModel = "players/" + playerSkin.substring(0, p+1) + weaponIcon + ".md2";
 		fEntity.setModelIndex2(Engine.getModelIndex(weaponModel));	
 		}
-
+*/
 	// ---- New-style VWep support
-	// (doesn't actually work yet)
-//	fEntity.setModelIndex2(Engine.getModelIndex("#" + fWeapon.getIconName() + ".md2"));
+	fEntity.setSkinNum((fEntity.getSkinNum() & 0x00ff) | (fWeapon.getVWepIndex() << 8));
+	fEntity.setModelIndex2(255);
 	}
 /**
  * spawn the player into the game.

@@ -1,4 +1,3 @@
-
 package q2jgame;
 
 import q2java.*;

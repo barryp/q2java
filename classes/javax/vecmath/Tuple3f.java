@@ -1,4 +1,3 @@
-
 package javax.vecmath;
 
 /*
@@ -57,7 +56,6 @@ public abstract class Tuple3f implements Serializable {
 	  * The z coordinate.
 	  */
 	public float z;
-
 
 	/**
 	  * Constructs and initializes a Tuple3f to (0,0,0).

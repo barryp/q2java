@@ -1,4 +1,3 @@
-
 package q2java;
 
 import java.io.*;
@@ -38,10 +37,6 @@ private static void setConsole( )
 		gIsRedirected = true;
 		}
 	}
-
 public native void write(byte[] b, int off, int len) throws IOException;
-
-
 public native void write(int b) throws java.io.IOException;
-
 }

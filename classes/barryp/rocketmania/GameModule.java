@@ -1,4 +1,3 @@
-
 package barryp.rocketmania;
 
 import q2jgame.*;

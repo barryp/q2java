@@ -1,4 +1,3 @@
-
 package baseq2.spawn;
 
 import q2java.*;
@@ -36,6 +35,8 @@ public target_speaker(String[] spawnArgs) throws GameException
 	// check for prestarted looping sound
 	if ((fSpawnFlags & 1) != 0)
 		fEntity.setSound( fNoiseIndex );
+
+	fEntity.linkEntity(); // <-- thanks to James Bielby for pointing out that this was missing
 	}
 public void use(Player p) 
 	{

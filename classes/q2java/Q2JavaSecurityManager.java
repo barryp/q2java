@@ -1,4 +1,3 @@
-
 package q2java;
 
 
@@ -21,7 +20,6 @@ class Q2JavaSecurityManager extends SecurityManager
 	
 	private String fSecurityPropertyName = System.getProperty("java.home") + File.separator + "lib" + File.separator + "security" + File.separator + "java.security";
 	
-
 /**
  * Q2JavaSecurityManager constructor comment.
  */ 

@@ -1,4 +1,3 @@
-
 package baseq2;
 
 import q2java.*;
@@ -60,5 +59,4 @@ public void touch(Player p)
 		setRespawn(30);	
 		}	
 	}
-
 }

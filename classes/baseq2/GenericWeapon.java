@@ -1,4 +1,3 @@
-
 package baseq2;
 
 import q2java.*;
@@ -16,6 +15,7 @@ public abstract class GenericWeapon extends GenericItem
 	protected String fAmmoName;
 	protected int    fAmmoCount;
 	protected String fViewModel;
+	protected int    fVWepIndex;
 	
 	// Player Weapon fields	
 	protected Player fPlayer;
@@ -57,13 +57,24 @@ public abstract class GenericWeapon extends GenericItem
 public GenericWeapon() 
 	{
 	setFields();
+
+	// precache VWep
+	fVWepIndex = Game.getVWepIndex(getIconName());	
 	}
 public GenericWeapon(String[] spawnArgs) throws GameException
 	{
 	super(spawnArgs);
 	setFields();
 	
-	fEntity.setModel(getModelName());
+	// precache VWep
+	fVWepIndex = Game.getVWepIndex(getIconName());	
+
+	// precache weapon sound
+	String ws = getWeaponSound();
+	if (ws != null)
+		Engine.getSoundIndex(ws);
+	
+	fEntity.setModel(getModelName());	
 	fEntity.setEffects(NativeEntity.EF_ROTATE); // all weapons rotate
 	fEntity.linkEntity();
 	}
@@ -89,7 +100,6 @@ public void deactivate()
  * This method was created by a SmartGuide.
  */
 public abstract void fire();
-
 /**
  * Get how much ammo this weapon is carrying with it.
  * @return int.
@@ -115,12 +125,29 @@ public String getPickupSound()
 	return "misc/w_pkup.wav";
 	}
 /**
+ * Get the VWep index of this weapon.
+ * @return int
+ */
+public int getVWepIndex() 
+	{
+	return fVWepIndex;
+	}
+/**
  * This method was created by a SmartGuide.
  * @return int
  */
 public final int getWeaponFrame() 
 	{
 	return fGunFrame;
+	}
+/**
+ * Get the player sound that will be used
+ * when carrying weapon, most weapons don't have one.
+ * @return name of sound, null if no sound
+ */
+public String getWeaponSound() 
+	{
+	return null;
 	}
 /**
  * This method was created by a SmartGuide.
@@ -149,6 +176,24 @@ public boolean isEnoughAmmo()
 public boolean isFiring() 
 	{
 	return fWeaponState == WEAPON_FIRING;
+	}
+/**
+ * Make sure a weapon's VWep skin is precached.  Most useful
+ * for weapons that aren't spawned in maps, like the blaster
+ * and grapple hook.
+ *
+ * @param weaponClassName java.lang.String
+ */
+public static void precacheVWep(String weaponClassSuffix) 
+	{
+	try
+		{
+		GenericWeapon gw = (GenericWeapon) Game.lookupClass(weaponClassSuffix).newInstance();
+		}
+	catch (Exception e)
+		{
+		// no weapon by this name? oh well, don't raise a stink about it.
+		}
 	}
 /**
  * This method was created by a SmartGuide.
@@ -184,7 +229,6 @@ public void touch(Player p)
 		setRespawn(30);	
 		}
 	}
-
 /**
  * This method was created by a SmartGuide.
  */

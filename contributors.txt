@@ -15,15 +15,19 @@ Bernd Kreimeier's <bk@gamers.org>
 Brian Haskin <haskin@ptway.com>
 
     Much work on the Player inventory, command, weapon-cycling, and 
-    scoreboard systems.
+    scoreboard systems.  Improvements to telnet server.
 
 gorilla <gorilla@pro-ns.net>
 
     Solaris-SPARC port
+    
+James "Skull" Bielby <james@bielby.u-net.com> 
 
-Kenji Hiranabe
+    Supplied bugfixes and implementations of various map entities.
 
-    Supplied implementation of javax.vecmath, classes from that package
+Kenji Hiranabe <hiranabe@esm.co.jp>
+
+    Supplied implementation of javax.vecmath. Classes from that package
     are used throughout the game.
 
 M. van Gangelen <menno@element.nl>
@@ -48,6 +52,6 @@ Withnails <leigh@praxis.co.uk>
 --------------------------------------
 
 My apologies if I've overlooked anyone, and thanks to everyone who's 
-participated either by coding or though suggestions / encouragement.
+participated either by coding or though suggestions & encouragement.
 
     Barry    

@@ -1,4 +1,3 @@
-
 package baseq2;
 
 
@@ -58,7 +57,6 @@ public GenericItem(String[] spawnArgs) throws GameException
  * @return java.lang.String
  */
 public abstract String getIconName(); 
-
 /**
  * Get the name of this item.
  * @return java.lang.String
@@ -78,10 +76,10 @@ public String getPickupSound()
 	return "items/pkup.wav";
 	}
 /**
- * Make the item visible again.
+ * Handle dropping items to the floor, and respawning.
  */
 public void runFrame(int phase) 
-	{
+	{	
 	switch (fItemState)
 		{
 		case STATE_DROPPED:
@@ -99,15 +97,36 @@ public void runFrame(int phase)
 				}
 
 			fEntity.setOrigin(tr.fEndPos);
+
+			if (fGroup != null)
+				{
+				// make the item disappear
+				fEntity.setSolid(NativeEntity.SOLID_NOT);
+				fEntity.setSVFlags(fEntity.getSVFlags() | NativeEntity.SVF_NOCLIENT);
+
+				// cause the group master to respawn right away
+				if (!isGroupSlave())
+					setRespawn(0);
+				}
+			
 			fEntity.linkEntity();
 			fEntity.setGroundEntity(tr.fEntity);
 			break;
 			
-		case STATE_NORMAL:
-			fEntity.setSVFlags(fEntity.getSVFlags() & ~NativeEntity.SVF_NOCLIENT);
-			fEntity.setSolid(NativeEntity.SOLID_TRIGGER);
-			fEntity.setEvent(NativeEntity.EV_ITEM_RESPAWN);
-			fEntity.linkEntity();
+		case STATE_NORMAL: // handle respawn
+			NativeEntity ent = fEntity;
+		
+			if (fGroup != null)
+				{
+				// entity is member of a group, pick a member at random
+				int selection = (Game.randomInt() & 0x0fff) % fGroup.size();
+				ent = ((GameObject)fGroup.elementAt(selection)).fEntity;
+				}
+				
+			ent.setSVFlags(ent.getSVFlags() & ~NativeEntity.SVF_NOCLIENT);
+			ent.setSolid(NativeEntity.SOLID_TRIGGER);
+			ent.setEvent(NativeEntity.EV_ITEM_RESPAWN);
+			ent.linkEntity();
 			break;
 		}
 	}

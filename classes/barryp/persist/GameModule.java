@@ -1,4 +1,3 @@
-
 package barryp.persist;
 
 import q2jgame.*;

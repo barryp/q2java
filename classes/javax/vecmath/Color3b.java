@@ -1,4 +1,3 @@
-
 package javax.vecmath;
 
 /*
@@ -19,7 +18,6 @@ import java.io.Serializable;
   * @author Kenji hiranabe
   */
 public class Color3b extends Tuple3b implements Serializable {
-
 	/**
 	  * Constructs and initializes a Color3b to (0,0,0).
 	  */

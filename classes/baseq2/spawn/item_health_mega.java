@@ -1,4 +1,3 @@
-
 package baseq2.spawn;
 
 import q2java.*;

@@ -1,4 +1,3 @@
-
 package baseq2;
 
 /**
@@ -30,8 +29,6 @@ public static String getMessage()
 	StringBuffer sb = new StringBuffer();
 	
 	sb.append(gPrefix);
-	sb.append("\nVWep is currently: ");
-	sb.append(GameModule.isVWepOn() ? "ON" : "OFF");
 
 	try
 		{

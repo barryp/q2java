@@ -1,4 +1,3 @@
-
 package javax.vecmath;
 
 /*
@@ -65,7 +64,6 @@ public class GMatrix implements Serializable {
 	 * The number of columns in this matrix.
 	 */
 	private int nCol;
-
 
 	/**
 	 * Constructs an nRow by nCol identity matrix. 

@@ -1,4 +1,3 @@
-
 package javax.vecmath;
 
 /*
@@ -49,7 +48,6 @@ public abstract class Tuple2f implements Serializable {
 	  * The y coordinate.
 	  */
 	public float y;
-
 
 	/**
 	  * Constructs and initializes a Tuple2f to (0,0).

@@ -1,4 +1,3 @@
-
 package baseq2;
 
 import java.util.Vector;
@@ -34,7 +33,6 @@ public Trigger(String[] spawnArgs) throws GameException
 public void use(Player touchedBy)
 	{
 	}
-
 /**
  * Use the objects targeted by this one.
  */

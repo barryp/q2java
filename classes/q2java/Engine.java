@@ -1,4 +1,3 @@
-
 package q2java;
 
 import javax.vecmath.*;
@@ -213,13 +212,8 @@ COLLISION DETECTION
 	private final static int CALL_INPVS 			= 11;
 	private final static int CALL_INPHS 			= 12;
 	
-
 public native static void addCommandString(String s);
-
-
 public native static boolean areasConnected(int area1, int area2);
-
-
 /**
  * Broadcast a message to all players
  *
@@ -227,35 +221,20 @@ public native static boolean areasConnected(int area1, int area2);
  * @param s The message to send
  */
 public native static void bprint(int printLevel, String s);
-
-
 public native static void debugGraph(float value, int color);
-
-
 /**
  * Send a message to Q2Java's debugLog.
  * @param s message to log.
  */
 public native static void debugLog(String s);
-
-
 /**
  * Print a message to the server console.
  */
 public native static void dprint(String s);
-
-
 public native static void error(String s);
-
-
 public native static int getArgc();
-
-
 public native static String getArgs();
-
-
 public native static String getArgv(int n);
-
 /**
  * This method was created by a SmartGuide.
  * @return NativeEntity[]
@@ -268,7 +247,6 @@ public static NativeEntity[] getBoxEntities(Tuple3f mins, Tuple3f maxs, int area
 	{
 	return getBoxEntities0(mins.x, mins.y, mins.z, maxs.x, maxs.y, maxs.z, areaType);
 	}
-
 /**
  * This method was created by a SmartGuide.
  * @return NativeEntity[]
@@ -279,22 +257,14 @@ public static NativeEntity[] getBoxEntities(Tuple3f mins, Tuple3f maxs, int area
  */
 private native static NativeEntity[] getBoxEntities0(float minsx, float minsy, float minsz,
 	float maxsx, float maxsy, float maxsz, int areaType);
-
-
 /**
  * Fetch the path of the current Quake2 game.
  *
  * @return A path such as "c:\\quake2\\q2java".
  */
 public native static String getGamePath();
-
-
 public native static int getImageIndex(String name);
-
-
 public native static int getModelIndex(String name);
-
-
 /**
  * Get a value indicating elapsed time in some number of ticks.
  * Use getPerformanceFrequency to find out how many ticks per second
@@ -302,22 +272,17 @@ public native static int getModelIndex(String name);
  * @return long
  */
 public native static long getPerformanceCounter();
-
-
 /**
  * Get a value indicating how many ticks per second
  * occur on this system.  Similar to the Win32 QueryPerformanceFrequency() function.
  * @return long
  */
 public native static long getPerformanceFrequency();
-
 public static int getPointContents(Point3f point)
 	{
 	return getPointContents0(point.x, point.y, point.z);
 	}
-
 private native static int getPointContents0(float x, float y, float z);
-
 /**
  * Get a list of entities who have their origin within a certain radius of the given point.
  * @return NativeEntity[]
@@ -330,7 +295,6 @@ public static NativeEntity[] getRadiusEntities(Point3f point, float radius, bool
 	{
 	return getRadiusEntities0(point.x, point.y, point.z, radius, 0, onlyPlayers, sortResults);
 	}
-
 /**
  * This method was created by a SmartGuide.
  * @return NativeEntity[]
@@ -341,13 +305,8 @@ public static NativeEntity[] getRadiusEntities(Point3f point, float radius, bool
  */
 private native static NativeEntity[] getRadiusEntities0(float x, float y, float z,
 	float radius, int ignoreIndex, boolean onlyPlayers, boolean sortResults);
-
-
 public native static int getSoundIndex(String name);
-
-
 private native static boolean inP0(float x1, float y1, float z1, float x2, float y2, float z2, int calltype);
-
 public static boolean inPHS(Point3f p1, Point3f p2)
 	{
 	return inP0(p1.x, p1.y, p1.z, p2.z, p2.y, p2.z, CALL_INPHS);
@@ -360,12 +319,8 @@ public static void multicast(Point3f origin, int to)
 	{
 	write0(null, origin.x, origin.y, origin.z, to, CALL_MULTICAST);
 	}
-
 public native static void setAreaPortalState(int portalnum, boolean open);
-
-
 public native static void setConfigString(int num, String s);
-
 /**
  * Trace a line through the world.
  * @return TraceResults
@@ -392,7 +347,6 @@ public static TraceResults trace(Point3f start, Tuple3f mins, Tuple3f maxs, Poin
 	{
 	return trace0(start.x, start.y, start.z, mins.x, mins.y, mins.z, maxs.x, maxs.y, maxs.z, end.x, end.y, end.z, passEnt, contentMask, 1);
 	}
-
 /**
  * This method was created by a SmartGuide.
  * @return TraceResults
@@ -408,7 +362,6 @@ private native static TraceResults trace0(float startx, float starty, float star
 	float maxsx, float maxsy, float maxsz,
 	float endx, float endy, float endz,
 	NativeEntity passEnt, int contentMask, int useMinMax);
-
 /**
  * Send a packet to a particular client?
  */
@@ -417,9 +370,7 @@ public static void unicast(NativeEntity ent, boolean reliable)
 	if (!ent.isBot())
 		write0(ent, 0, 0, 0, (reliable ? 1 : 0), CALL_UNICAST);
 	}
-
 private native static void write0(Object obj, float x, float y, float z, int c, int calltype);
-
 public static void writeAngle(float f)
 	{
 	write0(null, f, 0, 0, 0, CALL_WRITEANGLE);

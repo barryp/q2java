@@ -1,4 +1,3 @@
-
 package baseq2;
 
 import q2java.*;

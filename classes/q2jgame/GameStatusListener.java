@@ -1,4 +1,3 @@
-
 package q2jgame;
 
 /**
@@ -13,7 +12,6 @@ public interface GameStatusListener
  * Called when the DLL's ReadGame() function is called.
  */
 public void readGame(String filename);
-
 /**
  * Called when the DLL's ReadLevel() function is called.
  */
@@ -22,7 +20,6 @@ public void readLevel(String filename);
  * Called when the DLL's Shutdown() function is called.
  */
 public void shutdown();
-
 /**
  * Called when the DLL's WriteGame() function is called.
  */

@@ -1,4 +1,3 @@
-
 package baseq2;
 
 
@@ -29,7 +28,6 @@ returns the blocked flags (1 = floor, 2 = step / wall)
 ==================
 */
 static final float STOP_EPSILON = 0.1f;
-
 
 /**
  * BlasterBolt constructor comment.

@@ -1,4 +1,3 @@
-
 package javax.vecmath;
 
 /*
@@ -53,7 +52,6 @@ public abstract class Tuple3b implements Serializable {
 	  * The third value.
 	  */
 	public byte z;
-
 
 	/**
 	  * Constructs and initializes a Tuple3b to (0,0,0).

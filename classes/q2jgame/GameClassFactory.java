@@ -1,4 +1,3 @@
-
 package q2jgame;
 
 
@@ -9,7 +8,6 @@ import java.util.*;
  * @author 	Leigh Dodds
  */
 public abstract class GameClassFactory {
-
 
 	/**
 	 * Adds a package to the running game.

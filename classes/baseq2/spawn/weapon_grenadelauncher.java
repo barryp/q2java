@@ -1,4 +1,3 @@
-
 package baseq2.spawn;
 
 
@@ -14,7 +13,6 @@ public class weapon_grenadelauncher extends GenericWeapon
 	private final static int[] PAUSE_FRAMES = new int[] {34, 51, 59, 0};
 	private final static int[] FIRE_FRAMES = new int[] {6, 0};		
 	
-
 /**
  * Construct a grenade launcher for a player to carry.
  */

@@ -1,4 +1,3 @@
-
 package q2java;
 
 
@@ -240,7 +239,6 @@ public class NativeEntity
 	private final static int TYPE_VECTOR 		= 2;
 	private final static int TYPE_ANGLE 		= 3;
 	
-
 /**
  * Create a NativeEntity, which corresponds 
  * to a single Quake2 edict_t structure.
@@ -272,9 +270,7 @@ public NativeEntity(int entType) throws GameException
 					
 	gEntityArray[fEntityIndex] = this;
 	}
-
 private native static int allocateEntity(int entType);
-
 /** 
  * Print a message on the center of a player's screen.
  * Won't do anything for non-player entities or bots.
@@ -286,12 +282,10 @@ public void centerprint(String s)
 	if (!fIsBot)
 		centerprint0(getEntityIndex(), s);
 	}
-
 /**
  * Player only
  */
 private native static void centerprint0(int index, String msg);
-
 /**
  * Copy settings from another entity.
  * @param source NativeEntity to copy settings from.
@@ -300,14 +294,12 @@ public void copySettings(NativeEntity source)
 	{
 	copySettings0(source.fEntityIndex, fEntityIndex);
 	}
-
 /**
  * This method was created by a SmartGuide.
  * @param sourceIndex int
  * @param destIndex int
  */
 private native static void copySettings0(int sourceIndex, int destIndex);
-
 /** 
  * Print a message on player's screen.
  * Won't do anything for non-player entities or bots.
@@ -320,12 +312,10 @@ public void cprint(int printLevel, String s)
 	if (!fIsBot)
 		cprint0(getEntityIndex(), printLevel, s);
 	}
-
 /**
  * Player Only
  */
 private native static void cprint0(int index, int printlevel, String msg);
-
 /**
  * Create an enumeration to run through all
  * the active NativeEntity objects in the system.
@@ -406,9 +396,7 @@ public void freeEntity()
 	fGroundEntity = null;
 	fReference = null;
 	}
-
 private native static void freeEntity0(int index);
-
 public Point3f getAbsMaxs()
 	{
 	return (Point3f) getVec3(fEntityIndex, VEC3_ABSMAX, TYPE_POINT);
@@ -429,7 +417,6 @@ public NativeEntity[] getBoxEntities(int areaType)
 	{
 	return getBoxEntities0(fEntityIndex, areaType);
 	}
-
 /**
  * This method was created by a SmartGuide.
  * @return q2java.NativeEntity[]
@@ -438,10 +425,7 @@ public NativeEntity[] getBoxEntities(int areaType)
  * @param areaType int
  */
 private static native NativeEntity[] getBoxEntities0(int index, int areaType);
-
-
 private native static byte getByte(int index, int fieldNum);
-
 public int getClipmask()
 	{
 	return getInt(fEntityIndex, INT_CLIPMASK);
@@ -450,9 +434,7 @@ public int getEffects()
 	{
 	return getInt(fEntityIndex, INT_S_EFFECTS);
 	}
-
 private native static NativeEntity getEntity(int index, int fieldNum);
-
 /**
  * Return the index of this entity's corresponding
  * edict_t in the DLL's edict_t table.  Mostly needed
@@ -485,9 +467,7 @@ public NativeEntity getGroundEntity()
 	{
 	return fGroundEntity;
 	}
-
 private native static int getInt(int index, int fieldNum);
-
 public int getLinkCount()
 	{
 	return getInt(fEntityIndex, INT_LINKCOUNT);
@@ -540,13 +520,11 @@ public String getPlayerInfo()
 	{
 	return getPlayerInfo0(fEntityIndex);
 	}
-
 /**
  * Find a player's info string.
  * @return Player info.
  */
 private static native String getPlayerInfo0(int index);
-
 public Angle3f getPlayerKickAngles()
 	{
 	return (Angle3f) getVec3(fEntityIndex, VEC3_CLIENT_PS_KICKANGLES, TYPE_ANGLE);
@@ -559,13 +537,11 @@ public PlayerListener getPlayerListener()
 	{
 	return getPlayerListener0(fEntityIndex);
 	}
-
 /**
  * Set which object responds to this player's events.
  * @param pl q2java.PlayerListener
  */
 public native static PlayerListener getPlayerListener0(int index);
-
 /**
  * Get this player's number, needed for things like setting
  * skins with the Engine.configString() method.
@@ -624,7 +600,6 @@ public NativeEntity[] getPotentialPushed(Tuple3f mins, Tuple3f maxs, int default
 		maxs.x, maxs.y, maxs.z, 
 		defaultMask);
 	}
-
 /**
  * This method was created by a SmartGuide.
  * @return q2java.NativeEntity[]
@@ -634,7 +609,6 @@ private static native NativeEntity[] getPotentialPushed0(int index,
 	float minx, float miny, float minz, 
 	float maxx, float maxy, float maxz,
 	int defaultMask);
-
 /**
  * Get a list of entities who have their origin within
  * a certain radius of this entity's origin.
@@ -643,13 +617,11 @@ public NativeEntity[] getRadiusEntities(float radius, boolean onlyPlayers, boole
 	{
 	return getRadiusEntities0(fEntityIndex, radius, onlyPlayers, sortResults);
 	}
-
 /**
  * Get a list of entities who have their origin within
  * a certain radius of this entity's origin.
  */
 private native static NativeEntity[] getRadiusEntities0(int index, float radius, boolean onlyPlayers, boolean sortResults);
-
 /**
  * Get the object that was set by setReference().
  * Not used by the DLL, but available for a game to
@@ -665,9 +637,7 @@ public int getRenderFX()
 	{
 	return getInt(fEntityIndex, INT_S_RENDERFX);
 	}
-
 private native static short getShort(int index, int fieldNum);
-
 public Vector3f getSize()
 	{
 	return (Vector3f) getVec3(fEntityIndex, VEC3_SIZE, TYPE_VECTOR);
@@ -688,9 +658,7 @@ public int getSVFlags()
 	{
 	return getInt(fEntityIndex, INT_SVFLAGS);
 	}
-
 private native static Tuple3f getVec3(int index, int fieldNum, int tupleType);
-
 public Vector3f getVelocity()
 	{
 	return (Vector3f) getVec3(fEntityIndex, VEC3_VELOCITY, TYPE_VECTOR);
@@ -716,9 +684,7 @@ public void linkEntity()
 	{
 	linkEntity0(fEntityIndex);
 	}
-
 private native static void linkEntity0(int index);
-
 /**
  * Move the player.
  * @param cmd A PlayerCmd usually received by a class implementing
@@ -731,7 +697,6 @@ public PMoveResults pMove(PlayerCmd cmd, int traceMask)
 		cmd.fForwardMove, cmd.fSideMove, cmd.fUpMove,
 		cmd.fImpulse, cmd.fLightLevel, traceMask);
 	}
-
 /**
  * Player Only
  */
@@ -739,7 +704,6 @@ private static native PMoveResults pMove0(int index, byte msec, byte buttons,
 	short angle0, short angle1, short angle2,
 	short forward, short side, short up,
 	byte impulse, byte lightlevel, int traceMask);
-
 public void positionedSound(Point3f origin, int channel, int soundindex, float volume, float attenuation, float timeofs)
 	{   
 	sound0(origin.x, origin.y, origin.z, fEntityIndex, channel, soundindex, volume, attenuation, timeofs, CALL_POSITIONED_SOUND);
@@ -752,13 +716,11 @@ public void setAngles(Angle3f a)
 	{
 	setVec3(fEntityIndex, VEC3_S_ANGLES, a.x, a.y, a.z);
 	}
-
 //
 // protected so that NativePlayer can call on it to set a few fields
 // in the client structures
 //
 private native static void setByte(int index, int fieldNum, byte val);
-
 public void setClipmask(int val)
 	{
 	setInt(fEntityIndex, INT_CLIPMASK, val);
@@ -767,23 +729,19 @@ public void setEffects(int val)
 	{
 	setInt(fEntityIndex, INT_S_EFFECTS, val);
 	}
-
 //
 // protected so that NativePlayer can call on it to set a few fields
 // in the client structures
 //
 private native static void setEntity(int index, int fieldNum, int valIndex);
-
 public void setEvent(int val)
 	{
 	setInt(fEntityIndex, INT_S_EVENT, val);
 	}
-
 /**
  * Player Only
  */
 private native static void setFloat0(int index, int fieldNum, float r, float g, float b, float a);
-
 public void setFrame(int val)
 	{
 	setInt(fEntityIndex, INT_S_FRAME, val);
@@ -801,13 +759,11 @@ public void setGroundEntity(NativeEntity ent)
 	else		
 		setEntity(fEntityIndex, ENTITY_GROUND, ent.fEntityIndex);
 	}
-
 //
 // protected so that NativePlayer can call on it to set a few fields
 // in the client structures
 //
 private native static void setInt(int index, int fieldNum, int val);
-
 public void setMaxs(float x, float y, float z)
 	{
 	setVec3(fEntityIndex, VEC3_MAXS, x, y, z);
@@ -828,9 +784,7 @@ public void setModel(String name)
 	{
 	setModel0(fEntityIndex, name);
 	}
-
 private native static void setModel0(int index, String name);
-
 public void setModelIndex(int val)
 	{
 	setInt(fEntityIndex, INT_S_MODELINDEX, val);
@@ -927,13 +881,11 @@ public void setPlayerListener(PlayerListener pl)
 	{
 	setPlayerListener0(fEntityIndex, pl);
 	}
-
 /**
  * Set which object responds to this player's events.
  * @param pl q2java.PlayerListener
  */
 private native static void setPlayerListener0(int index, PlayerListener pl);
-
 public void setPlayerPMFlags(byte b)
 	{
 	setByte(fEntityIndex, BYTE_CLIENT_PS_PMOVE_PMFLAGS, b);
@@ -981,13 +933,11 @@ public void setRenderFX(int val)
 	{
 	setInt(fEntityIndex, INT_S_RENDERFX, val);
 	}
-
 //
 // protected so that NativePlayer can call on it to set a few fields
 // in the client structures
 //
 private native static void setShort(int index, int fieldNum, short val);
-
 public void setSkinNum(int val)
 	{
 	setInt(getEntityIndex(), INT_S_SKINNUM, val);
@@ -1000,7 +950,6 @@ public void setSound(int val)
 	{
 	setInt(fEntityIndex, INT_S_SOUND, val);
 	}
-
 /**
  * Player only
  * @param index int
@@ -1008,14 +957,11 @@ public void setSound(int val)
  * @param value int
  */
 private native static void setStat0(int index, int fieldIndex, short value);
-
 public void setSVFlags(int val)
 	{
 	setInt(fEntityIndex, INT_SVFLAGS, val);
 	}
-
 private native static void setVec3(int index, int fieldNum, float x, float y, float z);
-
 public void setVelocity(float x, float y, float z)
 	{
 	setVec3(fEntityIndex, VEC3_VELOCITY, x, y, z);
@@ -1028,9 +974,7 @@ public void sound(int channel, int soundindex, float volume, float attenuation, 
 	{   
 	sound0(0, 0, 0, fEntityIndex, channel, soundindex, volume, attenuation, timeofs, CALL_SOUND);
 	}
-
 private native static void sound0(float x, float y, float z, int index, int channel, int soundindex, float volume, float attenuation, float timeofs, int calltype);
-
 /**
  * Provide a string representation of the object, useful
  * for debugging.
@@ -1056,19 +1000,15 @@ public TraceResults traceMove(int contentMask, float frameFraction)
 	{
 	return traceMove0(fEntityIndex, contentMask, frameFraction);
 	}
-
 /**
  * This method was created by a SmartGuide.
  * @return q2java.TraceResults
  * @param mask int
  */
 private native static TraceResults traceMove0(int index, int contentMask, float frameFraction);
-
 public void unlinkEntity()
 	{
 	unlinkEntity0(fEntityIndex);
 	}
-
 private native static void unlinkEntity0(int index);
-
 }

@@ -1,4 +1,3 @@
-
 package javax.vecmath;
 
 /*
@@ -62,7 +61,6 @@ public abstract class Tuple4d implements Serializable {
 	  * The w coordinate.
 	  */
 	public double w;
-
 
 	/**
 	  * Constructs and initializes a Tuple4d to (0,0,0,0).

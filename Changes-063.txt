@@ -1,0 +1,124 @@
+CHANGES from v0.6.2 to v0.6.3
+
+---------------------------------------------------------------------------
+This file will just list changes in the core packages 
+(q2java, q2jgame, baseq2). Add-ons will have to list their own changes.
+---------------------------------------------------------------------------
+
+DLL CHANGES ===============================================================
+
+   (No Changes)
+    
+JAVA CHANGES ==============================================================
+
+
+q2jgame.Game
+
+    Added:   getVWepIndex() - tracks VWep Indexes, to support the VWep features 
+             added to Quake2 3.15
+             
+             svcmd_addmodulelater() and svcmd_removemodulelater() allow an admin
+             to schedule module addition or removal to happen at the moment a
+             map changes.  Makes switching modules like CTF in and out very
+             seamless to the players.
+             
+             svcmd_help() shows modules that will be removed or added 
+             at the next map change.
+           
+    Changed: addLocaleListener() no longer removes an object if it was already
+             registered to receive localecast messages.  This way an object 
+             can register for multiple locales. However, if an object doesn't 
+             want to receive multiple versions of messages, it has to take 
+             care of removing itself when switching locales.
+             
+             spawnEntities() now uses the JDK 1.1 java.io.PrintWriter class, 
+             instead of the depricated JDK 1.0 java.io.PrintStream class.
+
+             startLevel() was modified to support VWep index tracking, and
+             deferred module adding and removal.
+             
+q2jgame.LocaleListener
+
+    Changed: localecast() method now includes the locale the message is 
+             formatted for.  Useful for objects that want to register to
+             receive messages formatted for multiple locales.  Objects that
+             only are registered for a single locale will probably just ignore
+             this parameter.
+             
+q2jgame.ResourceGroup
+
+    Changed: localecast() methods modified to send the locale as a parameter
+    
+             removeLocaleListener() made public, so objects can more easily
+             remove themselves.
+             
+baseq2.GameModule
+
+    Removed: isVWepOn() and svcmd_vwep() - no longer needed because of the 
+             new-style VWep support
+             
+    Added:   svcmd_changemap() - allows an admin to make graceful map 
+             switches from the console, so that players see an intermission 
+             w/scoreboard.  
+             
+    Changed: runFrame(), startLevel(), and timeToQuit() modified to support 
+             graceful map changes.                                                         
+             
+             
+baseq2.GenericItem
+
+    Changed: runFrame() altered so that for a group (team) of items, only
+             one if spawned at a time.  Fixes BFG/Hyperblaster bug in base1
+             and BFG/Railgun bug in q2dm2. (James Bielby)
+             
+baseq2.GenericWeapon
+
+    Added:   getVWepIndex() and precacheVWepIndex() for the new-style
+             VWep support.    
+             
+             getWeaponSound() - lets weapons like the BFG and Railgun
+             specify a sound to emit when wielded.  Other weapons just
+             return null.    
+             
+baseq2.MiscUtil
+
+    Changed: getSpawnpointSingle() - fix minor bug found by Bernd Kreimeier                  
+    
+baseq2.Player
+
+    Added:   calcClientSound() causes weapons like the BFG and Railgun to 
+             give off sounds when wielded. (James Bielby)
+
+    Changed: one line was moved from playerThink() to endServerFrame() to fix
+             the "no-damage-when-falling" bug.   
+             
+             endServerFrame() calls the new calcClientSound()
+             
+             localecast() modified to take the locale as a parameter 
+             
+             Player() <the constructor> modified to precache the hand-blaster
+             VWep model
+             
+             playerVariableChanged() removes the Player from an old locale
+             before registering for a new one.
+             
+             setAnimation() no longer worries about VWep since it's on all 
+             the time now.
+             
+             showVWep() greatly simplified to support the new-style VWep.
+             
+baseq2.spawn.target_speaker
+
+    Changed: fixed so that ambient noises now work, thanks to James Bielby 
+    
+baseq2.spawn.target_splash
+baseq2.spawn.target_temp_entity
+
+    New map entity classes supplied by James Bielby   
+    
+baseq2.spawn.weapon_bfg
+baseq2.spawn.weapon_railgun
+
+    Changed: now specify the sounds they emit. (James Bielby)    
+                 
+----------- End of List -------------------------------------------------------             

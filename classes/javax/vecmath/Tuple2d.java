@@ -1,4 +1,3 @@
-
 package javax.vecmath;
 
 /*
@@ -33,7 +32,6 @@ public abstract class Tuple2d implements Serializable {
 	  * The y coordinate.
 	  */
 	public double y;
-
 
 	/**
 	  * Constructs and initializes a Tuple2d to (0,0).

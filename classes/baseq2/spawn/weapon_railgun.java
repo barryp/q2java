@@ -1,4 +1,3 @@
-
 package baseq2.spawn;
 
 import javax.vecmath.*;
@@ -97,6 +96,13 @@ public String getItemName()
 public String getModelName() 
 	{
 	return "models/weapons/g_rail/tris.md2";	
+	}
+/**
+ * Replace the sound
+ */
+public String getWeaponSound() 
+	{
+	return "weapons/rg_hum.wav";
 	}
 /**
  * Fill in the info specific to this type of weapon.

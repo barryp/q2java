@@ -1,4 +1,3 @@
-
 package baseq2.spawn;
 
 
@@ -18,7 +17,6 @@ public class ammo_grenades extends GenericWeapon
 	private float   fTimer = 0;
 	private boolean fHeld;
 	
-
 /**
  * Construct a grenade launcher for a player to carry.
  */

@@ -1,4 +1,3 @@
-
 package javax.vecmath;
 
 /*
@@ -20,7 +19,6 @@ import java.io.Serializable;
   * @author Kenji hiranabe
   */
 public class Vector2d extends Tuple2d implements Serializable {
-
 	/**
 	  * Constructs and initializes a Vector2d to (0,0).
 	  */

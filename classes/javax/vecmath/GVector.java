@@ -1,4 +1,3 @@
-
 package javax.vecmath;
 
 /*
@@ -47,7 +46,6 @@ public class GVector implements Serializable {
 	// invariant: elementData.length >= elementCount.
 	private int elementCount;
 	private double elementData[];
-
 
 	/**
 	 * Constructs a new generalized mathematic Vector with zero 

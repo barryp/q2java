@@ -1,4 +1,3 @@
-
 package javax.vecmath;
 
 /*
@@ -58,7 +57,6 @@ public abstract class Tuple4b implements Serializable {
 	  * The fourth value.
 	  */
 	public byte w;
-
 
 	/**
 	  * Constructs and initializes a Tuple4b to (0,0,0,0).

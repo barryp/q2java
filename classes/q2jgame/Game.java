@@ -1,4 +1,3 @@
-
 package q2jgame;
 
 
@@ -24,6 +23,9 @@ public class Game implements GameListener
 	// handy random number generator
 	private static Random gRandom = new Random();	
 	
+	// track VWep skin indexes
+	protected static Vector gVWepList = new Vector();
+		
 	// Manage FrameListeners
 	public final static int FRAME_BEGINNING	= 0x01;
 	public final static int FRAME_MIDDLE		= 0x02;
@@ -50,6 +52,10 @@ public class Game implements GameListener
 	//Withnails 04/22/98 - mods are now managed by GameClassFactory
 	protected static GameClassFactory gClassFactory;
 	protected static CVar gModules; // for persistant list of loaded modules
+
+	// lists of modules to add or remove only on level changes
+	protected static Vector gLaterModuleAdd;
+	protected static Vector gLaterModuleRemove;
 	
 	// Allow objects to find each other
 	private static Hashtable gLevelRegistry;
@@ -177,14 +183,12 @@ public static ResourceGroup addLocaleListener(LocaleListener obj, String localeN
 	}
 /**
  * Add an object that wants to receive broadcasts that are localized.
- * @param obj an object that implements LocaleListener - if this object
- *   has already been added, it'll be removed before being re-added.
+ * @param obj an object that implements LocaleListener.
  * @param loc java.util.Locale
  * @return ResourceGroup this object is now registered with. 
  */
 public static ResourceGroup addLocaleListener(LocaleListener obj, Locale loc) 
 	{
-	removeLocaleListener(obj);
 	ResourceGroup grp = getResourceGroup(loc);
 	grp.addLocaleListener(obj);
 
@@ -494,6 +498,33 @@ public static String getSpawnArg(String[] args, String keyword, String defaultVa
 	return defaultValue;
 	}
 /**
+ * Get the index of the VWep skin for a given weapon.
+ * Similar to the Engine.get*Index() methods, but this 
+ * is something the game itself has to keep track of.
+ *
+ * The VWep indexes are assigned in the order they're 
+ * requested, starting at 1.
+ *
+ * @return int
+ * @param weaponIconName java.lang.String
+ */
+public static int getVWepIndex(String weaponIconName) 
+	{
+	int nEntries = gVWepList.size();
+	
+	// look for pre-existing entries.
+	for (int i = 0; i < nEntries; i++)
+		{
+		if (((String) gVWepList.elementAt(i)).equals(weaponIconName))
+			return i+1;
+		}
+		
+	// wasn't in the list, so add it and return the new entry's index.		
+	Engine.getModelIndex("#" + weaponIconName + ".md2");
+	gVWepList.addElement(weaponIconName);
+	return nEntries + 1;		
+	}
+/**
  * Called by the DLL when Quake II calls the DLL's init() function.
  */
 public void init()
@@ -529,7 +560,11 @@ public void init()
 	//gModList = new Vector();
 	//gClassHash = new Hashtable();
 	setClassFactory(new DefaultClassFactory());
-				
+
+	// setup lists to track module changes that occur only when the level changes
+	gLaterModuleAdd = new Vector();
+	gLaterModuleRemove = new Vector();	
+
 	gFrameCount = 0;
 	gGameTime = 0;				
 	
@@ -1049,11 +1084,11 @@ private void spawnEntities(String entString)
 
 		File sandbox = new File(Engine.getGamePath(), "sandbox");
 		File entFile = new File(sandbox, "entities.log");
-		FileOutputStream fos = new FileOutputStream(entFile);
-		PrintStream ps = new PrintStream(fos);	
+		FileWriter fw = new FileWriter(entFile);
+		PrintWriter pw = new PrintWriter(fw);	
 	
-		ps.println(entString);
-		ps.println("--------------------------");
+		pw.println(entString);
+		pw.println("--------------------------");
 
 		Object[] params = new Object[1];
 		Class[] paramTypes = new Class[1];
@@ -1091,7 +1126,7 @@ private void spawnEntities(String entString)
 						Class entClass = gClassFactory.lookupClass(".spawn." + className.toLowerCase());
 						Constructor ctor = entClass.getConstructor(paramTypes);							
 						Object obj = ctor.newInstance(params);
-						ps.println(obj);
+						pw.println(obj);
 						}
 					// this stinks..since we're using reflection to find the 
 					// constructor, the compiler can't tell what exceptions
@@ -1105,17 +1140,17 @@ private void spawnEntities(String entString)
 						}
 					catch (ClassNotFoundException cnfe)
 						{
-						ps.print("---- " + className + "(");
+						pw.print("---- " + className + "(");
 						if (sa != null)
 							{
 							String prefix = "";
 							for (int i = 0; i < sa.length; i+=2)
 								{
-								ps.print(prefix + sa[i] + "=\"" + sa[i+1] + "\"");
+								pw.print(prefix + sa[i] + "=\"" + sa[i+1] + "\"");
 								prefix = ", ";
 								}
 							}
-						ps.println(")");						
+						pw.println(")");						
 						}
 					catch (Exception e)
 						{
@@ -1131,7 +1166,7 @@ private void spawnEntities(String entString)
 				}
 			}
 
-		ps.close();			
+		pw.close();			
 		}
 	catch (Exception e)
 		{
@@ -1155,6 +1190,20 @@ public void startLevel(String mapname, String entString, String spawnPoint)
 	// clear the object registry
 	gLevelRegistry.clear();
 	
+	// reset the VWep index
+	gVWepList.removeAllElements();
+
+	// remove modules that were deferred until a level change
+	for (int i = 0; i < gLaterModuleRemove.size(); i++)
+		removeModule((String)gLaterModuleRemove.elementAt(i));
+	gLaterModuleRemove.removeAllElements();
+
+	// add modules that were deferred until a level change
+	for (int i = 0; i < gLaterModuleAdd.size(); i+=2)
+		addModule((String)gLaterModuleAdd.elementAt(i), (String)gLaterModuleAdd.elementAt(i+1));
+	gLaterModuleAdd.removeAllElements();	
+	
+
 	// force a gc, to clean things up from the last level, before
 	// spawning all the new entities
 	System.gc();		
@@ -1212,6 +1261,40 @@ public static void svcmd_addmodule(String[] args)
 		addModule(args[2], args[3]);
 	}
 /**
+ * Schedule a module addition for the next level change.
+ */
+public static void svcmd_addmodulelater(String[] args) 
+	{
+	if (args.length < 3)
+		{
+		dprint("Usage: sv addmodulelater <package-name> [<alias>]\n");
+		dprint("  Cancel an addition by running this command again with the same package or alias name\n");
+		return;
+		}
+
+
+	int i = gLaterModuleAdd.indexOf(args[2]);
+
+	if (i < 0)
+		{
+		gLaterModuleAdd.addElement(args[2]);
+		if (args.length < 4)
+			gLaterModuleAdd.addElement(args[2]);
+		else
+			gLaterModuleAdd.addElement(args[3]);
+		dprint(args[2] + " will be added on the next level change\n");
+		}
+	else
+		{
+		i = i & 0xfffe; // strip off lower bit
+		gLaterModuleAdd.removeElementAt(i+1);
+		gLaterModuleAdd.removeElementAt(i);
+		dprint(args[2] + " addition cancelled\n");
+		}
+
+		
+	}
+/**
  * Print timing info to the console.
  */
 public static void svcmd_help(String[] args) 
@@ -1221,20 +1304,38 @@ public static void svcmd_help(String[] args)
 	dprint("      sv addmodule <package-name> [<alias>]\n");
 	dprint("      sv removemodule <alias>\n");
 	dprint("\n");
+	dprint("      sv addmodulelater <package-name> [<alias>]\n");
+	dprint("      sv removemodulelater <alias>\n");
+	dprint("\n");
 	dprint("      sv javamem       // show Java memory usage\n");
 	dprint("      sv javagc        // force a Java GC\n");
 	dprint("\n");
 	dprint("      sv time          // show performance timing\n");
 	dprint("      sv help          // this screen\n");
 	dprint("      sv <module>.help // help for a loaded module\n");
-	dprint("\n");
-	dprint("   loaded modules:\n");
+
 
 	//Withnails 04/22/98 - now makes use of an enumeration instead
+	dprint("\n");
+	dprint("   loaded modules:\n");
 	Enumeration enum = gClassFactory.getModules();
 	while (enum.hasMoreElements()) 
 		{
 		dprint("      " + ((GameModule)enum.nextElement()).getModuleName() + "\n");        
+		}
+
+	if (gLaterModuleRemove.size() > 0)
+		{
+		dprint("\n    modules to be removed at level change:\n");
+		for (int i = 0; i < gLaterModuleRemove.size(); i++)
+			dprint("      " + gLaterModuleRemove.elementAt(i) + "\n");
+		}
+
+	if (gLaterModuleAdd.size() > 0)
+		{
+		dprint("\n    modules to be added at level change:\n");
+		for (int i = 0; i < gLaterModuleAdd.size(); i+=2)
+			dprint("      " + gLaterModuleAdd.elementAt(i) + " [" + gLaterModuleAdd.elementAt(i+1) + "]\n");
 		}
 	}
 /**
@@ -1275,6 +1376,33 @@ public static void svcmd_removemodule(String[] args)
 		dprint("Usage: sv removemodule <alias>\n");
 	else
 		removeModule(args[2]);		
+	}
+/**
+ * Schedule a module removal for the next level change.
+ * Invoking this command a second time with the same parameter cancels
+ * the first call.
+ */
+public static void svcmd_removemodulelater(String[] args) 
+	{
+	if (args.length < 3)
+		{
+		dprint("Usage: sv removemodule <alias>\n");
+		dprint("  Cancel a removal by running this command again with the same alias name\n");
+		return;
+		}
+
+	int i = gLaterModuleRemove.indexOf(args[2]);
+
+	if (i < 0)
+		{
+		gLaterModuleRemove.addElement(args[2]);
+		dprint(args[2] + " will be removed on the next level change\n");
+		}
+	else
+		{
+		gLaterModuleRemove.removeElementAt(i);
+		dprint(args[2] + " removal cancelled\n");
+		}
 	}
 /**
  * Print timing info to the console. and reset counters.

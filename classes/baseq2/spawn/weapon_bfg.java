@@ -1,4 +1,3 @@
-
 package baseq2.spawn;
 
 
@@ -13,7 +12,6 @@ public class weapon_bfg extends GenericWeapon
 	private final static int[] PAUSE_FRAMES = new int[] {39, 45, 50, 55, 0};
 	private final static int[] FIRE_FRAMES = new int[] {9, 17, 0};				
 	
-
 /**
  * Create a BFG for a player to carry.
  */
@@ -115,6 +113,13 @@ public String getItemName()
 public String getModelName() 
 	{
 	return "models/weapons/g_bfg/tris.md2";
+	}
+/**
+ * Replace the sound
+ */
+public String getWeaponSound() 
+	{
+	return "weapons/bfg_hum.wav";
 	}
 /**
  * Fill in the info specific to this type of weapon.

@@ -1,4 +1,3 @@
-
 package baseq2;
 
 
@@ -77,7 +76,6 @@ public class InventoryList
 											"Airstrike Marker",
 											"Health" };
 								  
-
 
 /*
  * add an item to the list in first available slot after index i

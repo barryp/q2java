@@ -1,4 +1,3 @@
-
 package javax.vecmath;
 
 /*
@@ -20,7 +19,6 @@ import java.io.Serializable;
   * @author Kenji hiranabe
   */
 public class Point3f extends Tuple3f implements Serializable {
-
 	/**
 	  * Constructs and initializes a Point3f to (0,0,0).
 	  */

@@ -1,4 +1,3 @@
-
 package javax.vecmath;
 
 /*
@@ -20,7 +19,6 @@ import java.io.Serializable;
   * @author Kenji hiranabe
   */
 public class Point4d extends Tuple4d implements Serializable {
-
 	/**
 	  * Constructs and initializes a Point4d to (0,0,0,0).
 	  */

@@ -1,4 +1,3 @@
-
 package baseq2;
 
 /**
@@ -9,5 +8,4 @@ package baseq2;
  */
 public interface FixedObject 
 	{
-	
-}
+	}

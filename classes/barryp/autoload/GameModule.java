@@ -1,4 +1,3 @@
-
 package barryp.autoload;
 
 import q2java.*;

@@ -1,4 +1,3 @@
-
 package q2jgame;
 
 import java.text.MessageFormat;
@@ -123,7 +122,7 @@ void localecast(String basename, String key, Object[] args, int printLevel)
 		mf.setLocale(fLocale);
 		String msg = mf.format(args) + "\n";
 		for (int i = 0; i < fListeners.size(); i++)
-			((LocaleListener) fListeners.elementAt(i)).localecast(printLevel, msg);
+			((LocaleListener) fListeners.elementAt(i)).localecast(fLocale, printLevel, msg);
 		}
 	catch (Exception e)
 		{
@@ -142,7 +141,7 @@ void localecast(String basename, String key, int printLevel)
 		{
 		String msg = getRandomString(basename, key) + "\n";
 		for (int i = 0; i < fListeners.size(); i++)
-			((LocaleListener) fListeners.elementAt(i)).localecast(printLevel, msg);
+			((LocaleListener) fListeners.elementAt(i)).localecast(fLocale, printLevel, msg);
 		}
 	catch (Exception e)
 		{
@@ -153,7 +152,7 @@ void localecast(String basename, String key, int printLevel)
  * Remove a locale listener from the game.
  * @param obj q2jgame.LocaleListener
  */
-void removeLocaleListener(LocaleListener obj) 
+public void removeLocaleListener(LocaleListener obj) 
 	{
 	fListeners.removeElement(obj);
 	

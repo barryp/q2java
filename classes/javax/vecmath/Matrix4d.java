@@ -1,4 +1,3 @@
-
 package javax.vecmath;
 
 /*
@@ -126,7 +125,6 @@ public class Matrix4d implements Serializable {
 	  * The fourth element of the fourth row.
 	  */
 	public double m33;
-
 
 	/**
 	  * Constructs and initializes a Matrix4d to all zeros.

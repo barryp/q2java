@@ -1,4 +1,3 @@
-
 package javax.vecmath;
 
 /*
@@ -18,7 +17,6 @@ package javax.vecmath;
  * @author Kenji hiranabe
  */
 public class SingularMatrixException extends RuntimeException {
-
 	/**
 	  * Creates the exception object with default values.
 	  */

@@ -1,4 +1,3 @@
-
 package barryp.telnet;
 
 import java.io.*;
@@ -29,14 +28,18 @@ class TelnetServer extends Thread  implements PrintListener, LocaleListener, Fra
 	private boolean fNoCmd;
 	private boolean fNoChat;
 	protected ResourceGroup fResourceGroup;
+	protected GameModule fGameModule;
 	
 /**
  * TelnetServer constructor comment.
  */
-public TelnetServer(int port, String password, boolean noCmd, boolean noChat) throws IOException 
+public TelnetServer(GameModule gm, int port, String password, boolean noCmd, boolean noChat) throws IOException 
 	{
 	super("Telnet Server");
-	
+
+	// remember our GameModule
+	fGameModule = gm;
+
 	try
 		{
 		// setup the socket stuff
@@ -151,6 +154,14 @@ public int getConnectionCount()
 	return fHandlers.activeCount();
 	}
 /**
+ * Get a reference to the telnet server game module.
+ * @return barryp.telnet.GameModule
+ */
+public GameModule getGameModule() 
+	{
+	return fGameModule;
+	}
+/**
  * Fetch the port this TelnetServer is listening to.
  * @return int
  */
@@ -165,6 +176,22 @@ public int getPort()
 public ResourceGroup getResourceGroup() 
 	{
 	return fResourceGroup;
+	}
+/**
+ * get an array of telnet handlers to current sessions.
+ * @returns TelnetHandler[] - array of current sessions.
+ */
+protected TelnetHandler[] getTelnetHandlers()
+	{
+	int nClients = fHandlers.activeCount();
+	// check if there are any clients connected
+	if (nClients < 1)
+		return null;
+
+	TelnetHandler[] handlers = new TelnetHandler[nClients];			
+	fHandlers.enumerate(handlers);	
+
+	return handlers;
 	}
 /**
  * Report whether the Telnet Server is still running.
@@ -184,6 +211,15 @@ public void localecast(int printLevel, String msg)
 	output(msg);
 	}
 /**
+ * Called when the listener receives a localized broadcast message.
+ * @param printLevel One of the Engine.PRINT_* constants
+ * @param msg java.lang.String
+ */
+public void localecast(Locale loc, int printLevel, String msg)	
+	{
+	output(msg);
+	}
+/**
  * Send a string to all the connected clients.
  * @param s java.lang.String
  */
@@ -194,25 +230,10 @@ private void output(String s)
 	if (nClients < 1)
 		return;
 
-	// convert the string to a byte array, and 
-	// expand linefeeds to carriage-return/linefeed pairs.
-	int strSize = s.length();
-	int nChars = strSize;
-	for (int i = 0; i < strSize; i++)
-		if (s.charAt(i) == '\n')
-			nChars++;
-			
-	byte[] b = new byte[nChars];
-	nChars = 0;
-	for (int i = 0; i < strSize; i++)
-		{
-		char ch = s.charAt(i);
-		if (ch == '\n')
-			b[nChars++] = '\r';
-		b[nChars++] = (byte)(ch & 0x00ff);
-		}					
+	// use the TelnetHandler's common conversion utility.
+	byte[] b = TelnetHandler.getBytes(s);
 
-	consoleOutput(b, 0, nChars);	
+	consoleOutput(b, 0, b.length);	
 	}
 /**
  * This method was created by a SmartGuide.
@@ -270,7 +291,7 @@ public void runFrame(int phase)
 	String s;
 	while ((s = getCommand()) != null)
 		{
-		if ((s.length() > 0) && (s.charAt(0) == '+'))
+		if ((s.length() > 0) && (s.charAt(0) == '/'))
 			Engine.addCommandString(s.substring(1) + "\n");
 		else
 			Game.bprint(Engine.PRINT_CHAT, s + "\n");
@@ -282,6 +303,10 @@ public void runFrame(int phase)
  */
 public void setLocale(String localeName) 
 	{
+	// remove ourselves from the previous locale
+	if (fResourceGroup != null)
+		fResourceGroup.removeLocaleListener(this);
+		
 	fResourceGroup = Game.addLocaleListener(this, localeName);
 	}
 /**

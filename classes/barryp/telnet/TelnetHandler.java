@@ -1,11 +1,13 @@
-
 package barryp.telnet;
 
 import java.io.*;
 import java.net.*;
 import java.text.*;
-import java.util.Date;
+import java.util.*;
+
+import q2java.*;
 import q2jgame.*;
+import baseq2.Player;
 
 /**
  * Handle communication with an individual Telnet client.
@@ -50,6 +52,77 @@ TelnetHandler(ThreadGroup grp, TelnetServer srv, Socket s, String password, bool
 	fNoChat = noChat;
 	fLineBuffer = new byte[LINEBUFFER_SIZE];
 	fLineBufferPtr = 0;
+	}
+/**
+ * Send a list of players and telnet clients.
+ */
+public void doWho() throws IOException
+	{
+	output("Players:\n");
+						
+	Enumeration enum = NativeEntity.enumeratePlayers();
+	while (enum.hasMoreElements())
+		{
+		Player p = (Player) ((NativeEntity)enum.nextElement()).getPlayerListener();
+		output("    " + p.getName() + '\n');
+		}
+						
+	output("Telnet sessions:\n");
+
+	// get an enumeration of -all- the telnet servers
+	enum = fServer.getGameModule().getServers();
+
+	// for each server, print connected users
+	while (enum.hasMoreElements())
+		{
+		TelnetHandler[] handlers = ((TelnetServer)(enum.nextElement())).getTelnetHandlers();
+		if (handlers != null)
+			{
+			for (int i=0; i < handlers.length; i++)
+				{
+//				if (handlers[i] == this)
+//					continue;
+								
+				output("    " + handlers[i].getNickname() + '\n');
+				}
+			}
+		}		
+	}
+/**
+ * Convert a string to an array of bytes
+ * suitable for sending to a telnet client.
+ * @param s java.lang.String
+ * @return an array of bytes with linefeeds expanded to CR/LF pairs.
+ */
+public static byte[] getBytes(String s) 
+	{
+	// convert the string to a byte array, and 
+	// expand linefeeds to carriage-return/linefeed pairs.
+	int strSize = s.length();
+	int nChars = strSize;
+	for (int i = 0; i < strSize; i++)
+		if (s.charAt(i) == '\n')
+			nChars++;
+			
+	byte[] b = new byte[nChars];
+	nChars = 0;
+	for (int i = 0; i < strSize; i++)
+		{
+		char ch = s.charAt(i);
+		if (ch == '\n')
+			b[nChars++] = (byte) '\r';
+		b[nChars++] = (byte)(ch & 0x00ff);
+		}					
+
+	return b;
+	}
+/**
+ * get our nickname.
+ * @return String - our nickname.
+ */
+public String getNickname()
+	{
+	return fNickname;
 	}
 /**
  * Make the client type the right password, then welcome them.
@@ -120,6 +193,15 @@ void output(byte[] b, int off, int len) throws IOException
 	{
 	if (fOS != null)
 		fOS.write(b, off, len);
+	}
+/**
+ * Send a string to the telnet client.
+ * @param s java.lang.String
+ */
+public void output(String s) throws IOException
+	{
+	byte[] b = getBytes(s);
+	output(b, 0, b.length);
 	}
 /**
  * Read one line of input from the Telnet client.
@@ -206,7 +288,7 @@ public void run()
 		fIS = fSocket.getInputStream();
 		
 		logon();
-		if (fSocket == null)
+		if ((fSocket == null) || (fNickname == null))
 			return; // logon must have failed
 
 		fServer.pushCommand("<Telnet>: " + fNickname + " connected");
@@ -222,19 +304,26 @@ public void run()
 
 			if (s.length() < 1)
 				continue;
-				
-			if (s.charAt(0) == '+')
+
+			// commands begin with an IRC-style '/'
+			if (s.charAt(0) == '/')
 				{
-				if (fNoCmd)
-					continue;
-				fServer.pushCommand(s);
+				if (s.equals("/who"))
+					doWho();
+				else
+					{
+					// pass command up to the server if allowed.
+					if (!fNoCmd)
+						fServer.pushCommand(s);
+					}
+					
+				continue;
 				}
-			else
-				{
-				if (fNoChat)
-					continue;
+
+			// if it wasn't an IRC-style command, and we're not muzzled,
+			// then send our words of wisdom to the rest of the world.
+			if (!fNoChat)
 				fServer.pushCommand("<Telnet-" + fNickname + ">: " + s);
-				}
 			}
 
 		fServer.pushCommand("<Telnet>: " + fNickname + " disconnected");

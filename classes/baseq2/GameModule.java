@@ -1,4 +1,3 @@
-
 package baseq2;
 
 
@@ -37,7 +36,6 @@ public class GameModule extends q2jgame.GameModule implements GameStatusListener
 	
 	// Game options
 	public static boolean gIsDeathmatch;
-	private static boolean gIsVWepOn;
 	private static boolean gIsCheating;
 	public static int gSkillLevel; // this probably isn't necessary since this is a DM-only mod, but wtf.
 	
@@ -52,35 +50,34 @@ public class GameModule extends q2jgame.GameModule implements GameStatusListener
 	private static float gLevelStartTime;
 	private static boolean gInIntermission;
 	private static double gIntermissionEndTime;
+	private static boolean gChangeMapNow;
 	private static String gCurrentMap;
 	private static String gNextMap;
 	private static String gSpawnpoint;
 	
-
 	// ----------- Constants -------------------------
 	
 	// deathmatch flags
-	public final static int DF_NO_HEALTH			= 1;
+	public final static int DF_NO_HEALTH		= 1;
 	public final static int DF_NO_ITEMS			= 2;
 	public final static int DF_WEAPONS_STAY		= 4;
 	public final static int DF_NO_FALLING		= 8;
-	public final static int DF_INSTANT_ITEMS		= 16;
+	public final static int DF_INSTANT_ITEMS	= 16;
 	public final static int DF_SAME_LEVEL		= 32;
-	public final static int DF_SKINTEAMS			= 64;
+	public final static int DF_SKINTEAMS		= 64;
 	public final static int DF_MODELTEAMS		= 128;
-	public final static int DF_FRIENDLY_FIRE		= 256;
+	public final static int DF_FRIENDLY_FIRE	= 256;
 	public final static int DF_SPAWN_FARTHEST	= 512;
-	public final static int DF_FORCE_RESPAWN		= 1024;
+	public final static int DF_FORCE_RESPAWN	= 1024;
 	public final static int DF_NO_ARMOR			= 2048;
 	
 	// entity spawn flags.
 	public final static int SPAWNFLAG_NOT_EASY		= 0x00000100;
-	public final static int SPAWNFLAG_NOT_MEDIUM		= 0x00000200;
+	public final static int SPAWNFLAG_NOT_MEDIUM	= 0x00000200;
 	public final static int SPAWNFLAG_NOT_HARD		= 0x00000400;
 	public final static int SPAWNFLAG_NOT_DEATHMATCH	= 0x00000800;
 	public final static int SPAWNFLAG_NOT_COOP		= 0x00001000;		
 	
-
 /**
  * This method was created by a SmartGuide.
  */
@@ -104,7 +101,6 @@ public GameModule(String moduleName)
 	gDMFlags = new CVar("dmflags", "0", CVar.CVAR_SERVERINFO);
 	gCheats = new CVar("cheats", "0", CVar.CVAR_LATCH);
 	
-	gIsVWepOn = (new CVar("vwep", "0", CVar.CVAR_LATCH)).getFloat() == 1.0;
 	gIsDeathmatch = (new CVar("deathmatch", "0", CVar.CVAR_LATCH)).getFloat() == 1.0;
 	gSkillLevel = (int) ((new CVar("skill", "1", CVar.CVAR_LATCH)).getFloat());		
 	
@@ -181,7 +177,7 @@ public static String getSpawnpoint()
  */
 public static String getVersion() 
 	{
-	return "Q2Java Base Game, v0.6.2";
+	return "Q2Java Base Game, v0.6.3";
 	}	
 /**
  * Check whether or not the Cheating option is on.
@@ -198,14 +194,6 @@ public static boolean isCheating()
 public static boolean isDMFlagSet(int flag) 
 	{
 	return (((int)gDMFlags.getFloat()) & flag) != 0;
-	}
-/**
- * Check whether or not the VWep option is on.
- * @return boolean
- */
-public static boolean isVWepOn() 
-	{
-	return gIsVWepOn;
 	}
 /**
  * Called when a new map is starting, after entities have been spawned.
@@ -232,10 +220,10 @@ public void runFrame(int phase)
 	{		
 	if (gInIntermission && (Game.getGameTime() > gIntermissionEndTime))
 		{
-		if (isDMFlagSet(DF_SAME_LEVEL))
-			Engine.addCommandString("gamemap \"" + gCurrentMap + "\"\n");
-		else
+		if (gChangeMapNow || (!isDMFlagSet(DF_SAME_LEVEL)))
 			Engine.addCommandString("gamemap \"" + gNextMap + "\"\n");
+		else
+			Engine.addCommandString("gamemap \"" + gCurrentMap + "\"\n");
 		return;
 		}
 
@@ -324,6 +312,7 @@ public void startLevel(String mapname, String entString, String spawnPoint)
 
 	gLevelStartTime = Game.getGameTime();
 	gInIntermission = false;
+	gChangeMapNow = false;
 	gCurrentMap = mapname;
 	gNextMap = mapname; // in case there isn't a target_changelevel entity in the entString
 	
@@ -446,6 +435,23 @@ public void startLevel(String mapname, String entString, String spawnPoint)
 	Engine.setConfigString(Engine.CS_LIGHTS+63, "a");				
 	}
 /**
+ * Force a map change, but do it nicely so that players see the scoreboard.
+ */
+public void svcmd_changemap(String[] args) 
+	{
+	gChangeMapNow = true;
+	
+	if (args.length > 2)
+		{
+		gNextMap = args[2];
+		}
+	else
+		{
+		if (isDMFlagSet(DF_SAME_LEVEL))
+			gNextMap = gCurrentMap;
+		}
+	}
+/**
  * Control the Cheating option (for debugging of course!)
  */
 public void svcmd_cheating(String[] args) 
@@ -470,9 +476,9 @@ public void svcmd_help(String[] args)
 	{
 	Game.dprint(getVersion());
 	Game.dprint("\n\n    sv commands:\n");
+	Game.dprint("       changemap [mapname]\n");
 	Game.dprint("       cheating [on | off]\n");
 	Game.dprint("       scores\n");
-	Game.dprint("       vwep [on | off]\n");
 	}
 /**
  * Runs the svcmd.  For now, ignores arguments.
@@ -583,29 +589,15 @@ public void svcmd_scores(String[] args)
 	System.out.print( sb );
 	} // end scores ();
 /**
- * Control the VWep option
- */
-public void svcmd_vwep(String[] args) 
-	{
-	if (args.length > 2)
-		{
-		if (args[2].equalsIgnoreCase("on"))
-			gIsVWepOn = true;		
-		else if (args[2].equalsIgnoreCase("off"))
-			gIsVWepOn = false;
-		else
-			Game.dprint("Usage: sv vwep [on | off]\n");
-		}
-
-	Game.dprint("VWep is " + (gIsVWepOn ? "on" : "off") + "\n");
-	}
-/**
  * Check the timelimit and fraglimit values and decide
  * whether to end the level or not.
  * @return boolean true if it's time to end the level
  */
 protected static boolean timeToQuit() 
 	{
+	if (gChangeMapNow)
+		return true;
+		
 	float timeLimit = gTimeLimit.getFloat();
 
 	if ((timeLimit > 0) && (Game.getGameTime() > (gLevelStartTime + (timeLimit * 60))))

@@ -1,4 +1,3 @@
-
 package baseq2;
 
 import java.util.Enumeration;
@@ -180,7 +179,6 @@ public void moveFinished()
  * Move the door to its opened position.
  */
 protected abstract void moveOpen(); 
-
 /**
  * Open the door.
  */

@@ -1,4 +1,3 @@
-
 package barryp.rocketmania.spawn;
 
 import javax.vecmath.*;

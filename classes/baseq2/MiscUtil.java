@@ -1,4 +1,3 @@
-
 package baseq2;
 
 import java.util.*;
@@ -56,7 +55,6 @@ public static Vector3f calcMoveDir(Angle3f angles)
 	angles.getVectors(result, null, null);
 	return result;
 	}
-
 /**
  * Clamp the Tuple3f to 1/8 units.  This way positions will
  * be accurate for client side prediction.
@@ -376,7 +374,7 @@ public static GenericSpawnpoint getSpawnpointRandom()
 	}
 /**
  * Find a single-player spawnpoint. Kind of simplistic.
- * @return q2jgame.GameEntity
+ * @return q2jgame.GameEntity, null if nothing available.
  */
 public static GenericSpawnpoint getSpawnpointSingle() 
 	{
@@ -394,8 +392,9 @@ public static GenericSpawnpoint getSpawnpointSingle()
 				return sp;
 			}
 			
-		// all info_player_starts are targets, so settle for any one of them
-		return (GenericSpawnpoint) list.elementAt(0);					
+		// all info_player_starts are targets, so settle for the first one (if available)
+		if (list.size() > 0)
+			return (GenericSpawnpoint) list.elementAt(0);					
 		}
 	else
 		{
@@ -445,7 +444,6 @@ public static boolean killBox(NativeEntity ent)
 
 	return true;		// all clear	
 	}
-
 /**
  * Calculate how far the nearest player away is from a given entity
  * @return float

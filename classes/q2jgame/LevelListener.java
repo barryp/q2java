@@ -1,4 +1,3 @@
-
 package q2jgame;
 
 /**
@@ -17,5 +16,4 @@ public void levelEntitiesSpawned();
  * Called when a new level is starting, before entities are spawned.
  */
 public void startLevel(String mapname, String entString, String spawnPoint);
-
 }

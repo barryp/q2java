@@ -1,0 +1,61 @@
+menno.ctf v0.6.x -  Quake II Java CTF
+
+    Author:   Menno van Gangelen <menno@element.nl>
+    Homepage: <none, thank god...>
+    Revised: Oct 11, 1998 by Barry Pederson
+
+    Description: Java classes and sources that implement Quake II CTF in Java.
+
+    Requirements: Q2Java v0.6.3 from Barry Pederson <bpederson@geocities.com>
+                    at http://www.openquake.org/jquake/q2java
+                    
+                  Quake II CTF 1.0 or higher (only the pak0.pak)
+
+-------------------------------------
+
+
+INSTALLING
+
+    First, you need to get Q2Java working, see details in Q2Java zip-file.
+
+    Secondly, you and your players need to move the pak0.pak from the CTF 
+    directory to your baseq2 directory, so that games other than CTF can find it. 
+    There is probably already a file called pak0.pak, but you can give any *.pak 
+    another name: pak?.pak, where ? ranges from 0 to 9.
+
+    Then copy the classes directory from this zip-file into your classpath, 
+    assuming you already have a "/q2java/classes" directory, you can copy it 
+    into that directory. The directory-tree should look like this now:
+
+                                 /quake2
+                                    |
+                ---------------------
+                |                   |        
+             /baseq2             /q2java   
+                |                   |
+          <CTF .pak file>           |
+                                 /classes  
+                                    |
+                    ---------------------------------------
+                    |       |       |      |       |      |
+                 /barryp /baseq2 /javax /menno /q2java /q2jgame
+
+
+You can start the CTF game with this command:
+
+  quake2 +set game q2java +set q2jgame_packages menno.ctf+baseq2 +map q2ctf1
+  
+If a game has already started, you can switch from DM to CTF  
+with these console commands:
+
+    sv addmodulelater menno.ctf
+    sv changemap q2ctf1
+    
+To switch from CTF back to DM:    
+
+    sv removemodulelater menno.ctf
+    sv changemap q2dm1
+
+Happy Capturing !!!
+
+    Menno <menno@element.nl>

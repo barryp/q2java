@@ -1,4 +1,3 @@
-
 package q2java;
 
 /**
@@ -53,9 +52,7 @@ public CVar(String name, String value, int flags)
 	fName = name;
 	fCVarPointer = cvar0(name, value, flags, CALL_CVAR);
 	}
-
 private native static int cvar0(String name, String value, int flags, int callType);
-
 /**
  * Force a cvar to be set to a given value. Equivalent to gi.cvar_forceset(char *name, char *value).
  * @param name name of the cvar.
@@ -74,9 +71,7 @@ public float getFloat()
 	{
 	return getFloat0(fCVarPointer);
 	}
-
 private native static float getFloat0(int ptr);
-
 /**
  * Fetch the String value of a CVar.
  * @return the value as a String
@@ -85,9 +80,7 @@ public String getString()
 	{
 	return getString0(fCVarPointer);
 	}
-
 private native static String getString0(int ptr);
-
 /**
  * Set a cvar to a given value. Equivalent to gi.cvar_set(char *name, char *value).
  * @param value new value for the cvar.

@@ -1,10 +1,10 @@
-SRCS = game.c globals.c misc.c player.c javalink_Solaris.c q2java_ConsoleOutputStream.c q2java_CVar.c q2java_Engine.c q2java_NativeEntity.c
+SRCS = game.c globals.c misc.c player.c javalink_generic.c q2java_ConsoleOutputStream.c q2java_CVar.c q2java_Engine.c q2java_NativeEntity.c
 
 OBJS = $(SRCS:.c=.o)
 LIB = gamesparc.so
 
 TARCONTENTS = $(LIB) Makefile javalink_Solaris.c readme.solaris warnings.txt
-VERSION = 061
+VERSION = 062
 
 # CFLAGS explanation:
 # -G Make a shared library

@@ -1,4 +1,3 @@
-
 package javax.vecmath;
 
 /*
@@ -88,7 +87,6 @@ public class Matrix3f implements Serializable {
 	  * The third element of the third row.
 	  */
 	public float m22;
-
 
 	/**
 	  * Constructs and initializes a Matrix3f to all zeros.

@@ -1,4 +1,3 @@
-
 package barryp.telnet;
 
 import java.io.*;
@@ -44,7 +43,7 @@ public GameModule(String moduleName)
 		String password = (new CVar("telnet_password", "", CVar.CVAR_NOSET)).getString();
 		try
 			{
-			TelnetServer telnet = new TelnetServer(port, password, false, false);
+			TelnetServer telnet = new TelnetServer(this, port, password, false, false);
 			addServer(telnet);
 			telnet.start();
 			}
@@ -65,10 +64,10 @@ static synchronized void addLog(String s)
 		
 	try
 		{
-		FileOutputStream fos = new FileOutputStream(gLogName, true);
-		PrintStream ps = new PrintStream(fos);
-		ps.println(gTimestampFormat.format(new Date()) + " " + s);
-		ps.close();
+		FileWriter fw = new FileWriter(gLogName, true);
+		PrintWriter pw = new PrintWriter(fw);
+		pw.println(gTimestampFormat.format(new Date()) + " " + s);
+		pw.close();
 		}
 	catch (IOException e)
 		{
@@ -81,6 +80,17 @@ static synchronized void addLog(String s)
 static void addServer(TelnetServer s) 
 	{
 	gServers.addElement(s);
+	}
+
+
+	
+/**
+ * get an enumeration of the current servers.
+ * @return Enumeration - enumeration of servers.
+ */
+public Enumeration getServers()
+	{
+	return gServers.elements();
 	}
 /**
  * This method was created by a SmartGuide.
@@ -193,7 +203,7 @@ public void svcmd_start(String[] args)
 			
 	try
 		{	
-		TelnetServer t = new TelnetServer(port, password, noCmd, noChat);
+		TelnetServer t = new TelnetServer(this, port, password, noCmd, noChat);
 		t.start();
 		addServer(t);
 		}

@@ -1,4 +1,3 @@
-
 package q2jgame;
 
 /**
@@ -11,5 +10,4 @@ package q2jgame;
  */
 public interface CrossLevel 
 	{
-	
-}
+	}

@@ -1,4 +1,3 @@
-
 package javax.vecmath;
 
 /*
@@ -65,7 +64,6 @@ public class AxisAngle4d implements Serializable {
 	  * The angle.
 	  */
 	public double angle;
-
 
 	/**
 	  * Constructs and initializes a AxisAngle4d to (0,0,0,0).
