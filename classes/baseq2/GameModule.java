@@ -32,12 +32,15 @@ public class GameModule extends q2jgame.GameModule implements GameStatusListener
 	
 	// Game options
 	public static boolean gIsDeathmatch;
+	private static boolean gIsVWepOn;
+	private static boolean gIsCheating;
 	public static int gSkillLevel; // this probably isn't necessary since this is a DM-only mod, but wtf.
 	
 	// CVars only the Game object itself needs to worry about
 	private static CVar gFragLimit;
 	private static CVar gTimeLimit;
 	private static CVar gDMFlags;
+	private static CVar gCheats;
 	
 
 	// track level changes	
@@ -90,7 +93,9 @@ public GameModule ( )
 	gFragLimit = new CVar("fraglimit", "0", CVar.CVAR_SERVERINFO);
 	gTimeLimit = new CVar("timelimit", "0", CVar.CVAR_SERVERINFO);
 	gDMFlags = new CVar("dmflags", "0", CVar.CVAR_SERVERINFO);
-
+	gCheats = new CVar("cheats", "0", CVar.CVAR_LATCH);
+	
+	gIsVWepOn = (new CVar("vwep", "0", CVar.CVAR_LATCH)).getFloat() == 1.0;
 	gIsDeathmatch = (new CVar("deathmatch", "0", CVar.CVAR_LATCH)).getFloat() == 1.0;
 	gSkillLevel = (int) ((new CVar("skill", "1", CVar.CVAR_LATCH)).getFloat());	
 	}
@@ -150,12 +155,28 @@ public static String getVersion()
 	return "Quake2Java Test Game, v0.1";
 	}	
 /**
+ * Check whether or not the Cheating option is on.
+ * @return boolean
+ */
+public static boolean isCheating() 
+	{
+	return gIsCheating;
+	}
+/**
  * Check whether a given deathmatch flag is set.  Use the Game.DF_* constants.
  * @return true if the flag is set, false if not.
  */
 public static boolean isDMFlagSet(int flag) 
 	{
 	return (((int)gDMFlags.getFloat()) & flag) != 0;
+	}
+/**
+ * Check whether or not the VWep option is on.
+ * @return boolean
+ */
+public static boolean isVWepOn() 
+	{
+	return gIsVWepOn;
 	}
 /**
  * Called when the DLL's ReadGame() function is called.
@@ -246,6 +267,7 @@ public void startLevel(String mapname, String entString, String spawnPoint)
 	gInIntermission = false;
 	gCurrentMap = mapname;
 	gNextMap = mapname; // in case there isn't a target_changelevel entity in the entString
+	gIsCheating = (gCheats.getFloat() == 1.0);
 
 	//
 	// cache some sounds
@@ -355,13 +377,33 @@ public void startLevel(String mapname, String entString, String spawnPoint)
 	Engine.setConfigString(Engine.CS_LIGHTS+63, "a");				
 	}
 /**
+ * Control the Cheating option (for debugging of course!)
+ */
+public void svcmd_cheating(String[] args) 
+	{
+	if (args.length > 2)
+		{
+		if (args[2].equalsIgnoreCase("on"))
+			gIsCheating = true;		
+		else if (args[2].equalsIgnoreCase("off"))
+			gIsCheating = false;
+		else
+			Game.dprint("Usage: sv cheating [on | off]\n");
+		}
+
+	// make sure everyone knows what the situation is.
+	Game.bprint(Engine.PRINT_HIGH, "Cheating is " + (gIsCheating ? "on" : "off") + "\n");
+	}
+/**
  * Display help info to the console.
  */
 public void svcmd_help(String[] args) 
 	{
 	Game.dprint("Q2Java Base Quake2 game v0.4\n\n");
 	Game.dprint("    sv commands:\n");
+	Game.dprint("       cheating [on | off]\n");
 	Game.dprint("       scores\n");
+	Game.dprint("       vwep [on | off]\n");
 	}
 /**
  * Runs the svcmd.  For now, ignores arguments.
@@ -415,6 +457,23 @@ public void svcmd_scores(String[] args)
 	System.out.print( sb );
 	} // end run ();
 /**
+ * Control the VWep option
+ */
+public void svcmd_vwep(String[] args) 
+	{
+	if (args.length > 2)
+		{
+		if (args[2].equalsIgnoreCase("on"))
+			gIsVWepOn = true;		
+		else if (args[2].equalsIgnoreCase("off"))
+			gIsVWepOn = false;
+		else
+			Game.dprint("Usage: sv vwep [on | off]\n");
+		}
+
+	Game.dprint("VWep is " + (gIsVWepOn ? "on" : "off") + "\n");
+	}
+/**
  * Check the timelimit and fraglimit values and decide
  * whether to end the level or not.
  * @return boolean true if it's time to end the level
@@ -436,10 +495,10 @@ protected static boolean timeToQuit()
 	Enumeration enum = NativeEntity.enumeratePlayers();
 	while (enum.hasMoreElements())
 		{
-		Player p = (Player) enum.nextElement();
+		Player p = (Player) ((NativeEntity)enum.nextElement()).getPlayerListener();
 		if (p.getScore() > fragLimit)
 			{
-			Game.bprint(Engine.PRINT_HIGH, "Timelimit hit.\n");		
+			Game.bprint(Engine.PRINT_HIGH, "Fraglimit hit.\n");		
 			return true;
 			}
 		}		

@@ -3,6 +3,7 @@ package barryp.telnet;
 
 import java.io.*;
 import java.net.*;
+import java.util.Date;
 
 /**
  * Handle communication with an individual Telnet client.
@@ -77,17 +78,30 @@ private void logon() throws IOException
 
 	if (!fNoChat)
 		{
-		String prompt = "Nickname for chats: ";
+		String prompt = "\r\nNickname for chats: ";
 		os.write(prompt.getBytes());
 		fNickname = readLine(0);		
 		}
 		
-	String welcome = "Welcome to the Q2Java sample game\r\n\r\n";
+	String welcome = "Welcome to the Q2Java Telnet Server\r\n";
 	os.write(welcome.getBytes());		
 
+	try
+		{
+		Date d = new Date();
+		welcome = "    Current Server Time: " + d + "\r\n\r\n";
+		}
+	catch (ExceptionInInitializerError eiie)
+		{
+		eiie.getException().printStackTrace();
+		}
+		
+	os.write(welcome.getBytes());		
+		
+	
 	if (!fNoCmd)
 		{
-		welcome = "   prefix commands with a plus sign (+)\r\n";	
+		welcome = "    prefix commands with a plus sign (+)\r\n";	
 		os.write(welcome.getBytes());		
 		}
 

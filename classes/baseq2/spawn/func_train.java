@@ -88,10 +88,10 @@ public void go()
 			return;
 			}
 
-		fTargets = fTrainTarget.fTargets;
+		fTargets = fTrainTarget.getTargets();
 
 		// check for a teleport path_corner
-		if ((fTrainTarget.fSpawnFlags & 1) == 0)
+		if ((fTrainTarget.getSpawnFlags() & 1) == 0)
 			break;  // out if while(true) loop
 		else				
 			{
@@ -148,7 +148,7 @@ public void runFrame(int phase)
 			p.sub(fEntity.getMins());
 			fEntity.setOrigin(p);
 			fEntity.linkEntity();
-			fTargets = fTrainTarget.fTargets;
+			fTargets = fTrainTarget.getTargets();
 				
 			if ((fTargetGroup == null) || ((fSpawnFlags & TRAIN_START_ON) != 0))
 				go();

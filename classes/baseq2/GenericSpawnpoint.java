@@ -35,6 +35,9 @@ public GenericSpawnpoint(String[] spawnArgs) throws GameException
 		Float f = new Float(s);
 		fAngles = new Angle3f(0, f.floatValue(), 0);
 		}
+		
+	if (fAngles == null)
+		fAngles = new Angle3f();
 	}
 /**
  * Fetch the spawnpoint's orientation.

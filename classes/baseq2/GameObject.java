@@ -49,7 +49,7 @@ public GameObject(String[] spawnArgs, boolean isWorld) throws GameException
 
 	// The worldspawn is never inhibited..although
 	// on the jail1 map, it's flagged as if it is.
-	if (!(this instanceof baseq2.spawn.worldspawn))
+	if (!isWorld)
 		GameModule.checkInhibited(fSpawnFlags);
 				
 	// at this point, looks like the object will be sticking around
@@ -184,6 +184,22 @@ public int getSpawnArg(String keyword, int defaultValue)
 public String getSpawnArg(String keyword, String defaultValue)
 	{
 	return Game.getSpawnArg(fSpawnArgs, keyword, defaultValue);
+	}
+/**
+ * Get this object's spawnflags.
+ * @return int
+ */
+public int getSpawnFlags() 
+	{
+	return fSpawnFlags;
+	}
+/**
+ * Get this object's targets.
+ * @return java.util.Vector
+ */
+public Vector getTargets() 
+	{
+	return fTargets;
 	}
 /**
  * Check whether this Entitiy is a group slave. 
