@@ -48,9 +48,12 @@ public void fire()
 
 	try
 		{
-		new Grenade(fPlayer, start, forward, damage, 600, 2.5F, radius);
+		Class grenadeClass = Game.lookupClass(".Grenade");
+		// assume we're tossing a baseq2.Grenade or subclass
+		Grenade g = (Grenade) grenadeClass.newInstance();		
+		g.toss(fPlayer, start, forward, damage, 600, 2.5F, radius);
 		}
-	catch (GameException e)
+	catch (Exception e)
 		{
 		Game.dprint("Can't create Grenade " + e);
 		}		

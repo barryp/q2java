@@ -34,28 +34,14 @@ public GameModule(String moduleName)
  */
 public void svcmd_cmd(String[] args)
 	{
-	String[] sa = new String[args.length - 2];
-	for (int i = 0; i < sa.length; i++)
-		sa[i] = args[i+2];
-
-	Class[] paramTypes = new Class[1];
-	paramTypes[0] = sa.getClass();
-	
-	try
+	StringBuffer sb = new StringBuffer(args[2]);
+	for (int i = 3; i < args.length; i++)
 		{
-		java.lang.reflect.Method meth = fTestBot.getClass().getMethod("cmd_" + sa[0].toLowerCase(), paramTypes);						
-		Object[] params = new Object[1];
-		params[0] = sa;
-		meth.invoke(fTestBot, params);
+		sb.append(' ');
+		sb.append(args[i]);
 		}
-	catch (java.lang.reflect.InvocationTargetException e2)
-		{
-		e2.getTargetException().printStackTrace();
-		}
-	catch (Exception e3)
-		{
-		e3.printStackTrace();
-		}
+		
+	fTestBot.playerCommand(sb.toString());
 	}
 /**
  * This method was created by a SmartGuide.

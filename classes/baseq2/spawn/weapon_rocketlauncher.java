@@ -49,9 +49,12 @@ public void fire()
 
 	try
 		{
-		new Rocket(fPlayer, start, forward, damage, 650, damageRadius, radiusDamage);
+		Class rocketClass = Game.lookupClass(".Rocket");
+		// assume we're launching a baseq2.Rocket or subclass
+		Rocket r = (Rocket) rocketClass.newInstance();		
+		r.launch(fPlayer, start, forward, damage, 650, damageRadius, radiusDamage);
 		}
-	catch (GameException e)
+	catch (Exception e)
 		{
 		Game.dprint("Can't create Rocket " + e);
 		}		

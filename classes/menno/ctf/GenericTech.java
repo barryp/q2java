@@ -1,4 +1,4 @@
-package menno.ctf;
+package menno.ctftech;
 
 
 /*
@@ -19,7 +19,6 @@ package menno.ctf;
 import java.util.*;
 import q2java.*;
 import q2jgame.*;
-//import baseq2.*;
 import javax.vecmath.*;
 
 /**
@@ -31,16 +30,23 @@ public abstract class GenericTech extends baseq2.GenericItem implements baseq2.P
 {
 
 	public final static int CTF_TECH_TIMEOUT       = 60;  // seconds before techs spawn again
-	public final static int STAT_CTF_TECH          = 26;
+	public final static int NO_HUD_ICON 		   = -1;  // value to use if we don't want the techs to put their icons on the HUD
 
-	private Player  fOwner;			// The Player that's carrying us.
-	protected GenericTech() throws GameException
+	private baseq2.Player  fOwner;			// The Player that's carrying us.
+	private int fHUDStat;  // HUD Stat to display icon on.
+	/**
+	 * Create a CTF Tech
+	 *
+	 *@param hudStat stat to set to display this items icon when picked up, use zero to avoid showing icon.
+	 */
+	protected GenericTech(int hudStat) throws GameException
 	{
 		super( null );
 
 		// cause a timeout to be triggered right away so the tech
 		// gets to reposition itself.
 		setDropTimeout(0);
+		fHUDStat = hudStat;
 	}
 	/**
 	 * Drops the item on the ground
@@ -56,7 +62,7 @@ public abstract class GenericTech extends baseq2.GenericItem implements baseq2.P
 		super.drop(dropper, CTF_TECH_TIMEOUT);
 
 		// disassociate the tech from the player
-		dropper.fEntity.setPlayerStat( STAT_CTF_TECH, (short)0 );
+		dropper.fEntity.setPlayerStat( fHUDStat, (short)0 );
 		dropper.removePlayerStateListener(this);
 		setOwner(null);
 	}
@@ -81,7 +87,7 @@ public abstract class GenericTech extends baseq2.GenericItem implements baseq2.P
 	 * Get the player that's holding the tech.
 	 * @return menno.ctf.Player - may be null if not currently held.
 	 */
-	public Player getOwner() 
+	public baseq2.Player getOwner() 
 	{
 		return fOwner;
 	}
@@ -92,6 +98,7 @@ public abstract class GenericTech extends baseq2.GenericItem implements baseq2.P
 	 */
 	public boolean isTouchable(baseq2.Player bp) 
 	{
+/*	
 		// make sure player is a CTF player
 		if (!(bp instanceof Player))
 		{
@@ -108,11 +115,11 @@ public abstract class GenericTech extends baseq2.GenericItem implements baseq2.P
 			p.fEntity.centerprint(p.getResourceGroup().getRandomString("menno.ctf.CTFMessages", "no_team"));
 			return false;
 		}
-
+*/
 		// make sure player isn't already carrying a tech
 		if (bp.isCarrying("tech"))
 		{
-			p.fEntity.centerprint(p.getResourceGroup().getRandomString("menno.ctf.CTFMessages", "have_tech"));		
+			bp.fEntity.centerprint(bp.getResourceGroup().getRandomString("menno.ctf.CTFMessages", "have_tech"));		
 			return false;
 		}
 			
@@ -130,13 +137,15 @@ public abstract class GenericTech extends baseq2.GenericItem implements baseq2.P
 		else
 			p.removePlayerStateListener(this); // just remove the listener
 			
-		p.removeInventory("tech");			
+		p.removeInventory("tech");
+		if (fOwner != null)
+			setOwner(null);
 	}
 	/**
 	 * Set which player is holding the tech.
 	 * @param p menno.ctf.Player
 	 */
-	public void setOwner(Player p) 
+	public void setOwner(baseq2.Player p) 
 	{
 		fOwner = p;
 	}
@@ -156,11 +165,12 @@ public abstract class GenericTech extends baseq2.GenericItem implements baseq2.P
 	{
 		super.touchFinish(p, itemTaken);
 
-		// add tech to player's inventory and update their hud
+		// add tech to player's inventory and update their hud if playing genuine CTF
 		int icon = Engine.getImageIndex(getIconName());
-		p.fEntity.setPlayerStat( GenericTech.STAT_CTF_TECH, (short)icon );
+		if (fHUDStat != NO_HUD_ICON)
+			p.fEntity.setPlayerStat( fHUDStat, (short)icon );
 		p.putInventory( "tech", this );
-		setOwner((Player)p);
+		setOwner(p);
 
 		// make sure we find out if the player dies
 		p.addPlayerStateListener(this);

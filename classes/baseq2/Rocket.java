@@ -17,10 +17,24 @@ public class Rocket extends GameObject implements FrameListener
 	protected GameObject fOwner;
 	
 /**
- * BlasterBolt constructor comment.
+ * No-arg constructor.
+ */
+public Rocket() 
+	{
+	}
+/**
+ * This method was created by a SmartGuide.
+ */
+public void dispose() 
+	{
+	fEntity.freeEntity();
+	Game.removeFrameListener(this);
+	}
+/**
+ * Launch a rocket.
  * @exception q2java.GameException The exception description.
  */
-public Rocket(GameObject owner, Point3f start, Vector3f dir, int damage, int speed, float damageRadius, int radiusDamage) throws q2java.GameException 
+public void launch(GameObject owner, Point3f start, Vector3f dir, int damage, int speed, float damageRadius, int radiusDamage) throws q2java.GameException 
 	{
 	fEntity = new NativeEntity();
 	fEntity.setReference(this);
@@ -45,14 +59,6 @@ public Rocket(GameObject owner, Point3f start, Vector3f dir, int damage, int spe
 	// register to be called every server frame
 	// so we can animate the rocket's flight.
 	Game.addFrameListener(this, 0, 0);
-	}
-/**
- * This method was created by a SmartGuide.
- */
-public void dispose() 
-	{
-	fEntity.freeEntity();
-	Game.removeFrameListener(this);
 	}
 /**
  * Go away the first chance we get to think

@@ -21,50 +21,11 @@ public abstract class GenericGrenade extends GameObject implements FrameListener
 	static final float STOP_EPSILON = 0.1f;
 	
 /**
- * BlasterBolt constructor comment.
- * @exception q2java.GameException The exception description.
+ * No-arg constructor.
  */
-protected GenericGrenade(GameObject owner, Point3f start, Vector3f aimdir, int damage, int speed, float timer, float radiusDamage) throws q2java.GameException 
+public GenericGrenade() 
 	{
-	fEntity = new NativeEntity();
-	fEntity.setReference(this);
-
-	Vector3f forward = new Vector3f();
-	Vector3f right   = new Vector3f();
-	Vector3f up      = new Vector3f();
-	Angle3f dir      = new Angle3f(aimdir);
-	dir.getVectors( forward, right, up );
-	
-	fEntity.setOrigin(start);
-	aimdir.scale(speed); // this seems wrong...I would think the direction should be normalized first, like the blaster is.
-
-	Vector3f vel = new Vector3f(aimdir);
-	vel.scaleAdd( 200 + Game.randomFloat()*10, up,    vel);
-	vel.scaleAdd(       Game.randomFloat()*10, right, vel);
-
-	fEntity.setVelocity(vel);
-
-	fAvelocity = new Vector3f( 300, 300, 300 );
-	fEntity.setClipmask(Engine.MASK_SHOT); 
-	fEntity.setSolid(NativeEntity.SOLID_BBOX);
-	fEntity.setEffects(NativeEntity.EF_GRENADE);
-	fOwner = owner;
-	fEntity.setOwner(owner.fEntity);
-	fExpires = (float)Game.getGameTime() + timer; // explode after a while
-	fDamage = damage;
-	fRadiusDamage = radiusDamage;
-	fEntity.linkEntity();
-
-	if (timer <= 0.0)
-		{
-		explode(null);
-		dispose();
-		}
-	else
-		{
-		Game.addFrameListener(this, 0, 0);
-		}
-	}
+	}	
 void checkVelocity()
 	{
 	int		 i;
@@ -129,11 +90,12 @@ int clipVelocity (Vector3f normal, float overbounce)
 	return blocked;
 	}
 /**
- * This method was created by a SmartGuide.
+ * Disassociate the GenericGrenade from the rest of the game.
  */
 public void dispose() 
 	{
-	fEntity.freeEntity();
+	if (fEntity != null)	
+		fEntity.freeEntity();
 	Game.removeFrameListener(this);
 	}
 protected void explode( TraceResults tr )
@@ -225,6 +187,50 @@ public void runFrame(int phase)
 		{
 		clipVelocity(tr.fPlaneNormal, 1.5f);
 		fEntity.sound (NativeEntity.CHAN_VOICE, Engine.getSoundIndex("weapons/grenlb1b.wav"), 1, NativeEntity.ATTN_NORM, 0);
+		}
+	}
+/**
+ * Setup the grenade and start it running.
+ */
+public void toss(GameObject owner, Point3f start, Vector3f aimdir, int damage, int speed, float timer, float radiusDamage) throws q2java.GameException 
+	{
+	fEntity = new NativeEntity();
+	fEntity.setReference(this);
+
+	Vector3f forward = new Vector3f();
+	Vector3f right   = new Vector3f();
+	Vector3f up      = new Vector3f();
+	Angle3f dir      = new Angle3f(aimdir);
+	dir.getVectors( forward, right, up );
+	
+	fEntity.setOrigin(start);
+	aimdir.scale(speed); // this seems wrong...I would think the direction should be normalized first, like the blaster is.
+
+	Vector3f vel = new Vector3f(aimdir);
+	vel.scaleAdd( 200 + Game.randomFloat()*10, up,    vel);
+	vel.scaleAdd(       Game.randomFloat()*10, right, vel);
+
+	fEntity.setVelocity(vel);
+
+	fAvelocity = new Vector3f( 300, 300, 300 );
+	fEntity.setClipmask(Engine.MASK_SHOT); 
+	fEntity.setSolid(NativeEntity.SOLID_BBOX);
+	fEntity.setEffects(NativeEntity.EF_GRENADE);
+	fOwner = owner;
+	fEntity.setOwner(owner.fEntity);
+	fExpires = (float)Game.getGameTime() + timer; // explode after a while
+	fDamage = damage;
+	fRadiusDamage = radiusDamage;
+	fEntity.linkEntity();
+
+	if (timer <= 0.0)
+		{
+		explode(null);
+		dispose();
+		}
+	else
+		{
+		Game.addFrameListener(this, 0, 0);
 		}
 	}
 }

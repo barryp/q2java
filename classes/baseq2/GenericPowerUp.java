@@ -23,6 +23,13 @@ public GenericPowerUp(String[] spawnArgs) throws GameException
 	super(spawnArgs);
 	}
 /**
+ * The default respawn time for powerup's is 60 seconds.
+ */
+public float getRespawnTime()
+	{
+	return 60;
+	}
+/**
  * Can a given player touch this item.
  * @return boolean
  * @param p baseq2.Player

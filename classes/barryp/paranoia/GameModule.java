@@ -47,6 +47,11 @@ public static void addPlayer(Player p)
  */
 public static void assignRole(Player requestor) 
 	{
+	int nEntries = gVictimList.size();
+
+	if (nEntries < 1)
+		return;
+		
 	// randomize the order in which requests are granted
 	if ((Game.randomInt() & 0x003f) != 0)
 		return; // only fullfill one request out of every 64

@@ -16,14 +16,22 @@ import baseq2.*;
  */ 
 
 public class trigger_multiple extends GameObject implements FrameListener, FixedObject
-	{
+		{
+	protected final static int MONSTER = 1;
+	protected final static int NOT_PLAYER = 2;
+	protected final static int TRIGGER = 4;
+
 	protected float fDelay;
 	protected int fState;
 	protected Vector3f fTriggerDir;
-	
+	protected float fWait;
+
+	protected int fSound;
+	protected String fMessage;
+	protected float fLastFire;
+
 	protected final static int STATE_DISABLED = 0;
 	protected final static int STATE_ENABLED = 1;
-	protected final static int STATE_BUSY = 2;
 	protected final static int STATE_DISPOSING = 3;
 	
 /**
@@ -37,8 +45,25 @@ public trigger_multiple (String[] spawnArgs) throws GameException
 public trigger_multiple(String[] spawnArgs, boolean isMultiple) throws GameException
 	{
 	super(spawnArgs);
+
+	int sounds = Game.getSpawnArg(spawnArgs, "sounds", 0);
 	
-	fDelay = (isMultiple ? Game.getSpawnArg(spawnArgs, "delay", 0.2F) : -1);	
+	if(sounds == 1)
+	    fSound = Engine.getSoundIndex("misc/secret.wav");
+	else if(sounds == 2)
+	    fSound = Engine.getSoundIndex("misc/talk.wav");
+	else if(sounds == 3)
+	    fSound = Engine.getSoundIndex("misc/trigger1.wav");
+
+	fMessage = Game.getSpawnArg(spawnArgs, "message", null);
+
+	fWait = (isMultiple ? Game.getSpawnArg(spawnArgs, "wait", 0.2F) : -1.0F);	
+
+	if( isMultiple )
+	    {
+	    fDelay = Game.getSpawnArg(spawnArgs, "delay", 0);
+	    }
+	
 	fEntity.setSVFlags(NativeEntity.SVF_NOCLIENT);
 
 	// (trigger_once special handling)
@@ -54,9 +79,6 @@ public trigger_multiple(String[] spawnArgs, boolean isMultiple) throws GameExcep
 		fEntity.setSolid(NativeEntity.SOLID_TRIGGER);
 		fState = STATE_ENABLED;
 		}
-
-//	if (!VectorCompare(ent->s.angles, vec3_origin))
-//		G_SetMovedir (ent->s.angles, ent->movedir);
 
 	Angle3f angles = fEntity.getAngles();
 	if (!MiscUtil.equals(angles, 0, 0, 0))
@@ -75,13 +97,7 @@ public void runFrame(int phase)
 	{
 	switch (fState)
 		{
-		case STATE_BUSY:
-			fState = STATE_ENABLED;
-			break;	
-			
-		case STATE_DISPOSING:
-			dispose();
-			break;						
+		case STATE_DISPOSING: dispose(); break;						
 		}
 
 	}
@@ -92,15 +108,46 @@ public void runFrame(int phase)
  */
 public void touch(Player touchedBy) 
 	{
+	if( touchedBy != null )
+		{
+		if( (fSpawnFlags & NOT_PLAYER) != 0 ) 
+			return; // ie if NOT_PLAYER then ignore on player
+		}
+	  /*
+	else if( touchedBy instanceof Monster )
+	  {
+	  if( (fSpawnFlags & MONSTER) == 0 )  return; // ie only be touched if is MONSTER
+	  }
+	  */
+	else 
+		return; // ie been touched by a non-monster non-player
+	  
 	if (fTriggerDir != null)
 		{
 		Vector3f forward = new Vector3f();
 		touchedBy.fEntity.getAngles().getVectors(forward, null, null);
-		if (forward.dot(fTriggerDir) < 0)	
+		if (forward.dot(fTriggerDir) < 0) 
 			return;
 		}
-		
+	  
 	use(touchedBy);
+	}
+public void trigger(Object activator) 
+	{
+	useTargets( activator );
+
+	if( fSound != 0 )
+		fEntity.sound( NativeEntity.CHAN_AUTO, fSound, 1.0f, NativeEntity.ATTN_NORM, 0.0f );
+
+	if( fMessage != null && activator != null && activator instanceof GameObject )
+		((GameObject)activator).fEntity.cprint( Engine.PRINT_MEDIUM , fMessage + "\n" );
+
+	if (fWait <= 0) // ie is multiple trigger
+		{
+		// setup to be called back when busy state is finished
+		fState = STATE_DISPOSING;
+		Game.addFrameListener(this, 0, -1);
+		}
 	}
 /**
  * This method was created by a SmartGuide.
@@ -117,20 +164,42 @@ public void use(Player touchedBy)
 			break;
 			
 		case STATE_ENABLED:
-			useTargets();			
-			if (fDelay > 0)
+	        if( fWait <= 0 ) // deal with single triggers first
 				{
-				// setup to be called back when busy state is finished
-				fState = STATE_BUSY;
-				Game.addFrameListener(this, fDelay, -1);
+				trigger( touchedBy );
+				break;
+				}
+			
+			if( fLastFire + fWait > Game.getGameTime() ) 
+				return;
+			
+			fLastFire = Game.getGameTime();
+			
+	        if( fDelay > 0 )
+				{
+				Game.addFrameListener( new TriggerDelayer(this, touchedBy), 
+						 fDelay,
+						 -1);
 				}
 			else
 				{
-				// setup to be called back when busy state is finished
-				fState = STATE_DISPOSING;
-				Game.addFrameListener(this, 0, -1);
+				trigger( touchedBy );
 				}
 			break;			
+		}
+	}
+public void useTargets(Object activator) 
+	{
+	if (fTargets == null)
+		return;
+		
+	for (int i = 0; i < fTargets.size(); i++)
+		{
+		Object obj = fTargets.elementAt(i);
+		if (obj instanceof GameTarget)
+	    	((GameTarget) obj).use( (Player)activator );
+		else
+			System.out.println(obj.getClass().getName() + " doesn't implement GameTarget");
 		}
 	}
 }

@@ -1,4 +1,4 @@
-package menno.ctf.spawn;
+package menno.ctftech;
 
 
 /*
@@ -28,13 +28,14 @@ import menno.ctf.*;
  * just sits and flutters in the wind.
  */
 
-public class item_tech3 extends GenericTech
+public class TimeAccel extends GenericTech
 {
 	protected float fNextSoundTime = 0;
 
 
-	public item_tech3() throws GameException
+	public TimeAccel(int hudStat) throws GameException		
 	{
+		super(hudStat);
 	}
 	/**
 	 * Get the name of this item's icon.
@@ -92,7 +93,7 @@ public class item_tech3 extends GenericTech
 		if ((phase == Game.FRAME_BEGINNING) && (getOwner() != null))
 		{
 			baseq2.GenericWeapon gw = getOwner().getCurrentWeapon();
-			if ( (!(gw instanceof weapon_grapple)) && getOwner().getCurrentWeapon().isFiring() )
+			if ((!(gw instanceof menno.ctf.spawn.weapon_grapple)) &&  getOwner().getCurrentWeapon().isFiring() )
 			{
 				gw.weaponThink();
 				playSound();
@@ -103,7 +104,7 @@ public class item_tech3 extends GenericTech
 	 * Set which player is holding the tech.
 	 * @param p menno.ctf.Player
 	 */
-	public void setOwner(Player p) 
+	public void setOwner(baseq2.Player p) 
 	{
 		super.setOwner(p);
 

@@ -25,6 +25,8 @@ public class GenericMenu
 {
 	protected NativeEntity      fOwner;
 
+	protected Rectangle   fRectangle;
+	protected String      fPrefix;
 	protected String[]    fHeader;
 	protected String[]    fFooter;
 	protected Vector      fMenuItems;
@@ -36,14 +38,10 @@ public class GenericMenu
 	protected int         fPercAbove;
 	protected int         fPercBeneath;
 
-	public GenericMenu( NativeEntity owner )
+	public GenericMenu()
 	{
-		fOwner       = owner;
-
-		fHeader     = new String[0];
-		fFooter     = new String[0];
+		fRectangle = new Rectangle(0, 0, 320, 240);		
 		fMenuItems  = new Vector();
-
 		fSelectedItem = 0;
 	}
 	public void addMenuItem( String[] s )
@@ -57,6 +55,7 @@ public class GenericMenu
 	{
 		// close the menu;
 		fOwner.setPlayerStat(NativeEntity.STAT_LAYOUTS, (short)0);
+		fOwner = null;
 	}
 	private char[] createBotsel( int linelength )
 	{
@@ -175,6 +174,9 @@ public class GenericMenu
 	 */
 	private String getFooter( Rectangle area )
 	{
+		if (fFooter == null)
+			return "";
+			
 		StringBuffer sb = new StringBuffer();
 		int    x;
 		int    y    = area.y + area.height;
@@ -205,6 +207,9 @@ public class GenericMenu
 	 */
 	private String getHeader( Rectangle area )
 	{
+		if (fHeader == null)
+			return "";
+			
 		StringBuffer sb = new StringBuffer();
 		
 		int    x;
@@ -421,12 +426,23 @@ public class GenericMenu
 	public void selectNextItem()
 	{
 		fSelectedItem = (fSelectedItem + 1) % fMenuItems.size();
-		show();
+		show(fOwner);
 	}
 	public void selectPreviousItem()
 	{
 		fSelectedItem = (fMenuItems.size() + fSelectedItem - 1) % fMenuItems.size();
-		show();
+		show(fOwner);
+	}
+/**
+ * Set the bounds for the menu.
+ * @param x int
+ * @param y int
+ * @param width int
+ * @param height int
+ */
+public void setBounds(int x, int y, int width, int height) 
+	{
+	fRectangle.setBounds(x, y, width, height);
 	}
 	public void setFooter( String[] s )
 	{
@@ -436,12 +452,21 @@ public class GenericMenu
 	{
 		fHeader = s;
 	}
+/**
+ * Set extra info to add to the beginning of the layout string.
+ * @param prefix java.lang.String
+ */
+public void setPrefix(String prefix) 
+	{
+	fPrefix = prefix;
+	}
 	/**
 	 * Show the menu on the player's screen, using default settings.
 	 *
 	 */
-	public void show()
+	public void show(NativeEntity owner)
 	{
-		displayMenu( "", new Rectangle(0, 0, 320, 240) );
+		fOwner = owner;
+		displayMenu( fPrefix, new Rectangle(fRectangle) );
 	}
 }

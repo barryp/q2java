@@ -16,9 +16,11 @@ package menno.ctf;
 
 
 import java.util.*;
+import javax.vecmath.*;
 import q2java.*;
 import q2jgame.*;
-import javax.vecmath.*;
+import baseq2.PlayerStateListener;
+import baseq2.DamageFilter;
 import menno.ctf.spawn.*;
 
 /**
@@ -27,7 +29,7 @@ import menno.ctf.spawn.*;
  */
 
 
-public class Team implements LevelListener, baseq2.PlayerStateListener
+public class Team implements LevelListener, PlayerStateListener, DamageFilter
 {
 	public static final String CTF_TEAM1_SKIN = "ctf_r";
 	public static final String CTF_TEAM2_SKIN = "ctf_b";
@@ -87,10 +89,19 @@ public class Team implements LevelListener, baseq2.PlayerStateListener
 	}
 	public void addPlayer( Player p )
 	{
+		if (fPlayers.contains(p))
+			return; // already joined this team
+			
 		fPlayers.addElement( p );
 
 		// make sure we find out if the team member disconnects
 		p.addPlayerStateListener(this);
+
+		// act as a damage filter for this member
+		p.addDamageFilter(this);
+
+		// handle the say_team command for the player
+		p.addCommandHandler(this);
 		
 		// assign new skin
 		assignSkinTo( p );
@@ -143,6 +154,56 @@ public class Team implements LevelListener, baseq2.PlayerStateListener
 			client.fEntity.setPlayerStat( STAT_CTF_TEAM1_HEADER, (short)Engine.getImageIndex("ctfsb1") );
 			client.fEntity.setPlayerStat( STAT_CTF_TEAM2_HEADER, (short)Engine.getImageIndex("ctfsb2") );
 		}
+	}
+	/**
+	 * Handle "say_team" commands for our members.
+	 * @param (Ignored, uses the Engine.args() value instead)
+	 */
+	public void cmd_say_team(baseq2.Player source, String[] argv, String args) 
+	{
+		// remove any quote marks
+		if (args.charAt(args.length()-1) == '"')
+			args = args.substring(args.indexOf('"')+1, args.length()-1);
+			
+		args = "(" + source.getName() + "): " + args;		
+		
+		// keep the message down to a reasonable length
+		if (args.length() > 150)
+			args = args.substring(0, 150);	
+				
+		args += "\n";
+				
+		Player[] players = getPlayers();
+
+		for ( int i=0; i<players.length; i++ )
+			players[i].fEntity.cprint( Engine.PRINT_CHAT, args );
+	}
+	/**
+	 * Filter a team member's damage.
+	 * @param DamageObject - damage to be filtered.
+	 */
+	public baseq2.DamageObject filterDamage(baseq2.DamageObject damage)
+	{
+		// check for self-inflicted damage
+		if (damage.fVictim == damage.fAttacker)
+			return damage; // they deserve what they get..no help from us
+			
+		// check if the attacker also belongs to this team
+		if (isTeamMember(damage.fAttacker))
+		{
+			damage.fAmount = 0;
+			return damage;  // give the guy a break
+		}
+		
+		if ((damage.fAttacker instanceof Player) && ((Player)damage.fVictim).isCarrying("flag"))
+		{
+			// A CTF Player other than ourselves attacked us and we have the flag			
+			// mark the attacker that he was aggressive to the flag-carrier.
+			Player p = (Player)(damage.fAttacker);
+			p.fLastCarrierHurt = Game.getGameTime();
+		}
+		
+		return damage;
 	}
 	/**
 	* Returns the origin of the base of this team.
@@ -326,6 +387,15 @@ public class Team implements LevelListener, baseq2.PlayerStateListener
 	{
 		return null;
 	}
+	/**
+	 * Check if a player belongs to this team.
+	 * @return boolean
+	 * @param p The player we're checking on.
+	 */
+	public boolean isTeamMember(Object obj) 
+	{
+		return fPlayers.contains(obj);
+	}
 /**
  * Called when a new map is starting, after entities have been spawned.
  */
@@ -343,32 +413,16 @@ public void levelEntitiesSpawned() {
 	}
 	public boolean removePlayer( Player p )
 	{
+		if (!fPlayers.contains(p))
+			return false;
+			
 		//update players stats that he leaved this team (the yellow line around team-icon)
 		p.fEntity.setPlayerStat( STAT_CTF_JOINED_TEAM1_PIC, (short)0 );
 		p.fEntity.setPlayerStat( STAT_CTF_JOINED_TEAM2_PIC, (short)0 );
 		
 		p.removePlayerStateListener(this);
+		p.removeDamageFilter(this);
 		return fPlayers.removeElement( p );
-	}
-	/**
-	 * Send a chat message to all players of this team.
-	 * @param (Ignored, uses the Engine.args() value instead)
-	 */
-	public void say( Player talker, String msg )
-	{
-			
-		msg = "(" + talker.getName() + "): " + msg;		
-		
-		// keep the message down to a reasonable length
-		if (msg.length() > 150)
-			msg = msg.substring(0, 150);	
-				
-		msg += "\n";
-				
-		Player[] players = getPlayers();
-
-		for ( int i=0; i<players.length; i++ )
-			players[i].fEntity.cprint( Engine.PRINT_CHAT, msg );
 	}
 	//===================================================
 	// Methods

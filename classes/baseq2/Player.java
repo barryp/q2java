@@ -34,15 +34,17 @@ public class Player extends GameObject implements FrameListener, PlayerListener,
 	protected Vector fWeaponOrder;
 	protected Vector fWeaponsExcluded;
 
+	protected Vector fCommandHandlers;
 	protected Vector fPlayerStateListeners; // track PlayerStateListeners
+	protected Vector fPreArmorDamageFilters;	// Things that may want to modify the damage we take.
+	protected Vector fArmorDamageFilters;
+	protected Vector fPostArmorDamageFilters;
+	protected ArmorDamageFilter fArmor;
+	private DamageObject fTempDamageObject;
 	
-	// Armor 
-	private int fArmorCount;
-	private int fArmorMaxCount;
-	/** what fraction of normal damage the player's armor absorbs. */
-	protected float fArmorProtection;
-	/** fraction of energy damage the player's armor absorbs. */
-	protected float fArmorEnergyProtection;
+	public final static int DAMAGE_FILTER_PHASE_PREARMOR = 0;
+	public final static int DAMAGE_FILTER_PHASE_ARMOR = 1;
+	public final static int DAMAGE_FILTER_PHASE_POSTARMOR = 2;
 
 	/** have we given the current weapon a chance to think yet this frame? */
 	protected boolean fWeaponThunk;
@@ -341,7 +343,18 @@ public Player(NativeEntity ent, boolean loadgame) throws GameException
 	fWeaponOrder = new Vector();
 	fWeaponsExcluded = new Vector();
 
+	fCommandHandlers = new Vector();	
 	fPlayerStateListeners = new Vector();
+
+	// Setup damage filter lists
+	fPreArmorDamageFilters = new Vector();
+	fArmorDamageFilters = new Vector();
+	fPostArmorDamageFilters = new Vector();
+
+	// create the basic Player Armor
+	fArmor = new ArmorDamageFilter(this);
+	fTempDamageObject = new DamageObject();
+	addDamageFilter(fArmor, DAMAGE_FILTER_PHASE_ARMOR);
 	
 	// Setup default weapon ordering
 	fWeaponOrder.addElement("blaster");
@@ -408,57 +421,6 @@ protected boolean addAmmo(AmmoHolder ah)
 	return true;		
 	}
 /**
- * This method was created by a SmartGuide.
- * @param amount int
- * @param maxAmount int
- * @param protection float
- * @param energyProtection float
- */
-protected boolean addArmor(GenericArmor armor) 
-	{
-	int amount = armor.getArmorValue();
-	int maxAmount = armor.getArmorMaxValue();
-	
-	// handle shards differently
-	if (maxAmount == 0) 
-		{
-		if (fArmorCount == 0)
-			{
-			fEntity.setPlayerStat(NativeEntity.STAT_ARMOR_ICON, (short) Engine.getImageIndex(armor.getIconName()));
-			fArmorMaxCount = 50;
-			fArmorProtection = 0.3F;			
-			}
-		fArmorCount += amount;
-		fEntity.setPlayerStat(NativeEntity.STAT_ARMOR, (short)fArmorCount);
-		return true;
-		}
-
-	// is this an armor upgrade?
-	float protection = armor.getProtectionFactor();
-	if (protection > fArmorProtection)
-		{ 
-		int salvage = (int)((fArmorProtection / protection) * fArmorCount);
-		fArmorCount = amount + salvage;
-		fArmorMaxCount = maxAmount;
-		fArmorProtection = protection;
-		fArmorEnergyProtection = armor.getEnergyProtectionFactor();		
-		fEntity.setPlayerStat(NativeEntity.STAT_ARMOR, (short)fArmorCount);
-		fEntity.setPlayerStat(NativeEntity.STAT_ARMOR_ICON, (short) Engine.getImageIndex(armor.getIconName()));
-		return true;
-		}		
-
-	// is our armor not up to capacity?		
-	if (fArmorCount < fArmorMaxCount)		
-		{
-		fArmorCount = Math.min(fArmorMaxCount, fArmorCount + amount);
-		fEntity.setPlayerStat(NativeEntity.STAT_ARMOR, (short)fArmorCount);
-		return true;
-		}		
-
-	// guess we don't need this armor
-	return false;		
-	}
-/**
  * This method adds a color to fBlend, via RGBA (given as
  * xyzw to match the Color4f class).
  *
@@ -493,6 +455,56 @@ public void addBlend(Color4f color)
 	addBlend(color.x, color.y, color.z, color.w);
 	}
 /**
+ * Add a command handler to this player.
+ * @param obj an object with methods named "cmd_"
+ */
+public void addCommandHandler(Object obj) 
+	{
+	if (!fCommandHandlers.contains(obj))
+		fCommandHandlers.addElement(obj);
+	}
+/**
+ * Add an object that wants to filter damage the player takes.
+ * It adds the filter as a pre-armor filter.
+ * @param DamageFilter - The object to add as a damage filter
+ */
+public void addDamageFilter(DamageFilter pdf)
+	{
+	if (pdf == null)
+		return;
+	
+	if (!fPreArmorDamageFilters.contains(pdf))
+		fPreArmorDamageFilters.addElement(pdf);
+	}
+/**
+ * Add an object that wants to filter damage the player takes.
+ * @param DamageFilter - The object to add as a damage filter
+ * @param int - Phase at which it wants to filter.
+ */
+public void addDamageFilter(DamageFilter pdf, int phase)
+	{
+	if (pdf == null)
+		return;
+	
+	if (phase == DAMAGE_FILTER_PHASE_PREARMOR)
+		{
+		if (!fPreArmorDamageFilters.contains(pdf))
+			fPreArmorDamageFilters.addElement(pdf);
+		}
+	else if (phase == DAMAGE_FILTER_PHASE_ARMOR)
+		{
+		if (!fArmorDamageFilters.contains(pdf))
+			fArmorDamageFilters.addElement(pdf);
+		}
+	else if (phase == DAMAGE_FILTER_PHASE_POSTARMOR)
+		{
+		if (!fPostArmorDamageFilters.contains(pdf))
+			fPostArmorDamageFilters.addElement(pdf);
+		}
+	
+	return;
+	}
+/**
  * Add an item to the player's inventory.
  * @param item what we're trying to add.
  * @return boolean true if the item was taken.
@@ -515,13 +527,13 @@ public boolean addItem(GenericItem item)
 		}
 
 	if (item instanceof GenericArmor)
-		return addArmor((GenericArmor)item);
+		return fArmor.addArmor((GenericArmor)item);
 		
 	// assume item knows what it's doing.
 	return true;
 	}
 /**
- * Add an object that wants to be notified when the player dies.
+ * Add an object that wants to be notified when the player state changes.
  * @param pdl baseq2.PlayerDiedListener
  */
 public void addPlayerStateListener(PlayerStateListener psl) 
@@ -636,6 +648,18 @@ protected void beginServerFrame()
 		}			
 				
 	fLatchedButtons = 0;		
+	}
+/**
+ * Update the player's breathing state - normally called automatically
+ *  by worldEffects() when above water.
+ * @param duration - how many seconds this breath will last
+ * @param resetDrownDamage - whether drowning damage is set back to initial levels.
+ */
+public void breath(float duration, boolean resetDrownDamage)
+	{
+	fAirFinished = Game.getGameTime() + duration;
+	if (resetDrownDamage)
+		fDrownDamage = 2;
 	}
 /**
  * Announce this player's death to the world.
@@ -1030,11 +1054,7 @@ protected void clearSettings( )
 	setAmmoCount("grenades", 0, true);
 
 	// initialize the armor settings (jacket_armor quality protection)
-	fArmorCount = 0;
-	fArmorMaxCount =  0;
-	fArmorProtection = 0; // almost, but not quite as good as jacket_armor
-	fArmorEnergyProtection = 0.0F;
-	fEntity.setPlayerStat(NativeEntity.STAT_ARMOR_ICON, (short) 0);
+	fArmor.reset();
 
 
 	// set various other bits to a normal setting
@@ -1070,37 +1090,37 @@ protected void closeDisplay()
  * This allows us to test different blend modes.<p>
  * This function will not work unless the setPlayerBlend in calcBlend is commented out.
  *
- * @param args java.lang.String[]
+ * @param argv java.lang.String[]
  */
  
-public void cmd_debug_setblend(String[] args)
+public void cmd_debug_setblend(String[] argv, String args)
 	{
-	if (args.length != 5)
-		{
+	if (argv.length != 5)
 		fEntity.cprint(Engine.PRINT_HIGH, "Usage: debug_setblend <red> <green> <blue> <alpha>\n");
-		return;
-		}
-	try
+	else
 		{
-		fEntity.setPlayerBlend(Float.valueOf(args[1]).floatValue(), 
-							   Float.valueOf(args[2]).floatValue(), 
-							   Float.valueOf(args[3]).floatValue(), 
-							   Float.valueOf(args[4]).floatValue());
-		}
-	catch (NumberFormatException nfe)
-		{
-		fEntity.cprint(Engine.PRINT_HIGH, nfe.toString());
+		try
+			{
+			fEntity.setPlayerBlend(Float.valueOf(argv[1]).floatValue(), 
+								   Float.valueOf(argv[2]).floatValue(), 
+								   Float.valueOf(argv[3]).floatValue(), 
+								   Float.valueOf(argv[4]).floatValue());
+			}
+		catch (NumberFormatException nfe)
+			{
+			fEntity.cprint(Engine.PRINT_HIGH, nfe.toString());
+			}
 		}
 	}
 /**
  * Drop an item in our inventory.
  */
-public void cmd_drop(String[] args) 
+public void cmd_drop(String[] argv, String args) 
 	{
 	// build up the name of the item
-	String itemName = args[1];
-	for (int i = 2; i < args.length; i++)
-		itemName = itemName + " " + args[i];
+	String itemName = argv[1];
+	for (int i = 2; i < argv.length; i++)
+		itemName = itemName + " " + argv[i];
 	itemName = itemName.toLowerCase();
 
 	// get it from our inventory
@@ -1109,8 +1129,8 @@ public void cmd_drop(String[] args)
 	// empty handed
 	if ((ip == null) || (ip.fAmount < 1))
 		{
-		Object[] msgArgs = {itemName};
-		fEntity.cprint(Engine.PRINT_HIGH, fResourceGroup.format("baseq2.Messages", "dont_have", msgArgs) + "\n");
+		Object[] msgargv = {itemName};
+		fEntity.cprint(Engine.PRINT_HIGH, fResourceGroup.format("baseq2.Messages", "dont_have", msgargv) + "\n");
 		return;
 		}		
 
@@ -1220,17 +1240,16 @@ public void cmd_drop(String[] args)
 	}
 /**
  * Change field-of-view.
- * @param args java.lang.String[]
+ * @param argv java.lang.String[]
  */
-public void cmd_fov(String[] args) 
+public void cmd_fov(String[] argv, String args) 
 	{
-	if (args.length < 1)
+	if (argv.length < 1)
 		{
 		fEntity.cprint(Engine.PRINT_HIGH, "cmd_fov() called with no arguments\n");
-		return;
 		}
 		
-	int i = Integer.parseInt(args[1]);
+	int i = Integer.parseInt(argv[1]);
 	
 	// limit to reasonable values
 	if (i < 1)
@@ -1238,21 +1257,21 @@ public void cmd_fov(String[] args)
 	if (i > 160)
 		i = 160;
 
-	fEntity.setPlayerFOV(i);				
+	fEntity.setPlayerFOV(i);
 	}
 /**
  * Tell the player about the game.
- * @param args java.lang.String[]
+ * @param argv java.lang.String[]
  */
-public void cmd_gameversion(String[] args) 
+public void cmd_gameversion(String[] argv, String args) 
 	{
 	fEntity.cprint(Engine.PRINT_HIGH, GameModule.getVersion() + "\n");
 	}
 /**
  * Give the player one of each weapon.  Good for debugging.
- * @param args java.lang.String[]
+ * @param argv java.lang.String[]
  */
-public void cmd_giveall(String[] args)
+public void cmd_giveall(String[] argv, String args)
 	{
 	if (!baseq2.GameModule.isCheating())
 		{
@@ -1274,18 +1293,18 @@ public void cmd_giveall(String[] args)
 /**
  * Draw the help computer.
  * Only works for drawing the scoreboard in a deathmatch right now.
- * @param args java.lang.String[]
+ * @param argv java.lang.String[]
  */
-public void cmd_help(String[] args)
+public void cmd_help(String[] argv, String args)
 	{
  	if (GameModule.gIsDeathmatch)
-  		cmd_score(args);
+ 		playerCommand("score");
 	}
 /**
  * Identify the player in your crosshairs.
- * @param args java.lang.String[]
+ * @param argv java.lang.String[]
  */
-public void cmd_id(String[] args) 
+public void cmd_id(String[] argv, String args) 
 	{
 	Point3f start = fEntity.getOrigin();
 	start.z += fViewHeight;
@@ -1299,13 +1318,13 @@ public void cmd_id(String[] args)
 
 	TraceResults tr = Engine.trace(start, end, fEntity, Engine.MASK_SHOT|Engine.CONTENTS_SLIME|Engine.CONTENTS_LAVA);
 	if ((tr.fEntity != null) && (tr.fEntity.isPlayer()))
-		fEntity.centerprint(((Player)tr.fEntity.getPlayerListener()).getName());		
+		fEntity.centerprint(((Player)tr.fEntity.getPlayerListener()).getName());
 	}
 /**
  * Identify the Java object in your crosshairs.
- * @param args java.lang.String[]
+ * @param argv java.lang.String[]
  */
-public void cmd_iddebug(String[] args) 
+public void cmd_iddebug(String[] argv, String args) 
 	{
 	Point3f start = fEntity.getOrigin();
 	start.z += fViewHeight;
@@ -1325,69 +1344,64 @@ public void cmd_iddebug(String[] args)
 	if (obj != null)
 		fEntity.cprint(Engine.PRINT_HIGH, obj.toString() + "\n");
 	else
-		fEntity.cprint(Engine.PRINT_HIGH, tr.fEntity.toString() + "\n");		
+		fEntity.cprint(Engine.PRINT_HIGH, tr.fEntity.toString() + "\n");
 	}
 /**
  * displays the inventory
- * @param args java.lang.String[] - not used.
+ * @param argv java.lang.String[] - not used.
  */
-public void cmd_inven(String[] args)
+public void cmd_inven(String[] argv, String args)
 	{
 	StringBuffer sb = new StringBuffer();
 	
 	fShowScore = false;
 	
 	if (fShowInventory)
-	{
+		{
 		fEntity.setPlayerStat(NativeEntity.STAT_LAYOUTS, (short) 0);
 		fShowInventory = false;
 		return;
-	}
+		}
 	
 	fShowInventory = true;
 	
 	Engine.writeByte(Engine.SVC_INVENTORY);	
 	
 	for (int i=0; i<InventoryList.length(); i++)
-	{
+		{
 		int n = fInventory.getNumberOf(InventoryList.getItemAtIndex(i));
 		Engine.writeShort((short)n);
-	}
+		}
 
 	Engine.unicast(fEntity, true);
 	fEntity.setPlayerStat(NativeEntity.STAT_LAYOUTS, (short)2);
-	
-	return;
 	}
 /**
- * Do-nothing placeholder to make things smoother
- * for mods that use menus like CTF and NWRA
- * @param args java.lang.String[] - not used.
+ * Do-nothing placeholder to to keep players from driving 
+ * other people nuts when they hit this particular key over and over.
  */
-public void cmd_invnext(String[] args)
+public void cmd_invnext(String[] argv, String args)
 	{
 	}
 /**
- * Do-nothing placeholder to make things smoother
- * for mods that use menus like CTF and NWRA
- * @param args java.lang.String[] - not used.
+ * Do-nothing placeholder to to keep players from driving 
+ * other people nuts when they hit this particular key over and over.
  */
-public void cmd_invprev(String[] args)
+public void cmd_invprev(String[] argv, String args)
 	{
 	}
 /**
- * Do-nothing placeholder to make things smoother
- * for mods that use menus like CTF and NWRA
- * @param args java.lang.String[] - not used.
+ * Do-nothing placeholder to to keep players from driving 
+ * other people nuts when they hit this particular key over and over.
  */
-public void cmd_invuse(String[] args)
+public void cmd_invuse(String[] argv, String args)
 	{
 	}
 /**
  * Suicide.
- * @param args java.lang.String[]
+ * @param argv java.lang.String[]
  */
-public void cmd_kill(String[] args) 
+public void cmd_kill(String[] argv, String args) 
 	{
 	if (fIsDead)
 		fEntity.cprint(Engine.PRINT_HIGH, fResourceGroup.getBundle("baseq2.Messages").getString("already_dead") + "\n");
@@ -1397,45 +1411,45 @@ public void cmd_kill(String[] args)
 /**
  * Put's away the any special screens that are currently displayed, e.g. scoreboard, inventory or help computer.
  * when the special screen is displayed and the esc key is hit this cmd is called
- * @param args java.lang.String[]
+ * @param argv java.lang.String[]
  */
-public void cmd_putaway(String[] args)
+public void cmd_putaway(String[] argv, String args)
 	{
-		closeDisplay();
+	closeDisplay();
 	}
 /**
  * Send a chat message to all players.
- * @param (Ignored, uses the Engine.args() value instead)
+ * @param (Ignored, uses the Engine.argv() value instead)
  */
-public void cmd_say(String[] args) 
+public void cmd_say(String[] argv, String args) 
 	{
-	String msg = Engine.getArgs();
-	
 	// remove any quote marks
-	if (msg.charAt(msg.length()-1) == '"')
-		msg = msg.substring(msg.indexOf('"')+1, msg.length()-1);
+	if (args.charAt(args.length()-1) == '"')
+		args = args.substring(args.indexOf('"')+1, args.length()-1);
 		
-	say(msg);
+	args = getName() + ": " + args;		
+	
+	// keep the message down to a reasonable length
+	if (args.length() > 150)
+		args = args.substring(0, 150);	
+			
+	args += "\n";			
+	Game.bprint(Engine.PRINT_CHAT, args);
 	}
 /**
  * Treat "say_team" the same as "say" for now.
  * @param (Ignored, uses the Engine.args() value instead)
  */
-public void cmd_say_team(String[] args) 
+public void cmd_say_team(String[] argv, String args) 
 	{
-	String msg = Engine.getArgs();
-	
-	// remove any quote marks
-	if (msg.charAt(msg.length()-1) == '"')
-		msg = msg.substring(msg.indexOf('"')+1, msg.length()-1);
-		
-	sayTeam(msg);
+	// pretend the player typed "say"
+	playerCommand("cmd_say", argv, args);
 	}
 /**
  * Display the scoreboard.
- * @param args java.lang.String[]
+ * @param argv java.lang.String[]
  */
-public void cmd_score(String[] args)
+public void cmd_score(String[] argv, String args)
 	{
 	// needs to check for coop mode
 	// --FIXME--
@@ -1456,19 +1470,19 @@ public void cmd_score(String[] args)
 	}
 /**
  * Use an item.
- * @param args java.lang.String[]
+ * @param argv java.lang.String[]
  */
-public void cmd_use(String[] args) 
+public void cmd_use(String[] argv, String args) 
 	{
-	String itemName = args[1];
-	for (int i = 2; i < args.length; i++)
-		itemName = itemName + " " + args[i];
+	String itemName = argv[1];
+	for (int i = 2; i < argv.length; i++)
+		itemName = itemName + " " + argv[i];
 	
 	GameObject ent = (GameObject) fInventory.get(itemName.toLowerCase());
 	if (ent == null)
 		{
-		Object[] msgArgs = {itemName};
-		fEntity.cprint(Engine.PRINT_HIGH, fResourceGroup.format("baseq2.Messages", "dont_have", msgArgs) + "\n");
+		Object[] msgargv = {itemName};
+		fEntity.cprint(Engine.PRINT_HIGH, fResourceGroup.format("baseq2.Messages", "dont_have", msgargv) + "\n");
 		return;
 		}
 
@@ -1482,8 +1496,8 @@ public void cmd_use(String[] args)
 		fNextWeapon = (GenericWeapon) ent;
 		if (!fNextWeapon.isEnoughAmmo())
 			{
-			Object[] msgArgs = {itemName};
-			fEntity.cprint(Engine.PRINT_HIGH, fResourceGroup.format("baseq2.Messages", "no_ammo", msgArgs) + "\n");
+			Object[] msgargv = {itemName};
+			fEntity.cprint(Engine.PRINT_HIGH, fResourceGroup.format("baseq2.Messages", "no_ammo", msgargv) + "\n");
 			fNextWeapon = null;
 			return;
 			}
@@ -1498,18 +1512,17 @@ public void cmd_use(String[] args)
 	
 	fInventory.getPack(itemName.toLowerCase()).fAmount--;
 	ent.use(this);
-	
 	}
 /**
  * Invoke player gestures.
- * @param args java.lang.String[]
+ * @param argv java.lang.String[]
  */
-public void cmd_wave(String[] args) 
+public void cmd_wave(String[] argv, String args) 
 	{
 	int i = 0;
 		
-	if (args.length > 1)
-		i = Integer.parseInt(args[1]);
+	if (argv.length > 1)
+		i = Integer.parseInt(argv[1]);
 			
 	switch(i)
 		{
@@ -1537,38 +1550,39 @@ public void cmd_wave(String[] args)
 	  		setAnimation(ANIMATE_POINT);
 			fEntity.cprint(Engine.PRINT_HIGH, "point\n");
 			break;		
-		}			
+		}
 	}
 /**
  * Add a list of weapon to be excluded from the switching order. 
  * @author Brian Haskin
- * @param args java.lang.String[] - list of weapons
+ * @param argv java.lang.String[] - list of weapons
  */
-public void cmd_weapaddexcluded(String[] args)
+public void cmd_weapaddexcluded(String[] argv, String args)
 	{
-	for (int i=1; i < args.length; i++)
-		fWeaponsExcluded.addElement(args[i]);
-	
-	return;
+	for (int i=1; i < argv.length; i++)
+		fWeaponsExcluded.addElement(argv[i]);
 	}
 /**
  * Switch to the last weapon used
- * @param args java.lang.String[] - not used.
+ * @param argv java.lang.String[] - not used.
  */
-public void cmd_weaplast(String[] args)
+public void cmd_weaplast(String[] argv, String args)
 	{
-	if ((fLastWeapon != null) && (fLastWeapon.isEnoughAmmo()))
+	if ((fWeapon != null) && (fLastWeapon != null) && (fLastWeapon.isEnoughAmmo()))
 		{
 		fNextWeapon = fLastWeapon;
 		fWeapon.deactivate();
 		}
-	 }
+	}
 /**
  * Switch to the next available weapon.
- * @param args java.lang.String[] - not used.
+ * @param argv java.lang.String[] - not used.
  */
-public void cmd_weapnext(String[] args) 
+public void cmd_weapnext(String[] argv, String args) 
 	{
+	if (fWeapon == null)
+		return;
+		
 	int i = (fWeaponOrder.indexOf(fWeapon.getItemName().toLowerCase()) + 1) % fWeaponOrder.size();
 	int crashguard = i; // used to keep infinite loops from occuring
 	
@@ -1585,10 +1599,13 @@ public void cmd_weapnext(String[] args)
 	}
 /**
  * Switch to the previous available weapon.
- * @param args java.lang.String[] - not used.
+ * @param argv java.lang.String[] - not used.
  */
-public void cmd_weapprev(String[] args) 
+public void cmd_weapprev(String[] argv, String args) 
 	{
+	if (fWeapon == null)
+		return;
+		
 	int i = fWeaponOrder.indexOf(fWeapon.getItemName().toLowerCase()) - 1;
 	if (i < 0)
 		i = fWeaponOrder.size() - 1;
@@ -1604,13 +1621,15 @@ public void cmd_weapprev(String[] args)
 	if (fNextWeapon == fWeapon)
 		fNextWeapon = null;
 	else
-		fWeapon.deactivate();				
+		fWeapon.deactivate();
 	}
 /**
- * Print the excluded weapons list.
- * @param args java.lang.String[] - not used.
+ * Print the excluded weapons list. <p>
+ * This list should really be implemented as a CVAR somehow.
+ * The biggest problem is the size limit on CVARs.
+ * @param argv java.lang.String[] - not used.
  */
-public void cmd_weapprintexcluded(String[] args)
+public void cmd_weapprintexcluded(String[] argv, String args)
 	{
 	fEntity.cprint(Engine.PRINT_HIGH, "Weapons Excluded: ");
 	
@@ -1620,14 +1639,14 @@ public void cmd_weapprintexcluded(String[] args)
 		}
 	
 	fEntity.cprint(Engine.PRINT_HIGH, ".\n");
-	
-	return;
 	}
 /**
- * Print the weapon order list.
- * @param args java.lang.String[] - not used.
+ * Print the weapon order list. <p>
+ * This list should really be implemented as a CVAR somehow.
+ * The biggest problem is the size limit on CVARs.
+ * @param argv java.lang.String[] - not used.
  */
-public void cmd_weapprintorder(String[] args)
+public void cmd_weapprintorder(String[] argv, String args)
 	{
 	fEntity.cprint(Engine.PRINT_HIGH, "Weapon Order: ");
 	
@@ -1637,23 +1656,19 @@ public void cmd_weapprintorder(String[] args)
 		}
 		
 	fEntity.cprint(Engine.PRINT_HIGH, ".\n");
-	
-	return;
 	}
 /**
  * remove a list of weapons from the excluded list.
  * @author Brian Haskin
- * @param args java.lang.String[] - list of weapons
+ * @param argv java.lang.String[] - list of weapons
  */
-public void cmd_weapremoveexcluded(String[] args)
+public void cmd_weapremoveexcluded(String[] argv, String args)
 	{
-	for (int i=1; i < args.length; i++)
+	for (int i=1; i < argv.length; i++)
 		{
-		if (fWeaponsExcluded.contains(args[i]))
-			fWeaponsExcluded.removeElementAt(fWeaponsExcluded.indexOf(args[i]));
+		if (fWeaponsExcluded.contains(argv[i]))
+			fWeaponsExcluded.removeElementAt(fWeaponsExcluded.indexOf(argv[i]));
 		}
-		
-	return;
 	}
 /**
  * set the weapon switching order. If called without
@@ -1661,16 +1676,16 @@ public void cmd_weapremoveexcluded(String[] args)
  * Also, any weapons that have already been picked up but are not
  * explicitly listed will not be added to the list till the next respawn.
  * @author Brian Haskin
- * @param args java.lang.String[] - list of weapons
+ * @param argv java.lang.String[] - list of weapons
  */
-public void cmd_weapsetorder(String[] args)
+public void cmd_weapsetorder(String[] argv, String args)
 	{
 	fWeaponOrder.removeAllElements();
 	
-	if (args.length > 1)
+	if (argv.length > 1)
 		{
-		for (int i=1; i < args.length; i++)
-			fWeaponOrder.addElement(args[i].toLowerCase());
+		for (int i=1; i < argv.length; i++)
+			fWeaponOrder.addElement(argv[i].toLowerCase());
 		}
 	else
 		{
@@ -1686,8 +1701,6 @@ public void cmd_weapsetorder(String[] args)
 		fWeaponOrder.addElement("railgun");
 		fWeaponOrder.addElement("bfg10k");
 		}
-	
-	return;
 	}
 /**
  * Handle a new connection by just creating a new Player object 
@@ -1702,8 +1715,71 @@ public static void connect(NativeEntity ent, boolean loadgame) throws GameExcept
 	new Player(ent, loadgame);
 	}
 /**
- * Inflict damage on the Player. 
+ * Inflict damage on the Player.
  * If the player takes enough damage, this function will call the Player.die() function.
+ * @param DamageObject - The damage we are taking.
+ */
+public void damage(DamageObject damage)
+	{
+
+	// don't take any more damage if already dead
+	// but spray a little blood for kicks
+	if (fIsDead)
+		{
+//		spawnDamage(Engine.TE_BLOOD, damage.point, damage.normal, damage.amount);
+		return;
+		}
+	
+	// call all the pre-armor damage filters
+	damage = filterDamage(damage, DAMAGE_FILTER_PHASE_PREARMOR);
+	
+	// knock the player around
+	knockback(damage.fAttacker, damage.fDirection, damage.fKnockback, damage.fDFlags);
+
+	// notify any armor timed filters
+	damage = filterDamage(damage, DAMAGE_FILTER_PHASE_ARMOR);
+	
+	// notify post-armor filters
+	damage = filterDamage(damage, DAMAGE_FILTER_PHASE_POSTARMOR);
+
+	// always spawn explosive damage
+	if ((damage.fTempEvent == Engine.TE_ROCKET_EXPLOSION) || (damage.fTempEvent == Engine.TE_ROCKET_EXPLOSION_WATER))
+		spawnDamage(damage.fTempEvent, damage.fPoint, damage.fNormal, damage.fAmount);
+	
+	if (damage.fAmount > 0)
+		{
+		// damaging a player causes a blood spray
+		spawnDamage(Engine.TE_BLOOD, damage.fPoint, damage.fNormal, damage.fAmount);
+
+		// cause screams if damage is caused by lava
+		if (damage.fObitKey.equals("lava") && (Game.getGameTime() > fPainDebounceTime)) 
+			{
+			if ((Game.randomInt() & 1) != 0)
+				fEntity.sound(NativeEntity.CHAN_VOICE, Engine.getSoundIndex("player/burn1.wav"), 1, NativeEntity.ATTN_NORM, 0);
+			else
+				fEntity.sound(NativeEntity.CHAN_VOICE, Engine.getSoundIndex("player/burn2.wav"), 1, NativeEntity.ATTN_NORM, 0);
+			fPainDebounceTime = Game.getGameTime() + 1;
+			}		
+
+		setHealth(fHealth - damage.fAmount);
+		if (fHealth <= 0)
+			die(damage.fInflictor, damage.fAttacker, damage.fAmount, damage.fPoint, damage.fObitKey);
+		}
+	
+	// These are used to determine the blend for this frame. (TSW)
+	fDamageBlood += damage.fTakeDamage;
+	fDamageArmor += damage.fArmorSave;
+	fDamagePArmor += damage.fPowerArmorSave;
+	
+	// For view angle kicks this frame. (TSW)
+	fDamageKnockback += damage.fKnockback;
+	float[] f = {0,0,0};	// What in the world is this here for? - BH
+	damage.fPoint.get(fDamageFrom);	// set fDamageFrom to value of point
+	}
+/**
+ * Inflict damage on the Player.
+ * If the player takes enough damage, this function will call the Player.die() function.
+ *
  * @param inflictor the entity that's causing the damage, such as a rocket.
  * @param attacker the entity that's gets credit for the damage, for example the player who fired the above example rocket.
  * @param dir the direction the damage is coming from.
@@ -1715,87 +1791,13 @@ public static void connect(NativeEntity ent, boolean loadgame) throws GameExcept
  */
 public void damage(GameObject inflictor, GameObject attacker, 
 	Vector3f dir, Point3f point, Vector3f normal, 
-	int damage, int knockback, int dflags, int tempEvent, String obitKey) 
+	int damage, int knockback, int dflags, int tempEvent, String obitKey)
 	{
-
-	int armorSave = 0;		// for calculating blends later (TSW)
-	int powerArmorSave = 0;	// for calculating blends later (TSW)
-	int takeDamage = 0;		// for calculating blends later (TSW)
-	
-	// don't take any more damage if already dead
-	// but spray a little blood for kicks
-	if (fIsDead)
-		{
-//		spawnDamage(Engine.TE_BLOOD, point, normal, damage);
-		return;
-		}
-
-	// knock the player around
-	knockback(attacker, dir, knockback, dflags);
-
-	// decrease damage based on armor
-	if ((dflags & DAMAGE_NO_ARMOR) == 0)
-		{
-		int save; // the amount of damage our armor protects us from
-		if ((dflags & DAMAGE_ENERGY) != 0)
-			{
-			save = (int) Math.ceil(damage * fArmorEnergyProtection);
-			powerArmorSave = save;
-			}
-		else
-			{
-			save = (int) Math.ceil(damage * fArmorProtection);			
-			armorSave = save;
-			}
-			
-		save = Math.min(save, fArmorCount);
-		
-		// FIXME: Do we need to do any adjustments here for armorSave or
-		// powerArmorSave based on fArmorCount? (TSW)
-		takeDamage = damage;				// for blends (TSW)
-
-		if (save > 0)
-			{
-			damage -= save;
-			takeDamage -= armorSave;		// for blends (TSW)
-			takeDamage -= powerArmorSave;	// for blends (TSW)
-			fArmorCount -= save;
-			fEntity.setPlayerStat(NativeEntity.STAT_ARMOR, (short)fArmorCount);
-			if (fArmorCount == 0) // if armor is depleted we need to reset it
-				{
-				fArmorProtection = 0.3F;
-				fArmorEnergyProtection = 0.0F;
-				fArmorMaxCount = 50;
-				fEntity.setPlayerStat(NativeEntity.STAT_ARMOR_ICON, (short) 0);
-				}
-			spawnDamage(Engine.TE_SPARKS, point, normal, save);
-			}	
-		}
-	
-	if (damage <= 0)
-		return;
-		
-	// damaging a player causes a blood spray
-	spawnDamage(Engine.TE_BLOOD, point, normal, damage);
-
-	// also spawn explosive damage
-	if ((tempEvent == Engine.TE_ROCKET_EXPLOSION) || (tempEvent == Engine.TE_ROCKET_EXPLOSION_WATER))
-		spawnDamage(tempEvent, point, normal, damage);
-
-	
-	setHealth(fHealth - damage);
-	if (fHealth <= 0)
-		die(inflictor, attacker, damage, point, obitKey);
-	
-	// These are used to determine the blend for this frame. (TSW)
-	fDamageBlood += takeDamage;
-	fDamageArmor += armorSave;
-	fDamagePArmor += powerArmorSave;
-	
-	// For view angle kicks this frame. (TSW)
-	fDamageKnockback += knockback;
-	float[] f = {0,0,0};
-	point.get(fDamageFrom);	// set fDamageFrom to value of point
+	// re-use our existing damage object
+	fTempDamageObject.set(inflictor, attacker, this, dir, point, normal, damage,
+										knockback, dflags, tempEvent, obitKey);
+	// call the new damage function.
+	damage(fTempDamageObject);
 	}
 /** 
  * Handles color blends and view kicks
@@ -1803,7 +1805,7 @@ public void damage(GameObject inflictor, GameObject attacker,
  * Called during endServerFrame().
  */
 protected void damageFeedback()
-{
+	{
 	Color3f		color;
 	Vector3f	v;
 	float		realcount, count, kick;
@@ -1836,7 +1838,7 @@ protected void damageFeedback()
 		count = 10;	// always make a visible effect
 
 	// play an apropriate pain sound
-	if (Game.getGameTime() > fPainDebounceTime /* && !(player->flags & FL_GODMODE) && (client->invincible_framenum <= level.framenum)*/)
+	if (fDamageBlood != 0 && Game.getGameTime() > fPainDebounceTime /* && !(player->flags & FL_GODMODE) && (client->invincible_framenum <= level.framenum)*/)
 		{
 		fPainDebounceTime = Game.getGameTime() + 0.7f;	// Wait .7 seconds before starting another pain sound. (?)
 		if (fHealth < 25)
@@ -1908,7 +1910,7 @@ protected void damageFeedback()
 	fDamageArmor = 0;
 	fDamagePArmor = 0;
 	fDamageKnockback = 0;
-}
+	}
 /**
  * Advance the player's animation frame.
  */
@@ -2131,6 +2133,48 @@ protected void fallingDamage()
 		damage(null, null, new Vector3f(0, 0, 1), fEntity.getOrigin(), new Vector3f(0, 0, 0), (int) damage, 0, 0, Engine.TE_NONE, "falling");
 	}
 /**
+ * Let all the damage listeners from a particular phase filter a DamageObject;
+ * @param DamageObject - the damage being taken
+ * @param int - phase of filtering, one of DAMAGE_FILTER_PHASE_*
+ * @return DamageObject - the modified damage
+ */
+protected DamageObject filterDamage(DamageObject damage, int phase) 
+	{
+	// make a copy of the list
+	DamageFilter[] dfa;
+	
+	if (phase == DAMAGE_FILTER_PHASE_PREARMOR)
+		{
+		dfa = new DamageFilter[fPreArmorDamageFilters.size()];
+		fPreArmorDamageFilters.copyInto(dfa);
+		}
+	else if (phase == DAMAGE_FILTER_PHASE_ARMOR)
+		{
+		dfa = new DamageFilter[fArmorDamageFilters.size()];
+		fArmorDamageFilters.copyInto(dfa);
+		}
+	else
+		{
+		dfa = new DamageFilter[fPostArmorDamageFilters.size()];
+		fPostArmorDamageFilters.copyInto(dfa);
+		}
+	
+	// spread the word
+	for (int i = 0; i < dfa.length; i++)
+		{
+		try
+			{
+			damage = dfa[i].filterDamage(damage);
+			}
+		catch (Throwable t)
+			{
+			t.printStackTrace();
+			}
+		}
+		
+	return damage;
+	}
+/**
  * This method was created by a SmartGuide.
  * @return int
  * @param itemname java.lang.String
@@ -2147,19 +2191,14 @@ public int getAmmoCount(String ammoName)
 	else
 		return p.fAmount;				
 	}
-/** 
- * Get the Player's amount of Armor
- */
-public int getArmorCount()
-	{
-	return fArmorCount;
-	}
 /**
- * Get the Player's max armor capacity
+ * Get this player's ArmorDamageFilter - useful for CTF AutoDoc which
+ * repairs the player's armor.
+ * @return baseq2.ArmorDamageFilter
  */
-public int getArmorMaxCount()
+public ArmorDamageFilter getArmor() 
 	{
-	return fArmorMaxCount;
+	return fArmor;
 	}
 /**
  * Get which weapon the Player is currently using.
@@ -2330,6 +2369,14 @@ protected GenericSpawnpoint getSpawnpoint()
 	return MiscUtil.getSpawnpointSingle();
 	}
 /**
+ * Find out if were underwater
+ * @return int - level of water. 0, we're out - 3, head is under.
+ */
+public int getWaterLevel()
+	{
+	return fWaterLevel;
+	}
+/**
  * This method was created by a SmartGuide.
  * @param amount int
  */
@@ -2380,6 +2427,15 @@ public boolean isDead()
 public boolean isFemale()
 	{
 	return fIsFemale;
+	}
+/**
+ * Are these two player on the same team?
+ * @return boolean
+ * @param p baseq2.Player
+ */
+public boolean isTeammate(Player p) 
+	{
+	return false; // override or update someday
 	}
 /**
  * Knock the player around. 
@@ -2531,45 +2587,143 @@ public void playerBegin(boolean loadgame)
 	}
 /**
  * Called by the DLL when the player has typed, or initiated a command.
- * This method will look for a method named "cmd_" + Engine.argv(0), 
- * and if found, it will be called with an array of strings passed as 
- * an argument.  The first entry in the array is Engine.argv(0), and the 
- * succeding entries are the succeding values of Engine.argv().
  */
 public void playerCommand() 
 	{
-	String[] sa = new String[Engine.getArgc()];
-	for (int i = 0; i < sa.length; i++)
-		sa[i] = Engine.getArgv(i);
+	// get the command args from the Engine
+	String[] argv = new String[Engine.getArgc()];
+	for (int i = 0; i < argv.length; i++)
+		argv[i] = Engine.getArgv(i);
 
-	Class[] paramTypes = new Class[1];
-	paramTypes[0] = sa.getClass();
+	// call a more intelligent playerCommand()
+	playerCommand("cmd_" + argv[0], argv, Engine.getArgs());
+	}
+/**
+ * Simulate a player command sent from the Engine.
+ */
+public void playerCommand(String command) 
+	{
+	// breakup the command string into individual words
+	StringTokenizer st = new StringTokenizer(command);
+	String[] argv = new String[st.countTokens()];
+	for (int i = 0; i < argv.length; i++)
+		argv[i] = st.nextToken();
+
+	// strip the first word out of the command string
+	if (argv.length < 2)
+		command = "";
+	else
+		{
+		int p = command.indexOf(argv[0]);
+		p = command.indexOf(argv[1], p+1);
+		command = command.substring(p);
+		}
 	
+	// call the -real- playerCommand()
+	playerCommand("cmd_" + argv[0], argv, command);		
+	}
+/**
+ * Process a player command. Look for a handler with a
+ * given method name, that takes the parameters (Player, String[], String),
+ * and if not that, then a Player method that takes parameters (String[] String),
+ * and if -that- can't be found, treat it as a chat.
+ *
+ * @param methodName, usually "cmd_" + Engine.argv(0)
+ * @param argv A String array containg individual words such as are returned by Engine.argv()
+ * @param args A String containing the command string -except- for the first word, such as is returned by Engine.args()
+ */
+public void playerCommand(String methodName, String[] argv, String args)
+	{
+	Class[] paramTypes;
+	Object[] params;
+	
+	//
+	// look for the command to be handled by an external handler
+	//
+	if (fCommandHandlers.size() > 0)
+		{
+		// make a snapshot of the handlers list
+		Object[] handlers = new Object[fCommandHandlers.size()];
+		fCommandHandlers.copyInto(handlers);
+	
+		paramTypes = new Class[3];
+		paramTypes[0] = Player.class;
+		paramTypes[1] = argv.getClass();
+		paramTypes[2] = args.getClass();
+	
+		params = new Object[3];
+		params[0] = this;
+		params[1] = argv;
+		params[2] = args;
+
+		// search the list in reverse order, most recently added handler first
+		for (int i = handlers.length-1; i >=0; i--)
+			{	
+			try
+				{
+				java.lang.reflect.Method meth = handlers[i].getClass().getMethod(methodName, paramTypes);						
+				Object result = meth.invoke(handlers[i], params);
+	
+				// quit if the invoked returned something other than false (including void)
+				if (!(result instanceof Boolean) || ((Boolean)result).booleanValue() == false)
+					return;
+				}
+			catch (NoSuchMethodException e1)
+				{
+				}
+			catch (java.lang.reflect.InvocationTargetException e2)		
+				{
+				e2.getTargetException().printStackTrace();
+				return;
+				}
+			catch (Exception e3)
+				{
+				e3.printStackTrace();
+				return;
+				}
+			}	
+		}
+		
+
+	//
+	// look for the command to be handled by the player class (or subclasses) itself
+	//
+	paramTypes = new Class[2];
+	paramTypes[0] = argv.getClass();
+	paramTypes[1] = args.getClass();
+	
+	params = new Object[2];
+	params[0] = argv;
+	params[1] = args;
+
 	try
 		{
-		java.lang.reflect.Method meth = getClass().getMethod("cmd_" + sa[0].toLowerCase(), paramTypes);						
-		Object[] params = new Object[1];
-		params[0] = sa;
+		java.lang.reflect.Method meth = getClass().getMethod(methodName, paramTypes);						
 		meth.invoke(this, params);
+		return;
 		}
 	catch (NoSuchMethodException e1)
 		{
-		// treat unrecognized input as a chat
-		String msg = getName() + ": " + Engine.getArgv(0) + " " + Engine.getArgs();
-		if (msg.length() > 150)
-			msg = msg.substring(0, 150);		
-		msg += "\n";
-			
-		Game.bprint(Engine.PRINT_CHAT, msg);
 		}
 	catch (java.lang.reflect.InvocationTargetException e2)		
 		{
 		e2.getTargetException().printStackTrace();
+		return;
 		}
 	catch (Exception e3)
 		{
 		e3.printStackTrace();
-		}							
+		return;
+		}
+
+	//
+	// Couldn't find any methods to handle it? treat command as a chat
+	//
+	args = getName() + ": " + argv[0] + " " + args;
+	if (args.length() > 150)
+		args = args.substring(0, 150);		
+	args += "\n";		
+	Game.bprint(Engine.PRINT_CHAT, args);		
 	}
 /**
  * Called by the DLL when the player is disconnecting. 
@@ -2780,6 +2934,48 @@ protected void registerKill(Player p)
 		setScore(1, false);	
 	}
 /**
+ * Remove a command handler from this player.
+ * @param obj an object that was hopefully registered as a command handler.
+ */
+public void removeCommandHandler(Object obj) 
+	{
+	fCommandHandlers.removeElement(obj);
+	}
+/**
+ * Remove an object that was registered to filter damage.
+ * @param DamageFilter - filter to remove.
+ */
+public void removeDamageFilter(DamageFilter df)
+	{
+	if (df == null)
+		return;
+		
+	fPreArmorDamageFilters.removeElement(df);
+	}
+/**
+ * Remove an object that was registered to filter damage.
+ * @param DamageFilter - filter to remove.
+ * @param int - phase the filter was at.
+ */
+public void removeDamageFilter(DamageFilter df, int phase)
+	{
+	if (df == null)
+		return;
+		
+	if (phase == DAMAGE_FILTER_PHASE_PREARMOR)
+		{
+		fPreArmorDamageFilters.removeElement(df);
+		}
+	else if (phase == DAMAGE_FILTER_PHASE_ARMOR)
+		{
+		fArmorDamageFilters.removeElement(df);
+		}
+	else
+		{
+		fPostArmorDamageFilters.removeElement(df);
+		}
+	}
+/**
  * This method was created by a SmartGuide.
  * @param name java.lang.String
  */
@@ -2846,30 +3042,6 @@ public void runFrame(int phase)
 			endServerFrame();
 			break;
 		}
-	}
-/**
- * Send a chat message to all players.
- * @param msg String to send - a newline will be added.
- */
-public void say(String msg)
-	{
-	msg = getName() + ": " + msg;		
-	
-	// keep the message down to a reasonable length
-	if (msg.length() > 150)
-		msg = msg.substring(0, 150);	
-			
-	msg += "\n";
-			
-	Game.bprint(Engine.PRINT_CHAT, msg);		
-	}
-/**
- * Send a chat message to teammates (all players in DM mode).
- * @param msg String to send - a newline will be added.
- */
-public void sayTeam(String msg)
-	{
-	say(msg);		
 	}
 /**
  * Set the current ammo count, or alter it by some amount.
@@ -2978,38 +3150,6 @@ public void setAnimation(int animation, boolean ignorePriority, int frameOffset)
 			fAnimationEnd = end;
 			}
 		}
-	}
-/** 
- * Set the player's armor.  It can't go below zero or above the max armor count.
- * @param amount amount of armor
- */
-public void setArmorCount(int amount)
-	{
-	setArmorCount(amount, true);
-	}
-/** 
- * Set the player's armor.  It can't go below zero or above the max armor count.
- * @param amount amount of armor
- * @param isAbsolute Whether the amount is an absolute value, or relative to the current armor.
- */
-public void setArmorCount(int amount, boolean isAbsolute)
-	{
-	int newValue;
-	
-	if (isAbsolute)
-		newValue = amount;
-	else
-		newValue = fArmorCount + amount;
-		
-	fArmorCount = Math.max( 0, Math.min(newValue, fArmorMaxCount) );
-	fEntity.setPlayerStat(NativeEntity.STAT_ARMOR, (short)fArmorCount);
-	}
-/**
- * Set the Player's max possible armor amount
- */
-public void setArmorMaxCount( int maxCount )
-	{
-	fArmorMaxCount = maxCount;
 	}
 /**
  * Set the damage color blend for this frame.
@@ -3179,7 +3319,7 @@ protected void spawn()
 	fEntity.setClipmask(Engine.MASK_PLAYERSOLID);	
 	fEntity.setSVFlags(fEntity.getSVFlags() & ~NativeEntity.SVF_DEADMONSTER);
 	fEntity.setPlayerPMType(NativeEntity.PM_NORMAL);	
-	fEntity.setMins(-16, -16, 24);
+	fEntity.setMins(-16, -16, -24);  // James Bielby found a typo here, used to be +24, screwed up barryp.testbot
 	fEntity.setMaxs(16, 16, 32);
 	
 	// clear entity state values
@@ -3340,26 +3480,11 @@ protected void worldEffects()
 	//
 	// check for drowning
 	//
-	if (fWaterLevel == 3)
+	if (fWaterLevel != 3)
+		// reset breath counter and restore normal drowning damage level
+		breath(12, true);
+	else
 		{	
-		// breather or envirosuit give air
-/*
-		if (breather || envirosuit)
-			{
-			current_player->air_finished = level.time + 10;
-
-			if (((int)(current_client->breather_framenum - level.framenum) % 25) == 0)
-				{
-				if (!current_client->breather_sound)
-					gi.sound (current_player, CHAN_AUTO, gi.soundindex("player/u_breath1.wav"), 1, ATTN_NORM, 0);
-				else
-					gi.sound (current_player, CHAN_AUTO, gi.soundindex("player/u_breath2.wav"), 1, ATTN_NORM, 0);
-				current_client->breather_sound ^= 1;
-				PlayerNoise(current_player, current_player->s.origin, PNOISE_SELF);
-				//FIXME: release a bubble?
-				}
-			}
-*/
 		// if out of air, start drowning
 		if (fAirFinished < Game.getGameTime())
 			{	// drown!
@@ -3386,45 +3511,16 @@ protected void worldEffects()
 				}
 			}
 		}
-	else
-		{
-		// reset breath counter and restore normal drowning damage level
-		fAirFinished = Game.getGameTime() + 12;
-		fDrownDamage = 2;
-		}
 
 		
 	//
 	// check for sizzle damage
 	//
 	if ((fWaterLevel != 0) && ((fWaterType & Engine.CONTENTS_LAVA) != 0))
-		{
-		if (fHealth > 0
-			&& Game.getGameTime() > fPainDebounceTime 
-//			&& current_client->invincible_framenum < level.framenum
-			)
-			{
-			if ((Game.randomInt() & 1) != 0)
-				fEntity.sound(NativeEntity.CHAN_VOICE, Engine.getSoundIndex("player/burn1.wav"), 1, NativeEntity.ATTN_NORM, 0);
-			else
-				fEntity.sound(NativeEntity.CHAN_VOICE, Engine.getSoundIndex("player/burn2.wav"), 1, NativeEntity.ATTN_NORM, 0);
-			fPainDebounceTime = Game.getGameTime() + 1;
-			}
-
-//		if (envirosuit)	// take 1/3 damage with envirosuit
-//			T_Damage (current_player, world, world, vec3_origin, current_player->s.origin, vec3_origin, 1*waterlevel, 0, 0, MOD_LAVA);
-//		else
-			damage(GameModule.gWorld, GameModule.gWorld, origin, fEntity.getOrigin(), origin, 3* fWaterLevel, 0, 0, Engine.TE_NONE, "lava");
-		}
-
+		damage(GameModule.gWorld, GameModule.gWorld, origin, fEntity.getOrigin(), origin, 3* fWaterLevel, 0, 0, Engine.TE_NONE, "lava");
 
 	if ((fWaterLevel != 0) && ((fWaterType & Engine.CONTENTS_SLIME) != 0))
-		{
-//		if (!envirosuit)
-			{	// no damage from slime with envirosuit
-			damage(GameModule.gWorld, GameModule.gWorld, origin, fEntity.getOrigin(), origin, fWaterLevel, 0, 0, Engine.TE_NONE, "slime");
-			}
-		}
+		damage(GameModule.gWorld, GameModule.gWorld, origin, fEntity.getOrigin(), origin, fWaterLevel, 0, 0, Engine.TE_NONE, "slime");
 	}
 /**
  * This method was created by a SmartGuide.

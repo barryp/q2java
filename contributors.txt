@@ -12,10 +12,11 @@ Bernd Kreimeier's <bk@gamers.org>
 
     Linux port, German translations of DM and CTF messages
 
-Brian Haskin <haskin@ptway.com>
+Brian "Badger" Haskin <haskin@ptway.com>
 
     Much work on the Player inventory, command, weapon-cycling, and 
-    scoreboard systems.  Improvements to telnet server.
+    scoreboard systems.  Improvements to telnet server.  Damage filter
+    system
 
 gorilla <gorilla@pro-ns.net>
 
@@ -31,12 +32,16 @@ Kenji Hiranabe <hiranabe@esm.co.jp>
     Supplied implementation of javax.vecmath. Classes from that package
     are used throughout the game.
 
-M. van Gangelen <menno@element.nl>
+Menno "Fushion" van Gangelen <menno@element.nl>
 
     Worked on BFG, GrenadeLauncher, grenades, and some other classes.  His 
     implementation of a version of CTF in Java motivated many improvements 
     to the base game. Provided Dutch translation of obituary messages.
 
+Peter "Rahvin" Donald <donaldp@lion.cs.latrobe.edu.au>
+
+    New implementations and improvements to map entities.
+    
 _Quinn <tmiller@haverford.edu>
 
     Improvements to game-module handling, sv_scores command, various other 

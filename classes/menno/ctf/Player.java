@@ -15,11 +15,12 @@ package menno.ctf;
 ======================================================================================
 */
 
-import q2jgame.*;
-import q2java.*;
-import javax.vecmath.*;
-import menno.ctf.spawn.*;
 import java.util.*;	// remove..
+import javax.vecmath.*;
+import q2java.*;
+import q2java.gui.PlayerMenu;
+import q2jgame.*;
+import menno.ctf.spawn.*;
 
 public class Player extends baseq2.Player implements CameraListener
 {
@@ -45,6 +46,8 @@ public class Player extends baseq2.Player implements CameraListener
 	public static final int CTF_FRAG_CARRIER_ASSIST_TIMEOUT    = 10;
 	public static final int CTF_RETURN_FLAG_ASSIST_TIMEOUT     = 10;
 
+	final static String[] MENU_HEADER = { "===== Q2Java CTF v0.6 =====", ""};
+	final static String MENU_AUTHOR = "Menno van Gangelen";
 
 
 	public final static String CTF_STATUSBAR = 
@@ -170,11 +173,6 @@ public class Player extends baseq2.Player implements CameraListener
 	protected boolean  fIsSpectator;
 	protected boolean  fIsChasing;
 	protected boolean  fUseTeamSpawnpoint;
-
-	//=====================================================
-	// Methods for testing things (ignore)
-	//=====================================================
-	public CTFMenu fMenu = null;
 	//========================================================================
 	// Constructors
 	//========================================================================
@@ -319,10 +317,6 @@ public class Player extends baseq2.Player implements CameraListener
 		// put the grapple in inventory
 		addWeapon( ".spawn.weapon_grapple", false );
 
-		// remove any techs and flags, if we changed to another level
-		fInventory.remove( "tech" );
-		fInventory.remove( "flag" );
-
 		// set field VERY low...
 		fLastCarrierHurt = Float.MIN_VALUE;
 		fLastTechMessage = Float.MIN_VALUE;
@@ -331,7 +325,7 @@ public class Player extends baseq2.Player implements CameraListener
 	 * ChaseCam
 	 * @param (Ignored)
 	 */
-	public void cmd_chasecam(String[] args) 
+	public void cmd_chasecam(String[] argv, String args) 
 	{
 		if ( fViewer != null )	//already connected to another chasecam, so disconnect it and return
 		{
@@ -369,27 +363,72 @@ public class Player extends baseq2.Player implements CameraListener
 		else
 			fEntity.cprint( Engine.PRINT_MEDIUM, "No players to chase..\n" );
 	}
-	public void cmd_inven(String[] args)
+	public void cmd_inven(String[] argv, String args)
 	{
-		if ( fMenu == null )
+		// build the menu
+		PlayerMenu menu = new PlayerMenu();
+		
+		// setup the layout of the menu;
+		menu.setPrefix("xv 32 yv 8 picn inventory");
+		menu.setBounds(50, 25, 222, 156);
+		
+		// Set the header of the menu
+		menu.setHeader( MENU_HEADER );
+
+		// Setup the body of the menu
+		ResourceGroup rg = getResourceGroup();
+		Object[] msgArgs = new Object[1];
+
+		// Join Red Team
+		msgArgs[0] = new Integer(Team.TEAM1.getNumPlayers());
+		String[] item0  = { rg.getRandomString("menno.ctf.CTFMessages", "menu_join_red"),  
+						    rg.format("menno.ctf.CTFMessages", "menu_playercount", msgArgs)};
+		menu.addMenuItem( item0, "team red" );
+
+		// Join Blue Team		
+		msgArgs[0] = new Integer(Team.TEAM2.getNumPlayers());
+		String[] item1  = { rg.getRandomString("menno.ctf.CTFMessages", "menu_join_blue"),  
+						    rg.format("menno.ctf.CTFMessages", "menu_playercount", msgArgs)};
+		menu.addMenuItem( item1, "team blue" );
+
+		// Common string for Chasecam and Spectator menu items
+		String leavesTeam = rg.getRandomString("menno.ctf.CTFMessages", "menu_leaves_team");		
+
+		// Chasecam
+		if ( isChasing() )
 		{
-			// show the menu
-			fMenu = new CTFMenu( this );
-			fMenu.show();
+			String[] item22 = { rg.getRandomString("menno.ctf.CTFMessages", "menu_stop_chase") };
+			menu.addMenuItem( item22, "chasecam" );
 		}
 		else
 		{
-			// close the menu
-			fMenu.close();
-			fMenu = null;
+			String[] item21 = { rg.getRandomString("menno.ctf.CTFMessages", "menu_start_chase"), leavesTeam};
+			menu.addMenuItem( item21, "chasecam" );
 		}
 
+		// Spectator
+		String[] item3  = { rg.getRandomString("menno.ctf.CTFMessages", "menu_spectator"), leavesTeam};
+		menu.addMenuItem( item3, "spectator" );
+
+
+		// Setup the footer of the menu
+		msgArgs[0] = MENU_AUTHOR;
+	    String[] footer = { "",
+	                        rg.getRandomString("menno.ctf.CTFMessages", "menu_footer_press"),
+							rg.getRandomString("menno.ctf.CTFMessages", "menu_footer_cursor"),
+							rg.getRandomString("menno.ctf.CTFMessages", "menu_footer_enter"),
+							rg.getRandomString("menno.ctf.CTFMessages", "menu_footer_tab"),
+							"",
+							rg.format("menno.ctf.CTFMessages", "menu_footer_author", msgArgs)
+						  };						  
+		menu.setFooter( footer );
+
+		// actually show it
+		menu.show(this);
 	}
-	public void cmd_invnext( String[] args )
+	public void cmd_invnext(String[] argv, String args)
 	{
-		if ( fMenu != null )
-			fMenu.selectNextItem();
-		else if ( fViewer != null )
+		if ( fViewer != null )
 		{
 			ChaseCam nextCam = fChaser.getNextChaseCam( fViewer );
 			if ( nextCam != null )
@@ -398,16 +437,14 @@ public class Player extends baseq2.Player implements CameraListener
 				fViewer = nextCam;
 				fViewer.addCameraListener( this );
 			}
+			return;
 		}
-		// TODO:
-		// else
-		//	super.cmd_invuse( args );
+		else
+			super.cmd_invnext(argv, args);
 	}
-	public void cmd_invprev( String[] args )
+	public void cmd_invprev(String[] argv, String args)
 	{
-		if ( fMenu != null )
-			fMenu.selectPreviousItem();
-		else if ( fViewer != null )
+		if ( fViewer != null )
 		{
 			ChaseCam nextCam = fChaser.getPreviousChaseCam( fViewer );
 			if ( nextCam != null )
@@ -416,46 +453,16 @@ public class Player extends baseq2.Player implements CameraListener
 				fViewer = nextCam;
 				fViewer.addCameraListener( this );
 			}
+			return;
 		}
-		// TODO:
-		// else
-		//	super.cmd_invuse( args );
-	}
-	/**
-	 * Called when player presses Enter key
-	 */
-	public void cmd_invuse( String[] args )
-	{
-		if ( fMenu == null )
-			super.cmd_invuse(args);
-		else		
-		{
-			fMenu.selectMenuItem();
-			if (fMenu != null)
-			{
-				fMenu.close();
-				fMenu = null;
-			}
-		}
-	}
-	/**
-	 * Put's away the scorboard
-	 * when the scoreboard is displayed and the esc key is hit the cmd is called
-	 * when the help computer or inventory display is implemented this needs to shut those off also
-	 * @param args java.lang.String[]
-	 */
-	public void cmd_putaway( String[] args )
-	{
-		if ( fMenu != null )
-			cmd_inven( null );
-		
-		super.cmd_putaway( args );
+		else
+			super.cmd_invprev(argv, args);
 	}
 	/**
 	 * Spectator
 	 * @param (Ignored)
 	 */
-	public void cmd_spectator(String[] args) 
+	public void cmd_spectator(String[] argv, String args) 
 	{
 		if ( fIsSpectator )
 			return;
@@ -471,21 +478,11 @@ public class Player extends baseq2.Player implements CameraListener
 		notifyPlayerStateListeners(baseq2.PlayerStateListener.PLAYER_DISCONNECT);
 		fTeam = null;
 		
-		// close menu
-		if ( fMenu != null )
-		{
-			fMenu.close();
-			fMenu = null;
-		}
-
 		// deactivate our chasecam
 		fChaser.setActive( false );
 		fIsSpectator = true;
 		fIsChasing   = false;
 
-		//die( null, null, 0, null );
-		//fShowScore = false;
-		//respawn();
 		setScore( 0 );
 		clearSettings();
 		spawn();
@@ -493,13 +490,13 @@ public class Player extends baseq2.Player implements CameraListener
 	/**
 	 * Change team
 	 */
-	public void cmd_team(String[] args) 
+	public void cmd_team(String[] argv, String args) 
 	{
 		Team   oldTeam, newTeam;
 		String teamName = null;
 		
-		if ( args.length > 1 )
-			teamName = args[1].toLowerCase();
+		if ( argv.length > 1 )
+			teamName = argv[1].toLowerCase();
 
 		if ( teamName.equals("red") )
 			newTeam = Team.TEAM1;
@@ -539,51 +536,6 @@ public class Player extends baseq2.Player implements CameraListener
 	public static void connect(NativeEntity ent, boolean loadgame) throws GameException
 	{
 		new Player(ent, loadgame);
-	}
-	/**
-	 * Inflict damage on the Player. 
-	 * If the player takes enough damage, this function will call the Player.die() function.
-	 * @param inflictor the entity that's causing the damage, such as a rocket.
-	 * @param attacker the entity that's gets credit for the damage, for example the player who fired the above example rocket.
-	 * @param dir the direction the damage is coming from.
-	 * @param point the point where the damage is being inflicted.
-	 * @param normal q2java.Vec3
-	 * @param damage how much damage the player is being hit with.
-	 * @param knockback how much the player should be pushed around because of the damage.
-	 * @param dflags flags indicating the type of damage, corresponding to GameEntity.DAMAGE_* constants.
-	 */
-	public void damage(	baseq2.GameObject inflictor, baseq2.GameObject attacker, 
-						Vector3f dir, Point3f point, Vector3f normal, 
-						int damage, int knockback, int dflags, int tempEvent, String obitKey) 
-	{
-		// don't take any more damage if already dead
-		if (fIsDead)
-			return;
-			
-		if ( ( attacker instanceof Player ) && ( attacker != this ))
-		{
-			// A CTF Player other than ourselves attacked us
-			
-			Player p = (Player)attacker;
-			if ( p.fTeam == fTeam )
-				return;  // Teammates can't hurt you
-
-			// If we have a flag, and attacker is playing on other team,
-			// mark the attacker that he was aggressive to the flag-carrier.
-			if ( isCarrying("flag") )
-				p.fLastCarrierHurt = Game.getGameTime();
-		}
-
-		// if we are carrying the Disruptor Shield,
-		// apply it to us and get the damage-multiplier (0.0-1.0)
-		GenericTech tech = (GenericTech)getInventory( "tech" );
-		if ( tech instanceof item_tech1 )
-		{
-			damage *= ((item_tech1)tech).getDamageMultiplier();
-			((item_tech1)tech).playSound();
-		}
-
-		super.damage( inflictor, attacker, dir, point, normal, damage, knockback, dflags, tempEvent, obitKey );
 	}
 	/**
 	 * Disassociate the CTF player object from the rest 
@@ -632,6 +584,15 @@ public class Player extends baseq2.Player implements CameraListener
 	public boolean isChasing()
 	{
 		return fIsChasing;
+	}
+/**
+ * Override baseq2.Player.isTeammate().
+ * @return boolean
+ * @param p baseq2.Player
+ */
+public boolean isTeammate(baseq2.Player p) 
+	{
+	return fTeam.isTeamMember(p);
 	}
 /**
  * Called by the DLL when the player should begin playing in the game.
@@ -789,17 +750,6 @@ public void playerBegin(boolean loadgame)
 		setScore(1, false);
 	}
 	/**
-	 * Say something to the members of our team.
-	 * @param (Ignored, uses the Engine.args() value instead)
-	 */
-	public void sayTeam(String msg) 
-	{
-		if ( fTeam == null )
-			say(msg);
-		else
-			fTeam.say( this, msg );
-	}
-	/**
 	 * spawn the player into the game.
 	 */
 	protected void spawn() 
@@ -842,7 +792,7 @@ public void playerBegin(boolean loadgame)
 			fIsChasing   = false;
 
 			// show the menu
-			cmd_inven( null );
+			cmd_inven(null, null );
 		}
 	}
 	/**

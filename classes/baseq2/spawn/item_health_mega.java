@@ -4,7 +4,7 @@ import q2java.*;
 import q2jgame.*;
 import baseq2.*;
 
-public class item_health_mega extends GenericHealth
+public class item_health_mega extends GenericHealth implements PlayerStateListener
 	{
 	protected Player fOwner;
 	
@@ -51,6 +51,17 @@ public boolean isOverridingMax()
 	return true;
 	}
 /**
+ * Watch for Player disconnect or level change.
+ */
+public void playerStateChanged(Player p, int changeEvent)
+	{
+	fOwner.removePlayerStateListener(this);
+	fOwner = null;
+		
+	Game.removeFrameListener(this);
+	setRespawn(20);
+	}
+/**
  * Decrease the player's health as the item wears out
  */
 public void runFrame(int phase) 
@@ -76,7 +87,10 @@ public void runFrame(int phase)
 */		
 
 	// detach from player and respawn in 20 seconds.
-	fOwner = null;		
+	fOwner.removePlayerStateListener(this);
+	fOwner = null;
+	
+	Game.removeFrameListener(this);
 	setRespawn(20);		
 	}
 /**
@@ -87,9 +101,11 @@ public void runFrame(int phase)
 public void touch(Player p) 
 	{	
 	super.touch(p);
+		
+	// wait 5 seconds, then start decreasing health at one-second intervals
+	Game.addFrameListener(this, 5, 1);
 	
 	fOwner = p;
-	Game.addFrameListener(this, 5, 1); 
-	// wait 5 seconds, then start decreasing health at one-second intervals
+	fOwner.addPlayerStateListener(this);
 	}
 }

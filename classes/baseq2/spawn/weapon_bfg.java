@@ -76,9 +76,12 @@ public void fire()
 	start = fPlayer.projectSource(offset, forward, right);
 	try
 		{
-		new BfgBlast(fPlayer, start, forward, damage, 400, damageRadius);
+		Class blastClass = Game.lookupClass(".BfgBlast");
+		// assume we're launching a baseq2.BFGBlast or subclass
+		BfgBlast b = (BfgBlast) blastClass.newInstance();		
+		b.launch(fPlayer, start, forward, damage, 400, damageRadius);
 		}
-	catch (GameException e)
+	catch (Exception e)
 		{
 		Game.dprint("Can't create BfgBlast " + e);
 		}		

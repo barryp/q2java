@@ -55,13 +55,6 @@ public String getModelName()
 	return "models/items/quaddama/tris.md2";
 	}
 /**
- * Quad's don't respawn for 60 seconds.
- */
-public float getRespawnTime()
-	{
-	return 60;
-	}
-/**
  * called by the carrying player when they die to give us a chance to reset 
  * there damage multiplier and effects if we were in use when they died.
  */

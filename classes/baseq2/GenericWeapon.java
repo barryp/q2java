@@ -324,8 +324,7 @@ public void weaponThink()
 			else
 				{
 				fEntity.sound(NativeEntity.CHAN_VOICE, Engine.getSoundIndex("weapons/noammo.wav"), 1, NativeEntity.ATTN_NORM, 0);
-				fWeaponState = WEAPON_DROPPING;
-				setWeaponFrame(fFrameIdleLast + 1); // FRAME_DEACTIVATE_FIRST = FRAME_IDLE_LAST + 1
+				deactivate();
 				return;
 				}				
 			}

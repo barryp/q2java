@@ -1,4 +1,4 @@
-package menno.ctf.spawn;
+package menno.ctftech;
 
 
 /*
@@ -18,31 +18,31 @@ package menno.ctf.spawn;
 
 import q2java.*;
 import q2jgame.*;
-//import baseq2.*;
+import baseq2.DamageFilter;
+import baseq2.DamageObject;
 import javax.vecmath.*;
-import menno.ctf.*;
 
 
-/**
- * A misc_ctf_banner is a giant flag that
- * just sits and flutters in the wind.
- */
-
-public class item_tech1 extends GenericTech
+public class DisruptorShield extends GenericTech implements baseq2.DamageFilter
 {
 	protected final static float DAMAGE_MULTIPLIER = 0.5f;
-
-
-	public item_tech1() throws GameException
+	public DisruptorShield(int hudStat) throws GameException
 	{
-		// just call super...
+		super(hudStat);
 	}
 	/**
-	* This method returns the damage-multiplier (between 0 and 1)
-	**/
-	public float getDamageMultiplier()
+	 * Method to implement in order to filter a player's damage.
+	 * @param DamageObject - damage to be filtered.
+	 */
+	public DamageObject filterDamage(DamageObject damage)
 	{
-		return DAMAGE_MULTIPLIER;
+		float volume = 1f;
+		//if (self->owner->client->silencer_shots)
+		//	volume = 0.2;
+		getOwner().fEntity.sound( NativeEntity.CHAN_VOICE, Engine.getSoundIndex("ctf/tech1.wav"), volume, NativeEntity.ATTN_NORM, 0);
+	
+		damage.fAmount *= DAMAGE_MULTIPLIER;
+		return damage;
 	}
 	/**
 	 * Get the name of this item's icon.
@@ -69,18 +69,16 @@ public class item_tech1 extends GenericTech
 		return "models/ctf/resistance/tris.md2";	
 	}
 	/**
-	* This method plays a sound on the owner
-	**/
-	public void playSound()
+	 * Set which player is holding the tech.
+	 * @param p menno.ctf.Player
+	 */
+	public void setOwner(baseq2.Player p) 
 	{
-		if ( getOwner() == null )
-			System.err.println( "Disruptor Shield: playSound() called without owner" );
+		if (p == null)
+			getOwner().removeDamageFilter(this);
 		else
-		{
-			float volume = 1f;
-			//if (self->owner->client->silencer_shots)
-			//	volume = 0.2;
-			getOwner().fEntity.sound( NativeEntity.CHAN_VOICE, Engine.getSoundIndex("ctf/tech1.wav"), volume, NativeEntity.ATTN_NORM, 0);
-		}
+			p.addDamageFilter(this);
+			
+		super.setOwner(p);
 	}
 }

@@ -80,7 +80,7 @@ public void damage(GameObject inflictor, GameObject attacker,
 			{
 			// randomly pick a reaction message from the resource bundle
 			Object[] args = {p.getName()};
-			say(fResourceGroup.format("barryp.testbot.Messages", "react", args));
+			playerCommand("say " + fResourceGroup.format("barryp.testbot.Messages", "react", args));
 			fLastAttacker = p;
 			}
 		}

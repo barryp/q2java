@@ -56,9 +56,12 @@ public void fire()
 
 	try
 		{
-		new BlasterBolt(fPlayer, start, forward, damage, 1000, fEffect, fObitKey);
+		Class boltClass = Game.lookupClass(".BlasterBolt");
+		// assume we're launching a baseq2.BlasterBolt or subclass
+		BlasterBolt b = (BlasterBolt) boltClass.newInstance();		
+		b.launch(fPlayer, start, forward, damage, 1000, fEffect, fObitKey);
 		}
-	catch (GameException e)
+	catch (Exception e)
 		{
 		Game.dprint("Can't create BlasterBolt " + e);
 		}		

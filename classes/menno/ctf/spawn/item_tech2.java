@@ -1,4 +1,4 @@
-package menno.ctf.spawn;
+package menno.ctftech;
 
 
 /*
@@ -28,15 +28,16 @@ import menno.ctf.*;
  * just sits and flutters in the wind.
  */
 
-public class item_tech2 extends GenericTech
+public class PowerAmplifier extends GenericTech
 {
 	protected final static float DAMAGE_MULTIPLIER = 2f;
 
 	protected float fNextSoundTime = 0;
 
 
-	public item_tech2() throws GameException
+	public PowerAmplifier(int hudStat) throws GameException
 	{
+		super(hudStat);
 	}
 	/**
 	* This method returns the damage-multiplier (>1)
@@ -104,7 +105,7 @@ public class item_tech2 extends GenericTech
 		if ((phase == Game.FRAME_BEGINNING) && (getOwner() != null))
 		{
 			baseq2.GenericWeapon gw = getOwner().getCurrentWeapon();
-			if ( (!(gw instanceof weapon_grapple)) && getOwner().getCurrentWeapon().isFiring() )
+			if ( (!(gw instanceof menno.ctf.spawn.weapon_grapple)) &&  getOwner().getCurrentWeapon().isFiring() )
 				playSound();		
 		}
 	}
@@ -112,7 +113,7 @@ public class item_tech2 extends GenericTech
 	 * Set which player is holding the tech.
 	 * @param p menno.ctf.Player
 	 */
-	public void setOwner(Player p) 
+	public void setOwner(baseq2.Player p) 
 	{
 		// Adjust the Player's damage-multiplier
 		if (p != null)

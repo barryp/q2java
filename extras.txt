@@ -39,8 +39,34 @@ The <module>'s are:
         connections.  Finally the timelimit CVAR is set, and the map is set 
         to q2dm1.
 
+    barryp.bountyhunters
+    
+        Changes the rules of DM so that players are assigned particular
+        victims.  A Direction indicator and Range indicator help in
+        finding your target, and a flashing crosshair helps confirm you're
+        aiming at the right guy.  The complication is that while you're
+        hunting a particular player, someone is hunting -you-.  You get
+        points for killing your assigned victim or your stalker, and lose
+        points for killing innocent victims.        
         
+    barryp.flashgrenade
+    
+        Replaces the baseq2.HandGrenade class to add the extra behavior
+        of temporarily blinding enemies if they're looking in the direction 
+        of the explosion.        
 
+    barryp.paranoia
+    
+        Changes the rules of DM so that players are paired off, one
+        is assigned as a stalker, the other as a paranoid victim.  
+        A Direction indicator helps the stalker find his victim and a 
+        flashing crosshair helps confirm they're aiming at the right guy.
+        A Range indicator give the victim a sense of how close his stalker is.
+        You get points for killing your assigned victim or your stalker, 
+        and lose points for killing innocent victims.  Players that aren't
+        paired off with another player are "loose cannons", and can kill or
+        be killed by anyone for a smaller number of points.
+               
     barryp.persist
     
         After this module is loaded, any player that connects is a 

@@ -47,6 +47,11 @@ public static void addVictim(Player p)
  */
 public static void assignVictim(Player requestor) 
 	{
+	int nEntries = gVictimList.size();
+
+	if (nEntries < 1)
+		return;
+		
 	// randomize the order in which requests are granted
 	if ((Game.randomInt() & 0x007) != 0)
 		return;

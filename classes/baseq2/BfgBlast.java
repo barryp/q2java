@@ -35,37 +35,10 @@ public class BfgBlast extends GameObject implements FrameListener
 	public final static int MOD_BFG_EFFECT = 14;
 	
 /**
- * BlasterBolt constructor comment.
- * @exception q2java.GameException The exception description.
+ * No-arg constructor.
  */
-public BfgBlast(GameObject owner, Point3f start, Vector3f dir, int damage, int speed, float damageRadius) throws q2java.GameException 
+public BfgBlast() 
 	{
-	fEntity = new NativeEntity();
-	fEntity.setReference(this);
-	
-	fEntity.setOrigin(start);
-	fEntity.setAngles(new Angle3f(dir));
-	dir.scale(speed); // this seems wrong...I would think the direction should be normalized first, like the blaster is.
-	fEntity.setVelocity(dir);
-	fEntity.setClipmask(Engine.MASK_SHOT);
-	fEntity.setSolid(NativeEntity.SOLID_BBOX);
-	fEntity.setEffects(NativeEntity.EF_BFG | NativeEntity.EF_ANIM_ALLFAST);
-	fEntity.setModelIndex(Engine.getModelIndex("sprites/s_bfg1.sp2"));
-	fEntity.setSound(Engine.getSoundIndex("weapons/bfg__l1a.wav"));
-	fOwner = owner;
-	fEntity.setOwner(owner.fEntity);
-	fExpires = (float)Game.getGameTime() + (8000 / speed); // go away after a while
-	fDamage = (GameModule.gIsDeathmatch ? 5 : 10);
-	fRadiusDamage = damage;
-	fDamageRadius = damageRadius;
-	fState        = FLYING;
-	fEntity.linkEntity();
-/*
-	if (self->client)
-		check_dodge (self, bolt->s.origin, dir, speed);
-*/
-
-	Game.addFrameListener(this, 0, 0);
 	}
 /**
  * This method was created by a SmartGuide.
@@ -127,6 +100,39 @@ protected void explode()
 	fEntity.setFrame( fEntity.getFrame()+1 );
 	if (fEntity.getFrame() == 5)
 		fState = DISPOSING;
+	}
+/**
+ * BlasterBolt constructor comment.
+ * @exception q2java.GameException The exception description.
+ */
+public void launch(GameObject owner, Point3f start, Vector3f dir, int damage, int speed, float damageRadius) throws q2java.GameException 
+	{
+	fEntity = new NativeEntity();
+	fEntity.setReference(this);
+	
+	fEntity.setOrigin(start);
+	fEntity.setAngles(new Angle3f(dir));
+	dir.scale(speed); // this seems wrong...I would think the direction should be normalized first, like the blaster is.
+	fEntity.setVelocity(dir);
+	fEntity.setClipmask(Engine.MASK_SHOT);
+	fEntity.setSolid(NativeEntity.SOLID_BBOX);
+	fEntity.setEffects(NativeEntity.EF_BFG | NativeEntity.EF_ANIM_ALLFAST);
+	fEntity.setModelIndex(Engine.getModelIndex("sprites/s_bfg1.sp2"));
+	fEntity.setSound(Engine.getSoundIndex("weapons/bfg__l1a.wav"));
+	fOwner = owner;
+	fEntity.setOwner(owner.fEntity);
+	fExpires = (float)Game.getGameTime() + (8000 / speed); // go away after a while
+	fDamage = (GameModule.gIsDeathmatch ? 5 : 10);
+	fRadiusDamage = damage;
+	fDamageRadius = damageRadius;
+	fState        = FLYING;
+	fEntity.linkEntity();
+/*
+	if (self->client)
+		check_dodge (self, bolt->s.origin, dir, speed);
+*/
+
+	Game.addFrameListener(this, 0, 0);
 	}
 protected void prepareExplosion(TraceResults tr)
 	{

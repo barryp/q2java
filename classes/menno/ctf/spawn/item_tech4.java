@@ -1,4 +1,4 @@
-package menno.ctf.spawn;
+package menno.ctftech;
 
 
 /*
@@ -28,14 +28,15 @@ import menno.ctf.*;
  * just sits and flutters in the wind.
  */
 
-public class item_tech4 extends GenericTech
+public class AutoDoc extends GenericTech
 {
 	protected float fNextSoundTime = 0;
 	protected float fNextHealTime  = 0;
 
 
-	public item_tech4() throws GameException
+	public AutoDoc(int hudStat) throws GameException
 	{
+		super(hudStat);
 	}
 	/**
 	 * Get the name of this item's icon.
@@ -83,15 +84,16 @@ public class item_tech4 extends GenericTech
 	public void runFrame(int phase) 
 	{
 		super.runFrame(phase);
-		Player p = getOwner();
+		baseq2.Player p = getOwner();
 		
 		if ((phase == Game.FRAME_BEGINNING) && (p != null))
 		{
 			if ( fNextHealTime < Game.getGameTime() )
 			{
+				baseq2.ArmorDamageFilter adf = p.getArmor();
 				boolean noise  = false;
 				int     health = p.getHealth();
-				int     armor  = p.getArmorCount();
+				int     armor  = adf.getArmorCount();
 
 				fNextHealTime = Game.getGameTime();
 				if ( health < 150) 
@@ -103,8 +105,8 @@ public class item_tech4 extends GenericTech
 				}
 				if ( (armor > 0) && (armor < 150) )
 				{
-					p.setArmorMaxCount( 150 );
-					p.setArmorCount( Math.min(150, armor+5) );
+					adf.setArmorMaxCount( 150 );
+					adf.setArmorCount( Math.min(150, armor+5) );
 					fNextHealTime += 0.5f;
 					noise = true;
 				}
@@ -117,7 +119,7 @@ public class item_tech4 extends GenericTech
 	 * Set which player is holding the tech.
 	 * @param p menno.ctf.Player
 	 */
-	public void setOwner(Player p) 
+	public void setOwner(baseq2.Player p) 
 	{
 		super.setOwner(p);
 

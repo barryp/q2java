@@ -70,9 +70,12 @@ public void fire()
 
 	try
 		{
-		new HandGrenade(fPlayer, start, forward, damage, speed, timer, radius, fHeld);
+		Class hgClass = Game.lookupClass(".HandGrenade");
+		// assume we're tossing baseq2.HandGrenade or a subclass
+		HandGrenade hg = (HandGrenade) hgClass.newInstance();
+		hg.toss(fPlayer, start, forward, damage, speed, timer, radius, fHeld);
 		}
-	catch (GameException e)
+	catch (Exception e)
 		{
 		Game.dprint("Can't create HandGrenade " + e);
 		}		

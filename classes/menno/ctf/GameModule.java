@@ -18,7 +18,7 @@ package menno.ctf;
 import q2java.*;
 import q2jgame.*;
 import baseq2.InventoryList;
-import menno.ctf.spawn.*;
+import menno.ctftech.*;
 
 /**
  * Q2Java CTF module.
@@ -28,7 +28,7 @@ import menno.ctf.spawn.*;
 
 public class GameModule extends q2jgame.GameModule implements LevelListener
 {
-
+	public final static int STAT_CTF_TECH          = 26;
 	public GameModule(String moduleName)
 	{
 		super( moduleName );
@@ -72,10 +72,10 @@ public class GameModule extends q2jgame.GameModule implements LevelListener
 		// now it's time to spawn the techs.
 		try 
 		{
-			new item_tech1();
-			new item_tech2();
-			new item_tech3();
-			new item_tech4();
+			new AutoDoc(STAT_CTF_TECH);
+			new PowerAmplifier(STAT_CTF_TECH);
+			new DisruptorShield(STAT_CTF_TECH);
+			new TimeAccel(STAT_CTF_TECH);
 		}
 		catch ( Exception e )
 		{
