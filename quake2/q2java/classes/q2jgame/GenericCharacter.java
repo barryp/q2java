@@ -7,8 +7,6 @@ public class GenericCharacter extends GameEntity
 	{
 	protected int fHealth;
 	protected boolean fIsFemale;
-	protected GenericWeapon fWeapon;
-	protected GenericWeapon fNextWeapon;
 	
 /**
  * Don't call this constructor, it's required for the DLL. But 

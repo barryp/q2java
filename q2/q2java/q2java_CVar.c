@@ -1,6 +1,5 @@
 #include "globals.h"
-#include "javalink.h"
-#include "CVar.h"
+#include "q2java_CVar.h"
 
 #define CALL_CVAR  0
 #define CALL_CVAR_SET 1
@@ -11,9 +10,9 @@ static jclass class_CVar;
 
 static JNINativeMethod CVar_methods[] = 
 	{
-	{"cvar0",		"(Ljava/lang/String;Ljava/lang/String;II)I",	Java_CVar_cvar0},
-	{"getFloat0",	"(I)F",											Java_CVar_getFloat0},
-	{"getString0",	"(I)Ljava/lang/String;",						Java_CVar_getString0}
+	{"cvar0",		"(Ljava/lang/String;Ljava/lang/String;II)I",	Java_q2java_CVar_cvar0},
+	{"getFloat0",	"(I)F",											Java_q2java_CVar_getFloat0},
+	{"getString0",	"(I)Ljava/lang/String;",						Java_q2java_CVar_getString0}
 	};
 
 void CVar_javaInit()
@@ -39,7 +38,7 @@ void CVar_javaFinalize()
 		(*java_env)->UnregisterNatives(java_env, class_CVar);
 	}
 
-static jint JNICALL Java_CVar_cvar0(JNIEnv *env , jclass cls, jstring jname, jstring jval, jint flags, jint calltype)
+static jint JNICALL Java_q2java_CVar_cvar0(JNIEnv *env , jclass cls, jstring jname, jstring jval, jint flags, jint calltype)
 	{
 	char *name;
 	char *val;
@@ -59,13 +58,13 @@ static jint JNICALL Java_CVar_cvar0(JNIEnv *env , jclass cls, jstring jname, jst
 	return (jint) result;
 	}
 
-static jstring JNICALL Java_CVar_getString0(JNIEnv *env, jclass cls, jint ptr)
+static jstring JNICALL Java_q2java_CVar_getString0(JNIEnv *env, jclass cls, jint ptr)
 	{
 	cvar_t *cv = (cvar_t *)ptr;
 	return (*env)->NewStringUTF(env, cv->string);
 	}
 
-static jfloat JNICALL Java_CVar_getFloat0(JNIEnv *env, jclass cls, jint ptr)
+static jfloat JNICALL Java_q2java_CVar_getFloat0(JNIEnv *env, jclass cls, jint ptr)
 	{
 	cvar_t *cv = (cvar_t *)ptr;
 	return cv->value;

@@ -10,17 +10,23 @@ import java.io.*;
  
 class Q2JavaSecurityManager extends SecurityManager 
 	{
-	String fSandboxPrefix;
+	private int fSecurityLevel;
+	private String fSandboxPrefix;
 	
 /**
  * Q2JavaSecurityManager constructor comment.
  */ 
-private Q2JavaSecurityManager(String gamePath) 
+private Q2JavaSecurityManager(int level, String gamePath) 
 	{
 	super();
-	File gameDir = new File(gamePath);
-	File sandboxDir = new File(gameDir, "sandbox");
-	fSandboxPrefix = sandboxDir.getPath() + File.separator;
+	fSecurityLevel = level;
+	
+	if (level == 1) // setup sandbox-level security
+		{
+		File gameDir = new File(gamePath);
+		File sandboxDir = new File(gameDir, "sandbox");
+		fSandboxPrefix = sandboxDir.getPath() + File.separator;
+		}
 	}
 /**
  * This method was created by a SmartGuide.
@@ -28,7 +34,7 @@ private Q2JavaSecurityManager(String gamePath)
  */
 public void checkDelete(String filename) 
 	{
-	Engine.dprint("checkDelete(\"" + filename + "\")\n");
+	Engine.debugLog("checkDelete(\"" + filename + "\")\n");
 	checkSandbox(filename);
 	}
 /**
@@ -38,14 +44,14 @@ public void checkDelete(String filename)
  */
 public void checkMemberAccess(Class clazz, int which) 
 	{
-	Engine.dprint("checkMemberAccess(" + clazz + ", " + which + ")\n");
+//	Engine.debugLog("checkMemberAccess(" + clazz + ", " + which + ")\n");
 	}
 /**
  * This method was created by a SmartGuide.
  */
 public void checkPropertyAccess(String key) 
 	{
-	Engine.dprint("checkPropertyAccess(\"" + key + "\")\n");
+	Engine.debugLog("checkPropertyAccess(\"" + key + "\")\n");
 	}
 /**
  * This method was created by a SmartGuide.
@@ -53,7 +59,7 @@ public void checkPropertyAccess(String key)
  */
 public void checkRead(String filename) 
 	{
-	Engine.dprint("checkRead(\"" + filename + "\")\n");
+	Engine.debugLog("checkRead(\"" + filename + "\")\n");
 	checkSandbox(filename);
 	}
 /**
@@ -63,6 +69,9 @@ public void checkRead(String filename)
  */
 private void checkSandbox(String filename) 
 	{
+	if (fSandboxPrefix == null)
+		throw new SecurityException("No file access allowed at all");
+		
 	File f = new File(filename);
 	try
 		{
@@ -82,7 +91,7 @@ private void checkSandbox(String filename)
  */
 public void checkWrite(String filename) 
 	{
-	Engine.dprint("checkWrite(\"" + filename + "\")\n");
+	Engine.debugLog("checkWrite(\"" + filename + "\")\n");
 	checkSandbox(filename);
 	}
 }

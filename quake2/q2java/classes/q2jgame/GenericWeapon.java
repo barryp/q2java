@@ -3,26 +3,33 @@ package q2jgame;
 
 import q2java.*;
 
-public class GenericWeapon extends GenericItem
+public abstract class GenericWeapon extends GenericItem
 	{
-	public int fWeaponState;
+	protected Player fOwner;
 	
 	// keep our own copy of the animation frame, so
 	// we don't have to go back and forth to C so much
-	protected int fGunFrame;
+	private int fGunFrame;
 
 	// animation settings
-	protected int fFrameActivateLast;
-	protected int fFrameFireLast;
-	protected int fFrameIdleLast;
-	protected int fFrameDeactivateLast;
-	protected int[] fPauseFrames;
-	protected int[] fFireFrames;	
+	private int fWeaponModel;
+	private int fFrameActivateLast;
+	private int fFrameFireLast;
+	private int fFrameIdleLast;
+	private int fFrameDeactivateLast;
+	private int[] fPauseFrames;
+	private int[] fFireFrames;	
+
+	// private fields to manage the state of the weapon and
+	// its animation
+	private int fWeaponState;
+	private boolean fIsSwitching;
 	
-	public final static int WEAPON_READY			= 0;
-	public final static int WEAPON_ACTIVATING	= 1;
-	public final static int WEAPON_DROPPING		= 2;
-	public final static int WEAPON_FIRING		= 3;
+	private final static int WEAPON_UNUSED		= 0;
+	private final static int WEAPON_READY		= 1;
+	private final static int WEAPON_ACTIVATING	= 2;
+	private final static int WEAPON_DROPPING		= 3;
+	private final static int WEAPON_FIRING		= 4;
 	
 public GenericWeapon(String[] spawnArgs) throws GameException
 	{
@@ -32,67 +39,99 @@ public GenericWeapon(String[] spawnArgs) throws GameException
 /**
  * This method was created by a SmartGuide.
  */
-public void activate() 
+public GenericWeapon(int weaponModel, int lastActivate, int lastFire, int lastIdle, int lastDeactivate, int[] pauseFrames, int[] fireFrames) throws GameException
 	{
-	fWeaponState = WEAPON_ACTIVATING;
-	((Player)getOwner()).setGunFrame(fGunFrame = 0);
+	super(null);
+	
+	// animation settings
+	fWeaponModel = weaponModel;
+	fFrameActivateLast = lastActivate;
+	fFrameFireLast = lastFire;
+	fFrameIdleLast = lastIdle;
+	fFrameDeactivateLast = lastDeactivate;
+	fPauseFrames = pauseFrames;
+	fFireFrames = fireFrames;
+	}
+/**
+ * This method was created by a SmartGuide.
+ * @return int
+ */
+public final int currentWeaponFrame() 
+	{
+	return fGunFrame;
 	}
 /**
  * This method was created by a SmartGuide.
  */
-public void fire() 
+public void deactivate() 
 	{
+	fIsSwitching = true;
+	}
+/**
+ * This method was created by a SmartGuide.
+ */
+public abstract void fire();
+
+/**
+ * This method was created by a SmartGuide.
+ */
+public final void incWeaponFrame() 
+	{
+	fOwner.setGunFrame(++fGunFrame);
 	}
 /**
  * This method was created by a SmartGuide.
  */
 public void runFrame() 
 	{
-	Player mob = (Player) getOwner();
-
-	// if this isn't a weapon that's being wielded then bail
-	if ((mob == null) || (mob.fWeapon != this))
+	if (fWeaponState == WEAPON_UNUSED)
 		return;
-
+		
 	if (fWeaponState == WEAPON_DROPPING)
 		{
 		if (fGunFrame < fFrameDeactivateLast)
-			mob.setGunFrame(++fGunFrame);
+			incWeaponFrame();
 		else			
 			{
-			mob.fWeapon = mob.fNextWeapon;
-			mob.fNextWeapon = null;
-			mob.fWeapon.activate();
-			}		
+			fWeaponState = WEAPON_UNUSED;
+			fIsSwitching = false;
+			setWeaponFrame(0);
+			fOwner.changeWeapon();
+			}
 		return;
 		}
 
 	if (fWeaponState == WEAPON_ACTIVATING)
 		{
+		if (fIsSwitching)
+			{
+			fOwner.setGunIndex(fWeaponModel);
+			fIsSwitching = false;
+			}
+			
 		if (fGunFrame  < fFrameActivateLast)
-			mob.setGunFrame(++fGunFrame);
+			incWeaponFrame();
 		else
 			{
 			fWeaponState = WEAPON_READY;
-			mob.setGunFrame(fGunFrame = fFrameFireLast + 1); // FRAME_IDLE_FIRST = FRAME_FIRE_LAST + 1
+			setWeaponFrame(fFrameFireLast + 1); // FRAME_IDLE_FIRST = FRAME_FIRE_LAST + 1
 			}
 		return;
 		}
 
-
-	if ((mob.fNextWeapon != null) && (fWeaponState != WEAPON_FIRING))
+	if (fIsSwitching && (fWeaponState != WEAPON_FIRING))
 		{
 		fWeaponState = WEAPON_DROPPING;
-		mob.setGunFrame(fGunFrame = fFrameIdleLast + 1); // FRAME_DEACTIVATE_FIRST = FRAME_IDLE_LAST + 1
+		setWeaponFrame(fFrameIdleLast + 1); // FRAME_DEACTIVATE_FIRST = FRAME_IDLE_LAST + 1
 		return;
 		}
 
 	if (fWeaponState == WEAPON_READY)
 		{
-		if ((mob.fButtons & Player.BUTTON_ATTACK) != 0)
+		if ((fOwner.fButtons & Player.BUTTON_ATTACK) != 0)
 			{
 			fWeaponState = WEAPON_FIRING;
-			mob.setGunFrame(fGunFrame = fFrameActivateLast + 1); // FRAME_FIRE_FIRST = FRAME_ACTIVATE_LAST + 1
+			setWeaponFrame(fFrameActivateLast + 1); // FRAME_FIRE_FIRST = FRAME_ACTIVATE_LAST + 1
 			}
 		else
 /*		
@@ -133,7 +172,7 @@ public void runFrame()
 			{
 			if (fGunFrame == fFrameIdleLast)
 				{
-				mob.setGunFrame(fGunFrame = fFrameFireLast + 1); // FRAME_IDLE_FIRST = FRAME_IDLE_LAST + 1
+				setWeaponFrame(fFrameFireLast + 1); // FRAME_IDLE_FIRST = FRAME_IDLE_LAST + 1
 				return;
 				}
 
@@ -149,7 +188,7 @@ public void runFrame()
 						}
 					}
 				}
-			mob.setGunFrame(++fGunFrame);
+			incWeaponFrame();
 			return;
 			}
 			
@@ -172,11 +211,29 @@ public void runFrame()
 			}
 	
 		if (fFireFrames[n] == 0)
-			mob.setGunFrame(++fGunFrame);
+			incWeaponFrame();
 
 		if (fGunFrame == fFrameFireLast + 2) // FRAME_IDLE_FIRST = FRAME_FIRE_LAST + 1
 			fWeaponState = WEAPON_READY;
 		}
 		
+	}
+/**
+ * This method was created by a SmartGuide.
+ */
+public final void setWeaponFrame(int newFrame) 
+	{
+	fGunFrame = newFrame;
+	fOwner.setGunFrame(fGunFrame);
+	}
+/**
+ * This method was created by a SmartGuide.
+ */
+public void use(Player p) 
+	{
+	fIsSwitching = true;
+	fWeaponState = WEAPON_ACTIVATING;
+	fOwner = p;
+	setWeaponFrame(0);
 	}
 }

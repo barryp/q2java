@@ -1,5 +1,4 @@
 #include "globals.h"
-#include "javalink.h"
 
 static jclass class_player;
 static jmethodID method_player_ctor;
@@ -112,12 +111,6 @@ static void java_clientBegin(edict_t *ent, qboolean loadgame)
 	javaPlayer = Entity_getEntity(index);
 	(*java_env)->CallVoidMethod(java_env, javaPlayer, method_player_begin, loadgame);	
 	CHECK_EXCEPTION();
-/*
-	gi.WriteByte(1);
-	gi.WriteShort(ent-ge.edicts);
-	gi.WriteByte(9);
-	gi.multicast(ent->s.origin, 2);	
-*/
 	}
 
 static void java_clientUserinfoChanged(edict_t *ent, char *userinfo)

@@ -12,4 +12,10 @@ public weapon_bfg(String[] spawnArgs) throws GameException
 	setModel("models/weapons/g_bfg/tris.md2");
 	linkEntity();
 	}
+/**
+ * This method was created by a SmartGuide.
+ */
+public void fire() {
+	return;
+}
 }

@@ -12,4 +12,10 @@ public weapon_supershotgun(String[] spawnArgs) throws GameException
 	setModel("models/weapons/g_shotg2/tris.md2");
 	linkEntity();
 	}
+/**
+ * This method was created by a SmartGuide.
+ */
+public void fire() {
+	return;
+}
 }

@@ -1,6 +1,4 @@
-#include <jni.h>
 #include "globals.h" 
-#include "javalink.h"
 
 
 // handles to the Game class

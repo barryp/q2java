@@ -1,6 +1,8 @@
-#include <windows.h>	// for DLL handling
+#include <windows.h>	// for DLL handling & GetModuleFileName() 
+#include <stdio.h>		// for the debugLog() function
+#include <stdarg.h>		// for the debugLog() function
+
 #include "globals.h"
-#include "javalink.h"
 
 JNIEnv *java_env;
 char *java_error;
@@ -8,165 +10,66 @@ char *java_error;
 static HINSTANCE hJavaDLL;
 static JavaVM *java_vm;
 
-static cvar_t *java_DLLHandle_cvar;
-static cvar_t *java_VMPointer_cvar;
-static cvar_t *java_EnvPointer_cvar;
+static cvar_t *q2java_DLLHandle;
+static cvar_t *q2java_VMPointer;
+static cvar_t *q2java_EnvPointer;
 
-// handle to the java.lang.Class class
-static jclass class_Class;
-static jmethodID method_Class_getName;
-
-// handle for the (default?) Classloader
-static jobject object_ClassLoader;
-
-// handle to java.lang.Throwable class
-static jclass class_Throwable;
-static jmethodID method_Throwable_getMessage;
-
-// handle to the Vec class
-static jclass class_Vec3;
-static jmethodID method_Vec3_ctor;
 
 // for making our new Java classpath
+char java_gameDirName[1024];
 static char classpath[1024];
+static char debugFileName[1024];
+static cvar_t *q2java_debugLog;
 
-
-void setSecurity()
+void debugLog(const char *msg, ...)
 	{
-	jclass class_System;
-	jmethodID method_System_setSecurityManager;
+	va_list ap;
+	FILE *f;
 
-	jclass class_Q2JavaSecurityManager;
-	jmethodID method_Q2JavaSecurityManager_ctor;
-	jobject object_security_manager;
-
-	jstring jsGameDir;
-
-debugLog("In setSecurity()\n");
-
-	class_Q2JavaSecurityManager = (*java_env)->FindClass(java_env, "q2java/Q2JavaSecurityManager");
-	CHECK_EXCEPTION();
-	if (!class_Q2JavaSecurityManager)
-		{
-		gi.dprintf("Can't get a handle on Q2JavaSecurityManager\n");
+	if (!q2java_debugLog->value)
 		return;
-		}
 
-	method_Q2JavaSecurityManager_ctor = (*java_env)->GetMethodID(java_env, class_Q2JavaSecurityManager, "<init>", "(Ljava/lang/String;)V");
-	CHECK_EXCEPTION();
-	if (!method_Q2JavaSecurityManager_ctor)
-		{
-		gi.dprintf("Can't get a handle on Q2JavaSecurityManager constructor\n");
-		return;
-		}
+	f = fopen(debugFileName, "a");
 
-	jsGameDir = (*java_env)->NewStringUTF(java_env, global_gameDirName);
-	debugLog("About to construct new SecurityManager\n");
+	va_start(ap, msg);
+	vfprintf(f, msg, ap);
+	va_end(ap);
+
+	fclose(f);
+	}
+
+// Figure out what directory we're operating out of,
+// so we can write a debug trace file and later
+// setup a Java classpath
+//
+static void setupPaths()
+	{	
+	char *p;
+	cvar_t *game_cvar = gi.cvar("game", "baseq2", 0);			
+
+	// WINDOWS SPECIFIC: get the full pathname of the Quake2 .EXE file
+    GetModuleFileName(0, java_gameDirName, 1024);
+
+	// find the last backslash in the path
+	p = strrchr(java_gameDirName, '\\');
+
+	// p should never be null, but just in case....
+	if (!p)
+		p = java_gameDirName;
+	else
+		p++; // p is now just after the last backslash
 	
-	object_security_manager = (*java_env)->NewObject(java_env, class_Q2JavaSecurityManager, method_Q2JavaSecurityManager_ctor, jsGameDir);
-	CHECK_EXCEPTION();
-	if (!object_security_manager)
-		{
-		gi.dprintf("Couldn't create new security manager\n");
-		return;
-		}
+	// append the name of the game
+	strcpy(p, game_cvar->string);
 
-	debugLog("New SecurityManager constructed\n");
+	// save the name of our debugLog file
+	sprintf(debugFileName, "%s\\q2java.log", java_gameDirName);
 
-	class_System = (*java_env)->FindClass(java_env, "java/lang/System");
-	CHECK_EXCEPTION();
-	if (!class_System)
-		{
-		gi.dprintf("Can't get a handle on java.lang.System\n");
-		return;
-		}
-
-	debugLog("System class found\n");
-
-	method_System_setSecurityManager = (*java_env)->GetStaticMethodID(java_env, class_System, "setSecurityManager", "(Ljava/lang/SecurityManager;)V");
-	CHECK_EXCEPTION();
-	if (!method_System_setSecurityManager)
-		{
-		gi.dprintf("Can't get a handle on System.setSecurityManager()\n");
-		return;
-		}
-
-	debugLog("setSecurityManagerMethod found\n");
-
-	(*java_env)->CallStaticVoidMethod(java_env, class_System, method_System_setSecurityManager, object_security_manager);
-	CHECK_EXCEPTION();
-
-	debugLog("setSecurity() finished\n");
+	// erase any existing debug file
+	remove(debugFileName);
 	}
 
 
-static void initClass()
-	{
-	jmethodID method_Class_getClassLoader;
-
-	class_Class = (*java_env)->FindClass(java_env, "java/lang/Class");
-	CHECK_EXCEPTION();
-	if (!class_Class)
-		{			
-		java_error = "Couldn't find java.lang.Class\n";
-		return;
-		}
-
-	method_Class_getName = (*java_env)->GetMethodID(java_env, class_Class, "getName", "()Ljava/lang/String;");		
-	CHECK_EXCEPTION();
-	if (!method_Class_getName)
-		{
-		java_error = "Couldn't find java.lang.Class.getName() method\n";
-		return;
-		}
-/*
-	method_Class_getClassLoader = (*java_env)->GetMethodID(java_env, class_Class, "getClassLoader", "()Ljava/lang/ClassLoader;");
-	CHECK_EXCEPTION();
-	if (!method_Class_getClassLoader)
-		debugLog("Couldn't get Class.getClassLoader() method handle\n");
-
-	object_ClassLoader = (*java_env)->CallObjectMethod(java_env, class_Class, method_Class_getClassLoader);
-	CHECK_EXCEPTION();
-	if (!object_ClassLoader)
-		debugLog("Couldn't get the default classloader\n");
-*/	
-	}
-
-
-static void initThrowable()
-	{
-	class_Throwable = (*java_env)->FindClass(java_env, "java/lang/Throwable");
-	if (!class_Throwable)
-		{			
-		java_error = "Couldn't find java.lang.Throwable\n";
-		return;
-		}
-
-	method_Throwable_getMessage = (*java_env)->GetMethodID(java_env, class_Throwable, "getMessage", "()Ljava/lang/String;");		
-	if (!method_Throwable_getMessage)
-		{
-		java_error = "Couldn't find java.lang.Throwable.getMessage() method\n";
-		return;
-		}
-	}
-
-static void initVec3()
-	{
-	class_Vec3 = (*java_env)->FindClass(java_env, "q2java/Vec3");
-//	class_Vec3 = (*java_env)->DefineClass(java_env, "Vec3", object_ClassLoader, Vec3Class, sizeof(Vec3Class));
-	if (!class_Vec3)
-		{
-		java_error = "Couldn't find q2java.Vec3\n";
-		return;
-		}
-
-	method_Vec3_ctor = (*java_env)->GetMethodID(java_env, class_Vec3, "<init>", "(FFF)V");		
-	if (!method_Vec3_ctor)
-		{
-		java_error = "Couldn't find q2java.Vec3 constructor method\n";
-		return;
-		}
-	}
 
 
 
@@ -177,17 +80,22 @@ void startJava()
     jint (JNICALL *p_JNI_CreateJavaVM)(JavaVM **, JNIEnv **, void *);
 	int alreadyStarted = 0;
 	char buffer[64];
+	cvar_t *q2java_security;
 
+	q2java_debugLog = gi.cvar("q2java_debugLog", "0", 0);
+	q2java_security = gi.cvar("q2java_security", "2", CVAR_NOSET);
+
+	setupPaths();
 	debugLog("in startJava()\n");
 
 	java_error = NULL;
 
-    java_DLLHandle_cvar = gi.cvar("java_DLLHandle", "0", 0);
-    java_VMPointer_cvar = gi.cvar("java_VMPointer", "0", 0);
-    java_EnvPointer_cvar = gi.cvar("java_EnvPointer", "0", 0);
+    q2java_DLLHandle = gi.cvar("q2java_DLLHandle", "0", CVAR_NOSET);
+    q2java_VMPointer = gi.cvar("q2java_VMPointer", "0", CVAR_NOSET);
+    q2java_EnvPointer = gi.cvar("q2java_EnvPointer", "0", CVAR_NOSET);
 
-    if (java_DLLHandle_cvar->value)
-        hJavaDLL = (HINSTANCE) atoi(java_DLLHandle_cvar->string);
+    if (q2java_DLLHandle->value)
+        hJavaDLL = (HINSTANCE) atoi(q2java_DLLHandle->string);
     else
         {	
         hJavaDLL = LoadLibrary("javai.dll");
@@ -199,13 +107,13 @@ void startJava()
 
 		// save the Java DLL handle in a CVAR so we can get it back if the DLL is reloaded
         sprintf(buffer, "%d", hJavaDLL);	
-        gi.cvar_set("java_DLLHandle", buffer);
+        gi.cvar_forceset("q2java_DLLHandle", buffer);
         }
 
-	if (java_VMPointer_cvar->value)
+	if (q2java_VMPointer->value)
         {
-        java_vm = (void *) atoi(java_VMPointer_cvar->string);
-        java_env = (void *) atoi(java_EnvPointer_cvar->string);
+        java_vm = (void *) atoi(q2java_VMPointer->string);
+        java_env = (void *) atoi(q2java_EnvPointer->string);
 		alreadyStarted = 1;
         }
     else
@@ -221,8 +129,10 @@ void startJava()
         //
 		strcpy(classpath, vm_args.classpath);
 		strcat(classpath, ";");
-		strcat(classpath, global_gameDirName);
-		strcat(classpath, "\\classes");
+		strcat(classpath, java_gameDirName);
+		strcat(classpath, "\\q2java.jar;");
+		strcat(classpath, java_gameDirName);
+		strcat(classpath, "\\classes;");
 
 		// set the new classpath
         vm_args.classpath = classpath;
@@ -237,23 +147,19 @@ void startJava()
 		// save some key pointers and handles in cvars, in case
 		// the DLL is reloaded and we need them back
         sprintf(buffer, "%d", java_vm);	
-        gi.cvar_set("java_VMPointer", buffer);
+        gi.cvar_forceset("q2java_VMPointer", buffer);
         sprintf(buffer, "%d", java_env);
-        gi.cvar_set("java_EnvPointer", buffer);
+        gi.cvar_forceset("q2java_EnvPointer", buffer);
         }
 
 
 	// if Java's up and running, then get everything hooked up
     if (java_env)
 		{
+		// initialize the "Misc" module first, so the other ones 
+		// can check for exceptions
 		if (!java_error)
-			initClass();
-
-		if (!java_error)
-			initThrowable();
-
-		if (!java_error)
-			initVec3();
+			Misc_javaInit();  
 
 		if (!java_error)
 			Engine_javaInit();
@@ -269,10 +175,9 @@ void startJava()
 
 		if (!java_error)
 			Entity_javaInit();
-/*
-		if (!alreadyStarted)
-			setSecurity();	
-*/
+
+		if (!java_error && !alreadyStarted && q2java_security->value)
+			enableSecurity((int)q2java_security->value);	
 		}
 	return;
     }
@@ -299,71 +204,12 @@ debugLog("in stopJava()\n");
     else
         {			
         FreeLibrary(hJavaDLL);
-        gi.cvar_set("java_DLLHandle", "0");
-        gi.cvar_set("java_VMPointer", "0");
-        gi.cvar_set("java_EnvPointer", "0");
+        gi.cvar_forceset("q2java_DLLHandle", "0");
+        gi.cvar_forceset("q2java_VMPointer", "0");
+        gi.cvar_forceset("q2java_EnvPointer", "0");
         hJavaDLL = 0;
         java_vm = 0;
         java_env = 0;
         debugLog("It's a miracle, the JDK is fixed! VM Destroyed and Java DLL freed\n");
         }
     }
-
-
-
-
-int checkException(char *filename, int linenum)
-	{
-	jclass exClass;
-	jthrowable ex;
-	jstring jsName;
-	jstring jsMsg;
-	char *name;
-	char *msg;
-
-	ex = (*java_env)->ExceptionOccurred(java_env);
-	if (!ex)
-		return false;
-
-	(*java_env)->ExceptionClear(java_env);
-
-	exClass = (*java_env)->GetObjectClass(java_env, ex);
-	jsName = (*java_env)->CallObjectMethod(java_env, exClass, method_Class_getName);
-	if (jsName)
-		name = (char *)((*java_env)->GetStringUTFChars(java_env, jsName, 0));
-	else
-		name = "(Unknown Java exception)";
-
-	jsMsg = (*java_env)->CallObjectMethod(java_env, ex, method_Throwable_getMessage);
-	if (jsMsg)
-		{
-		msg = (char *)((*java_env)->GetStringUTFChars(java_env, jsMsg, 0));
-		debugLog("(%s:%d) %s: %s\n", filename, linenum, name, msg); 
-		gi.dprintf("%s: %s\n", name, msg);
-		(*java_env)->ReleaseStringUTFChars(java_env, jsMsg, msg);	
-		}
-	else
-		{
-		debugLog("(%s:%d)%s\n", filename, linenum, name); 
-		gi.dprintf("%s\n", name);
-		}
-
-	if (jsName)
-		(*java_env)->ReleaseStringUTFChars(java_env, jsName, name);	
-	
-	return true;
-	}
-
-
-/*******   Helper functions ***********/
-
-
-
-jobject newJavaVec3(vec3_t *v)
-	{
-	if (!v)
-		return 0;
-	else
-		return (*java_env)->NewObject(java_env, class_Vec3, method_Vec3_ctor, (*v)[0], (*v)[1], (*v)[2]);
-	}
-

@@ -2,16 +2,15 @@
 #define _Included_javalink
 
 #include <jni.h>
-#include "Quake2.h"
-
-#define CHECK_EXCEPTION() checkException(__FILE__, __LINE__)
 
 extern JNIEnv *java_env;
 extern char *java_error;
 
+// global functions
+extern char java_gameDirName[];
+void debugLog(const char *msg, ...);
 void startJava();
 void stopJava();
-int checkException(char *filename, int linenum);
-jobject newJavaVec3(vec3_t *v);
+
 
 #endif
