@@ -71,7 +71,7 @@ public synchronized void addPrintListener(PrintListener pl, int channels, Locale
 	// nothing more to do if the locale is already known
 	for (int i = 0; i < fLocales.length; i++)
 		{
-		if (fLocales[i] == loc)
+		if (fLocales[i].equals(loc))
 			return;
 		}
 
