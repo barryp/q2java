@@ -1,0 +1,33 @@
+CHANGES from v0.6.1 to v0.6.2
+
+---------------------------------------------------------------------------
+This file will just list changes in the core packages 
+(q2java, q2jgame, baseq2). Add-ons will have to list their own changes.
+---------------------------------------------------------------------------
+
+DLL CHANGES ===============================================================
+
+javalink_generic.c
+
+    No changes to the actual code, but an #ifdef was added around the 
+    "#include <direct.h>" line to make Solaris compile more cleanly.
+    
+JAVA CHANGES ==============================================================
+
+javax.vecmath.*
+
+    Updated this package with the latest version from Kenji Hiranabe. There
+    weren't any changes that affected Q2Java, but I figured it'd be good
+    to keep it up-to-date.
+
+q2jgame.Game
+
+    Changed: svcmd_javagc() now displays how long the GC took to run.
+            
+baseq2.Player
+
+    Added:   new knockback() method split off from the damage() method, 
+             should make it easier to support rocket-jumping on NWRA.
+             
+
+----------- End of List -------------------------------------------------------             

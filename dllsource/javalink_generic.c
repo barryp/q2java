@@ -1,18 +1,20 @@
 //
-// javalink_win32.c
+// javalink_generic.c
 //
-// PORTING NOTES FOR OTHER PLATFORMS
+// Invokes the JavaVM, generic to both Win32 and Unix platforms.
 //
 // Functions and variables that are only used in this module are
 // all marked "static".  Anything non-static is also used
 // in other parts of the Q2Java C code.
 //
-// Everything that is specific to the Win32 environment is marked
-// with "WINDOWS-SPECIFIC:", and will definitely need to be replaced
-// in other platforms.
+// Everything that is specific to the Win32 environment is #ifdef'ed
+// with "_WIN32".  Things specific to Microsoft Visual C++ are #ifdef'ed
+// with "_MSC_VER".
 //
 
-#include <direct.h>  // WINDOWS-SPECIFIC? for _getcwd()
+#ifdef _MSC_VER
+    #include <direct.h>  // MSC specific for _getcwd()
+#endif
 #include <stdio.h>   // needed for the debugLog() function
 #include <stdarg.h>  // needed for the debugLog() function
 

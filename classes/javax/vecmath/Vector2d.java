@@ -19,75 +19,60 @@ import java.io.Serializable;
   * @version specification 1.1, implementation $Revision: 1.5 $, $Date: 1998/04/10 04:52:14 $
   * @author Kenji hiranabe
   */
-public class Vector2f extends Tuple2f implements Serializable {
+public class Vector2d extends Tuple2d implements Serializable {
 
 	/**
-	  * Constructs and initializes a Vector2f to (0,0).
+	  * Constructs and initializes a Vector2d to (0,0).
 	  */
-	public Vector2f() {
+	public Vector2d() {
 	super();
 	}
 	/**
-	  * Constructs and initializes a Vector2f from the specified array.
+	  * Constructs and initializes a Vector2d from the specified array.
 	  * @param v the array of length 2 containing xy in order
 	  */
-	public Vector2f(float v[]) {
+	public Vector2d(double v[]) {
 	super(v);
 	}
 /*
- * $Log: Vector2f.java,v $
- * Revision 1.5  1998/04/10  04:52:14  hiranabe
- * API1.0 -> API1.1 (added constructors, methods)
- *
- * Revision 1.4  1998/04/09  08:18:15  hiranabe
- * minor comment change
- *
- * Revision 1.3  1998/04/09  07:05:18  hiranabe
- * API 1.1
- *
- * Revision 1.2  1998/01/05  06:29:31  hiranabe
- * copyright 98
- *
- * Revision 1.1  1997/11/26  03:00:44  hiranabe
- * Initial revision
+ * $Log: Vector2d.java,v $
  *
  */
 
-
 	/**
-	  * Constructs and initializes a Vector2f from the specified xy coordinates.
+	  * Constructs and initializes a Vector2d from the specified xy coordinates.
 	  * @param x the x coordinate
 	  * @param y the y coordinate
 	  */
-	public Vector2f(float x, float y) {
+	public Vector2d(double x, double y) {
 	super(x, y);
 	}
 	/**
-	  * Constructs and initializes a Vector2f from the specified Tuple2d.
+	  * Constructs and initializes a Vector2d from the specified Tuple2d.
 	  * @param t1 the Tuple2d containing the initialization x y data
 	  */
-	public Vector2f(Tuple2d t1) {
+	public Vector2d(Tuple2d t1) {
 	super(t1);
 	}
 	/**
-	  * Constructs and initializes a Vector2f from the specified Tuple2f.
+	  * Constructs and initializes a Vector2d from the specified Tuple2f.
 	  * @param t1 the Tuple2f containing the initialization x y data
 	  */
-	public Vector2f(Tuple2f t1) {
+	public Vector2d(Tuple2f t1) {
 	super(t1);
 	}
 	/**
-	  * Constructs and initializes a Vector2f from the specified Vector2d.
-	  * @param v1 the Vector2f containing the initialization x y data
+	  * Constructs and initializes a Vector2d from the specified Vector2d.
+	  * @param v1 the Vector2d containing the initialization x y data
 	  */
-	public Vector2f(Vector2d v1) {
+	public Vector2d(Vector2d v1) {
 	super(v1);
 	}
 	/**
-	  * Constructs and initializes a Vector2f from the specified Vector2f.
+	  * Constructs and initializes a Vector2d from the specified Vector2f.
 	  * @param v1 the Vector2f containing the initialization x y data
 	  */
-	public Vector2f(Vector2f v1) {
+	public Vector2d(Vector2f v1) {
 	super(v1);
 	}
 	/**
@@ -97,29 +82,29 @@ public class Vector2f extends Tuple2f implements Serializable {
 	  * @param v1  the other vector
 	  * @return the angle in radians in the range [0,PI]
 	  */
-	public final float angle(Vector2f v1) {
+	public final double angle(Vector2d v1) {
 	// stabler than acos
-	return (float)Math.abs(Math.atan2(x*v1.y - y*v1.x , dot(v1)));
+	return Math.abs(Math.atan2(x*v1.y - y*v1.x , dot(v1)));
 	}
 	/**
 	  * Computes the dot product of the this vector and vector v1.
 	  * @param  v1 the other vector
 	  */
-	public final float dot(Vector2f v1) {
+	public final double dot(Vector2d v1) {
 	return x*v1.x + y*v1.y;
 	}
 	/**
 	  * Returns the length of this vector.
 	  * @return the length of this vector
 	  */
-	public final float length() {
-	return (float)Math.sqrt(x*x + y*y);
+	public final double length() {
+	return Math.sqrt(x*x + y*y);
 	}
 	/**
 	  * Returns the squared length of this vector.
 	  * @return the squared length of this vector
 	  */
-	public final float lengthSquared() {
+	public final double lengthSquared() {
 	return x*x + y*y;
 	}
 	/**
@@ -136,7 +121,7 @@ public class Vector2f extends Tuple2f implements Serializable {
 	  * Sets the value of this vector to the normalization of vector v1.
 	  * @param v1 the un-normalized vector
 	  */
-	public final void normalize(Vector2f v1) {
+	public final void normalize(Vector2d v1) {
 	set(v1);
 	normalize();
 	}

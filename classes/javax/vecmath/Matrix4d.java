@@ -15,12 +15,15 @@ import java.io.Serializable;
 
 /**
  * A double precision floating point 4 by 4 matrix.
- * @version specification 1.1, implementation $Revision: 1.7 $, $Date: 1998/04/10 04:52:14 $
+ * @version specification 1.1, implementation $Revision: 1.8 $, $Date: 1998/04/17 10:30:46 $
  * @author Kenji hiranabe
  */
 public class Matrix4d implements Serializable {
 /*
  * $Log: Matrix4d.java,v $
+ * Revision 1.8  1998/04/17  10:30:46  hiranabe
+ * null check for equals
+ *
  * Revision 1.7  1998/04/10  04:52:14  hiranabe
  * API1.0 -> API1.1 (added constructors, methods)
  *
@@ -340,13 +343,23 @@ public class Matrix4d implements Serializable {
 		&& Math.abs(m33 - m1.m33) <= epsilon;
 	  }  
 	/**
+	  * Returns true if the Object o1 is of type Matrix4d and all of the data
+	  * members of t1 are equal to the corresponding data members in this
+	  * Matrix4d.
+	  * @param o1 the object with which the comparison is made.
+	  */
+	public boolean equals(Object o1) {
+	return o1 != null && (o1 instanceof Matrix4d) && equals((Matrix4d)o1);
+	}
+	/**
 	 * Returns true if all of the data members of Matrix4d m1 are
 	 * equal to the corresponding data members in this Matrix4d. 
 	 * @param m1 The matrix with which the comparison is made. 
 	 * @return true or false 
 	 */
 	public boolean equals(Matrix4d m1)  {
-	return  m00 == m1.m00
+	return  m1 != null
+	        && m00 == m1.m00
 		&& m01 == m1.m01
 		&& m02 == m1.m02 
 		&& m03 == m1.m03

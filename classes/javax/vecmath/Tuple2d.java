@@ -14,35 +14,16 @@ package javax.vecmath;
 import java.io.Serializable;
 
 /**
-  * A generic 4 element tuple that is represented by
-  * double precision floating point x,y,z and w coordinates.
-  * @version specification 1.1, implementation $Revision: 1.6 $, $Date: 1998/04/17 10:30:46 $
+  * A generic 2 element tuple that is represented by
+  * double precision floating point x,y coordinates.
+  * @version specification 1.1, implementation $Revision: 1.5 $, $Date: 1998/04/17 10:30:46 $
   * @author Kenji hiranabe
   */
-public abstract class Tuple4d implements Serializable {
+public abstract class Tuple2d implements Serializable {
 /*
- * $Log: Tuple4d.java,v $
- * Revision 1.6  1998/04/17  10:30:46  hiranabe
- * null check for equals
- *
- * Revision 1.5  1998/04/09  08:18:15  hiranabe
- * minor comment change
- *
- * Revision 1.4  1998/04/09  07:05:18  hiranabe
- * API 1.1
- *
- * Revision 1.3  1998/01/06  00:20:14  hiranabe
- * typo of scale method
- *
- * Revision 1.2  1998/01/05  06:29:31  hiranabe
- * copyright 98
- *
- * Revision 1.1  1997/11/26  03:00:44  hiranabe
- * Initial revision
+ * $Log: Tuple2f.java,v $
  *
  */
-
-
 	/**
 	  * The x coordinate.
 	  */
@@ -53,56 +34,47 @@ public abstract class Tuple4d implements Serializable {
 	  */
 	public double y;
 
-	/**
-	  * The z coordinate.
-	  */
-	public double z;
 
 	/**
-	  * The w coordinate.
+	  * Constructs and initializes a Tuple2d to (0,0).
 	  */
-	public double w;
-
-
-	/**
-	  * Constructs and initializes a Tuple4d to (0,0,0,0).
-	  */
-	public Tuple4d() {
+	public Tuple2d() {
 	x = 0.0;
 	y = 0.0;
-	z = 0.0;
-	w = 0.0;
 	}
 	/**
-	  * Constructs and initializes a Tuple4d from the specified array.
-	  * @param t the array of length 4 containing xyzw in order
+	  * Constructs and initializes a Tuple2d from the specified array.
+	  * @param t the array of length 2 containing xy in order
 	  */
-	public Tuple4d(double t[]) {
-	set(t);
+	public Tuple2d(double t[]) {
+	// ArrayIndexOutOfBounds is thrown if t.length < 2
+	this.x = t[0];
+	this.y = t[1];
 	}
 	/**
-	  * Constructs and initializes a Tuple4d from the specified xyzw coordinates.
+	  * Constructs and initializes a Tuple2d from the specified xy coordinates.
 	  * @param x the x coordinate
 	  * @param y the y coordinate
-	  * @param z the z coordinate
-	  * @param w the w coordinate
 	  */
-	public Tuple4d(double x, double y, double z, double w) {
-	set(x, y, z, w);
+	public Tuple2d(double x, double y) {
+	this.x = x;
+	this.y = y;
 	}
 	/**
-	  * Constructs and initializes a Tuple4d from the specified Tuple4d.
-	  * @param t1 the Tuple4d containing the initialization x y z w data
+	  * Constructs and initializes a Tuple2d from the specified Tuple2d.
+	  * @param t1 the Tuple2d containing the initialization x y data
 	  */
-	public Tuple4d(Tuple4d t1) {
-	set(t1);
+	public Tuple2d(Tuple2d t1) {
+	x = t1.x;
+	y = t1.y;
 	}
 	/**
-	  * Constructs and initializes a Tuple4d from the specified Tuple4f.
-	  * @param t1 the Tuple4f containing the initialization x y z w data
+	  * Constructs and initializes a Tuple2d from the specified Tuple2f.
+	  * @param t1 the Tuple2d containing the initialization x y data
 	  */
-	public Tuple4d(Tuple4f t1) {
-	set(t1);
+	public Tuple2d(Tuple2f t1) {
+	x = t1.x;
+	y = t1.y;
 	}
 	/**
 	  * Sets each component of this tuple to its absolute value.
@@ -112,17 +84,13 @@ public abstract class Tuple4d implements Serializable {
 	    x = -x;
 	if (y < 0.0)
 	    y = -y;
-	if (z < 0.0)
-	    z = -z;
-	if (w < 0.0)
-	    w = -w;
 	}
 	/**
 	  * Sets each component of the tuple parameter to its absolute value and
 	  * places the modified values into this tuple.
 	  * @param t the source tuple, which will not be modified
 	  */
-	public final void absolute(Tuple4d t) {
+	public final void absolute(Tuple2d t) {
 	set(t);
 	absolute();
 	}
@@ -130,22 +98,20 @@ public abstract class Tuple4d implements Serializable {
 	  * Sets the value of this tuple to the vector sum of itself and tuple t1.
 	  * @param t1  the other tuple
 	  */
-	public final void add(Tuple4d t1) {
+	public final void add(Tuple2d t1) {
 	x += t1.x;
 	y += t1.y;
-	z += t1.z;
-	w += t1.w;
 	}
+	// Why no get(Tuple2d t), which exists in Tuple3f ?
+
 	/**
 	  * Sets the value of this tuple to the vector sum of tuples t1 and t2.
 	  * @param t1 the first tuple
 	  * @param t2 the second tuple
 	  */
-	public final void add(Tuple4d t1, Tuple4d t2) {
+	public final void add(Tuple2d t1, Tuple2d t2) {
 	x = t1.x + t2.x;
 	y = t1.y + t2.y;
-	z = t1.z + t2.z;
-	w = t1.w + t2.w;
 	}
 	/**
 	  * Clamps this tuple to the range [low, high].
@@ -163,7 +129,7 @@ public abstract class Tuple4d implements Serializable {
 	  * @param max the highest value in the tuple after clamping
 	  * @param t the source tuple, which will not be modified
 	  */
-	public final void clamp(double min, double max, Tuple4d t) {
+	public final void clamp(double min, double max, Tuple2d t) {
 	set(t);
 	clamp(min, max);
 	}
@@ -176,10 +142,6 @@ public abstract class Tuple4d implements Serializable {
 	    x = max;
 	if (y > max)
 	    y = max;
-	if (z > max)
-	    z = max;
-	if (w > max)
-	    w = max;
 	}
 	/**
 	  * Clamps the maximum value of the tuple parameter to the max parameter and
@@ -187,7 +149,7 @@ public abstract class Tuple4d implements Serializable {
 	  * @param max the highest value in the tuple after clamping
 	  * @param t the source tuple, which will not be modified
 	  */
-	public final void clampMax(double max, Tuple4d t) {
+	public final void clampMax(double max, Tuple2d t) {
 	set(t);
 	clampMax(max);
 	}
@@ -200,10 +162,6 @@ public abstract class Tuple4d implements Serializable {
 	    x = min;
 	if (y < min)
 	    y = min;
-	if (z < min)
-	    z = min;
-	if (w < min)
-	    w = min;
 	}
 	/**
 	  * Clamps the minimum value of the tuple parameter to the min parameter
@@ -211,68 +169,59 @@ public abstract class Tuple4d implements Serializable {
 	  * @param min the lowest value in the tuple after clamping
 	  * @parm t the source tuple, which will not be modified
 	  */
-	public final void clampMin(double min, Tuple4d t) {
+	public final void clampMin(double min, Tuple2d t) {
 	set(t);
 	clampMin(min);
 	}
 	/**
 	  * Returns true if the L-infinite distance between this tuple and tuple t1 is
 	  * less than or equal to the epsilon parameter, otherwise returns false. The L-infinite
-	  * distance is equal to MAX[abs(x1-x2), abs(y1-y2), abs(z1-z2), abs(w1-w2)].
+	  * distance is equal to MAX[abs(x1-x2), abs(y1-y2)].
 	  * @param t1 the tuple to be compared to this tuple
 	  * @param epsilon the threshold value
 	  */
-	public boolean epsilonEquals(Tuple4d t1, double epsilon) {
+	public boolean epsilonEquals(Tuple2d t1, double epsilon) {
 	return (Math.abs(t1.x - this.x) <= epsilon) &&
-	    (Math.abs(t1.y - this.y) <= epsilon) &&
-	    (Math.abs(t1.z - this.z) <= epsilon) &&
-	    (Math.abs(t1.w - this.w) <= epsilon);
+	    (Math.abs(t1.y - this.y) <= epsilon);
 	}
 	/**
-	  * Returns true if all of the data members of Tuple4d t1 are equal to the corresponding
+	  * Returns true if the Object o1 is of type Tuple2d and all of the data
+	  * members of t1 are equal to the corresponding data members in this
+	  * Tuple2d.
+	  * @param o1 the object with which the comparison is made.
+	  */
+	public boolean equals(Object o1) {
+	return o1 != null && (o1 instanceof Tuple2d) && equals((Tuple2d)o1);
+	}
+	/**
+	  * Returns true if all of the data members of Tuple2d t1 are equal to the corresponding
 	  * data members in this
 	  * @param t1 the vector with which the comparison is made.
 	  */
-	public boolean equals(Tuple4d t1) {
-	return t1 != null && x == t1.x && y == t1.y && z == t1.z && w == t1.w;
+	public boolean equals(Tuple2d t1) {
+	return t1 != null && x == t1.x && y == t1.y;
 	}
 	/**
 	  * Copies the value of the elements of this tuple into the array t[]. 
 	  * @param t the array that will contain the values of the vector
 	  */
 	public final void get(double t[]) {
-	// ArrayIndexOutOfBounds is thrown if t.length < 4
+	// ArrayIndexOutOfBounds is thrown if t.length < 2
 	t[0] = x;
 	t[1] = y;
-	t[2] = z;
-	t[3] = w;
-	}
-	/**
-	  * Gets the value of this tuple and copies the values into the Tuple4d.
-	  * @param t Tuple4d object into which that values of this object are copied
-	  */
-	public final void get(Tuple4d t) {
-	t.x = x;
-	t.y = y;
-	t.z = z;
-	t.w = w;
 	}
 	/**
 	  * Returns a hash number based on the data values in this object. 
-	  * Two different Tuple4d objects with identical data  values
-	  * (ie, returns true for equals(Tuple4d) ) will return the same hash number.
+	  * Two different Tuple2d objects with identical data  values
+	  * (ie, returns true for equals(Tuple2d) ) will return the same hash number.
 	  * Two vectors with different data members may return the same hash value,
 	  * although this is not likely.
 	  */
 	  public int hashCode() {
 	  long xbits = Double.doubleToLongBits(x);
 	  long ybits = Double.doubleToLongBits(y);
-	  long zbits = Double.doubleToLongBits(z);
-	  long wbits = Double.doubleToLongBits(w);
 	  return (int)(xbits ^ (xbits >> 32) ^
-		  ybits ^ (ybits >> 32) ^
-		  zbits ^ (zbits >> 32) ^
-		  wbits ^ (wbits >> 32));
+		  ybits ^ (ybits >> 32));
 	  }  
 	/**
 	  * Linearly interpolates between this tuple and tuple t1 and places the
@@ -281,12 +230,10 @@ public abstract class Tuple4d implements Serializable {
 	  * @param alpha the alpha interpolation parameter
 	  *
 	  */
-	public final void interpolate(Tuple4d t1, double alpha) {
+	public final void interpolate(Tuple2d t1, double alpha) {
 	double beta = 1 - alpha;
 	x = beta*x + alpha*t1.x;
 	y = beta*y + alpha*t1.y;
-	z = beta*z + alpha*t1.z;
-	w = beta*w + alpha*t1.w;
 	}
 	/**
 	  * Linearly interpolates between tuples t1 and t2 and places the
@@ -295,7 +242,7 @@ public abstract class Tuple4d implements Serializable {
 	  * @param t2 the second tuple
 	  * @param alpha the alpha interpolation parameter
 	  */
-	public final void interpolate(Tuple4d t1, Tuple4d t2, double alpha) {
+	public final void interpolate(Tuple2d t1, Tuple2d t2, double alpha) {
 	set(t1);
 	interpolate(t2, alpha);
 	}
@@ -305,18 +252,14 @@ public abstract class Tuple4d implements Serializable {
 	public final void negate() {
 	x = -x;
 	y = -y;
-	z = -z;
-	w = -w;
 	}
 	/**
 	  * Sets the value of this tuple to the negation of tuple t1. 
 	  * @param t1 the source vector
 	  */
-	public final void negate(Tuple4d t1) {
+	public final void negate(Tuple2d t1) {
 	x = -t1.x;
 	y = -t1.y;
-	z = -t1.z;
-	w = -t1.w;
 	}
 	/**
 	  * Sets the value of this tuple to the scalar multiplication of itself.
@@ -325,19 +268,15 @@ public abstract class Tuple4d implements Serializable {
 	public final void scale(double s) {
 	x *= s;
 	y *= s;
-	z *= s;
-	w *= s;
 	}
 	/**
 	  * Sets the value of this tuple to the scalar multiplication of tuple t1.
 	  * @param s the scalar value
 	  * @param t1 the source tuple
 	  */
-	public final void scale(double s, Tuple4d t1) {
+	public final void scale(double s, Tuple2d t1) {
 	x = s*t1.x;
 	y = s*t1.y;
-	z = s*t1.z;
-	w = s*t1.w;
 	}
 	/**
 	  * Sets the value of this tuple to the scalar multiplication of itself and then
@@ -345,11 +284,9 @@ public abstract class Tuple4d implements Serializable {
 	  * @param s the scalar value
 	  * @param t1 the tuple to be added
 	  */
-	public final void scaleAdd(double s, Tuple4d t1) {
+	public final void scaleAdd(double s, Tuple2d t1) {
 	x = s*x + t1.x;
 	y = s*y + t1.y;
-	z = s*z + t1.z;
-	w = s*z + t1.w;
 	}
 	/**
 	  * Sets the value of this tuple to the scalar multiplication of tuple t1 and then
@@ -358,82 +295,66 @@ public abstract class Tuple4d implements Serializable {
 	  * @param t1 the tuple to be multipled
 	  * @param t2 the tuple to be added
 	  */
-	public final void scaleAdd(double s, Tuple4d t1, Tuple4d t2) {
+	public final void scaleAdd(double s, Tuple2d t1, Tuple2d t2) {
 	x = s*t1.x + t2.x;
 	y = s*t1.y + t2.y;
-	z = s*t1.z + t2.z;
-	w = s*t1.w + t2.w;
 	}
 	/**
-	  * Sets the value of this tuple from the 4 values specified in the array.
-	  * @param t the array of length 4 containing xyzw in order
+	  * Sets the value of this tuple from the 2 values specified in the array.
+	  * @param t the array of length 2 containing xy in order
 	  */
 	public final void set(double t[]) {
-	// ArrayIndexOutOfBounds is thrown if t.length < 4
+	// ArrayIndexOutOfBounds is thrown if t.length < 2
 	x = t[0];
 	y = t[1];
-	z = t[2];
-	w = t[3];
 	}
 	/**
-	  * Sets the value of this tuple to the specified xyzw coordinates.
+	  * Sets the value of this tuple to the specified xy coordinates.
 	  * @param x the x coordinate
 	  * @param y the y coordinate
-	  * @param z the z coordinate
-	  * @param w the w coordinate
 	  */
-	public final void set(double x, double y, double z, double w) {
+	public final void set(double x, double y) {
 	this.x = x;
 	this.y = y;
-	this.z = z;
-	this.w = w;
 	}
 	/**
-	  * Sets the value of this tuple to the value of tuple t1.
+	  * Sets the value of this tuple to the value of the Tuple2d argument.
 	  * @param t1 the tuple to be copied
 	  */
-	public final void set(Tuple4d t1) {
+	public final void set(Tuple2d t1) {
 	x = t1.x;
 	y = t1.y;
-	z = t1.z;
-	w = t1.w;
 	}
 	/**
-	  * Sets the value of this tuple to the value of tuple t1.
+	  * Sets the value of this tuple to the value of the Tuple2f argument.
 	  * @param t1 the tuple to be copied
 	  */
-	public final void set(Tuple4f t1) {
+	public final void set(Tuple2f t1) {
 	x = t1.x;
 	y = t1.y;
-	z = t1.z;
-	w = t1.w;
 	}
 	/**
 	  * Sets the value of this tuple to the vector difference of itself and tuple t1 (this = this - t1).
 	  * @param t1 the other tuple
 	  */
-	public final void sub(Tuple4d t1) {
+	public final void sub(Tuple2d t1) {
 	x -= t1.x;
 	y -= t1.y;
-	z -= t1.z;
-	w -= t1.w;
 	}
 	/**
 	  * Sets the value of this tuple to the vector difference of tuple t1 and t2 (this = t1 - t2).
 	  * @param t1 the first tuple
 	  * @param t2 the second tuple
 	  */
-	public final void sub(Tuple4d t1, Tuple4d t2) {
+	public final void sub(Tuple2d t1, Tuple2d t2) {
 	x = t1.x - t2.x;
 	y = t1.y - t2.y;
-	z = t1.z - t2.z;
-	w = t1.z - t2.w;
 	}
 	/**
-	  * Returns a string that contains the values of this Tuple4d. The form is (x,y,z,w).
+	  * Returns a string that contains the values of this Tuple2d. The form is (x,y).
 	  * @return the String representation
 	  */
 	public String toString() {
-	    return "(" + x + ", " + y + ", " + z +", " + w + ")";
+	    return "("+x+", "+y+")";
 	}
 }

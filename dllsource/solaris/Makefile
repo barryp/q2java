@@ -4,7 +4,7 @@ OBJS = $(SRCS:.c=.o)
 LIB = gamesparc.so
 
 TARCONTENTS = $(LIB) Makefile javalink_Solaris.c readme.solaris warnings.txt
-VERSION = 056
+VERSION = 061
 
 # CFLAGS explanation:
 # -G Make a shared library

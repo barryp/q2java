@@ -1242,15 +1242,17 @@ public static void svcmd_help(String[] args)
  */
 public static void svcmd_javagc(String[] args) 
 	{
-	long oldFree, freeMem, totalMem;
+	long oldFree, freeMem, totalMem, gcStart, gcStop;
 	Runtime rt = Runtime.getRuntime();
 
 	oldFree = rt.freeMemory();
+	gcStart = Engine.getPerformanceCounter();
 	System.gc();
+	gcStop = Engine.getPerformanceCounter();
 	freeMem = rt.freeMemory();
 	totalMem = rt.totalMemory();
 		
-	dprint((freeMem - oldFree) + " bytes freed in GC\n");
+	dprint("GC freed " + (freeMem - oldFree) + " bytes in " + (((double)(gcStop-gcStart) / Engine.getPerformanceFrequency()) * 1000.0) + " msec\n");
 	dprint("Total Java memory: " + totalMem + " bytes    Used: " + (totalMem - freeMem) + " Free: " + freeMem + "\n");
 	}
 /**

@@ -15,14 +15,14 @@ import java.io.Serializable;
 
 /**
   * A four byte tuple.
-  * @version specification 1.1, implementation $Revision: 1.4 $, $Date: 1998/04/09 08:18:15 $
+  * @version specification 1.1, implementation $Revision: 1.5 $, $Date: 1998/04/17 10:30:46 $
   * @author Kenji hiranabe
   */
 public abstract class Tuple4b implements Serializable {
 /*
  * $Log: Tuple4b.java,v $
- * Revision 1.4  1998/04/09  08:18:15  hiranabe
- * minor comment change
+ * Revision 1.5  1998/04/17  10:30:46  hiranabe
+ * null check for equals
  *
  * Revision 1.4  1998/04/09  08:18:15  hiranabe
  * minor comment change
@@ -110,7 +110,7 @@ public abstract class Tuple4b implements Serializable {
 	  * @param t1 the vector with which the comparison is made.
 	  */
 	public boolean equals(Tuple4b t1) {
-	return x == t1.x && y == t1.y && z == t1.z && w == t1.w;
+	return t1 != null && x == t1.x && y == t1.y && z == t1.z && w == t1.w;
 	}
 	/**
 	  * Places the value of the x,y,z components of this Tuple4b into the array of length 4.

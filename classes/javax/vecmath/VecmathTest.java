@@ -27,9 +27,6 @@ public class VecmathTest {
  * Revision 1.4  1998/04/09  07:05:18  hiranabe
  * API 1.1
  *
- * Revision 1.4  1998/04/09  07:05:18  hiranabe
- * API 1.1
- *
  * Revision 1.3  1998/01/05  06:29:31  hiranabe
  * copyright 98
  *
@@ -801,11 +798,16 @@ public class VecmathTest {
 	Vector3f zeroVector = new Vector3f();
 	Vector3f v1 = new Vector3f(2,3,4);
 	Vector3f v2 = new Vector3f(2,5,-8);
+	// System.out.println("v1=" + v1.toString());
 
 	Vector3f v3 = new Vector3f();
+	// System.out.println("v1=" + v1.toString());
 	v3.cross(v1, v2);
 
 	// check cross and dot.
+	// System.out.println("v3=" + v3.toString());
+	// System.out.println("v1=" + v1.toString());
+	// System.out.println("v3.dot(v1) = " + v3.dot(v1));
 	ASSERT(equals(v3.dot(v1), 0));
 	ASSERT(equals(v3.dot(v2), 0));
 

@@ -15,14 +15,14 @@ import java.io.Serializable;
 
 /**
   * A three byte tuple.
-  * @version specification 1.1, implementation $Revision: 1.4 $, $Date: 1998/04/09 08:18:15 $
+  * @version specification 1.1, implementation $Revision: 1.5 $, $Date: 1998/04/17 10:30:46 $
   * @author Kenji hiranabe
   */
 public abstract class Tuple3b implements Serializable {
 /*
  * $Log: Tuple3b.java,v $
- * Revision 1.4  1998/04/09  08:18:15  hiranabe
- * minor comment change
+ * Revision 1.5  1998/04/17  10:30:46  hiranabe
+ * null check for equals
  *
  * Revision 1.4  1998/04/09  08:18:15  hiranabe
  * minor comment change
@@ -95,12 +95,21 @@ public abstract class Tuple3b implements Serializable {
 	z = t1.z;
 	}
 	/**
+	  * Returns true if the Object o1 is of type Tuple3b and all of the data
+	  * members of t1 are equal to the corresponding data members in this
+	  * Tuple3b.
+	  * @param o1 the object with which the comparison is made.
+	  */
+	public boolean equals(Object o1) {
+	return o1 != null && (o1 instanceof Tuple3b) && equals((Tuple3b)o1);
+	}
+	/**
 	  * Returns true if all of the data members of Tuple3b t1 are equal to the corresponding
 	  * data members in this
 	  * @param t1 the vector with which the comparison is made.
 	  */
 	public boolean equals(Tuple3b t1) {
-	return x == t1.x && y == t1.y && z == t1.z;
+	return t1 != null && x == t1.x && y == t1.y && z == t1.z;
 	}
 	/**
 	  * Places the value of the x,y,z components of this Tuple3b into the array of length 3.

@@ -1426,31 +1426,8 @@ public void damage(GameObject inflictor, GameObject attacker,
 		return;
 		}
 
-	if ((dflags & DAMAGE_NO_KNOCKBACK) == 0)
-		{
-		if (knockback != 0)
-			{
-			Vector3f	kickVelocity = new Vector3f();
-			int			mass = getMass();
-
-			if (mass < 50)
-				mass = 50;
-				
-			// If you don't normalize this, you'll get insane amounts of kickback!
-			dir.normalize();
-
-			// If we are our own attacker, do id's "rocket jump hack"
-			if (this == attacker)
-				kickVelocity.scale(1600 * knockback / mass, dir);
-			else
-				kickVelocity.scale(500 * knockback / mass, dir);
-
-			// Add the new kick velocity to our current velocity.
-			Vector3f v = new Vector3f(fEntity.getVelocity());
-			v.add(kickVelocity);
-			fEntity.setVelocity(v);
-			}
-		}
+	// knock the player around
+	knockback(attacker, dir, knockback, dflags);
 
 	// decrease damage based on armor
 	if ((dflags & DAMAGE_NO_ARMOR) == 0)
@@ -2037,6 +2014,40 @@ public boolean isCarrying(String itemName)
 public boolean isFemale()
 	{
 	return fIsFemale;
+	}
+/**
+ * Knock the player around. 
+ * @param dir the direction the damage is coming from.
+ * @param knockback how much the player should be pushed around because of the damage.
+ * @param dflags flags indicating the type of damage, corresponding to GameEntity.DAMAGE_* constants.
+ */
+public void knockback(GameObject attacker, Vector3f dir, int knockback, int dflags) 
+	{
+	if ((dflags & DAMAGE_NO_KNOCKBACK) == 0)
+		{
+		if (knockback != 0)
+			{
+			Vector3f	kickVelocity = new Vector3f();
+			int			mass = getMass();
+
+			if (mass < 50)
+				mass = 50;
+				
+			// If you don't normalize this, you'll get insane amounts of kickback!
+			dir.normalize();
+
+			// If we are our own attacker, do id's "rocket jump hack"
+			if (this == attacker)
+				kickVelocity.scale(1600 * knockback / mass, dir);
+			else
+				kickVelocity.scale(500 * knockback / mass, dir);
+
+			// Add the new kick velocity to our current velocity.
+			Vector3f v = new Vector3f(fEntity.getVelocity());
+			v.add(kickVelocity);
+			fEntity.setVelocity(v);
+			}
+		}
 	}
 /**
  * React to a localized game message by printing to the player's screen.

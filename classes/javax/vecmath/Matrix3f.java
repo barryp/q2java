@@ -15,12 +15,15 @@ import java.io.Serializable;
 
 /**
  * A single precision floating point 3 by 3 matrix.
- * @version specification 1.1, implementation $Revision: 1.6 $, $Date: 1998/04/10 04:52:14 $
+ * @version specification 1.1, implementation $Revision: 1.7 $, $Date: 1998/04/17 10:30:46 $
  * @author Kenji hiranabe
  */
 public class Matrix3f implements Serializable {
 /*
  * $Log: Matrix3f.java,v $
+ * Revision 1.7  1998/04/17  10:30:46  hiranabe
+ * null check for equals
+ *
  * Revision 1.6  1998/04/10  04:52:14  hiranabe
  * API1.0 -> API1.1 (added constructors, methods)
  *
@@ -219,13 +222,23 @@ public class Matrix3f implements Serializable {
 		&& Math.abs(m22 - m1.m22) <= epsilon;
 	  }  
 	/**
+	  * Returns true if the Object o1 is of type Matrix3f and all of the data
+	  * members of t1 are equal to the corresponding data members in this
+	  * Matrix3f.
+	  * @param o1 the object with which the comparison is made.
+	  */
+	public boolean equals(Object o1) {
+	return o1 != null && (o1 instanceof Matrix3f) && equals((Matrix3f)o1);
+	}
+	/**
 	 * Returns true if all of the data members of Matrix3f m1 are
 	 * equal to the corresponding data members in this Matrix3f. 
 	 * @param m1 The matrix with which the comparison is made. 
 	 * @return true or false 
 	 */
 	public boolean equals(Matrix3f m1)  {
-	return  m00 == m1.m00
+	return  m1 != null
+	        && m00 == m1.m00
 		&& m01 == m1.m01
 		&& m02 == m1.m02 
 		&& m10 == m1.m10

@@ -16,12 +16,15 @@ import java.io.Serializable;
 /**
  * A double precision, general, and dynamically resizeable one 
  * dimensional vector class. Index numbering begins with zero.
- * @version specification 1.1, implementation $Revision: 1.5 $, $Date: 1998/04/10 04:52:14 $
+ * @version specification 1.1, implementation $Revision: 1.6 $, $Date: 1998/04/17 10:30:46 $
  * @author Kenji hiranabe
  */
 public class GVector implements Serializable {
 /*
  * $Log: GVector.java,v $
+ * Revision 1.6  1998/04/17  10:30:46  hiranabe
+ * null check for equals
+ *
  * Revision 1.5  1998/04/10  04:52:14  hiranabe
  * API1.0 -> API1.1 (added constructors, methods)
  *
@@ -201,12 +204,23 @@ public class GVector implements Serializable {
 		return true;
 	}
 	/**
+	  * Returns true if the Object o1 is of type GVector and all of the data
+	  * members of t1 are equal to the corresponding data members in this
+	  * GVector.
+	  * @param o1 the object with which the comparison is made.
+	  */
+	public boolean equals(Object o1) {
+	return o1 != null && (o1 instanceof GVector) && equals((GVector)o1);
+	}
+	/**
 	 * Returns true if all of the data members of GVector vector1 
 	 * are equal to the corresponding data members in this GVector.
 	 * @param   vector1 The vector with which the comparison is made. 
 	 * @return  true or false 
 	 */
 	public boolean equals(GVector vector1) {
+	if (vector1 == null)
+	    return false;
 		if (elementCount != vector1.elementCount)
 	    return false;
 	double [] v1data = vector1.elementData;
@@ -256,7 +270,7 @@ public class GVector implements Serializable {
 	/**
 	 * Linearly interpolates between this vector and vector v1 and 
 	 * places the result into this tuple: 
-	 * this = alpha*this + (1-alpha)*v1. 
+	 * this = (1-alpha)*this + alpha*v1. 
 	 * @param   v1 the first vector 
 	 * @param   alpha the alpha interpolation parameter 
 	 */
@@ -267,13 +281,13 @@ public class GVector implements Serializable {
 
 		double beta = (1.0-alpha);
 		for (int i = 0; i < elementCount; ++i) {
-			elementData[i] = alpha * elementData[i] + beta * v1data[i];
+			elementData[i] = beta * elementData[i] + alpha * v1data[i];
 	}
 	}
 	/**
 	 * Linearly interpolates between this vector and vector v1 and 
 	 * places the result into this tuple: 
-	 * this = alpha*this + (1-alpha)*v1. 
+	 * this = (1-alpha)*this + alpha*v1. 
 	 * @deprecated the double version of this method should be used.
 	 * @param   v1 the first vector 
 	 * @param   alpha the alpha interpolation parameter 
@@ -283,7 +297,7 @@ public class GVector implements Serializable {
 	}
 	/**
 	 * Linearly interpolates between vectors v1 and v2 and places 
-	 * the result into this tuple: this = alpha*v1 + (1-alpha)*v2.
+	 * the result into this tuple: this = (1-alpha)*v1 + alpha*v2.
 	 * @param   v1 the first vector 
 	 * @param   v2 the second vector 
 	 * @param   alpha the alpha interpolation parameter 
@@ -294,7 +308,7 @@ public class GVector implements Serializable {
 	}
 	/**
 	 * Linearly interpolates between vectors v1 and v2 and places 
-	 * the result into this tuple: this = alpha*v1 + (1-alpha)*v2.
+	 * the result into this tuple: this = (1-alpha)*v1 + alpha*v2.
 	 * @deprecated the double version of this method should be used.
 	 * @param   v1 the first vector 
 	 * @param   v2 the second vector 

@@ -16,12 +16,15 @@ import java.io.Serializable;
 /**
  * A double precision floating point 3 by 3 matrix.
  * Primarily to support rotations
- * @version specification 1.1, implementation $Revision: 1.6 $, $Date: 1998/04/10 04:52:14 $
+ * @version specification 1.1, implementation $Revision: 1.7 $, $Date: 1998/04/17 10:30:46 $
  * @author Kenji hiranabe
  */
 public class Matrix3d implements Serializable {
 /*
  * $Log: Matrix3d.java,v $
+ * Revision 1.7  1998/04/17  10:30:46  hiranabe
+ * null check for equals
+ *
  * Revision 1.6  1998/04/10  04:52:14  hiranabe
  * API1.0 -> API1.1 (added constructors, methods)
  *
@@ -216,13 +219,23 @@ public class Matrix3d implements Serializable {
 		&& Math.abs(m22 - m1.m22) <= epsilon;
 	  }  
 	/**
+	  * Returns true if the Object o1 is of type Matrix3d and all of the data
+	  * members of t1 are equal to the corresponding data members in this
+	  * Matrix3d.
+	  * @param o1 the object with which the comparison is made.
+	  */
+	public boolean equals(Object o1) {
+	return o1 != null && (o1 instanceof Matrix3d) && equals((Matrix3d)o1);
+	}
+	/**
 	 * Returns true if all of the data members of Matrix3d m1 are
 	 * equal to the corresponding data members in this Matrix3d. 
 	 * @param m1 The matrix with which the comparison is made. 
 	 * @return true or false 
 	 */
 	public boolean equals(Matrix3d m1)  {
-	return  m00 == m1.m00
+	return  m1 != null
+	        && m00 == m1.m00
 		&& m01 == m1.m01
 		&& m02 == m1.m02 
 		&& m10 == m1.m10

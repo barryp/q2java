@@ -21,6 +21,11 @@ gorilla <gorilla@pro-ns.net>
 
     Solaris-SPARC port
 
+Kenji Hiranabe
+
+    Supplied implementation of javax.vecmath, classes from that package
+    are used throughout the game.
+
 M. van Gangelen <menno@element.nl>
 
     Worked on BFG, GrenadeLauncher, grenades, and some other classes.  His 

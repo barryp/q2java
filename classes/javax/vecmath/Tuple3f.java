@@ -16,14 +16,14 @@ import java.io.Serializable;
 /**
   * A generic 3 element tuple that is represented by
   * single precision floating point x,y and z coordinates.
-  * @version specification 1.1, implementation $Revision: 1.5 $, $Date: 1998/04/09 08:18:15 $
+  * @version specification 1.1, implementation $Revision: 1.6 $, $Date: 1998/04/17 10:30:46 $
   * @author Kenji hiranabe
   */
 public abstract class Tuple3f implements Serializable {
 /*
  * $Log: Tuple3f.java,v $
- * Revision 1.5  1998/04/09  08:18:15  hiranabe
- * minor comment change
+ * Revision 1.6  1998/04/17  10:30:46  hiranabe
+ * null check for equals
  *
  * Revision 1.5  1998/04/09  08:18:15  hiranabe
  * minor comment change
@@ -227,7 +227,7 @@ public abstract class Tuple3f implements Serializable {
 	  * @param t1 the vector with which the comparison is made.
 	  */
 	public boolean equals(Tuple3f t1) {
-	return (t1 != null) && (x == t1.x) && (y == t1.y) && (z == t1.z);
+	return t1 != null && x == t1.x && y == t1.y && z == t1.z;
 	}
 	/**
 	  * Copies the value of the elements of this tuple into the array t[]. 
@@ -263,27 +263,27 @@ public abstract class Tuple3f implements Serializable {
 	  }  
 	/**
 	  * Linearly interpolates between this tuple and tuple t1 and places the
-	  * result into this tuple: this = alpha*this + (1-alpha)*t1.
+	  * result into this tuple: this = (1-alpha)*this + alpha*t1.
 	  * @param t1 the first tuple
 	  * @param alpha the alpha interpolation parameter
 	  *
 	  */
 	public final void interpolate(Tuple3f t1, float alpha) {
-	x = alpha*x + (1 - alpha)*t1.x;
-	y = alpha*y + (1 - alpha)*t1.y;
-	z = alpha*z + (1 - alpha)*t1.z;
+	float beta = 1 - alpha;
+	x = beta*x + alpha*t1.x;
+	y = beta*y + alpha*t1.y;
+	z = beta*z + alpha*t1.z;
 	}
 	/**
 	  * Linearly interpolates between tuples t1 and t2 and places the
-	  * result into this tuple: this = alpha*t1 + (1-alpha)*t2.
+	  * result into this tuple: this = (1-alpha)*t1 + alpha*t2.
 	  * @param t1 the first tuple
 	  * @param t2 the second tuple
 	  * @param alpha the alpha interpolation parameter
 	  */
 	public final void interpolate(Tuple3f t1, Tuple3f t2, float alpha) {
-	x = alpha*t1.x + (1 - alpha)*t2.x;
-	y = alpha*t1.y + (1 - alpha)*t2.y;
-	z = alpha*t1.z + (1 - alpha)*t2.z;
+	set(t1);
+	interpolate(t2, alpha);
 	}
 	/**
 	  * Negates the value of this vector in place.

@@ -16,14 +16,14 @@ import java.io.Serializable;
 /**
   * A generic 2 element tuple that is represented by
   * single precision floating point x,y coordinates.
-  * @version specification 1.1, implementation $Revision: 1.4 $, $Date: 1998/04/09 08:18:15 $
+  * @version specification 1.1, implementation $Revision: 1.5 $, $Date: 1998/04/17 10:30:46 $
   * @author Kenji hiranabe
   */
 public abstract class Tuple2f implements Serializable {
 /*
  * $Log: Tuple2f.java,v $
- * Revision 1.4  1998/04/09  08:18:15  hiranabe
- * minor comment change
+ * Revision 1.5  1998/04/17  10:30:46  hiranabe
+ * null check for equals
  *
  * Revision 1.4  1998/04/09  08:18:15  hiranabe
  * minor comment change
@@ -75,6 +75,14 @@ public abstract class Tuple2f implements Serializable {
 	public Tuple2f(float x, float y) {
 	this.x = x;
 	this.y = y;
+	}
+	/**
+	  * Constructs and initializes a Tuple2f from the specified Tuple2d.
+	  * @param t1 the Tuple2d containing the initialization x y data
+	  */
+	public Tuple2f(Tuple2d t1) {
+	x = (float)t1.x;
+	y = (float)t1.y;
 	}
 	/**
 	  * Constructs and initializes a Tuple2f from the specified Tuple2f.
@@ -193,12 +201,21 @@ public abstract class Tuple2f implements Serializable {
 	    (Math.abs(t1.y - this.y) <= epsilon);
 	}
 	/**
+	  * Returns true if the Object o1 is of type Tuple2f and all of the data
+	  * members of t1 are equal to the corresponding data members in this
+	  * Tuple2f.
+	  * @param o1 the object with which the comparison is made.
+	  */
+	public boolean equals(Object o1) {
+	return o1 != null && (o1 instanceof Tuple2f) && equals((Tuple2f)o1);
+	}
+	/**
 	  * Returns true if all of the data members of Tuple2f t1 are equal to the corresponding
 	  * data members in this
 	  * @param t1 the vector with which the comparison is made.
 	  */
 	public boolean equals(Tuple2f t1) {
-	return x == t1.x && y == t1.y;
+	return t1 != null && x == t1.x && y == t1.y;
 	}
 	/**
 	  * Copies the value of the elements of this tuple into the array t[]. 
@@ -223,25 +240,26 @@ public abstract class Tuple2f implements Serializable {
 	  }  
 	/**
 	  * Linearly interpolates between this tuple and tuple t1 and places the
-	  * result into this tuple: this = alpha*this + (1-alpha)*t1.
+	  * result into this tuple: this = (1-alpha)*this + alpha*t1.
 	  * @param t1 the first tuple
 	  * @param alpha the alpha interpolation parameter
 	  *
 	  */
 	public final void interpolate(Tuple2f t1, float alpha) {
-	x = alpha*x + (1 - alpha)*t1.x;
-	y = alpha*y + (1 - alpha)*t1.y;
+	float beta = 1 - alpha;
+	x = beta*x + alpha*t1.x;
+	y = beta*y + alpha*t1.y;
 	}
 	/**
 	  * Linearly interpolates between tuples t1 and t2 and places the
-	  * result into this tuple: this = alpha*t1 + (1-alpha)*t2.
+	  * result into this tuple: this = (1-alpha)*t1 + alpha*t2.
 	  * @param t1 the first tuple
 	  * @param t2 the second tuple
 	  * @param alpha the alpha interpolation parameter
 	  */
 	public final void interpolate(Tuple2f t1, Tuple2f t2, float alpha) {
-	x = alpha*t1.x + (1 - alpha)*t2.x;
-	y = alpha*t1.y + (1 - alpha)*t2.y;
+	set(t1);
+	interpolate(t2, alpha);
 	}
 	/**
 	  * Negates the value of this vector in place.
@@ -313,6 +331,14 @@ public abstract class Tuple2f implements Serializable {
 	public final void set(float x, float y) {
 	this.x = x;
 	this.y = y;
+	}
+	/**
+	  * Sets the value of this tuple to the value of the Tuple2d argument.
+	  * @param t1 the tuple to be copied
+	  */
+	public final void set(Tuple2d t1) {
+	x = (float)t1.x;
+	y = (float)t1.y;
 	}
 	/**
 	  * Sets the value of this tuple to the value of the Tuple2f argument.

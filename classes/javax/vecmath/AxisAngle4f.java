@@ -17,14 +17,14 @@ import java.io.Serializable;
   * A 4 element axis angle represented by single precision floating point
   * x,y,z,angle components. An axis angle is a rotation of angle (radians) about
   * the vector (x,y,z).
-  * @version specification 1.1, implementation $Revision: 1.4 $, $Date: 1998/04/09 08:18:15 $
+  * @version specification 1.1, implementation $Revision: 1.5 $, $Date: 1998/04/17 10:30:46 $
   * @author Kenji hiranabe
   */
 public class AxisAngle4f implements Serializable {
 /*
  * $Log: AxisAngle4f.java,v $
- * Revision 1.4  1998/04/09  08:18:15  hiranabe
- * minor comment change
+ * Revision 1.5  1998/04/17  10:30:46  hiranabe
+ * null check for equals
  *
  * Revision 1.4  1998/04/09  08:18:15  hiranabe
  * minor comment change
@@ -71,7 +71,7 @@ public class AxisAngle4f implements Serializable {
 	public AxisAngle4f() {
 	x = 0.0f;
 	y = 0.0f;
-	z = 0.0f;
+	z = 1.0f;
 	angle = 0.0f;
 	}
 	/**
@@ -121,12 +121,21 @@ public class AxisAngle4f implements Serializable {
 	    (Math.abs(a1.angle - this.angle) <= epsilon);
 	}
 	/**
+	  * Returns true if the Object o1 is of type AxisAngle4f and all of the data
+	  * members of o1 are equal to the corresponding data members in this
+	  * AxisAngle4f.
+	  * @param o1 the object with which the comparison is made.
+	  */
+	public boolean equals(Object o1) {
+	return o1 != null && (o1 instanceof AxisAngle4f) && equals((AxisAngle4f)o1);
+	}
+	/**
 	  * Returns true if all of the data members of AxisAngle4f t1 are equal to the corresponding
 	  * data members in this
 	  * @param a1 the vector with which the comparison is made.
 	  */
 	public boolean equals(AxisAngle4f a1) {
-	return x == a1.x && y == a1.y && z == a1.z && angle == a1.angle;
+	return a1 != null && x == a1.x && y == a1.y && z == a1.z && angle == a1.angle;
 	}
 	/**
 	  * Gets the value of this axis angle into the array a of

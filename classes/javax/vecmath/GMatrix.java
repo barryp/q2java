@@ -17,14 +17,14 @@ import java.io.Serializable;
  * A double precision, general, real, and dynamically resizeable 
  * two dimensional N x M matrix class. Row and column numbering 
  * begins with zero. The representation is row major. 
- * @version specification 1.1, implementation $Revision: 1.5 $, $Date: 1998/04/09 08:18:15 $
+ * @version specification 1.1, implementation $Revision: 1.6 $, $Date: 1998/04/17 10:30:46 $
  * @author Kenji hiranabe
  */
 public class GMatrix implements Serializable {
 /*
  * $Log: GMatrix.java,v $
- * Revision 1.5  1998/04/09  08:18:15  hiranabe
- * minor comment change
+ * Revision 1.6  1998/04/17  10:30:46  hiranabe
+ * null check for equals
  *
  * Revision 1.5  1998/04/09  08:18:15  hiranabe
  * minor comment change
@@ -241,6 +241,15 @@ public class GMatrix implements Serializable {
 	return true;
 	}
 	/**
+	  * Returns true if the Object o1 is of type GMatrix and all of the data
+	  * members of t1 are equal to the corresponding data members in this
+	  * GMatrix.
+	  * @param o1 the object with which the comparison is made.
+	  */
+	public boolean equals(Object o1) {
+	return o1 != null && (o1 instanceof GMatrix) && equals((GMatrix)o1);
+	}
+	/**
 	 * Returns true if all of the data members of Matrix4d m1 are
 	 * equal to the corresponding data members in this Matrix4d.
 	 *
@@ -248,6 +257,8 @@ public class GMatrix implements Serializable {
 	 * @return true or false
 	 */ 
 	public boolean equals(GMatrix m1) {
+	if (m1 == null)
+	    return false;
 	if(m1.nRow != nRow)
 	    return false;
 	if(m1.nCol != nCol)

@@ -39,9 +39,6 @@ public class TexCoord3f extends Tuple3f implements Serializable {
  * Revision 1.4  1998/04/09  08:18:15  hiranabe
  * minor comment change
  *
- * Revision 1.4  1998/04/09  08:18:15  hiranabe
- * minor comment change
- *
  * Revision 1.3  1998/04/09  07:05:18  hiranabe
  * API 1.1
  *
