@@ -203,6 +203,7 @@ void Entity_arrayReset()
     jstring jstr;
     int inuse;
     int i;
+    float fov;
 
     debugLog("Clearing existing arrays\n");
 
@@ -213,13 +214,14 @@ void Entity_arrayReset()
     memset(ge.edicts, 0, sizeof (ge.edicts[0])); 
     (*java_env)->SetObjectArrayElement(java_env, ja, 0, 0);
 
-    // clear player entities, except for inuse flags
+    // clear player entities, except for inuse flags and fov
     // (leave java objects alone)
     for (i = 0; i < global_maxClients; i++)
         {
         inuse = ge.edicts[i+1].inuse;
         jobj = ge.edicts[i+1].client->listener;
         jstr = ge.edicts[i+1].client->playerInfo;
+        fov = ge.edicts[i+1].client->ps.fov;
 
         memset(ge.edicts + i + 1, 0, sizeof(ge.edicts[0]));
         memset(global_clients + i, 0, sizeof(global_clients[0]));
@@ -228,6 +230,7 @@ void Entity_arrayReset()
         ge.edicts[i+1].inuse = inuse;
         ge.edicts[i+1].client->listener = jobj;
         ge.edicts[i+1].client->playerInfo = jstr;
+        ge.edicts[i+1].client->ps.fov = fov;
         }
 
     // clear all other non-player entities
@@ -931,35 +934,59 @@ static void JNICALL Java_q2java_NativeEntity_setStat0(JNIEnv *env, jclass cls, j
 
 static void JNICALL Java_q2java_NativeEntity_cprint0(JNIEnv *env , jclass cls, jint index, jint printlevel, jstring js)
     {
-    const char *str;
+    char *str;
     edict_t *ent;
 
     // sanity check
     if ((index < 0) || (index > global_maxClients))
         return;
 
+    if (js == NULL)
+        return;
+
     ent = ge.edicts + index;
 
-    str = (*env)->GetStringUTFChars(env, js, 0);
+    // it may happen that a print call is made when 
+    // the client entity is in the process of disconnecting
+    // and reconnecting - in which case we set the inuse
+    // flag to false, so we know not to actually print.
+    if (!ent->inuse)
+        return;
+
+//    str = (*env)->GetStringUTFChars(env, js, 0);
+    str = convertJavaString(js);
     gi.cprintf(ent, printlevel, "%s", str);
-    (*env)->ReleaseStringUTFChars(env, js, str);
+//    (*env)->ReleaseStringUTFChars(env, js, str);
+    gi.TagFree(str);
     }
 
 
 static void JNICALL Java_q2java_NativeEntity_centerprint0(JNIEnv *env, jclass cls, jint index, jstring js)
     {
-    const char *str;
+    char *str;
     edict_t *ent;
 
     // sanity check
     if ((index < 0) || (index > global_maxClients))
         return;
 
-    ent = ge.edicts + index;
+    if (js == NULL)
+        return;
 
-    str = (*env)->GetStringUTFChars(env, js, 0);
+    ent = ge.edicts + index;
+    
+    // it may happen that a print call is made when 
+    // the client entity is in the process of disconnecting
+    // and reconnecting - in which case we set the inuse
+    // flag to false, so we know not to actually print.
+    if (!ent->inuse)
+        return;
+
+//    str = (*env)->GetStringUTFChars(env, js, 0);
+    str = convertJavaString(js);
     gi.centerprintf(ent, "%s", str);
-    (*env)->ReleaseStringUTFChars(env, js, str);
+//    (*env)->ReleaseStringUTFChars(env, js, str);
+    gi.TagFree(str);
     }
 
 

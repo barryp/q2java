@@ -13,7 +13,7 @@ public class weapon_machinegun extends GenericWeapon
 	private final static int[] PAUSE_FRAMES = new int[] {23, 45, 0};
 	private final static int[] FIRE_FRAMES = new int[] {4, 5, 0};			
 	
-	private int fShotCount;	
+	protected int fShotCount;	
 	
 /**
  * Create a machinegun for a player to carry.
@@ -69,8 +69,8 @@ public void fire()
 	damage *= fPlayer.getDamageMultiplier();
 	kick *= fPlayer.getDamageMultiplier();
 
-	fPlayer.fKickOrigin.set(MiscUtil.cRandom() * 0.35f, MiscUtil.cRandom() * 0.35f, MiscUtil.cRandom() * 0.35f);
-	fPlayer.fKickAngles.set(fShotCount * -1.5f,  MiscUtil.cRandom() * 0.7f,  MiscUtil.cRandom() * 0.7f);
+	fPlayer.fKickOrigin.set(Game.cRandom() * 0.35f, Game.cRandom() * 0.35f, Game.cRandom() * 0.35f);
+	fPlayer.fKickAngles.set(fShotCount * -1.5f,  Game.cRandom() * 0.7f,  Game.cRandom() * 0.7f);
 
 	// raise the gun as it is firing
 	if (true /*!deathmatch->value */)
@@ -85,28 +85,48 @@ public void fire()
 	angles.add(fPlayer.fKickAngles);
 	angles.getVectors(forward, right, null);
 	start = fPlayer.projectSource(offset, forward, right);
-	MiscUtil.fireLead(fPlayer, start, forward, damage, kick, Engine.TE_GUNSHOT, DEFAULT_BULLET_HSPREAD, DEFAULT_BULLET_VSPREAD);
+	MiscUtil.fireLead(fPlayer, start, forward, damage, kick, Engine.TE_GUNSHOT, DEFAULT_BULLET_HSPREAD, DEFAULT_BULLET_VSPREAD, "machinegun");
 	
-	fPlayer.setAnimation(Player.ANIMATE_ATTACK, false,(int)(MiscUtil.randomFloat() + 0.25f));  //VWep
+	fPlayer.setAnimation(Player.ANIMATE_ATTACK, false,(int)(Game.randomFloat() + 0.25f));  //VWep
 	
 	Engine.writeByte(Engine.SVC_MUZZLEFLASH);
 	Engine.writeShort(fEntity.getEntityIndex());
 	Engine.writeByte(Engine.MZ_MACHINEGUN /*| is_silenced */);
 	Engine.multicast(fEntity.getOrigin(), Engine.MULTICAST_PVS);
 
-//	PlayerNoise(ent, start, PNOISE_WEAPON);
-	fPlayer.alterAmmoCount(-1);
+	fPlayer.setAmmoCount(-1, false);
+	}
+/**
+ * Get the name of this item's icon.
+ * @return java.lang.String
+ */
+public String getIconName() 
+	{
+	return "w_machinegun";
+	}
+/**
+ * Get the name of this item.
+ * @return java.lang.String
+ */
+public String getItemName() 
+	{
+	return "Machinegun";
+	}
+/**
+ * Get the name of this item's model.
+ * @return java.lang.String
+ */
+public String getModelName() 
+	{
+	return "models/weapons/g_machn/tris.md2";	
 	}
 /**
  * Fill in the info specific to this type of weapon.
  */
 protected void setFields() 
 	{
-	fWeaponName = "machinegun";
-	fWeaponIconName = "w_machinegun";	
 	fAmmoName = "bullets";
 	fAmmoCount = 50;
-	fEntityModel = "models/weapons/g_machn/tris.md2";	
 	fViewModel = "models/weapons/v_machn/tris.md2";
 	
 	fFrameActivateLast		= 3;

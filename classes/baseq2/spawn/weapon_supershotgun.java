@@ -52,10 +52,10 @@ public void fire()
 
 	ang.y -= 5;
 	ang.getVectors(forward, null, null);
-	MiscUtil.fireShotgun(fPlayer, start, forward, damage, kick, DEFAULT_SHOTGUN_HSPREAD, DEFAULT_SHOTGUN_VSPREAD, DEFAULT_SSHOTGUN_COUNT/2);
+	MiscUtil.fireShotgun(fPlayer, start, forward, damage, kick, DEFAULT_SHOTGUN_HSPREAD, DEFAULT_SHOTGUN_VSPREAD, DEFAULT_SSHOTGUN_COUNT/2, "sshotgun");
 	ang.y += 10;
 	ang.getVectors(forward, null, null);
-	MiscUtil.fireShotgun(fPlayer, start, forward, damage, kick, DEFAULT_SHOTGUN_HSPREAD, DEFAULT_SHOTGUN_VSPREAD, DEFAULT_SSHOTGUN_COUNT/2);
+	MiscUtil.fireShotgun(fPlayer, start, forward, damage, kick, DEFAULT_SHOTGUN_HSPREAD, DEFAULT_SHOTGUN_VSPREAD, DEFAULT_SSHOTGUN_COUNT/2, "sshotgun");
 
 	// send muzzle flash
 	Engine.writeByte(Engine.SVC_MUZZLEFLASH);
@@ -65,8 +65,31 @@ public void fire()
 
 	incWeaponFrame();
 	
-//	PlayerNoise(ent, start, PNOISE_WEAPON);
-	fPlayer.alterAmmoCount(-2);
+	fPlayer.setAmmoCount(-2, false);
+	}
+/**
+ * Get the name of this item's icon.
+ * @return java.lang.String
+ */
+public String getIconName() 
+	{
+	return "w_sshotgun";
+	}
+/**
+ * Get the name of this item.
+ * @return java.lang.String
+ */
+public String getItemName() 
+	{
+	return "Super Shotgun";
+	}
+/**
+ * Get the name of this item's model.
+ * @return java.lang.String
+ */
+public String getModelName() 
+	{
+	return "models/weapons/g_shotg2/tris.md2";	
 	}
 /**
  * Override the PlayerWeapon.isEnoughAmmo() method, since 
@@ -82,11 +105,8 @@ public boolean isEnoughAmmo()
  */
 protected void setFields() 
 	{
-	fWeaponName = "super shotgun";
-	fWeaponIconName = "w_sshotgun";	
 	fAmmoName = "shells";
 	fAmmoCount = 10;
-	fEntityModel = "models/weapons/g_shotg2/tris.md2";	
 	fViewModel = "models/weapons/v_shotg2/tris.md2";
 	
 	fFrameActivateLast		= 6;

@@ -177,7 +177,7 @@ public GameObject getRandomTarget()
 	if ((fTargets == null) || (fTargets.size() < 1))
 		return null;
 		
-	int choice = (MiscUtil.randomInt() & 0x0fff) % fTargets.size();
+	int choice = (Game.randomInt() & 0x0fff) % fTargets.size();
 	return (GameObject) fTargets.elementAt(choice);
 	}
 /**

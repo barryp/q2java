@@ -2,14 +2,16 @@
 package baseq2;
 
 import javax.vecmath.*;
+import q2jgame.*;
 import q2java.*;
 
 /**
  * Corpse lying on the ground.
  * 
  */
-public class Corpse extends GameObject 
+public class Corpse extends GameObject implements FrameListener
 	{
+	protected final static int CORPSE_DELAY = 45; // remove corpses after this many seconds
 	
 /**
  * Create a corpse entity.
@@ -35,6 +37,9 @@ public void copy(NativeEntity ent)
 	fEntity.unlinkEntity();
 	fEntity.copySettings(ent);
 	fEntity.linkEntity();
+	
+	// get called back to remove the corpse after a certain time.
+	Game.addFrameListener(this, CORPSE_DELAY, -1);
 	}
 /**
  * Cause the corpse to spray blood.
@@ -53,5 +58,14 @@ public void damage(GameObject inflictor, GameObject attacker,
 	int damage, int knockback, int dflags, int tempEvent) 
 	{
 	spawnDamage(Engine.TE_BLOOD, point, normal, damage);	
+	}
+/**
+ * Hide the corpse.
+ * @param phase int
+ */
+public void runFrame(int phase) 
+	{
+	fEntity.setSVFlags(NativeEntity.SVF_NOCLIENT);
+	fEntity.unlinkEntity();	
 	}
 }

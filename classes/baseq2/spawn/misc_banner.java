@@ -21,7 +21,7 @@ public misc_banner(String[] spawnArgs) throws GameException
 	fEntity.setSolid(NativeEntity.SOLID_NOT);
 	fEntity.setModel("models/objects/banner/tris.md2");
 
-	fCurrentFrame = (MiscUtil.randomInt() & 0x0fff) % 16;
+	fCurrentFrame = (Game.randomInt() & 0x0fff) % 16;
 	fEntity.setFrame(fCurrentFrame);
 
 	fEntity.linkEntity();

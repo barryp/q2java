@@ -99,6 +99,7 @@ public void svcmd_help(String[] args)
 	Game.dprint("    sv commands:\n");
 	Game.dprint("       start <port> [-pass <password>] [-nocmd] [-nochat]\n");
 	Game.dprint("       stop <port>\n");
+	Game.dprint("       locale <port> <locale-name>\n");
 	Game.dprint("\n");
 	Game.dprint("    active servers:\n");
 	
@@ -109,6 +110,30 @@ public void svcmd_help(String[] args)
 		{
 		TelnetServer t = (TelnetServer) gServers.elementAt(i);
 		Game.dprint("       port: " + t.getPort() + " connections: " + t.getConnectionCount() + "\n");
+		}
+	}
+/**
+ * Run the "sv telnet.locale" command.
+ * @param args java.lang.String[]
+ */
+public void svcmd_locale(String[] args) 
+	{
+	if (args.length < 4)
+		{
+		Game.dprint("Usage: locale <port> <new-locale>\n");
+		return;
+		}
+		
+	int port = Integer.parseInt(args[2]);
+	
+	for (int i = 0; i < gServers.size(); i++)
+		{
+		TelnetServer t = (TelnetServer) gServers.elementAt(i);
+		if (t.getPort() == port)
+			{
+			t.setLocale(args[3]);
+			return;
+			}
 		}
 	}
 /**
@@ -178,7 +203,7 @@ public void svcmd_start(String[] args)
 		}
 	}
 /**
- * Run the "sv telnet_start" command.
+ * Run the "sv telnet.stop" command.
  * @param args java.lang.String[]
  */
 public void svcmd_stop(String[] args) 

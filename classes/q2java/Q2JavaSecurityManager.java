@@ -1,6 +1,7 @@
 
 package q2java;
 
+
 /**
  * Rudimentary security manager.
  * 
@@ -18,8 +19,9 @@ class Q2JavaSecurityManager extends SecurityManager
 	private ThreadGroup fGameThreadGroup;
 	private ThreadGroup fSubthreadGroup;
 	
-	private String fSecurityPropertyName = File.separator + "lib" + File.separator + "security" + File.separator + "java.security";
+	private String fSecurityPropertyName = System.getProperty("java.home") + File.separator + "lib" + File.separator + "security" + File.separator + "java.security";
 	
+
 /**
  * Q2JavaSecurityManager constructor comment.
  */ 
@@ -34,13 +36,10 @@ private Q2JavaSecurityManager(int level, String gamePath)
 	fSubthreadGroup = new ThreadGroup("Q2Java Subthreads");
 	fSubthreadGroup.setMaxPriority(Thread.NORM_PRIORITY); // don't let subthreads rise higher than the game thread
 		
-	if (level == 1) // setup sandbox-level security
-		{
-		File gameDir = new File(gamePath);
-		File sandboxDir = new File(gameDir, "sandbox");
-		fSandboxPrefix = sandboxDir.getPath() + File.separator;
-		fSandboxPrefix = fSandboxPrefix.toLowerCase(); // seems necessary for Win95
-		}
+	File gameDir = new File(gamePath);
+	File sandboxDir = new File(gameDir, "sandbox");
+	fSandboxPrefix = sandboxDir.getPath() + File.separator;
+	fSandboxPrefix = fSandboxPrefix.toLowerCase(); // seems necessary for Win95
 	}
 /**
  * Accept connections from anywhere.
@@ -95,7 +94,7 @@ public void checkCreateClassLoader()
  */
 public void checkDelete(String filename) 
 	{
-	Engine.debugLog("checkDelete(\"" + filename + "\")\n");
+	Engine.debugLog("checkDelete(\"" + filename + "\")");
 	checkSandbox(filename);
 	}
 /**
@@ -132,14 +131,14 @@ public void checkListen(int port)
  */
 public void checkMemberAccess(Class clazz, int which) 
 	{
-//	Engine.debugLog("checkMemberAccess(" + clazz + ", " + which + ")\n");
+//	Engine.debugLog("checkMemberAccess(" + clazz + ", " + which + ")");
 	}
 /**
  * This method was created by a SmartGuide.
  */
 public void checkPropertyAccess(String key) 
 	{
-	Engine.debugLog("checkPropertyAccess(\"" + key + "\")\n");
+	Engine.debugLog("checkPropertyAccess(\"" + key + "\")");
 	}
 /**
  * Allow reads on any FileDescriptor 
@@ -154,33 +153,44 @@ public void checkRead(FileDescriptor fd)
  * This method was created by a SmartGuide.
  * @param filename java.lang.String
  */
-public void checkRead(String filename) 
+public void checkRead(String filename)
 	{
-	Engine.debugLog("checkRead(\"" + filename + "\")\n");
-	
-	// this is horseshit...in order to be able to 
+	Engine.debugLog("checkRead(\"" + filename + "\")");
+
+	File f = new File(filename);
+	try
+		{
+		filename = f.getCanonicalPath();
+		}
+	catch (IOException e)
+		{
+		throw new SecurityException(e.getMessage());
+		}
+
+	// allow files underneath the game dir to be read
+	if (filename.toLowerCase().startsWith(Engine.getGamePath().toLowerCase()))
+		return;
+
+	// this is horseshit...in order to be able to
 	// serialize objects, you need a hash digest function,
 	// the system uses SHA from the java.security package
-	// which requires read-access to the 
+	// which requires read-access to the
 	// <jdk>\lib\security\java.security property file
 	// in order to find the security provider to supply
 	// the SHA algorithm that the java.io serialization
-	// uses.  
-	if (filename.endsWith(fSecurityPropertyName))
+	// uses.
+	if (filename.equals(fSecurityPropertyName))
 		return;
-		
-	checkSandbox(filename);
+
+	throw new SecurityException(filename + ": read access not allowed");
 	}
 /**
  * This method was created by a SmartGuide.
  * @return boolean
  * @param filename java.lang.String
  */
-private void checkSandbox(String filename) 
+private void checkSandbox(String filename)
 	{
-	if (fSandboxPrefix == null)
-		throw new SecurityException("No file access allowed at all");
-		
 	File f = new File(filename);
 	try
 		{
@@ -209,7 +219,7 @@ public void checkWrite(FileDescriptor fd)
  */
 public void checkWrite(String filename) 
 	{
-	Engine.debugLog("checkWrite(\"" + filename + "\")\n");
+	Engine.debugLog("checkWrite(\"" + filename + "\")");
 	checkSandbox(filename);
 	}
 /**

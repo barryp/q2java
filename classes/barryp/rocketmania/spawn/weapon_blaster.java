@@ -36,7 +36,7 @@ public void fire()
 	Vector3f right = new Vector3f();
 	Vector3f offset = new Vector3f(24, 8, fPlayer.fViewHeight - 8);
 		
-	int		damage = 80 + (int)(MiscUtil.randomFloat() * 20.0);
+	int		damage = 80 + (int)(Game.randomFloat() * 20.0);
 	int		radiusDamage = 60;
 	float	damageRadius = 60;	
 /*

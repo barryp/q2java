@@ -13,8 +13,6 @@ import q2jgame.*;
  */
 public class MiscUtil 
 	{
-	// handy random number generator
-	private static Random gRandom = new Random();	
 	
 /**
  * Adjust the specified mins and maxs vectors so that they contain the specified point.
@@ -70,13 +68,6 @@ public static void clampEight(Tuple3f t)
 	t.z = Math.round(t.z * 8) * 0.125F;
 	}
 /**
- * @return A random number between -1.0 and +1.0
- */
-public static float cRandom() 
-	{
-	return (float)((gRandom.nextFloat() - 0.5) * 2.0);
-	}
-/**
  * Check whether a Tuple3f has a particular set of x,y,z values.
  * @return True if equal, false if not
  */
@@ -115,8 +106,8 @@ public static void fireLead(GameObject p, Point3f start, Vector3f aimDir, int da
 		dir = new Angle3f(aimDir);
 		dir.getVectors(forward, right, up);
 
-		r = (float) (MiscUtil.cRandom() * hSpread);
-		u = (float) (MiscUtil.cRandom() * vSpread);
+		r = (float) (Game.cRandom() * hSpread);
+		u = (float) (Game.cRandom() * vSpread);
 		end.scaleAdd(8192, forward, start);
 		end.scaleAdd(r, right, end);
 		end.scaleAdd(u, up, end);
@@ -170,8 +161,8 @@ public static void fireLead(GameObject p, Point3f start, Vector3f aimDir, int da
 				diff.sub(end, start);
 				Angle3f ang = new Angle3f(diff);
 				ang.getVectors(forward, right, up);
-				r = (float)(MiscUtil.cRandom() * hSpread * 2);
-				u = (float)(MiscUtil.cRandom() * vSpread * 2);
+				r = (float)(Game.cRandom() * hSpread * 2);
+				u = (float)(Game.cRandom() * vSpread * 2);
 				end.scaleAdd(8192, forward, waterStart);
 				end.scaleAdd(r, right, end);
 				end.scaleAdd(u, up, end);
@@ -365,7 +356,7 @@ public static GenericSpawnpoint getSpawnpointRandom()
 	else
 		count -= 2;			
 
-	int selection = (MiscUtil.randomInt() & 0x0fff) % count;
+	int selection = (Game.randomInt() & 0x0fff) % count;
 	spawnPoint = null;
 
 	enum = list.elements();
@@ -558,21 +549,4 @@ public static void radiusDamage(GameObject inflictor, GameObject attacker, float
 			}
 		}	
 	}		
-/**
- * Return A random float between 0.0 and 1.0.
- */
-
-public static float randomFloat() 
-	{
-	return gRandom.nextFloat();
-	}
-/**
- * Get a random integer, values are distributed across 
- * the full range of the signed 32-bit integer type.
- * @return A random integer.
- */
-public static int randomInt() 
-	{
-	return gRandom.nextInt();
-	}
 }

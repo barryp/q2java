@@ -18,7 +18,7 @@ public class weapon_hyperblaster extends GenericBlaster
  */
 public weapon_hyperblaster()
 	{
-	super(NativeEntity.EF_HYPERBLASTER, 20, Engine.MZ_HYPERBLASTER);
+	super(NativeEntity.EF_HYPERBLASTER, 20, Engine.MZ_HYPERBLASTER, "hyperblaster");
 	}
 public weapon_hyperblaster(String[] spawnArgs) throws GameException
 	{
@@ -62,7 +62,7 @@ public void fire()
 
 			super.fire();			
 			fPlayer.setAnimation(Player.ANIMATE_ATTACK); // VWep
-			fPlayer.alterAmmoCount(-1);				
+			fPlayer.setAmmoCount(-1, false);				
 			}
 
 		incWeaponFrame();
@@ -77,15 +77,36 @@ public void fire()
 		}		
 	}
 /**
+ * Get the name of this item's icon.
+ * @return java.lang.String
+ */
+public String getIconName() 
+	{
+	return "w_hyperblaster";
+	}
+/**
+ * Get the name of this item.
+ * @return java.lang.String
+ */
+public String getItemName() 
+	{
+	return "HyperBlaster";
+	}
+/**
+ * Get the name of this item's model.
+ * @return java.lang.String
+ */
+public String getModelName() 
+	{
+	return "models/weapons/g_hyperb/tris.md2";	
+	}
+/**
  * Fill in the info specific to this type of weapon.
  */
 protected void setFields() 
 	{
-	fWeaponName = "hyperblaster";
-	fWeaponIconName = "w_hyperblaster";	
 	fAmmoName = "cells";
 	fAmmoCount = 50;
-	fEntityModel = "models/weapons/g_hyperb/tris.md2";	
 	fViewModel = "models/weapons/v_hyperb/tris.md2";
 	
 	fFrameActivateLast		= 5;

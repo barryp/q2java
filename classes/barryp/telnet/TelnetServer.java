@@ -15,7 +15,7 @@ import q2jgame.*;
  * 
  * @author Barry Pederson
  */
-class TelnetServer extends Thread  implements PrintListener, FrameListener, CrossLevel
+class TelnetServer extends Thread  implements PrintListener, LocaleListener, FrameListener, CrossLevel
 	{
 	private final static int SOCKET_TIMEOUT = 500; // milliseconds
 	private final static String GROUP_NAME = "Telnet Handlers";
@@ -28,6 +28,7 @@ class TelnetServer extends Thread  implements PrintListener, FrameListener, Cros
 	private String fPassword;
 	private boolean fNoCmd;
 	private boolean fNoChat;
+	protected ResourceGroup fResourceGroup;
 	
 /**
  * TelnetServer constructor comment.
@@ -56,6 +57,15 @@ public TelnetServer(int port, String password, boolean noCmd, boolean noChat) th
 		fPassword = password;
 		fNoCmd = noCmd;
 		fNoChat = noChat;
+		
+		// call us when stuff is being printed
+		Game.addPrintListener(this);	
+	
+		// call us with localized messages using the default locale
+		fResourceGroup = Game.addLocaleListener(this);
+	
+		// call us so we can pass chats and commands back to the game
+		Game.addFrameListener(this, Game.FRAME_BEGINNING, 0, 0);		
 		}
 	catch (IOException e)
 		{
@@ -149,12 +159,29 @@ public int getPort()
 	return fPort;
 	}
 /**
+ * This method was created by a SmartGuide.
+ * @return java.util.Locale
+ */
+public ResourceGroup getResourceGroup() 
+	{
+	return fResourceGroup;
+	}
+/**
  * Report whether the Telnet Server is still running.
  * @return boolean
  */
 public boolean isRunning() 
 	{
 	return fIsRunning;
+	}
+/**
+ * Called when the listener receives a localized broadcast message.
+ * @param printLevel One of the Engine.PRINT_* constants
+ * @param msg java.lang.String
+ */
+public void localecast(int printLevel, String msg)	
+	{
+	output(msg);
 	}
 /**
  * Send a string to all the connected clients.
@@ -203,11 +230,6 @@ public void run()
 	{
 	if (fServerSocket == null)
 		return;
-
-	// call us when stuff is being printed
-	Game.addPrintListener(this);	
-	// call us so we can pass chats and commands back to the game
-	Game.addFrameListener(this, Game.FRAME_BEGINNING, 0, 0);	
 	
 	try
 		{
@@ -236,6 +258,7 @@ public void run()
 		}	
 		
 
+	Game.removeLocaleListener(this);
 	Game.removePrintListener(this);
 	Game.removeFrameListener(this, Game.FRAME_BEGINNING);	
 	}
@@ -252,6 +275,14 @@ public void runFrame(int phase)
 		else
 			Game.bprint(Engine.PRINT_CHAT, s + "\n");
 		}
+	}
+/**
+ * Change the server's locale.
+ * @param localeName java.lang.String
+ */
+public void setLocale(String localeName) 
+	{
+	fResourceGroup = Game.addLocaleListener(this, localeName);
 	}
 /**
  * Called when it's time to shut the server down.

@@ -38,7 +38,7 @@ public func_timer(String[] spawnArgs) throws GameException
 
 	if ((Game.getSpawnArg(spawnArgs, "spawnflags", 0) & 1) != 0)
 		{
-		Game.addFrameListener(this, 1 + fPauseTime + fDelay + fWait + (float)MiscUtil.cRandom() * fRandom, -1);
+		Game.addFrameListener(this, 1 + fPauseTime + fDelay + fWait + (float)Game.cRandom() * fRandom, -1);
 		fIsOn = true;
 		}
 
@@ -55,7 +55,7 @@ public void runFrame(int phase)
 	useTargets();
 	
 	// schedule another call
-	Game.addFrameListener(this, fWait + (float)MiscUtil.cRandom() * fRandom, -1);
+	Game.addFrameListener(this, fWait + (float)Game.cRandom() * fRandom, -1);
 	}
 /**
  * Trigger the timer.

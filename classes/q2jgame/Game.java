@@ -21,6 +21,9 @@ import q2java.*;
 
 public class Game implements GameListener
 	{
+	// handy random number generator
+	private static Random gRandom = new Random();	
+	
 	// Manage FrameListeners
 	public final static int FRAME_BEGINNING	= 0x01;
 	public final static int FRAME_MIDDLE		= 0x02;
@@ -59,7 +62,8 @@ public class Game implements GameListener
 	private static int  gPerformanceFrames;
 	private static long gCPUTime;	
 	
-
+	private static Vector gResourceGroups;
+	
 /**
  * Register an object that implements FrameListener to 
  * receive normal (FRAME_MIDDLE phase) frame events.
@@ -133,6 +137,60 @@ public static Vector addLevelRegistry(Object key, Object value)
 	return list;
 	}
 /**
+ * Add an object that wants to receive broadcasts that are localized with the default locale.
+ * @param obj an object that implements LocaleListener - if this object
+ *   has already been added, it'll be removed before being re-added.
+ * @return ResourceGroup this object is now registered with.
+ */
+public static ResourceGroup addLocaleListener(LocaleListener obj) 
+	{
+	return addLocaleListener(obj, Locale.getDefault());
+	}
+/**
+ * Add an object that wants to receive broadcasts that are localized with the default locale.
+ * @param obj an object that implements LocaleListener - if this object
+ *   has already been added, it'll be removed before being re-added.
+ * @param localeName String representation of locale
+ * @return ResourceGroup this object is now registered with.
+ */
+public static ResourceGroup addLocaleListener(LocaleListener obj, String localeName) 
+	{
+	if (localeName.equalsIgnoreCase("default"))
+		return addLocaleListener(obj);
+
+	StringTokenizer st = new StringTokenizer(localeName, "_");
+	String lang = st.nextToken();
+	String country;
+			
+	if (st.hasMoreTokens())
+		country = st.nextToken();
+	else 
+		country = "";
+			
+	Locale loc;				
+	if (st.hasMoreTokens())
+		loc = new Locale(lang, country, st.nextToken());
+	else
+		loc = new Locale(lang, country);
+				
+	return addLocaleListener(obj, loc);
+	}
+/**
+ * Add an object that wants to receive broadcasts that are localized.
+ * @param obj an object that implements LocaleListener - if this object
+ *   has already been added, it'll be removed before being re-added.
+ * @param loc java.util.Locale
+ * @return ResourceGroup this object is now registered with. 
+ */
+public static ResourceGroup addLocaleListener(LocaleListener obj, Locale loc) 
+	{
+	removeLocaleListener(obj);
+	ResourceGroup grp = getResourceGroup(loc);
+	grp.addLocaleListener(obj);
+
+	return grp;
+	}
+/**
  * Add a new module to the game.  If the module has a class named:
  * <packagename>.GameModule, then that classes static void load() method is called.  
  * If a module has already been added, nothing happens.
@@ -200,6 +258,13 @@ public void consoleOutput(String s)
 			{
 			}
 		}
+	}
+/**
+ * @return A random number between -1.0 and +1.0
+ */
+public static float cRandom() 
+	{
+	return (float)((gRandom.nextFloat() - 0.5) * 2.0);
 	}
 /**
  * Handle debugging print messages.
@@ -327,11 +392,32 @@ public Class getPlayerClass() throws ClassNotFoundException
 	return q2java.NativeEntity.class;
 	}
 /**
+ * Get a ResourceGroup object that tracks a specified locale
+ * @return q2jgame.ResourceGroup
+ * @param loc java.util.Locale
+ */
+public static ResourceGroup getResourceGroup(Locale loc) 
+	{
+	ResourceGroup grp;
+	
+	for (int i = 0; i < gResourceGroups.size(); i++)
+		{
+		grp = (ResourceGroup) gResourceGroups.elementAt(i);
+		if (grp.equalsLocale(loc))
+			return grp;
+		}
+		
+	// we didn't find a matching locale, so add a new one
+	grp = new ResourceGroup(loc);
+	gResourceGroups.addElement(grp);
+	return grp;
+	}
+/**
  * Lookup an float spawn argument.
  * @return value found, or defaultValue.
  * @param args String array holding the map's entity arguments, as created by the spawnEntities() method.
  * @param name name of spawn argument.
- * @param defaultValue value to return if "name" is not found.
+ * @param defaultValue value to return if "name" is not found or isn't a valid float
  */
 public static float getSpawnArg(String[] args, String keyword, float defaultValue) 
 	{
@@ -340,9 +426,20 @@ public static float getSpawnArg(String[] args, String keyword, float defaultValu
 
 	keyword = keyword.intern();
 	for (int i = 0; i < args.length; i+=2)
+		{
 		if (keyword == args[i])
-			return Float.valueOf(args[i+1]).floatValue();
-
+			{
+			try
+				{
+				float result = Float.valueOf(args[i+1]).floatValue();
+				return result;
+				}
+			catch (NumberFormatException nfe)
+				{
+				}
+			}
+		}
+		
 	return defaultValue;
 	}
 /**
@@ -350,7 +447,7 @@ public static float getSpawnArg(String[] args, String keyword, float defaultValu
  * @return value found, or defaultValue.
  * @param args String array holding the map's entity arguments, as created by the spawnEntities() method.
  * @param name name of spawn argument.
- * @param defaultValue value to return if "name" is not found.
+ * @param defaultValue value to return if "name" is not found or isn't a valid integer
  */
 public static int getSpawnArg(String[] args, String keyword, int defaultValue) 
 	{
@@ -359,8 +456,19 @@ public static int getSpawnArg(String[] args, String keyword, int defaultValue)
 
 	keyword = keyword.intern();
 	for (int i = 0; i < args.length; i+=2)
+		{
 		if (keyword == args[i])
-			return Integer.parseInt(args[i+1]);
+			{
+			try
+				{
+				int result = Integer.parseInt(args[i+1]);
+				return result;
+				}
+			catch (NumberFormatException nfe)
+				{
+				}
+			}
+		}
 
 	return defaultValue;
 	}
@@ -410,6 +518,9 @@ public void init()
 	// setup to manage PackageListeners
 	gModuleListeners = new Vector();
 	
+	// setup to manage BroadcastListeners and cached ResourceBundles
+	gResourceGroups = new Vector();
+	
 	// setup hashtable to let objects find each other in a level
 	gLevelRegistry = new Hashtable();
 		
@@ -454,6 +565,58 @@ public void init()
 		} // end for loop.
 		
 	Engine.debugLog("Game.init() finished");
+	}
+/**
+ * Check if a resource can be located given a basename and key.
+ * @return boolean
+ * @param basename java.lang.String
+ * @param key java.lang.String
+ */
+public static boolean isResourceAvailable(String basename, String key) 
+	{
+	if ((gResourceGroups == null) || (gResourceGroups.size() < 1))
+		return false;
+		
+	ResourceGroup grp = (ResourceGroup) gResourceGroups.elementAt(0);
+	ResourceBundle bundle = grp.getBundle(basename);
+	try
+		{
+		Object obj = bundle.getObject(key);
+		return true;
+		}
+	catch (MissingResourceException mre)
+		{
+		return false;
+		}				
+	}
+/**
+ * Broadcast a localized message to interested objects.
+ * @param basename ResourceBundle basename, same as what you'd pass to java.util.ResourceBundle.getBundle().
+ * @param key Name of ResourceBundle object, same as what you'd pass to java.util.ResourceBundle.getString().
+ * @param args args to pass to java.text.MessageFormat.format().
+ * @param printLevel One of the Engine.PRINT_* constants.
+ */
+public static void localecast(String basename, String key, Object[] args, int printLevel) 
+	{
+	for (int i = 0; i < gResourceGroups.size(); i++)
+		{
+		ResourceGroup grp = (ResourceGroup) gResourceGroups.elementAt(i);
+		grp.localecast(basename, key, args, printLevel);
+		}
+	}
+/**
+ * Broadcast a localized message to interested objects.
+ * @param basename ResourceBundle basename, same as what you'd pass to java.util.ResourceBundle.getBundle().
+ * @param key Name of ResourceBundle object, same as what you'd pass to java.util.ResourceBundle.getString().
+ * @param printLevel One of the Engine.PRINT_* constants.
+ */
+public static void localecast(String basename, String key, int printLevel) 
+	{
+	for (int i = 0; i < gResourceGroups.size(); i++)
+		{
+		ResourceGroup grp = (ResourceGroup) gResourceGroups.elementAt(i);
+		grp.localecast(basename, key, printLevel);
+		}
 	}
 /**
  * Look through the game mod list, trying to find a class
@@ -536,6 +699,23 @@ public void playerConnect(NativeEntity playerEntity, boolean loadgame) throws Ex
 		{
 		throw ite.getTargetException();
 		}
+	}
+/**
+ * Return A random float between 0.0 and 1.0.
+ */
+
+public static float randomFloat() 
+	{
+	return gRandom.nextFloat();
+	}
+/**
+ * Get a random integer, values are distributed across 
+ * the full range of the signed 32-bit integer type.
+ * @return A random integer.
+ */
+public static int randomInt() 
+	{
+	return gRandom.nextInt();
 	}
 /**
  * Called by the DLL when the DLL's ReadGame() function is called.
@@ -625,6 +805,18 @@ public static void removeLevelRegistry(Object key, Object value)
 	Vector list = (Vector) gLevelRegistry.get(key);
 	if (list != null)
 		list.removeElement(value);
+	}
+/**
+ * Remove a broadcast listener from the game.
+ * @param obj q2jgame.LocaleListener
+ */
+public static void removeLocaleListener(LocaleListener obj) 
+	{
+	for (int i = 0; i < gResourceGroups.size(); i++)
+		{
+		ResourceGroup grp = (ResourceGroup) gResourceGroups.elementAt(i);
+		grp.removeLocaleListener(obj);
+		}
 	}
 /**
  * Remove a module from the game's package list
@@ -855,6 +1047,14 @@ private void spawnEntities(String entString)
 		boolean foundClassname = false;
 		String className = null;
 
+		File sandbox = new File(Engine.getGamePath(), "sandbox");
+		File entFile = new File(sandbox, "entities.log");
+		FileOutputStream fos = new FileOutputStream(entFile);
+		PrintStream ps = new PrintStream(fos);	
+	
+		ps.println(entString);
+		ps.println("--------------------------");
+
 		Object[] params = new Object[1];
 		Class[] paramTypes = new Class[1];
 		String[] sa = new String[1];
@@ -890,7 +1090,8 @@ private void spawnEntities(String entString)
 						{
 						Class entClass = gClassFactory.lookupClass(".spawn." + className.toLowerCase());
 						Constructor ctor = entClass.getConstructor(paramTypes);							
-						ctor.newInstance(params);
+						Object obj = ctor.newInstance(params);
+						ps.println(obj);
 						}
 					// this stinks..since we're using reflection to find the 
 					// constructor, the compiler can't tell what exceptions
@@ -904,6 +1105,17 @@ private void spawnEntities(String entString)
 						}
 					catch (ClassNotFoundException cnfe)
 						{
+						ps.print("---- " + className + "(");
+						if (sa != null)
+							{
+							String prefix = "";
+							for (int i = 0; i < sa.length; i+=2)
+								{
+								ps.print(prefix + sa[i] + "=\"" + sa[i+1] + "\"");
+								prefix = ", ";
+								}
+							}
+						ps.println(")");						
 						}
 					catch (Exception e)
 						{
@@ -918,6 +1130,8 @@ private void spawnEntities(String entString)
 					foundClassname = false;				
 				}
 			}
+
+		ps.close();			
 		}
 	catch (Exception e)
 		{
@@ -959,6 +1173,20 @@ public void startLevel(String mapname, String entString, String spawnPoint)
 		}
 
 	spawnEntities(entString);
+
+	// let interested objects know that entities have been spawned
+	enum = gLevelListeners.elements();
+	while (enum.hasMoreElements())
+		{
+		try
+			{
+			((LevelListener) enum.nextElement()).levelEntitiesSpawned();
+			}
+		catch (Exception e)
+			{
+			}
+		}
+
 						
 	// now, right before the game starts, is a good time to 
 	// force Java to do another garbage collection to tidy things up.
@@ -993,7 +1221,7 @@ public static void svcmd_help(String[] args)
 	dprint("      sv addmodule <package-name> [<alias>]\n");
 	dprint("      sv removemodule <alias>\n");
 	dprint("\n");
-	dprint("      sv javamem       // show Java menory usage\n");
+	dprint("      sv javamem       // show Java memory usage\n");
 	dprint("      sv javagc        // force a Java GC\n");
 	dprint("\n");
 	dprint("      sv time          // show performance timing\n");

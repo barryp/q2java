@@ -36,12 +36,65 @@ void Player_javaFinalize()
     (*java_env)->DeleteLocalRef(java_env, interface_PlayerListener);
     }
 
+
+
+static void java_clientDisconnect(edict_t *ent)
+    {
+    jobject javaPlayer;
+    int index = ent - ge.edicts;
+
+    // mark ourselves as not inuse, so that if any print calls
+    // go through, they're ignored.
+    ent->inuse = 0;
+
+    javaPlayer = ent->client->listener;
+
+    if (javaPlayer != NULL)
+        {
+        (*java_env)->CallVoidMethod(java_env, javaPlayer, method_player_disconnect);    
+        CHECK_EXCEPTION();
+        }
+
+    // unlink from world (---FIXME--- not sure about this)
+    gi.unlinkentity (ent);      
+
+    // make the Java Entity forget where it is in the C array
+    Entity_set_fEntityIndex(javaPlayer, -1);
+
+    // remove the entity reference from the Java array
+    Entity_setEntity(index, 0);
+
+    // remove the global reference to the PlayerListener
+    if (ent->client->listener)
+        (*java_env)->DeleteGlobalRef(java_env, ent->client->listener);
+
+    // remove the local reference to the player info
+    if (ent->client->playerInfo)
+        (*java_env)->DeleteLocalRef(java_env, ent->client->playerInfo);
+
+    // wipe the old entity and client info out
+    memset(ent->client, 0, sizeof(*(ent->client)));
+    memset(ent, 0, sizeof(*ent));
+
+    // relink the entity structure to the client structure
+    ent->client = &(global_clients[index-1]);
+    }
+
+
 static int java_clientConnect(edict_t *ent, char *userinfo, int loadgame)
     {
     jmethodID method_player_ctor;
     jclass class_player;
     jobject newPlayer;
     int index = ent - ge.edicts;
+
+    // noticed in Q2 3.17 that you can connect multiple times
+    // without disconnect automatically being called, try to catch that.
+    if (ent->inuse)
+        {
+        debugLog("player.c::java_clientConnect() caught connection to entity already in use\n");
+        java_clientDisconnect(ent);
+        }
 
     class_player = Game_getPlayerClass();
     if (CHECK_EXCEPTION() || !class_player)
@@ -118,7 +171,6 @@ static int java_clientConnect(edict_t *ent, char *userinfo, int loadgame)
 static void java_clientBegin(edict_t *ent, int loadgame)
     {
     jobject javaPlayer = ent->client->listener;
-
     if (javaPlayer != NULL)
         {
         (*java_env)->CallVoidMethod(java_env, javaPlayer, method_player_begin, loadgame);   
@@ -159,44 +211,6 @@ static void java_clientCommand(edict_t *ent)
         }
     }
 
-
-static void java_clientDisconnect(edict_t *ent)
-    {
-    jobject javaPlayer;
-    int index = ent - ge.edicts;
-
-    javaPlayer = ent->client->listener;
-
-    if (javaPlayer != NULL)
-        {
-        (*java_env)->CallVoidMethod(java_env, javaPlayer, method_player_disconnect);    
-        CHECK_EXCEPTION();
-        }
-
-    // unlink from world (---FIXME--- not sure about this)
-    gi.unlinkentity (ent);      
-
-    // make the Java Entity forget where it is in the C array
-    Entity_set_fEntityIndex(javaPlayer, -1);
-
-    // remove the entity reference from the Java array
-    Entity_setEntity(index, 0);
-
-    // remove the global reference to the PlayerListener
-    if (ent->client->listener)
-        (*java_env)->DeleteGlobalRef(java_env, ent->client->listener);
-
-    // remove the local reference to the player info
-    if (ent->client->playerInfo)
-        (*java_env)->DeleteLocalRef(java_env, ent->client->playerInfo);
-
-    // wipe the old entity and client info out
-    memset(ent->client, 0, sizeof(*(ent->client)));
-    memset(ent, 0, sizeof(*ent));
-
-    // relink the entity structure to the client structure
-    ent->client = &(global_clients[index-1]);
-    }
 
 
 static void java_clientThink(edict_t *ent, usercmd_t *cmd)

@@ -74,8 +74,8 @@ public void fire()
 		}
 */
 
-	fPlayer.fKickOrigin.set(MiscUtil.cRandom() * 0.35f, MiscUtil.cRandom() * 0.35f, MiscUtil.cRandom() * 0.35f);
-	fPlayer.fKickAngles.set(fShotCount * -1.5f,  MiscUtil.cRandom() * 0.7f,  MiscUtil.cRandom() * 0.7f);
+	fPlayer.fKickOrigin.set(Game.cRandom() * 0.35f, Game.cRandom() * 0.35f, Game.cRandom() * 0.35f);
+	fPlayer.fKickAngles.set(fShotCount * -1.5f,  Game.cRandom() * 0.7f,  Game.cRandom() * 0.7f);
 
 	// raise the gun as it is firing
 	if (true /*!deathmatch->value */)
@@ -93,7 +93,7 @@ public void fire()
 	MiscUtil.fireLead(fPlayer, start, forward, damage, kick, Engine.TE_GUNSHOT, DEFAULT_BULLET_HSPREAD, DEFAULT_BULLET_VSPREAD, "machinegun");
 
 	// throw a rocket occasionally
-	if ((MiscUtil.randomInt() & 0x07) == 0)
+	if ((Game.randomInt() & 0x07) == 0)
 		{
 		try
 			{

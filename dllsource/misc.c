@@ -361,3 +361,49 @@ void setPlayerCmd(jbyte msec, jbyte buttons,
     (*java_env)->CallVoidMethod(java_env, playerCmd, method_PlayerCmd_set,
         msec, buttons, angle0, angle1, angle2, forward, side, up, impulse, lightlevel);
     }
+
+
+// table for translating accented latin-1 characters to closest non-accented chars
+// Icelandic thorn and eth are difficult, so I just used an asterisk
+// German sz ligature ß is also difficult, chose to just put in 's'
+// AE ligatures are just replaced with *
+// perhaps some sort of multi-character substitution scheme would be helpful
+//
+// this translation table starts at decimal 192 (capital A, grave accent: À)
+static char *translateTable = "AAAAAA*CEEEEIIIIDNOOOOOxOUUUUY*saaaaaa*ceeeeiiii*nooooo/ouuuuy*y";
+
+
+// convert a Java string (which is Unicode) to reasonable
+// 7-bit ASCII
+// Be sure to gi.TagFree() the result when finished.
+char *convertJavaString(jstring jstr)
+    {
+    jsize jStrLen;
+    const jchar *unicodeChars;
+    char *result;
+    int i;
+    char *p;
+    
+    jStrLen = (*java_env)->GetStringLength(java_env, jstr);
+    p = result = gi.TagMalloc(jStrLen + 1, TAG_GAME);
+    unicodeChars = (*java_env)->GetStringChars(java_env, jstr, NULL);
+
+    for (i = 0; i < jStrLen; i++)
+        {
+        jchar ch = unicodeChars[i];
+        if (ch < 192)
+            *p++ = (char) ch;
+        else
+            {
+            if (ch < 256)
+                *p++ = translateTable[ch - 192];
+            else
+                *p++ = '*';
+            }
+
+        }
+
+    (*java_env)->ReleaseStringChars(java_env, jstr, unicodeChars);
+    *p = 0;
+    return result;
+    }

@@ -109,19 +109,19 @@ public void fire()
 	damage *= fPlayer.getDamageMultiplier();
 	kick *= fPlayer.getDamageMultiplier();
 
-	fPlayer.fKickOrigin.set(MiscUtil.cRandom() * 0.35f, MiscUtil.cRandom() * 0.35f, MiscUtil.cRandom() * 0.35f);
-	fPlayer.fKickAngles.set(MiscUtil.cRandom() * 0.7f,  MiscUtil.cRandom() * 0.7f,  MiscUtil.cRandom() * 0.7f);
+	fPlayer.fKickOrigin.set(Game.cRandom() * 0.35f, Game.cRandom() * 0.35f, Game.cRandom() * 0.35f);
+	fPlayer.fKickAngles.set(Game.cRandom() * 0.7f,  Game.cRandom() * 0.7f,  Game.cRandom() * 0.7f);
 
 	for (i=0 ; i<shots ; i++)
 		{
 		// get start / end positions
 		Angle3f ang = fEntity.getPlayerViewAngles();
 		ang.getVectors(forward, right, up);
-		r = (float)(7 + MiscUtil.cRandom() * 4);
-		u = (float)(MiscUtil.cRandom() * 4);
+		r = (float)(7 + Game.cRandom() * 4);
+		u = (float)(Game.cRandom() * 4);
 		offset = new Vector3f(0, r, u + fPlayer.fViewHeight - 8);
 		start = fPlayer.projectSource(offset, forward, right);
-		MiscUtil.fireLead(fPlayer, start, forward, damage, kick, Engine.TE_GUNSHOT, DEFAULT_BULLET_HSPREAD, DEFAULT_BULLET_VSPREAD);
+		MiscUtil.fireLead(fPlayer, start, forward, damage, kick, Engine.TE_GUNSHOT, DEFAULT_BULLET_HSPREAD, DEFAULT_BULLET_VSPREAD, "chaingun");
 		}
 
 	// send muzzle flash
@@ -132,18 +132,39 @@ public void fire()
 	
 //	PlayerNoise(ent, start, PNOISE_WEAPON);
 	fPlayer.setAnimation(Player.ANIMATE_ATTACK, false, getWeaponFrame() % 3);  // VWep
-	fPlayer.alterAmmoCount(-shots);
+	fPlayer.setAmmoCount(-shots, false);
+	}
+/**
+ * Get the name of this item's icon.
+ * @return java.lang.String
+ */
+public String getIconName() 
+	{
+	return "w_chaingun";
+	}
+/**
+ * Get the name of this item.
+ * @return java.lang.String
+ */
+public String getItemName() 
+	{
+	return "Chaingun";
+	}
+/**
+ * Get the name of this item's model.
+ * @return java.lang.String
+ */
+public String getModelName() 
+	{
+	return "models/weapons/g_chain/tris.md2";
 	}
 /**
  * Fill in the info specific to this type of weapon.
  */
 protected void setFields() 
 	{
-	fWeaponName = "chaingun";
-	fWeaponIconName = "w_chaingun";	
 	fAmmoName = "bullets";
 	fAmmoCount = 50;
-	fEntityModel = "models/weapons/g_chain/tris.md2";	
 	fViewModel = "models/weapons/v_chain/tris.md2";
 	
 	fFrameActivateLast		= 4;

@@ -32,7 +32,7 @@ public void fire()
 	Vector3f	forward = new Vector3f();
 	Vector3f	right = new Vector3f();
 	Vector3f	offset;
-	int		damage = 100 + (int)(MiscUtil.randomFloat() * 20.0);
+	int		damage = 100 + (int)(Game.randomFloat() * 20.0);
 	int		radiusDamage = 120;
 	float	damageRadius = 120;
 
@@ -65,19 +65,39 @@ public void fire()
 	
 	incWeaponFrame();
 	
-//	PlayerNoise(ent, start, PNOISE_WEAPON);
-	fPlayer.alterAmmoCount(-1);
+	fPlayer.setAmmoCount(-1, false);
+	}
+/**
+ * Get the name of this item's icon.
+ * @return java.lang.String
+ */
+public String getIconName() 
+	{
+	return "w_rlauncher";
+	}
+/**
+ * Get the name of this item.
+ * @return java.lang.String
+ */
+public String getItemName() 
+	{
+	return "Rocket Launcher";
+	}
+/**
+ * Get the name of this item's model.
+ * @return java.lang.String
+ */
+public String getModelName() 
+	{
+	return "models/weapons/g_rocket/tris.md2";	
 	}
 /**
  * Fill in the info specific to this type of weapon.
  */
 protected void setFields() 
 	{
-	fWeaponName = "rocket launcher";
-	fWeaponIconName = "w_rlauncher";	
 	fAmmoName = "rockets";
 	fAmmoCount = 10;
-	fEntityModel = "models/weapons/g_rocket/tris.md2";	
 	fViewModel = "models/weapons/v_rocket/tris.md2";
 	
 	fFrameActivateLast		= 4;

@@ -17,11 +17,10 @@ import baseq2.spawn.*;
  * @author Barry Pederson
  */
 
-public class Player extends GameObject implements FrameListener, PlayerListener, CrossLevel
+public class Player extends GameObject implements FrameListener, PlayerListener, LocaleListener, CrossLevel
 	{	
-	protected Locale fLocale = Locale.getDefault();
-	protected ResourceBundle fObits = ResourceBundle.getBundle("baseq2.obit", fLocale);
-
+	protected transient ResourceGroup fResourceGroup;
+	
 	private int fScore;
 	protected float fStartTime;
 
@@ -32,7 +31,7 @@ public class Player extends GameObject implements FrameListener, PlayerListener,
 	
 	private float fDamageMultiplier;
 		
-	protected Hashtable fUserInfo;
+	protected Hashtable fPlayerInfo;
 	protected InventoryTracker fInventory;
 	protected Vector fWeaponOrder;
 	protected Vector fWeaponsExcluded;
@@ -295,11 +294,20 @@ public class Player extends GameObject implements FrameListener, PlayerListener,
  */
 public Player(NativeEntity ent, boolean loadgame) throws GameException
 	{
+	Engine.debugLog("baseq2.Player.<ctor>(" + ent + ", " + loadgame + ")");
+
 	fEntity = ent;
 	fEntity.setPlayerListener(this);
 	fEntity.setReference(this);
+
+	// sign up to receive server frame notices at the beginning and end of server frames
+	Game.addFrameListener(this, Game.FRAME_BEGINNING + Game.FRAME_END, 0, 0);
 	
-	parsePlayerInfo(fEntity.getPlayerInfo());
+	// sign up to receive broadcast messages using the default locale
+	fResourceGroup = Game.addLocaleListener(this);
+		
+	fPlayerInfo = new Hashtable();
+	playerInfoChanged(fEntity.getPlayerInfo());
 	
 	// create temporary vectors
 	fViewOffset = new Vector3f();
@@ -342,9 +350,6 @@ public Player(NativeEntity ent, boolean loadgame) throws GameException
 	fDamageRoll = 0.0f;
 	fDamagePitch = 0.0f;
 	fDamageTime = 0.0f;
-
-	// sign up to receive server frame notices at the beginning and end of server frames
-	Game.addFrameListener(this, Game.FRAME_BEGINNING + Game.FRAME_END, 0, 0);
 	}
 /**
  * Add ammo to the player's inventory.
@@ -534,53 +539,6 @@ public boolean addWeapon(String weaponClassSuffix, boolean allowSwitch)
 		e.printStackTrace();		
 		return false;
 		}		
-	}
-/**
- * Change user settings based on what was in userinfo string.
- */
-protected void applyPlayerInfo()
-	{
-	String s = getUserInfo("skin");
-
-	Engine.setConfigString(Engine.CS_PLAYERSKINS + fEntity.getPlayerNum(), getName() + "\\" + s);			
-	
-	// id's C code just checks the first letter of the skin for a 'f' or 'F'
-	fIsFemale = (s != null) &&  s.toLowerCase().startsWith("female");
-			
-	s = getUserInfo("hand");
-	if (s != null)
-		fHand = Integer.parseInt(s);			
-		
-	s = getUserInfo("fov");
-	if (s != null)
-		fEntity.setPlayerFOV((new Float(s)).floatValue());	
-
-	s = getUserInfo("locale");
-	if ((s != null) && (!(s.equals(fLocale.toString()))))
-		{
-		StringTokenizer st = new StringTokenizer(s, "_");
-		if (st.countTokens() >= 2)
-			{
-			String lang = st.nextToken();
-			String country = st.nextToken();
-			if (st.hasMoreTokens())
-				fLocale = new Locale(lang, country, st.nextToken());
-			else
-				fLocale = new Locale(lang, country);		
-				
-			try
-				{				
-				fObits = ResourceBundle.getBundle("baseq2.obit", fLocale);	
-				fEntity.cprint(Engine.PRINT_HIGH, "new resources loaded\n");
-				}
-			catch (Exception e)
-				{
-				e.printStackTrace();
-				}
-			}			
-		}
-
-	showVWep();
 	}
 /**
  * This method was created by a SmartGuide.
@@ -1163,7 +1121,7 @@ public void cmd_invuse(String[] args)
 public void cmd_kill(String[] args) 
 	{
 	if (fIsDead)
-		fEntity.cprint(Engine.PRINT_HIGH, "You're already dead\n");
+		fEntity.cprint(Engine.PRINT_HIGH, fResourceGroup.getBundle("baseq2.Messages").getString("already_dead") + "\n");
 	else		
 		die(this, this, 0, fEntity.getOrigin(), "suicide");
 	}
@@ -1188,15 +1146,7 @@ public void cmd_say(String[] args)
 	if (msg.charAt(msg.length()-1) == '"')
 		msg = msg.substring(msg.indexOf('"')+1, msg.length()-1);
 		
-	msg = getName() + ": " + msg;		
-	
-	// keep the message down to a reasonable length
-	if (msg.length() > 150)
-		msg = msg.substring(0, 150);	
-			
-	msg += "\n";
-			
-	Game.bprint(Engine.PRINT_CHAT, msg);		
+	say(msg);
 	}
 /**
  * Treat "say_team" the same as "say" for now.
@@ -1204,7 +1154,13 @@ public void cmd_say(String[] args)
  */
 public void cmd_say_team(String[] args) 
 	{
-	cmd_say(args);
+	String msg = Engine.getArgs();
+	
+	// remove any quote marks
+	if (msg.charAt(msg.length()-1) == '"')
+		msg = msg.substring(msg.indexOf('"')+1, msg.length()-1);
+		
+	sayTeam(msg);
 	}
 /**
  * Display the scoreboard.
@@ -1438,6 +1394,7 @@ public void cmd_weapsetorder(String[] args)
  */
 public static void connect(NativeEntity ent, boolean loadgame) throws GameException
 	{
+	Engine.debugLog("baseq2.Player.connect(" + ent + ", " + loadgame + ")");
 	new Player(ent, loadgame);
 	}
 /**
@@ -1684,14 +1641,20 @@ protected void die(GameObject inflictor, GameObject attacker, int damage, Point3
 	fIsDead = true;
 	fRespawnTime = (float)(Game.getGameTime() + 1);  // the player can respawn after this time
 	
-//	obituary(inflictor, attacker, obitKey);
-
+	// broadcast a message announcing our death
 	Object[] args = {getName(), new Integer(isFemale() ? 1 : 0), (attacker instanceof Player ? ((Player)attacker).getName() : null)};
-	Enumeration enum = NativeEntity.enumeratePlayers();
-	while (enum.hasMoreElements())
+	if (attacker == this)
+		obitKey = "self_" + obitKey;
+		
+	if (Game.isResourceAvailable("baseq2.Messages", obitKey))		
+		Game.localecast("baseq2.Messages", obitKey, args, Engine.PRINT_MEDIUM);	
+	else
 		{
-		Player p = (Player) ((NativeEntity)enum.nextElement()).getPlayerListener();
-		p.obituary(this, inflictor, attacker, obitKey);
+		// must be some new kind of obitKey, use a default death message
+		if (attacker == this)
+			Game.localecast("baseq2.Messages", "self_died", args, Engine.PRINT_MEDIUM);	
+		else
+			Game.localecast("baseq2.Messages", "died", args, Engine.PRINT_MEDIUM);				
 		}
 	
 	// either give the attacker a point or take one away from the deceased
@@ -1734,7 +1697,7 @@ protected void die(GameObject inflictor, GameObject attacker, int damage, Point3
 	else
 		{	// normal death
 		setAnimation(ANIMATE_DEATH);
-		fEntity.sound(NativeEntity.CHAN_VOICE, getSexedSoundIndex("death"+((MiscUtil.randomInt() & 0x03) + 1)), 1, NativeEntity.ATTN_NORM, 0);
+		fEntity.sound(NativeEntity.CHAN_VOICE, getSexedSoundIndex("death"+((Game.randomInt() & 0x03) + 1)), 1, NativeEntity.ATTN_NORM, 0);
 		}
 		
 	fEntity.linkEntity();
@@ -1746,6 +1709,7 @@ protected void die(GameObject inflictor, GameObject attacker, int damage, Point3
  */
 public void dispose() 
 	{
+	Game.removeLocaleListener(this);
 	Game.removeFrameListener(this, Game.FRAME_BEGINNING + Game.FRAME_END);	
 	fEntity.setReference(null);
 	fEntity.setPlayerListener(null);
@@ -1985,7 +1949,33 @@ protected int getMaxAmmoCount(String ammoName)
  */
 public String getName()
 	{
-	return getUserInfo("name");
+	return getPlayerInfo("name");
+	}
+/**
+ * Lookup a value from the userinfo string.
+ * @param key name of the value we're looking for.
+ * @return value if key is found, null otherwise.
+ */
+protected String getPlayerInfo(String key) 
+	{
+	return getPlayerInfo(key, null);
+	}
+/**
+ * Lookup a value from the userinfo string.
+ * @param key name of the value we're looking for.
+ * @param defaultValue what to return if key isn't found.
+ * @return java.lang.String
+ */
+protected String getPlayerInfo(String key, String defaultValue) 
+	{
+	if (fPlayerInfo == null)
+		return defaultValue;
+
+	String result = (String) fPlayerInfo.get(key);		
+	if (result == null)
+		return defaultValue;
+	else
+		return result;
 	}
 /**
  * This method was created by a SmartGuide.
@@ -2003,32 +1993,6 @@ public int getScore()
 protected int getSexedSoundIndex(String base) 
 	{
 	return Engine.getSoundIndex((fIsFemale ? "player/female/" : "player/male/") + base + ".wav");
-	}
-/**
- * Lookup a value from the userinfo string.
- * @param key name of the value we're looking for.
- * @return value if key is found, null otherwise.
- */
-protected String getUserInfo(String key) 
-	{
-	return getUserInfo(key, null);
-	}
-/**
- * Lookup a value from the userinfo string.
- * @param key name of the value we're looking for.
- * @param defaultValue what to return if key isn't found.
- * @return java.lang.String
- */
-protected String getUserInfo(String key, String defaultValue) 
-	{
-	if (fUserInfo == null)
-		return defaultValue;
-
-	String result = (String) fUserInfo.get(key);		
-	if (result == null)
-		return defaultValue;
-	else
-		return result;
 	}
 /**
  * This method was created by a SmartGuide.
@@ -2073,6 +2037,15 @@ public boolean isCarrying(String itemName)
 public boolean isFemale()
 	{
 	return fIsFemale;
+	}
+/**
+ * React to a localized game message by printing to the player's screen.
+ * @param printLevel int
+ * @param msg java.lang.String
+ */
+public void localecast(int printLevel, String msg) 
+	{
+	fEntity.cprint(printLevel, msg);
 	}
 /**
  * This method was created by a SmartGuide.
@@ -2124,77 +2097,6 @@ public void notifyPickup(String itemName, String iconName)
 	fPickupMsgTime = Game.getGameTime() + 3;
 	}
 /**
- * Broadcast a message announcing the player's demise.
- * @param inflictor the thing that killed the player.
- * @param attacker the player responsible.
- */
-protected void obituary(GameObject victim, GameObject inflictor, GameObject attacker, String obitKey) 
-	{
-/*	
-	if (attacker == this)
-		{
-		Game.bprint(Engine.PRINT_MEDIUM, getName() + " killed " + (fIsFemale ? "her" : "him") + "self.\n");
-		fScore--;
-//		self->enemy = NULL;
-		return;
-		}
-
-//	self->enemy = attacker;
-	if (attacker instanceof Player)
-		{
-		Player p = (Player) attacker;
-		Game.bprint(Engine.PRINT_MEDIUM, getName() + " was killed by " + p.getName() + "\n");
-		p.fScore++;
-		return;
-		}
-
-	Game.bprint(Engine.PRINT_MEDIUM, getName() + " died.\n");
-*/
-
-	if (attacker == victim)
-		obitKey = "self_" + obitKey;
-
-	String msg;
-	try
-		{
-		msg = fObits.getString(obitKey);			
-		}
-	catch (MissingResourceException mre)
-		{
-		try
-			{
-			msg = fObits.getString((attacker == victim) ? "self_default" : "default");
-			}
-		catch (MissingResourceException mre2)
-			{
-			msg = "{0} died";
-			}
-		}
-		
-	Object[] args = {((Player)victim).getName(), new Integer(isFemale() ? 1 : 0), (attacker instanceof Player ? ((Player)attacker).getName() : null)};
-//	Game.bprint(Engine.PRINT_MEDIUM, java.text.MessageFormat.format(msg, args) + "\n");
-	fEntity.cprint(Engine.PRINT_MEDIUM, java.text.MessageFormat.format(msg, args) + "\n");
-	}
-/**
- * Parse a userinfo string into a hashtable.
- * @param userinfo the userinfo string, formatted as: "\keyword\value\keyword\value\....\keyword\value"
- */
-protected void parsePlayerInfo(String playerInfo)
-	{
-	fUserInfo = new Hashtable();
-
-	if (playerInfo == null)
-		return;
-		
-	StringTokenizer st = new StringTokenizer(playerInfo, "\\");
-	while (st.hasMoreTokens())
-		{
-		String key = st.nextToken();
-		if (st.hasMoreTokens())
-			fUserInfo.put(key, st.nextToken());
-		}		
-	}
-/**
  * Called by the DLL when the player should begin playing in the game.
  * @param loadgame boolean
  */
@@ -2202,12 +2104,13 @@ public void playerBegin(boolean loadgame)
 	{
 	Engine.debugLog("Player.begin(" + loadgame + ")");
 
-	applyPlayerInfo();
-			
 	fStartTime = (float) Game.getGameTime();	
+	
+	// restore key entity settings - needs to be done each level change.
 	fEntity.setPlayerStat(NativeEntity.STAT_HEALTH_ICON, (short) Engine.getImageIndex("i_health"));	
 	fEntity.setPlayerGravity((short)GameModule.gGravity.getFloat());
-	
+	Engine.setConfigString(Engine.CS_PLAYERSKINS + fEntity.getPlayerNum(), getName() + "\\" + getPlayerInfo("skin"));			
+		
 	clearSettings();
 	spawn();	
 	welcome();
@@ -2265,8 +2168,10 @@ public void playerCommand()
 public void playerDisconnect()
 	{
 	Engine.debugLog("Player.disconnect()");
-	Game.bprint(Engine.PRINT_HIGH, getName() + " disconnected\n");
 
+	Object[] args = {getName()};
+	Game.localecast("baseq2.Messages", "disconnect", args, Engine.PRINT_HIGH);
+	
 	// send effect
 	Engine.writeByte(Engine.SVC_MUZZLEFLASH);
 	Engine.writeShort(fEntity.getEntityIndex());
@@ -2283,13 +2188,31 @@ public void playerDisconnect()
 	dispose();
 	}
 /**
- * Called by the DLL when the player's userinfo has changed.
+ * Called (usually by the DLL) when the player's userinfo has changed.
  * @param userinfo the userinfo string, formatted as: "\keyword\value\keyword\value\....\keyword\value"
  */
 public void playerInfoChanged(String playerInfo) 
 	{
-	parsePlayerInfo(playerInfo);
-	applyPlayerInfo();
+	Engine.debugLog("baseq2.Player.playerInfoChanged(" + playerInfo + ")");
+
+	if (playerInfo == null)
+		return;
+		
+	StringTokenizer st = new StringTokenizer(playerInfo, "\\");
+	while (st.hasMoreTokens())
+		{
+		String key = st.nextToken();
+		if (st.hasMoreTokens())
+			{
+			String val = st.nextToken();
+			String oldVal = (String) fPlayerInfo.get(key);
+			if ((oldVal == null) || (!val.equals(oldVal)))
+				{
+				fPlayerInfo.put(key, val);
+				playerVariableChanged(key, oldVal, val);
+				}
+			}
+		}					
 	}
 /**
  * All player entities get a chance to think.  When
@@ -2347,6 +2270,45 @@ public void playerThink(PlayerCmd cmd)
 		{
 		fWeaponThunk = true;
 		fWeapon.weaponThink();
+		}
+	}
+/**
+ * Called when an individual player variable changes.
+ * @param key Keyword such as "name", "fov", etc..
+ * @param oldValue Previous value of this keyword (may be null)
+ * @param newValue New value of keyword (may be null)
+ */
+protected void playerVariableChanged(String key, String oldValue, String newValue) 
+	{
+	Engine.debugLog("baseq2.Player.playerVariableChanged(" + key + ", " + oldValue + ", " + newValue + ")");
+
+	if (key.equalsIgnoreCase("skin") || key.equalsIgnoreCase("name"))
+		{
+		Engine.setConfigString(Engine.CS_PLAYERSKINS + fEntity.getPlayerNum(), getPlayerInfo("name") + "\\" + getPlayerInfo("skin"));			
+
+		// id's C code just checks the first letter of the skin for a 'f' or 'F'
+		fIsFemale = (newValue != null) &&  newValue.toLowerCase().startsWith("female");
+
+		showVWep();
+		return;
+		}
+		
+	if (key.equalsIgnoreCase("hand"))
+		{		
+		fHand = Integer.parseInt(newValue);			
+		return;
+		}
+		
+	if (key.equalsIgnoreCase("fov"))
+		{
+		fEntity.setPlayerFOV((new Float(newValue)).floatValue());	
+		return;
+		}
+
+	if (key.equalsIgnoreCase("locale"))
+		{
+		fResourceGroup = Game.addLocaleListener(this, newValue);
+		return;
 		}
 	}
 /**
@@ -2436,6 +2398,30 @@ public void runFrame(int phase)
 		}
 	}
 /**
+ * Send a chat message to all players.
+ * @param msg String to send - a newline will be added.
+ */
+public void say(String msg)
+	{
+	msg = getName() + ": " + msg;		
+	
+	// keep the message down to a reasonable length
+	if (msg.length() > 150)
+		msg = msg.substring(0, 150);	
+			
+	msg += "\n";
+			
+	Game.bprint(Engine.PRINT_CHAT, msg);		
+	}
+/**
+ * Send a chat message to teammates (all players in DM mode).
+ * @param msg String to send - a newline will be added.
+ */
+public void sayTeam(String msg)
+	{
+	say(msg);		
+	}
+/**
  * Set the ammo count, or alter it by some amount.
  * @param amount int
  * @param isAbsolute is the amount an absolute value, or a relative one?
@@ -2502,7 +2488,7 @@ public void setAnimation(int animation, boolean ignorePriority, int frameOffset)
 		
 	// pain and death can have 3 variations...pick one randomly
 	if ((animation == ANIMATE_PAIN) || (animation == ANIMATE_DEATH))
-		animation += (MiscUtil.randomInt() & 0x00ff) % 3;
+		animation += (Game.randomInt() & 0x00ff) % 3;
 		
 	// use different animations when crouching		
 	if ((animation < ANIMATE_FLIPOFF) && ducking)
@@ -2624,6 +2610,24 @@ public void setMass(int mass)
 	fMass = mass;
 	}
 /**
+ * Put a value into the playerInfo hashtable.
+ * @param key name of the value we're storing.
+ * @para  value the value to store
+ */
+protected void setPlayerInfo(String key, String value) 
+	{
+	String oldVal = (String) fPlayerInfo.get(key);
+	
+	// update the current hashtable
+	if (value == null)
+		fPlayerInfo.remove(key);
+	else
+		fPlayerInfo.put(key, value);
+
+	// notify about the change
+	playerVariableChanged(key, oldVal, value);	
+	}
+/**
  * Set the player's score.
  */
 public void setScore(int amount)
@@ -2643,15 +2647,6 @@ public void setScore(int amount, boolean isAbsolute)
 	fEntity.setPlayerStat( NativeEntity.STAT_FRAGS, (short)fScore );
 	}
 /**
- * Put a value into the userinfo hashtable.
- * @param key name of the value we're storing.
- * @para  value the value to store
- */
-protected void setUserInfo(String key, String value) 
-	{
-	fUserInfo.put(key, value);
-	}
-/**
  * VWeap support...show the right weapon to the rest of the world.
  */
 public void showVWep() 
@@ -2664,6 +2659,8 @@ public void showVWep()
 		fEntity.setModelIndex2(0);
 		return;		
 		}
+	
+	// ---- Old-style VWep support
 			
 	if (!baseq2.GameModule.isVWepOn())
 		{
@@ -2676,11 +2673,15 @@ public void showVWep()
 		fEntity.setModelIndex2(255);
 	else
 		{
-		String playerSkin = getUserInfo("skin");
+		String playerSkin = getPlayerInfo("skin");
 		int p = playerSkin.indexOf('/');
-		String weaponModel = "players/" + playerSkin.substring(0, p+1) + fWeapon.getIconName() + ".md2";
+		String weaponModel = "players/" + playerSkin.substring(0, p+1) + weaponIcon + ".md2";
 		fEntity.setModelIndex2(Engine.getModelIndex(weaponModel));	
 		}
+
+	// ---- New-style VWep support
+	// (doesn't actually work yet)
+//	fEntity.setModelIndex2(Engine.getModelIndex("#" + fWeapon.getIconName() + ".md2"));
 	}
 /**
  * spawn the player into the game.
@@ -2819,7 +2820,8 @@ public void use(String itemName)
 	Object ent = fInventory.get(itemName.toLowerCase());
 	if (ent == null)
 		{
-		fEntity.cprint(Engine.PRINT_HIGH, "You don't have a " + itemName + "\n");
+		Object[] args = {itemName};
+		fEntity.cprint(Engine.PRINT_HIGH, fResourceGroup.format("baseq2.Messages", "dont_have", args) + "\n");
 		return;
 		}
 
@@ -2833,7 +2835,8 @@ public void use(String itemName)
 		fNextWeapon = (GenericWeapon) ent;
 		if (!fNextWeapon.isEnoughAmmo())
 			{
-			fEntity.cprint(Engine.PRINT_HIGH, "You don't have enough ammo to use a " + itemName + "\n");
+			Object[] args = {itemName};
+			fEntity.cprint(Engine.PRINT_HIGH, fResourceGroup.format("baseq2.Messages", "no_ammo", args) + "\n");
 			fNextWeapon = null;
 			return;
 			}
@@ -2859,7 +2862,8 @@ public void welcome()
 	Engine.writeByte(Engine.MZ_LOGIN);
 	Engine.multicast(fEntity.getOrigin(), Engine.MULTICAST_PVS);
 
-	Game.bprint(Engine.PRINT_HIGH, getName() + " entered the game\n");
+	Object[] args = {getName()};
+	Game.localecast("baseq2.Messages", "entered", args, Engine.PRINT_HIGH);
 	fEntity.centerprint(WelcomeMessage.getMessage());
 	}
 /**
@@ -2943,7 +2947,7 @@ protected void worldEffects()
 				// play a gurp sound instead of a normal pain sound
 				if (fHealth <= fDrownDamage)
 					fEntity.sound(NativeEntity.CHAN_VOICE, Engine.getSoundIndex("player/drown1.wav"), 1, NativeEntity.ATTN_NORM, 0);
-				else if ((MiscUtil.randomInt() & 1) != 0)
+				else if ((Game.randomInt() & 1) != 0)
 					fEntity.sound(NativeEntity.CHAN_VOICE, Engine.getSoundIndex("*gurp1.wav"), 1, NativeEntity.ATTN_NORM, 0);
 				else
 					fEntity.sound(NativeEntity.CHAN_VOICE, Engine.getSoundIndex("*gurp2.wav"), 1, NativeEntity.ATTN_NORM, 0);
@@ -2972,7 +2976,7 @@ protected void worldEffects()
 //			&& current_client->invincible_framenum < level.framenum
 			)
 			{
-			if ((MiscUtil.randomInt() & 1) != 0)
+			if ((Game.randomInt() & 1) != 0)
 				fEntity.sound(NativeEntity.CHAN_VOICE, Engine.getSoundIndex("player/burn1.wav"), 1, NativeEntity.ATTN_NORM, 0);
 			else
 				fEntity.sound(NativeEntity.CHAN_VOICE, Engine.getSoundIndex("player/burn2.wav"), 1, NativeEntity.ATTN_NORM, 0);

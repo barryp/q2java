@@ -181,7 +181,7 @@ public static String getSpawnpoint()
  */
 public static String getVersion() 
 	{
-	return "Q2Java Base Game, v0.5.7";
+	return "Q2Java Base Game, v0.6";
 	}	
 /**
  * Check whether or not the Cheating option is on.
@@ -296,7 +296,7 @@ public static void startIntermission()
 		v = Game.getLevelRegistryList(baseq2.spawn.info_player_deathmatch.REGISTRY_KEY);
 		
 	// randomly pick something from the list
-	int i = (MiscUtil.randomInt() & 0x0fff) % v.size();
+	int i = (Game.randomInt() & 0x0fff) % v.size();
 	GenericSpawnpoint spot = (GenericSpawnpoint) v.elementAt(i);
 
 	// notify each player
@@ -610,7 +610,7 @@ protected static boolean timeToQuit()
 
 	if ((timeLimit > 0) && (Game.getGameTime() > (gLevelStartTime + (timeLimit * 60))))
 		{
-		Game.bprint(Engine.PRINT_HIGH, "Timelimit hit.\n");		
+		Game.localecast("baseq2.Messages", "timelimit",  Engine.PRINT_HIGH);
 		return true;
 		}
 		
@@ -624,7 +624,7 @@ protected static boolean timeToQuit()
 		Player p = (Player) ((NativeEntity)enum.nextElement()).getPlayerListener();
 		if (p.getScore() > fragLimit)
 			{
-			Game.bprint(Engine.PRINT_HIGH, "Fraglimit hit.\n");		
+			Game.localecast("baseq2.Messages", "fraglimit", Engine.PRINT_HIGH);
 			return true;
 			}
 		}		

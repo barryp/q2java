@@ -18,8 +18,6 @@ import java.util.*;
 public class TestBot extends baseq2.Player
 	{
 	protected Player fLastAttacker;
-	protected Locale fLocale;
-	protected ResourceBundle fRes;
 
 	protected final static int RESPAWN_INTERVAL = 15;
 	protected final static String BUNDLE_NAME = "barryp.testbot.talk";
@@ -33,8 +31,6 @@ public class TestBot extends baseq2.Player
 TestBot(q2java.NativeEntity ent, String name) throws q2java.GameException
 	{
 	super(ent, false);
-
-	setLocale(Locale.getDefault());
 
 	setName(name);
 	setSkin("male/grunt");
@@ -81,13 +77,9 @@ public void damage(GameObject inflictor, GameObject attacker,
 		if (p != fLastAttacker)
 			{
 			// randomly pick a reaction message from the resource bundle
-			String count = fRes.getString("react.count");
-			int n = (MiscUtil.randomInt() & 0x00ff) % Integer.parseInt(count);
-			String msg = fRes.getString("react." + n);
-
 			Object[] args = {p.getName()};
-			Game.bprint(Engine.PRINT_CHAT, getName() + ": " + MessageFormat.format(msg, args) + "\n");
-			fLastAttacker = p;
+			say(fResourceGroup.format("barryp.testbot.Messages", "react", args));
+//			fLastAttacker = p;
 			}
 		}
 
@@ -106,15 +98,16 @@ public void doRespawn()
  */
 public Locale getLocale()
 	{
-	return fLocale;
+	return fResourceGroup.getLocale();
 	}
 /**
  * Disconnect the Bot.
  */
 public void playerDisconnect()
 	{
+	NativeEntity ent = fEntity;
 	super.playerDisconnect();
-	fEntity.freeEntity();
+	ent.freeEntity();
 	}
 /**
  * This method was created by a SmartGuide.
@@ -135,29 +128,7 @@ public void runFrame(int phase)
  */
 public void setLocale(String val)
 	{
-	Locale loc;
-	if (val == null)
-		loc = Locale.getDefault();
-	else
-		{
-		StringTokenizer st = new StringTokenizer(val, "_");
-		String lang = st.nextToken();
-		String country = st.nextToken();
-		if (st.hasMoreTokens())
-			loc = new Locale(lang, country, st.nextToken());
-		else
-			loc = new Locale(lang, country);
-		}
-
-	setLocale(loc);
-	}
-/**
- * Set this bot's locale
- */
-public void setLocale(Locale loc)
-	{
-	fLocale = loc;
-	fRes = ResourceBundle.getBundle(BUNDLE_NAME, fLocale);
+	setPlayerInfo("locale", val);
 	}
 /**
  * Set the name of the bot.
@@ -165,8 +136,7 @@ public void setLocale(Locale loc)
  */
 public void setName(String name)
 	{
-	setUserInfo("name", name);
-	applyPlayerInfo();
+	setPlayerInfo("name", name);
 	}
 /**
  * Set the skin of the bot.
@@ -174,8 +144,7 @@ public void setName(String name)
  */
 public void setSkin(String name) 
 	{
-	setUserInfo("skin", name);
-	applyPlayerInfo();
+	setPlayerInfo("skin", name);
 	}
 /**
  * Do nothing - sending a scoreboard to a bot would crash the game.

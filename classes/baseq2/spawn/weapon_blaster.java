@@ -18,7 +18,7 @@ public class weapon_blaster extends GenericBlaster
  */
 public weapon_blaster()
 	{
-	super(NativeEntity.EF_BLASTER, 10, Engine.MZ_BLASTER);
+	super(NativeEntity.EF_BLASTER, 10, Engine.MZ_BLASTER, "blaster");
 	}
 public weapon_blaster(String[] spawnArgs) throws GameException
 	{
@@ -33,15 +33,36 @@ public void fire()
 	incWeaponFrame();
 	}
 /**
+ * Get the name of this item's icon.
+ * @return java.lang.String
+ */
+public String getIconName() 
+	{
+	return "w_blaster";
+	}
+/**
+ * Get the name of this item.
+ * @return java.lang.String
+ */
+public String getItemName() 
+	{
+	return "Blaster";
+	}
+/**
+ * Get the name of this item's model.
+ * @return java.lang.String
+ */
+public String getModelName() 
+	{
+	return "models/weapons/g_blast/tris.md2";
+	}
+/**
  * Fill in the info specific to this type of weapon.
  */
 protected void setFields() 
 	{
-	fWeaponName = "blaster";
-	fWeaponIconName = "w_blaster";
 	fAmmoName = null;
 	fAmmoCount = 0;
-	fEntityModel = "models/weapons/g_blast/tris.md2";	
 	fViewModel = "models/weapons/v_blast/tris.md2";
 	
 	fFrameActivateLast		= 4;

@@ -71,14 +71,17 @@ public static void connect(NativeEntity ent, boolean loadgame) throws GameExcept
 
 		// hook our weapon back up
 		p.fWeapon.activate();
-		
-		// update the player info, in case they
-		// changed something (other than their name)
-		// while they were disconnected
-		p.parsePlayerInfo(ent.getPlayerInfo());		
 
 		// sign up to receive server frame notices at the beginning and end of server frames
 		Game.addFrameListener(p, Game.FRAME_BEGINNING + Game.FRAME_END, 0, 0);		
+	
+		// sign up to receive broadcast messages using the default locale
+		p.fResourceGroup = Game.addLocaleListener(p);
+			
+		// update the player info, in case they
+		// changed something (other than their name)
+		// while they were disconnected
+		p.playerInfoChanged(ent.getPlayerInfo());		
 		return;
 		}
 	catch (FileNotFoundException fnfe)
@@ -97,11 +100,9 @@ public static void connect(NativeEntity ent, boolean loadgame) throws GameExcept
  * @param loadgame boolean
  */
 public void playerBegin(boolean loadgame) 
-	{
+	{		
 	Engine.debugLog("Player.begin(" + loadgame + ")");
 
-	applyPlayerInfo();
-			
 	fStartTime = (float) Game.getGameTime();	
 	fEntity.setPlayerStat(NativeEntity.STAT_HEALTH_ICON, (short) Engine.getImageIndex("i_health"));	
 	fEntity.setPlayerGravity((short)baseq2.GameModule.gGravity.getFloat());
@@ -112,17 +113,10 @@ public void playerBegin(boolean loadgame)
 	fWasSaved = false;	 // this way the player will be reset on level changes
 					 // set to true if you want all players to keep their weapons across levels	
 	spawn();	
-	
-	// send effect
-	Engine.writeByte(Engine.SVC_MUZZLEFLASH);
-	Engine.writeShort(fEntity.getEntityIndex());
-	Engine.writeByte(Engine.MZ_LOGIN);
-	Engine.multicast(fEntity.getOrigin(), Engine.MULTICAST_PVS);
+	welcome();
 
-	Game.bprint(Engine.PRINT_HIGH, getName() + " entered the game\n");
-	fEntity.centerprint(WelcomeMessage.getMessage());
 	// make sure all view stuff is valid
-	endServerFrame();	
+	endServerFrame();		
 	}
 /**
  * Called by the DLL when the player is disconnecting. 

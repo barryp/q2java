@@ -1,6 +1,6 @@
 #include "globals.h"
 
-#define DLL_VERSION "v0.5.5"
+#define DLL_VERSION "v0.6"
 
 game_import_t   gi;
 game_export_t   ge;
@@ -22,7 +22,7 @@ game_export_t *GetGameAPI (game_import_t *import)
         return 0;
         }
 
-    gi.dprintf("=============================\nQ2Java %s\n", DLL_VERSION);
+    gi.dprintf("=============================\nQ2Java Game Interface %s\n", DLL_VERSION);
     gi.dprintf("(c) 1998 Barry Pederson\n<bpederson@geocities.com>\n");
     gi.dprintf("--------------\n");
     gi.dprintf("%s\n=============================\n", javalink_version);

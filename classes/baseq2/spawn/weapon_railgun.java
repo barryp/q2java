@@ -72,18 +72,39 @@ public void fire()
 	incWeaponFrame();
 	
 //	PlayerNoise(ent, start, PNOISE_WEAPON);
-	fPlayer.alterAmmoCount(-1);
+	fPlayer.setAmmoCount(-1, false);
+	}
+/**
+ * Get the name of this item's icon.
+ * @return java.lang.String
+ */
+public String getIconName() 
+	{
+	return "w_railgun";
+	}
+/**
+ * Get the name of this item.
+ * @return java.lang.String
+ */
+public String getItemName() 
+	{
+	return "Railgun";
+	}
+/**
+ * Get the name of this item's model.
+ * @return java.lang.String
+ */
+public String getModelName() 
+	{
+	return "models/weapons/g_rail/tris.md2";	
 	}
 /**
  * Fill in the info specific to this type of weapon.
  */
 protected void setFields() 
 	{
-	fWeaponName = "railgun";
-	fWeaponIconName = "w_railgun";	
 	fAmmoName = "slugs";
-	fAmmoCount = 10;
-	fEntityModel = "models/weapons/g_rail/tris.md2";	
+	fAmmoCount = 10;	
 	fViewModel = "models/weapons/v_rail/tris.md2";
 	
 	fFrameActivateLast		= 3;

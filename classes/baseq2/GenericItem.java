@@ -45,6 +45,9 @@ public GenericItem(String[] spawnArgs) throws GameException
 	fEntity.setSolid(NativeEntity.SOLID_TRIGGER);
 	fPickupSoundIndex = Engine.getSoundIndex(getPickupSound());
 	
+	//precache icon
+	Engine.getImageIndex(getIconName());
+	
 	// schedule a one-shot runFrame() call so we can 
 	// drop to the floor
 	fItemState = STATE_DROPPED;

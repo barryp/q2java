@@ -2,6 +2,8 @@
 package baseq2;
 
 import q2java.*;
+import q2jgame.*;
+
 /**
  * Superclass for all weapons lying 
  * around in the world and carried by players.
@@ -268,7 +270,7 @@ public void weaponThink()
 					{
 					if (fGunFrame == fPauseFrames[n])
 						{
-						if ((MiscUtil.randomInt() & 15) != 0)
+						if ((Game.randomInt() & 15) != 0)
 							return;
 						}
 					}

@@ -25,6 +25,7 @@ jobject newTraceResults(trace_t trace);
 jobject newJavaVec3(vec3_t *v, int vecType);
 void setPlayerCmd(jbyte, jbyte, short, short, short, short, short, short, jbyte, jbyte);
 extern jobject playerCmd;
+char *convertJavaString(jstring jstr);
 
 void CVar_javaInit();
 void CVar_javaFinalize();

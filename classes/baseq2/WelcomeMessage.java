@@ -8,21 +8,43 @@ package baseq2;
  * message.  Perhaps a Server command could also be added
  * to change it at runtime.
  * 
+ * @author Barry Pederson
  */
 public class WelcomeMessage 
 	{
+	// some parts of the welcome message don't change from moment-to-moment
+	// so we might as well figure out things like VM versions one time
+	// when the class is first loaded instead of doing it over and over
+	// each time someone connects
+	private static String gPrefix = GameModule.getVersion() 
+		+ "\nVM: [" + System.getProperty("java.vendor") + " " + System.getProperty("java.version") + "]"
+		+ "\nOS: [" + System.getProperty("os.name") + " " + System.getProperty("os.version") + " " + System.getProperty("os.arch") + "]";
 	
 /**
  * Return the message to display to new players.
- * This particular implementation is pretty simple, but
- * it could be easily replaced with something more dynamic -
- * perhaps reading something from a file, or reporting
- * the current status of the game.
  *
  * @return java.lang.String
  */
 public static String getMessage() 
 	{
-	return GameModule.getVersion() + "\nVWep is currently: " + (GameModule.isVWepOn() ? "ON" : "OFF");
+	StringBuffer sb = new StringBuffer();
+	
+	sb.append(gPrefix);
+	sb.append("\nVWep is currently: ");
+	sb.append(GameModule.isVWepOn() ? "ON" : "OFF");
+
+	try
+		{
+		java.util.Date d = new java.util.Date();
+		String ds = d.toString();
+		sb.append("\n\n");
+		sb.append(ds);
+		}
+	catch (ExceptionInInitializerError eiie)
+		{
+		eiie.getException().printStackTrace();
+		}
+
+	return sb.toString();		
 	}
 }

@@ -77,28 +77,37 @@ void Engine_javaFinalize()
 
 
 
-static void JNICALL Java_q2java_Engine_dprint(JNIEnv *env, jclass cls, jstring s)
+static void JNICALL Java_q2java_Engine_dprint(JNIEnv *env, jclass cls, jstring js)
     {
-    const char *str;
+    char *str;
 
-    str = (*env)->GetStringUTFChars(env, s, 0);
+    if (js == NULL)
+        return;
+
+    str = convertJavaString(js);
     gi.dprintf("%s", str); 
     debugLog(str);
-    (*env)->ReleaseStringUTFChars(env, s, str);
+    gi.TagFree(str);
     }
 
-static void JNICALL Java_q2java_Engine_bprint(JNIEnv *env, jclass cls, jint printlevel, jstring s)
+static void JNICALL Java_q2java_Engine_bprint(JNIEnv *env, jclass cls, jint printlevel, jstring js)
     {
-    const char *str;
+    char *str;
 
-    str = (*env)->GetStringUTFChars(env, s, 0);
+    if (js == NULL)
+        return;
+
+    str = convertJavaString(js);
     gi.bprintf(printlevel, "%s", str); 
-    (*env)->ReleaseStringUTFChars(env, s, str);
+    gi.TagFree(str);
     }
 
 static void JNICALL Java_q2java_Engine_setConfigString(JNIEnv *env, jclass cls, jint num, jstring js)
     {
     char *s;
+
+    if (js == NULL)
+        return;
 
     s = (char *)((*env)->GetStringUTFChars(env, js, 0));
     gi.configstring(num, s);
@@ -110,9 +119,14 @@ static void JNICALL Java_q2java_Engine_error(JNIEnv *env, jclass cls, jstring js
     {
     char *s;
 
-    s = (char *)((*env)->GetStringUTFChars(env, js, 0));
-    gi.error(s);
-    (*env)->ReleaseStringUTFChars(env, js, s);
+    if (js == NULL)
+        gi.error(NULL);
+    else
+        {
+        s = (char *)((*env)->GetStringUTFChars(env, js, 0));
+        gi.error(s);
+        (*env)->ReleaseStringUTFChars(env, js, s);
+        }
     }
 
 
@@ -120,6 +134,9 @@ static jint JNICALL Java_q2java_Engine_getModelIndex(JNIEnv *env, jclass cls, js
     {
     char *name;
     int result;
+
+    if (jname == NULL)
+        return 0;
 
     name = (char *)((*env)->GetStringUTFChars(env, jname, 0));
     result = gi.modelindex(name);
@@ -132,6 +149,9 @@ static jint JNICALL Java_q2java_Engine_getSoundIndex(JNIEnv *env, jclass cls, js
     char *name;
     int result;
 
+    if (jname == NULL)
+        return 0;
+
     name = (char *)((*env)->GetStringUTFChars(env, jname, 0));
     result = gi.soundindex(name);
     (*env)->ReleaseStringUTFChars(env, jname, name);
@@ -142,6 +162,9 @@ static jint JNICALL Java_q2java_Engine_getImageIndex(JNIEnv *env, jclass cls, js
     {
     char *name;
     int result;
+
+    if (jname == NULL)
+        return 0;
 
     name = (char *)((*env)->GetStringUTFChars(env, jname, 0));
     result = gi.imageindex(name);
@@ -348,6 +371,9 @@ static void JNICALL Java_q2java_Engine_addCommandString(JNIEnv *env, jclass cls,
     {
     char *s;
 
+    if (js == NULL)
+        return;
+
     s = (char *)((*env)->GetStringUTFChars(env, js, 0));
     gi.AddCommandString(s);
     (*env)->ReleaseStringUTFChars(env, js, s);
@@ -370,6 +396,9 @@ static jstring JNICALL Java_q2java_Engine_getGamePath(JNIEnv *env, jclass cls)
 static void JNICALL Java_q2java_Engine_debugLog(JNIEnv *env, jclass cls, jstring js)
     {
     char *s;
+
+    if (js == NULL)
+        return;
 
     s = (char *)((*env)->GetStringUTFChars(env, js, 0));
     debugLog("%s\n", s);

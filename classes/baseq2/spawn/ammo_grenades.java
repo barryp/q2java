@@ -162,7 +162,7 @@ public void weaponThink()
 
 		if ((fGunFrame == 29) || (fGunFrame == 34) || (fGunFrame == 39) || (fGunFrame == 48))
 			{
-			if ((MiscUtil.randomInt() & 15) != 0)
+			if ((Game.randomInt() & 15) != 0)
 				return;
 			}
 

@@ -27,6 +27,7 @@ public class NativeEntity
 	// ------------------- Instance fields ---------------------
 	private int fEntityIndex;
 	private NativeEntity fGroundEntity;	
+	private boolean fIsBot;  // a pseudo-player
 
 	// this field is not used by the DLL, but is available for 
 	// a game to use however it wants through the getReference()
@@ -90,6 +91,11 @@ public class NativeEntity
 	public final static int EF_FLIES			= 0x00004000;
 	public final static int EF_QUAD				= 0x00008000;
 	public final static int EF_PENT				= 0x00010000;
+	public final static int EF_TELEPORTER		= 0x00020000;		// particle fountain
+	public final static int EF_FLAG1			= 0x00040000;
+	public final static int EF_FLAG2			= 0x00080000;
+	public final static int EF_BOOMER			= 0x00100000;
+	public final static int EF_GREENGIB			= 0x00200000;
 
 	// constants for setEvent()
 	// entity events are for effects that take place reletive
@@ -98,11 +104,9 @@ public class NativeEntity
 	public final static int EV_ITEM_RESPAWN		= 1;
 	public final static int EV_FOOTSTEP			= 2;
 	public final static int EV_FALLSHORT			= 3;
-	public final static int EV_MALE_FALL			= 4;
-	public final static int EV_MALE_FALLFAR		= 5;
-	public final static int EV_FEMALE_FALL		= 6;
-	public final static int EV_FEMALE_FALLFAR	= 7;
-	public final static int EV_PLAYER_TELEPORT	= 8;
+	public final static int EV_FALL				= 4;
+	public final static int EV_FALLFAR			= 5;
+	public final static int EV_PLAYER_TELEPORT	= 6;
 
 
 	// setPMType() constants
@@ -116,9 +120,14 @@ public class NativeEntity
 	public final static int PM_GIB		= 3;	// different bounding box
 	public final static int PM_FREEZE	= 4;
 
-	// getPMFlags() constants
+	// get/setPMFlags() constants
 	public final static int PMF_DUCKED			= 1;
 	public final static int PMF_JUMP_HELD		= 2;
+	public final static int PMF_ON_GROUND		= 4;
+	public final static int PMF_TIME_WATERJUMP	= 8;	 	// pm_time is waterjump
+	public final static int PMF_TIME_LAND		= 16;	// pm_time is time before rejump
+	public final static int PMF_TIME_TELEPORT	= 32;	// pm_time is non-moving time
+	public final static int PMF_NO_PREDICTION	= 64;	// temporarily disables prediction (used for grappling hook)
 
 	// player_state_t->refdef flags
 	public final static int RDF_UNDERWATER		= 1;		// warp the screen as apropriate
@@ -172,7 +181,7 @@ public class NativeEntity
 
 	// --- Private constants for communicating with the DLL
 	private final static int BYTE_CLIENT_PS_PMOVE_PMFLAGS		= 100;
-	private final static int BYTE_CLIENT_PS_PMOVE_TELEPORTTIME	= 101;
+	private final static int BYTE_CLIENT_PS_PMOVE_PMTIME	= 101;
 	
 	private final static int SHORT_CLIENT_PS_PMOVE_GRAVITY		= 100;
 		
@@ -257,6 +266,8 @@ public NativeEntity(int entType) throws GameException
 		fEntityIndex = allocateEntity(entType);
 		if (fEntityIndex < 0)
 			throw new GameException("Can't allocate entity");
+			
+		fIsBot = (entType == ENTITY_PLAYER);
 		}
 					
 	gEntityArray[fEntityIndex] = this;
@@ -266,13 +277,14 @@ private native static int allocateEntity(int entType);
 
 /** 
  * Print a message on the center of a player's screen.
- * Won't do anything for non-player entities.
+ * Won't do anything for non-player entities or bots.
  *
  * @param s The message to print.
  */
 public void centerprint(String s)
 	{
-	centerprint0(getEntityIndex(), s);
+	if (!fIsBot)
+		centerprint0(getEntityIndex(), s);
 	}
 
 /**
@@ -298,14 +310,15 @@ private native static void copySettings0(int sourceIndex, int destIndex);
 
 /** 
  * Print a message on player's screen.
- * Won't do anything for non-player entities.
+ * Won't do anything for non-player entities or bots.
  *
  * @param printLevel One of the Engine.PRINT_* constants.
  * @param s The message to print.
  */
 public void cprint(int printLevel, String s)
 	{
-	cprint0(getEntityIndex(), printLevel, s);
+	if (!fIsBot)
+		cprint0(getEntityIndex(), printLevel, s);
 	}
 
 /**
@@ -683,6 +696,15 @@ public Vector3f getVelocity()
 	return (Vector3f) getVec3(fEntityIndex, VEC3_VELOCITY, TYPE_VECTOR);
 	}
 /**
+ * Is this entity a player entity but not connected to
+ * an actual Q2 client?
+ * @return boolean
+ */
+public boolean isBot() 
+	{
+	return fIsBot;
+	}
+/**
  * Check whether or not this entity is one of the special ones used by players.
  * @return boolean
  */
@@ -912,6 +934,14 @@ public void setPlayerListener(PlayerListener pl)
  */
 private native static void setPlayerListener0(int index, PlayerListener pl);
 
+public void setPlayerPMFlags(byte b)
+	{
+	setByte(fEntityIndex, BYTE_CLIENT_PS_PMOVE_PMFLAGS, b);
+	}
+public void setPlayerPMTime(byte val)
+	{
+	setByte(fEntityIndex, BYTE_CLIENT_PS_PMOVE_PMTIME, val);
+	}
 public void setPlayerPMType(int val)
 	{
 	setInt(fEntityIndex, INT_CLIENT_PS_PMOVE_PMTYPE, val);
@@ -923,10 +953,6 @@ public void setPlayerRDFlags(int val)
 public void setPlayerStat(int fieldindex, short value) 
 	{
 	setStat0(getEntityIndex(), fieldindex, value);
-	}
-public void setPlayerTeleportTime(byte val)
-	{
-	setByte(fEntityIndex, BYTE_CLIENT_PS_PMOVE_TELEPORTTIME, val);
 	}
 public void setPlayerViewAngles(float pitch, float yaw, float roll)
 	{
@@ -990,6 +1016,10 @@ public void setSVFlags(int val)
 
 private native static void setVec3(int index, int fieldNum, float x, float y, float z);
 
+public void setVelocity(float x, float y, float z)
+	{
+	setVec3(fEntityIndex, VEC3_VELOCITY, x, y, z);
+	}
 public void setVelocity(Vector3f v)
 	{
 	setVec3(fEntityIndex, VEC3_VELOCITY, v.x, v.y, v.z);

@@ -68,7 +68,7 @@ public void fire()
 	fPlayer.fKickOrigin.set(forward);
 	fPlayer.fKickOrigin.scale(-2);
 
-	fPlayer.fKickAngles.set(-40, 0, MiscUtil.cRandom()*8);
+	fPlayer.fKickAngles.set(-40, 0, Game.cRandom()*8);
 	// make a big pitch kick with an inverse fall
 	//ent->client->v_dmg_pitch = -40;
 	//ent->client->v_dmg_roll = crandom()*8;
@@ -89,19 +89,40 @@ public void fire()
 	
 //	PlayerNoise(ent, start, PNOISE_WEAPON);
 	//if (! ( (int)dmflags->value & DF_INFINITE_AMMO ) )
-		fPlayer.alterAmmoCount(-50);
+		fPlayer.setAmmoCount(-50, false);
 
+	}
+/**
+ * Get the name of this item's icon.
+ * @return java.lang.String
+ */
+public String getIconName() 
+	{
+	return "w_bfg";
+	}
+/**
+ * Get the name of this item.
+ * @return java.lang.String
+ */
+public String getItemName() 
+	{
+	return "BFG10K";
+	}
+/**
+ * Get the name of this item's model.
+ * @return java.lang.String
+ */
+public String getModelName() 
+	{
+	return "models/weapons/g_bfg/tris.md2";
 	}
 /**
  * Fill in the info specific to this type of weapon.
  */
 protected void setFields() 
 	{
-	fWeaponName = "bfg10k";
-	fWeaponIconName = "w_bfg";	
 	fAmmoName = "cells";
 	fAmmoCount = 50;
-	fEntityModel = "models/weapons/g_bfg/tris.md2";	
 	fViewModel = "models/weapons/v_bfg/tris.md2";
 	
 	fFrameActivateLast		= 8;

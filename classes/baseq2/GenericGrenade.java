@@ -50,8 +50,8 @@ protected GenericGrenade(GameObject owner, Point3f start, Vector3f aimdir, int d
 	aimdir.scale(speed); // this seems wrong...I would think the direction should be normalized first, like the blaster is.
 
 	Vector3f vel = new Vector3f(aimdir);
-	vel.scaleAdd( 200 + MiscUtil.randomFloat()*10, up,    vel);
-	vel.scaleAdd(       MiscUtil.randomFloat()*10, right, vel);
+	vel.scaleAdd( 200 + Game.randomFloat()*10, up,    vel);
+	vel.scaleAdd(       Game.randomFloat()*10, right, vel);
 
 	fEntity.setVelocity(vel);
 

@@ -25,7 +25,7 @@ M. van Gangelen <menno@element.nl>
 
     Worked on BFG, GrenadeLauncher, grenades, and some other classes.  His 
     implementation of a version of CTF in Java motivated many improvements 
-    to the base game.
+    to the base game. Provided Dutch translation of obituary messages.
 
 _Quinn <tmiller@haverford.edu>
 

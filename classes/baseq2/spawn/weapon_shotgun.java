@@ -56,7 +56,7 @@ public void fire()
 	kick *= fPlayer.getDamageMultiplier();
 
 //	if (deathmatch->value)
-		MiscUtil.fireShotgun(fPlayer, start, forward, damage, kick, 500, 500, DEFAULT_DEATHMATCH_SHOTGUN_COUNT);
+		MiscUtil.fireShotgun(fPlayer, start, forward, damage, kick, 500, 500, DEFAULT_DEATHMATCH_SHOTGUN_COUNT, "shotgun");
 //	else
 //		fireShotgun(fOwner, start, forward, damage, kick, 500, 500, DEFAULT_SHOTGUN_COUNT);
 
@@ -68,19 +68,39 @@ public void fire()
 	
 	incWeaponFrame();
 	
-//	PlayerNoise(ent, start, PNOISE_WEAPON);
-	fPlayer.alterAmmoCount(-1);
+	fPlayer.setAmmoCount(-1, false);
+	}
+/**
+ * Get the name of this item's icon.
+ * @return java.lang.String
+ */
+public String getIconName() 
+	{
+	return "w_shotgun";
+	}
+/**
+ * Get the name of this item.
+ * @return java.lang.String
+ */
+public String getItemName() 
+	{
+	return "Shotgun";
+	}
+/**
+ * Get the name of this item's model.
+ * @return java.lang.String
+ */
+public String getModelName() 
+	{
+	return "models/weapons/g_shotg/tris.md2";	
 	}
 /**
  * Fill in the info specific to this type of weapon.
  */
 protected void setFields() 
 	{
-	fWeaponName = "shotgun";
-	fWeaponIconName = "w_shotgun";	
 	fAmmoName = "shells";
 	fAmmoCount = 10;
-	fEntityModel = "models/weapons/g_shotg/tris.md2";	
 	fViewModel = "models/weapons/v_shotg/tris.md2";
 	
 	fFrameActivateLast		= 7;
