@@ -48,7 +48,7 @@ public void fire()
 		}
 	catch (GameException e)
 		{
-		Engine.dprint("Can't create BlasterBolt " + e);
+		PrintManager.dprint("Can't create BlasterBolt " + e);
 		}		
 
 	// send muzzle flash

@@ -7,12 +7,16 @@ package q2java;
  * @author Barry Pederson
  */
  
-import java.io.*;  
+import java.io.*; 
+import java.net.*; 
  
 class Q2JavaSecurityManager extends SecurityManager 
 	{
 	private int fSecurityLevel;
 	private String fSandboxPrefix;
+	private Thread fGameThread;
+	private ThreadGroup fGameThreadGroup;
+	private ThreadGroup fSubthreadGroup;
 	
 /**
  * Q2JavaSecurityManager constructor comment.
@@ -22,6 +26,12 @@ private Q2JavaSecurityManager(int level, String gamePath)
 	super();
 	fSecurityLevel = level;
 	
+	// Get things we need for Thread security
+	fGameThread = Thread.currentThread();
+	fGameThreadGroup = fGameThread.getThreadGroup();
+	fSubthreadGroup = new ThreadGroup("Q2Java Subthreads");
+	fSubthreadGroup.setMaxPriority(Thread.NORM_PRIORITY); // don't let subthreads rise higher than the game thread
+		
 	if (level == 1) // setup sandbox-level security
 		{
 		File gameDir = new File(gamePath);
@@ -31,18 +41,45 @@ private Q2JavaSecurityManager(int level, String gamePath)
 		}
 	}
 /**
+ * Accept connections from anywhere.
+ * @param host java.lang.String
+ * @param port int
+ */
+public void checkAccept(String host, int port) 
+	{
+	if (fSecurityLevel > 1)
+		throw new SecurityException("Not allowed to accept IP connections");
+	}
+/**
+ * This method was created by a SmartGuide.
+ * @param g java.lang.Thread
+ */
+public void checkAccess(Thread t) 
+	{
+	if (fGameThread.equals(t))
+		throw new SecurityException("Mucking with game Thread not allowed");
+	}
+/**
+ * This method was created by a SmartGuide.
+ * @param g java.lang.Thread
+ */
+public void checkAccess(ThreadGroup g) 
+	{
+	if (fGameThreadGroup.equals(g))
+		throw new SecurityException("Mucking with game ThreadGroup not allowed");
+	}
+/**
  * This method was created by a SmartGuide.
  * @param host java.lang.String
  * @param port int
  */
 public void checkConnect(String host, int port) 
 	{
-	if (fSecurityLevel >= 2)
+	if (fSecurityLevel > 1)
 		throw new SecurityException("Network access not allowed");
 		
-	if ((fSecurityLevel == 1) 
-	&& (port > 0) && (port < 1024))
-		throw new SecurityException("No access allowed to ports 1..1023");
+	if (port < 1024)
+		throw new SecurityException("No access allowed to ports less than 1024");
 	}
 /**
  * This method was created by a SmartGuide.
@@ -54,18 +91,31 @@ public void checkDelete(String filename)
 	checkSandbox(filename);
 	}
 /**
+ * Check whether loading libraries is allowed.  
+ * For security level 1, we only want to allow the "net" library to be loaded.
+ * For security level 2, no libraries allowed at all.
+ * @param lib java.lang.String
+ */
+public void checkLink(String lib) 
+	{
+	if (fSecurityLevel > 1)
+		throw new SecurityException("Loading libraries not allowed");
+		
+	if ((lib == null) || !lib.equals("net"))
+		throw new SecurityException("Loading libraries not allowed");
+	}
+/**
  * This method was created by a SmartGuide.
  * @param host java.lang.String
  * @param port int
  */
 public void checkListen(int port) 
 	{
-	if (fSecurityLevel >= 2)
+	if (fSecurityLevel > 1)
 		throw new SecurityException("Network access not allowed");
 		
-	if ((fSecurityLevel == 1) 
-	&& (port > 0) && (port < 1024))
-		throw new SecurityException("No access allowed to ports 1..1023");
+	if (port < 1024)
+		throw new SecurityException("No access allowed to ports less than 1024");
 	}
 /**
  * This method was created by a SmartGuide.
@@ -82,6 +132,15 @@ public void checkMemberAccess(Class clazz, int which)
 public void checkPropertyAccess(String key) 
 	{
 	Engine.debugLog("checkPropertyAccess(\"" + key + "\")\n");
+	}
+/**
+ * Allow reads on any FileDescriptor 
+ * @param fd java.io.FileDescriptor
+ */
+public void checkRead(FileDescriptor fd) 
+	{
+	if (fSecurityLevel > 1)
+		throw new SecurityException("Not allowed to read from FileDescriptor");
 	}
 /**
  * This method was created by a SmartGuide.
@@ -116,6 +175,15 @@ private void checkSandbox(String filename)
 		throw new SecurityException(filename + " is not in the protected sandbox: " + fSandboxPrefix);
 	}
 /**
+ * Allow writes on any FileDescriptor 
+ * @param fd java.io.FileDescriptor
+ */
+public void checkWrite(FileDescriptor fd) 
+	{
+	if (fSecurityLevel > 1)
+		throw new SecurityException("Not allowed to write to FileDescriptor");
+	}
+/**
  * This method was created by a SmartGuide.
  * @param filename java.lang.String
  */
@@ -123,5 +191,13 @@ public void checkWrite(String filename)
 	{
 	Engine.debugLog("checkWrite(\"" + filename + "\")\n");
 	checkSandbox(filename);
+	}
+/**
+ * This method was created by a SmartGuide.
+ * @return java.lang.ThreadGroup
+ */
+public ThreadGroup getThreadGroup() 
+	{
+	return fSubthreadGroup;
 	}
 }

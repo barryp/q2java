@@ -48,7 +48,7 @@ public void fire()
 		}
 	catch (GameException e)
 		{
-		Engine.dprint("Can't create Rocket " + e);
+		PrintManager.dprint("Can't create Rocket " + e);
 		}		
 	
 	// send muzzle flash

@@ -13,11 +13,16 @@ import java.util.Vector;
  * @author Barry Pederson 
  */
 
-public abstract class NativeEntity
+public class NativeEntity
 	{
 	// ------------------- Instance fields ---------------------
 	private int fEntityIndex;
 	private NativeEntity fGroundEntity;	
+
+	// this field is not used by the DLL, but is available for 
+	// a game to use however it wants through the getReference()
+	// and setReference() methods.
+	private Object fReference; 
 		
 	// -------------------- Static fields ----------------------		
 		
@@ -206,13 +211,25 @@ public abstract class NativeEntity
 	private final static int CALL_POSITIONED_SOUND = 2;
 	
 /**
- * This method was created by a SmartGuide.
+ * Create a NativeEntity, which corresponds 
+ * to a single Quake2 edict_t structure.
+ *
+ * @exception q2java.GameException when there are no more entities available.
  */
-protected NativeEntity () throws GameException
+public NativeEntity () throws GameException
 	{
 	this(false);
 	}
-protected NativeEntity(boolean isWorld) throws GameException
+/**
+ * Create a NativeEntity, which corresponds 
+ * to a single Quake2 edict_t structure.
+ *
+ * @param isWorld Whether or not this entity is the special
+ *    "world" entity..there has to be one in the game (there can be only one!) 
+ *
+ * @exception q2java.GameException when there are no more entities available.
+ */
+public NativeEntity(boolean isWorld) throws GameException
 	{
 	if (fEntityIndex == 0) // players will already have this set to something > 0
 		{
@@ -226,12 +243,6 @@ protected NativeEntity(boolean isWorld) throws GameException
 
 private native static int allocateEntity(boolean isWorld);
 
-/**
- * This method was created by a SmartGuide.
- * @return q2java.NativeEntity[]
- * @param maxCount int
- * @param areaType int
- */
 public NativeEntity[] boxEntity(int areaType) 
 	{
 	return boxEntity0(fEntityIndex, areaType);
@@ -247,7 +258,10 @@ public NativeEntity[] boxEntity(int areaType)
 private static native NativeEntity[] boxEntity0(int index, int areaType);
 
 /** 
- * Player Only
+ * Print a message on the center of a player's screen.
+ * Won't do anything for non-player entities.
+ *
+ * @param s The message to print.
  */
 public void centerprint(String s)
 	{
@@ -259,8 +273,12 @@ public void centerprint(String s)
  */
 private native static void centerprint0(int index, String msg);
 
-/**
- * Player Only
+/** 
+ * Print a message on player's screen.
+ * Won't do anything for non-player entities.
+ *
+ * @param printLevel One of the Engine.PRINT_* constants.
+ * @param s The message to print.
  */
 public void cprint(int printLevel, String s)
 	{
@@ -272,14 +290,30 @@ public void cprint(int printLevel, String s)
  */
 private native static void cprint0(int index, int printlevel, String msg);
 
+/**
+ * Create an enumeration to run through all
+ * the active NativeEntity objects in the system.
+ */
 public static Enumeration enumerateEntities() 
 	{
 	return new EntityEnumeration();
 	}
+/**
+ * Create an enumeration to run through all
+ * the active NativeEntity objects in the system
+ * that are instances or descendants of a given class.
+ *
+ * @param targetClass name of the class we are looking for instances or descendants of.
+ */
 public static Enumeration enumerateEntities(String targetClassName) 
 	{
 	return new EntityEnumeration(targetClassName);
 	}
+/**
+ * Create an enumeration to run through all
+ * the active NativeEntity objects in the system
+ * that are associated with active players.
+ */
 public static Enumeration enumeratePlayers() 
 	{
 	return new PlayerEnumeration();
@@ -315,16 +349,26 @@ static NativeEntity findNextPlayer(NativeEntity start)
 	return result;
 	}
 /**
- * This method was created by a SmartGuide.
+ * Removes this entity from the Quake2 DLL.
+ * The NativeEntity itself will remain accessible
+ * in Java, but all it's methods will generally be 
+ * no-ops
  */
 public void freeEntity()
 	{
+	if (fEntityIndex < 0)
+		return; // already freed
+		
 	// remove from the DLL
 	freeEntity0(fEntityIndex);	
 	
-	// remove from Java
+	// remove from Java side of things
 	gEntityArray[fEntityIndex] = null;
 	fEntityIndex = -1;
+
+	// clear references to other Java objects
+	fGroundEntity = null;
+	fReference = null;
 	}
 
 private native static void freeEntity0(int index);
@@ -344,6 +388,10 @@ public Vec3 getAngles()
 
 private native static byte getByte(int index, int fieldNum);
 
+public int getClipmask()
+	{
+	return getInt(fEntityIndex, INT_CLIPMASK);
+	}
 public int getEffects()
 	{
 	return getInt(fEntityIndex, INT_S_EFFECTS);
@@ -352,16 +400,32 @@ public int getEffects()
 private native static NativeEntity getEntity(int index, int fieldNum);
 
 /**
- * This method was created by a SmartGuide.
+ * Return the index of this entity's corresponding
+ * edict_t in the DLL's edict_t table.  Mostly needed
+ * as a parameter for sending temporary effects to 
+ * the clients.
+ *
  * @return int
  */
 public final int getEntityIndex() 
 	{
 	return fEntityIndex;
 	}
+public int getEvent()
+	{
+	return getInt(fEntityIndex, INT_S_EVENT);
+	}
+public int getFrame()
+	{
+	return getInt(fEntityIndex, INT_S_FRAME);
+	}
 /**
- * This method was created by a SmartGuide.
- * @param ent q2java.NativeEntity
+ * Find what this entity is resting on.  This needs to
+ * be set by the Java game, but is used by the DLL
+ * in the getPotentialPushed() method.
+ *
+ * @return The NativeEntity this entity is standing
+ * on, null if in the air or unknown.
  */
 public NativeEntity getGroundEntity() 
 	{
@@ -382,10 +446,6 @@ public Vec3 getOrigin()
 	{
 	return getVec3(fEntityIndex, VEC3_S_ORIGIN);
 	}
-/**
- * This method was created by a SmartGuide.
- * @param ent q2java.NativeEntity
- */
 public NativeEntity getOwner() 
 	{
 	return getEntity(fEntityIndex, ENTITY_OWNER);
@@ -395,14 +455,17 @@ public Vec3 getPlayerKickAngles()
 	return getVec3(fEntityIndex, VEC3_CLIENT_PS_KICKANGLES);
 	}
 /**
- * Player Only
+ * Get this player's number, needed for things like setting
+ * skins with the Engine.configString() method.
  *
- * Return the index of this player object (zero-based)
- * @return int
+ * @return The zero-based number of this player, -1 if not a player
  */
 public int getPlayerNum() 
 	{
-	return getEntityIndex() - 1;
+	if ((fEntityIndex == 0) || (fEntityIndex > gMaxPlayers))
+		return -1; // maybe this should be an exception
+
+	return fEntityIndex - 1;
 	}
 public int getPlayerPing()
 	{
@@ -446,12 +509,31 @@ public NativeEntity[] getPotentialPushed(Vec3 mins, Vec3 maxs)
  */
 private static native NativeEntity[] getPotentialPushed0(int index, float minx, float miny, float minz, float maxx, float maxy, float maxz);
 
+/**
+ * Get the object that was set by setReference().
+ * Not used by the DLL, but available for a game to
+ * use however it wants.
+ *
+ * @return java.lang.Object
+ */
+public Object getReference() 
+	{
+	return fReference;
+	}
 
 private native static short getShort(int index, int fieldNum);
 
 public Vec3 getSize()
 	{
 	return getVec3(fEntityIndex, VEC3_SIZE);
+	}
+public int getSolid()
+	{
+	return getInt(fEntityIndex, INT_SOLID);
+	}
+public int getSound()
+	{
+	return getInt(fEntityIndex, INT_S_SOUND);
 	}
 public int getSVFlags()
 	{
@@ -472,7 +554,9 @@ public void linkEntity()
 private native static void linkEntity0(int index);
 
 /**
- * Player Only
+ * Move the player.
+ * @param cmd A PlayerCmd usually received by a class implementing
+ *   the NativePlayer.playerThink() method
  */
 public PMoveResults pMove(PlayerCmd cmd) 
 	{
@@ -539,7 +623,7 @@ public void setFrame(int val)
 	setInt(fEntityIndex, INT_S_FRAME, val);
 	}
 /**
- * This method was created by a SmartGuide.
+ * Set a reference to the entity this entity is standing on.
  * @param ent q2java.NativeEntity
  */
 public void setGroundEntity(NativeEntity ent) 
@@ -601,10 +685,6 @@ public void setOrigin(Vec3 v)
 	{
 	setVec3(fEntityIndex, VEC3_S_ORIGIN, v.x, v.y, v.z);
 	}
-/**
- * This method was created by a SmartGuide.
- * @param ent q2java.NativeEntity
- */
 public void setOwner(NativeEntity ent) 
 	{
 	if (ent == null)
@@ -613,22 +693,20 @@ public void setOwner(NativeEntity ent)
 		setEntity(fEntityIndex, ENTITY_OWNER, ent.fEntityIndex);
 	}
 /**
- * Player Only
- * @param r float
- * @param g float
- * @param b float
- * @param a float
+ * Set the blend colors on the player's screen.
+ * @param r Red amount
+ * @param g Green amount
+ * @param b Blue amount
+ * @param a Alpha amount
  */
 public void setPlayerBlend(float r, float g, float b, float a) 
 	{
 	setFloat0(getEntityIndex(), FLOAT_CLIENT_PS_BLEND, r, g, b, a);
 	}
 /**
- * Player Only
- * @param r float
- * @param g float
- * @param b float
- * @param a float
+ * Set the Player's Field of View. 
+ *
+ * @param v Field of View in degrees
  */
 public void setPlayerFOV(float v) 
 	{
@@ -638,37 +716,22 @@ public void setPlayerGravity(short val)
 	{
 	setShort(fEntityIndex, SHORT_CLIENT_PS_PMOVE_GRAVITY, val);
 	}
-/**
- * Player Only
- */
 public void setPlayerGunAngles(Vec3 v)
 	{
 	setVec3(getEntityIndex(), VEC3_CLIENT_PS_GUNANGLES, v.x, v.y, v.z);
 	}
-/**
- * Player Only
- */
 public void setPlayerGunFrame(int val)
 	{
 	setInt(getEntityIndex(), INT_CLIENT_PS_GUNFRAME, val);
 	}
-/**
- * Player Only
- */
 public void setPlayerGunIndex(int val)
 	{
 	setInt(getEntityIndex(), INT_CLIENT_PS_GUNINDEX, val);
 	}
-/**
- * Player Only
- */
 public void setPlayerGunOffset(Vec3 v)
 	{
 	setVec3(getEntityIndex(), VEC3_CLIENT_PS_GUNOFFSET, v.x, v.y, v.z);
 	}
-/**
- * Player Only
- */
 public void setPlayerKickAngles(Vec3 v)
 	{
 	setVec3(getEntityIndex(), VEC3_CLIENT_PS_KICKANGLES, v.x, v.y, v.z);
@@ -677,18 +740,10 @@ public void setPlayerPMType(int val)
 	{
 	setInt(fEntityIndex, INT_CLIENT_PS_PMOVE_PMTYPE, val);
 	}
-/**
- * Player Only
- */
 public void setPlayerRDFlags(int val)
 	{
 	setInt(getEntityIndex(), INT_CLIENT_PS_RDFLAGS, val);
 	}
-/**
- * Player Only
- * @param fieldindex int
- * @param value int
- */
 public void setPlayerStat(int fieldindex, short value) 
 	{
 	setStat0(getEntityIndex(), fieldindex, value);
@@ -697,26 +752,28 @@ public void setPlayerTeleportTime(byte val)
 	{
 	setByte(fEntityIndex, BYTE_CLIENT_PS_PMOVE_TELEPORTTIME, val);
 	}
-/**
- * Player Only
- */
 public void setPlayerViewAngles(float nx, float ny, float nz)
 	{
 	setVec3(getEntityIndex(), VEC3_CLIENT_PS_VIEWANGLES, nx, ny, nz);
 	}
-/**
- * Player Only
- */
 public void setPlayerViewAngles(Vec3 v)
 	{
 	setVec3(getEntityIndex(), VEC3_CLIENT_PS_VIEWANGLES, v.x, v.y, v.z);
 	}
-/**
- * Player Only
- */
 public void setPlayerViewOffset(Vec3 v)
 	{
 	setVec3(getEntityIndex(), VEC3_CLIENT_PS_VIEWOFFSET, v.x, v.y, v.z);
+	}
+/**
+ * Store a handle to an arbitrary object.
+ * Not used by the DLL, but available for a game to
+ * use however it wants.
+ *
+ * @param obj java.lang.Object
+ */
+public void setReference(Object obj) 
+	{
+	fReference = obj;
 	}
 public void setRenderFX(int val)
 	{
@@ -729,9 +786,6 @@ public void setRenderFX(int val)
 //
 private native static void setShort(int index, int fieldNum, short val);
 
-/**
- * Player Only
- */
 public void setSkinNum(int val)
 	{
 	setInt(getEntityIndex(), INT_S_SKINNUM, val);
@@ -771,6 +825,10 @@ public void sound(int channel, int soundindex, float volume, float attenuation, 
 
 private native static void sound0(float x, float y, float z, int index, int channel, int soundindex, float volume, float attenuation, float timeofs, int calltype);
 
+/**
+ * Provide a string representation of the object, useful
+ * for debugging.
+ */
 public String toString()
 	{
 	StringBuffer sb = new StringBuffer();

@@ -14,12 +14,22 @@ public abstract class GenericItem extends GameEntity
 	private float fRespawnTime;
 	
 /**
- * This method was created by a SmartGuide.
+ * A Generic Item lying around in the Quake world.
+ *
+ * @param spawnArgs args passed from the map.
+ * @exception q2java.GameException when there are no more entities available. 
  */
 public GenericItem (String[] spawnArgs) throws GameException
 	{
 	this(spawnArgs, "items/pkup.wav");
 	}
+/**
+ * A Generic Item lying around in the Quake world.
+ *
+ * @param spawnArgs args passed from the map.
+ * @param pickupSound sound to play when the item is picked up.
+ * @exception q2java.GameException when there are no more entities available. 
+ */
 public GenericItem(String[] spawnArgs, String pickupSound) throws GameException
 	{
 	super(spawnArgs);

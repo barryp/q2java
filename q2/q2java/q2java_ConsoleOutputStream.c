@@ -9,8 +9,8 @@ static jmethodID method_ConsoleOutputStream_setConsole;
 
 static JNINativeMethod ConsoleOutputStream_methods[] = 
 	{
-	{"write",	"(I)V",		Java_q2java_ConsoleOutputStream_write__I},
-	{"write",	"([BII)V",	Java_q2java_ConsoleOutputStream_write___3BII}
+	{"write0",	"(I)V",		Java_q2java_ConsoleOutputStream_write0__I},
+	{"write0",	"([BII)V",	Java_q2java_ConsoleOutputStream_write0___3BII}
 	};
 
 void ConsoleOutputStream_javaInit()
@@ -50,28 +50,74 @@ void ConsoleOutputStream_javaFinalize()
 		(*java_env)->UnregisterNatives(java_env, class_ConsoleOutputStream);
 	}
 
-static void JNICALL Java_q2java_ConsoleOutputStream_write__I(JNIEnv *env , jobject obj, jint i)
+static void JNICALL Java_q2java_ConsoleOutputStream_write0__I(JNIEnv *env , jobject obj, jint i)
 	{
 	switch (i)
 		{
-		case '\r': break;
-		case '\t': gi.dprintf("    "); debugLog("    "); break; // not the ideal way to handle tabs, but good enough for printing java Exceptions
-		default: gi.dprintf("%c", i); debugLog("%c", i); break;
+		case '\r': 
+			break;
+
+		case '\t': 
+			// not the ideal way to handle tabs, but good enough 
+			// for printing java Exceptions
+			gi.dprintf("    "); 
+			debugLog("    "); 
+			break; 
+
+		default: 
+			gi.dprintf("%c", i); 
+			debugLog("%c", i); 
+			break;
 		}
 	}
 
-static void JNICALL Java_q2java_ConsoleOutputStream_write___3BII(JNIEnv *env, jobject obj, jbyteArray jba, jint offset, jint len)
+static void JNICALL Java_q2java_ConsoleOutputStream_write0___3BII(JNIEnv *env, jobject obj, jbyteArray jba, jint offset, jint len)
 	{
 	jboolean isCopy;
 	char *p;
 	char *q;
+	char *r;
+	char *s;
 	int i;
-	
+	int count;
+
 	p = (*env)->GetByteArrayElements(env, jba, &isCopy);
 	q = p + offset;
 
+	count = len + 1;
 	for (i = 0; i < len; i++, q++)
-		Java_q2java_ConsoleOutputStream_write__I(env, obj, *q);
+		{
+		if (*q == '\r')
+			count--;
+		if (*q == '\t')
+			count += 3;
+		}
+
+	r = s = gi.TagMalloc(count, TAG_GAME);
+	q = p + offset;
+	for (i = 0; i < len; i++, q++)
+		{
+		switch (*q)
+			{
+			case '\r':
+				break;
+			case '\t':
+				*(r++) = ' ';
+				*(r++) = ' ';
+				*(r++) = ' ';
+				*(r++) = ' ';
+				break;
+			default:
+				*(r++) = *q;
+			}
+		}
+	*r = 0;
+
+	gi.dprintf("%s", s);
+	debugLog("%s", s);
+	gi.TagFree(s);
+
+//	Java_q2java_ConsoleOutputStream_write0__I(env, obj, *q);
 
 	(*env)->ReleaseByteArrayElements(env, jba, p, JNI_ABORT);
 	}

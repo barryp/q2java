@@ -12,11 +12,11 @@ package q2jgame;
 public class WelcomeMessage 
 	{
 	private final static String gMsg = 
-		  "Welcome to the Q2Java Sample Game v0.1\n\n"
-		+ "Quite a few things don't work yet\n"
-		+ "but hopefully there's enough here\n"
-		+ "to show that Java and Quake II\n"
-		+ "can work together.\n";
+		  "Welcome to the Q2Java Sample Game v0.2\n\n"
+		+ "A couple new entities classes were\n"
+		+ "added, but there's still a lot that\n"
+		+ "doesn't work.  The big new feature\n"
+		+ "is the built-in Telnet server";
 	
 /**
  * Return the message to display to new players.

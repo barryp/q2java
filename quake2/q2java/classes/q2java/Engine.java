@@ -246,6 +246,12 @@ private native static NativeEntity[] boxEntities0(float minsx, float minsy, floa
 	float maxsx, float maxsy, float maxsz, int areaType);
 
 
+/**
+ * Broadcast a message to all players
+ *
+ * @param printLevel One of the PRINT_* constants.
+ * @param s The message to send
+ */
 public native static void bprint(int printLevel, String s);
 
 
@@ -256,12 +262,15 @@ public native static void debugGraph(float value, int color);
 
 
 /**
- * This method was created by a SmartGuide.
- * @param s java.lang.String
+ * Send a message to Q2Java's debugLog.
+ * @param s message to log.
  */
 public native static void debugLog(String s);
 
 
+/**
+ * Print a message to the server console.
+ */
 public native static void dprint(String s);
 
 
@@ -269,8 +278,9 @@ public native static void error(String s);
 
 
 /**
- * This method was created by a SmartGuide.
- * @return java.lang.String
+ * Fetch the path of the current Quake2 game.
+ *
+ * @return A path such as "c:\\quake2\\q2java".
  */
 public native static String getGamePath();
 
@@ -309,7 +319,7 @@ public native static void setAreaPortalState(int portalnum, boolean open);
 public native static int soundIndex(String name);
 
 /**
- * This method was created by a SmartGuide.
+ * Trace a line through the world.
  * @return TraceResults
  * @param start Vec3
  * @param end Vec3
@@ -321,7 +331,7 @@ public static TraceResults trace(Vec3 start, Vec3 end, NativeEntity passEnt, int
 	return trace0(start.x, start.y, start.z, 0, 0, 0, 0, 0, 0, end.x, end.y, end.z, passEnt, contentMask, 0);
 	}
 /**
- * This method was created by a SmartGuide.
+ * Trace a volume across the world.
  * @return TraceResults
  * @param start Vec3
  * @param mins Vec3

@@ -57,7 +57,7 @@ public func_train(String[] spawnArgs) throws GameException
 	
 	if (fTargets == null)
 		{
-		Engine.dprint("func_train without a target at " + getAbsMins() + "\n");
+		PrintManager.dprint("func_train without a target at " + getAbsMins() + "\n");
 		fTrainState = STATE_TRAIN_STOPPED;
 		fNextTrainThink = 0;
 		}
@@ -82,7 +82,7 @@ public void go()
 		fTrainTarget = getRandomTarget();
 		if (fTargets == null)
 			{
-//			Engine.dprint("train_next: no next target\n");
+//			PrintManager.dprint("train_next: no next target\n");
 			fTrainState = STATE_TRAIN_STOPPED;
 			fNextTrainThink = 0;
 			return;
@@ -97,7 +97,7 @@ public void go()
 			{
 			if (!first)
 				{
-				Engine.dprint("connected teleport path_corners, see " + fTrainTarget.getClass().getName() + " at " + fTrainTarget.getOrigin() + "\n");
+				PrintManager.dprint("connected teleport path_corners, see " + fTrainTarget.getClass().getName() + " at " + fTrainTarget.getOrigin() + "\n");
 				return;
 				}
 			first = false;

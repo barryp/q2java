@@ -6,6 +6,7 @@ import java.lang.reflect.*;
 import java.util.*;
 
 import q2java.*;
+import q2jgame.telnet.TelnetServer;
 
 /**
  * This class implements a Quake II Java game. All the
@@ -21,6 +22,7 @@ public class Game implements NativeGame
 	// game clocks
 	private static int gFrameCount;
 	public static float gGameTime;
+	private static long gCPUTime;
 	
 	// handy reference to the world
 	public static GameEntity gWorld;
@@ -53,6 +55,9 @@ public class Game implements NativeGame
 	private static double gIntermissionEndTime;
 	private static String gCurrentMap;
 	private static String gNextMap;
+	
+	// Telnet server support
+	private static TelnetServer gTelnet;
 
 	// ----------- Constants -------------------------
 	
@@ -457,6 +462,22 @@ public void init()
 	gIsDeathmatch = (new CVar("deathmatch", "0", CVar.CVAR_LATCH)).getFloat() == 1.0;
 	gSkillLevel = (int) ((new CVar("skill", "1", CVar.CVAR_LATCH)).getFloat());
 
+	// startup another thread to handle Telnet clients
+	int port = (int) ((new CVar("telnet_port", "0", CVar.CVAR_NOSET)).getFloat());
+	if (port > 0)
+		{
+		String password = (new CVar("telnet_password", "", CVar.CVAR_NOSET)).getString();
+		try
+			{
+			gTelnet = new TelnetServer(port, password);
+			gTelnet.start();
+			}
+		catch (IOException e)
+			{
+			e.printStackTrace();
+			}		
+		}
+		
 	Engine.debugLog("Game.init() finished");
 	}
 /**
@@ -571,6 +592,8 @@ public void readLevel(String filename)
  */
 public void runFrame()
 	{
+	long startTime = System.currentTimeMillis();
+	
 	Enumeration enum;
 	Object obj;
 	
@@ -581,6 +604,22 @@ public void runFrame()
 	gFrameCount++;
 	gGameTime = gFrameCount * Engine.SECONDS_PER_FRAME;
 	
+	
+	// Telnet support
+	// (this stinks...having to insert code inside other existing code..the 
+	//  next version will definitely do this in a better way with events and such)	
+	if (gTelnet != null)
+		{
+		String s;
+		while ((s = gTelnet.getCommand()) != null)
+			{
+			if ((s.length() > 0) && (s.charAt(0) == '+'))
+				Engine.addCommandString(s.substring(1));
+			else
+				PrintManager.bprint(Engine.PRINT_CHAT, "<Telnet Console>: " + s + "\n");
+			}
+		}
+		
 	if (gInIntermission && (gGameTime > gIntermissionEndTime))
 		{
 		if (isDMFlagSet(DF_SAME_LEVEL))
@@ -638,13 +677,49 @@ public void runFrame()
 			e.printStackTrace();
 			}			
 		}			
+		
+	long endTime = System.currentTimeMillis();
+	gCPUTime += (endTime - startTime);		
 	}
 /**
  * Called by the DLL when the DLL's ServerCommand() function is called.
+ * The admin can type "sv <a> <b> <c>" at the console, this method
+ * will use reflection to look for a method named svcmd_<a> and execute
+ * it if possible, otherwise just repeat the command back to the console. 
  */
-public void serverCommand() {
-	return;
-}
+public void serverCommand() 
+	{
+	String[] sa = new String[Engine.argc()];
+	for (int i = 0; i < sa.length; i++)
+		sa[i] = Engine.argv(i);
+
+	Class[] paramTypes = new Class[1];
+	paramTypes[0] = sa.getClass();
+	
+	try
+		{
+		java.lang.reflect.Method meth = getClass().getMethod("svcmd_" + sa[1].toLowerCase(), paramTypes);						
+		Object[] params = new Object[1];
+		params[0] = sa;
+		meth.invoke(this, params);
+		}
+	catch (NoSuchMethodException e1)
+		{
+		// Send unrecognized input back to the console
+		PrintManager.dprint("serverCommand()\n");
+		PrintManager.dprint("    args(): [" + Engine.args() + "]\n");
+		for (int i = 0; i < sa.length; i++)
+			PrintManager.dprint("    argv(" + i + "): [" + sa[i] + "]\n");
+		}
+	catch (java.lang.reflect.InvocationTargetException e2)		
+		{
+		e2.getTargetException().printStackTrace();
+		}
+	catch (Exception e3)
+		{
+		e3.printStackTrace();
+		}							
+	}	
 /**
  * Set what the next map will be.
  * @param mapname java.lang.String
@@ -659,6 +734,11 @@ public static void setNextMap(String mapname)
  */
 public void shutdown()
 	{
+	if (gTelnet != null)
+		{
+		gTelnet.shutdown();
+		}
+		
 	Engine.debugLog("Game.shutdown()");
 	}
 /**
@@ -939,6 +1019,13 @@ public void startLevel(String mapname, String entString, String spawnPoint)
 	System.gc();		
 	}
 /**
+ * Print timing info to the console.
+ */
+public void svcmd_time(String[] args) 
+	{
+	PrintManager.dprint(gFrameCount + " frames, " + gCPUTime + " milliseconds, " + (((double)gCPUTime) / ((double)gFrameCount)) + " msec/frame avg\n");
+	}
+/**
  * Check the timelimit and fraglimit values and decide
  * whether to end the level or not.
  * @return boolean true if it's time to end the level
@@ -949,7 +1036,7 @@ private static boolean timeToQuit()
 
 	if ((quitTime > 0) && (gGameTime > quitTime))
 		{
-		Engine.bprint(Engine.PRINT_HIGH, "Timelimit hit.\n");		
+		PrintManager.bprint(Engine.PRINT_HIGH, "Timelimit hit.\n");		
 		return true;
 		}
 		
@@ -963,7 +1050,7 @@ private static boolean timeToQuit()
 		Player p = (Player) enum.nextElement();
 		if (p.getScore() > fragLimit)
 			{
-			Engine.bprint(Engine.PRINT_HIGH, "Timelimit hit.\n");		
+			PrintManager.bprint(Engine.PRINT_HIGH, "Timelimit hit.\n");		
 			return true;
 			}
 		}		

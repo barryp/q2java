@@ -367,7 +367,7 @@ public void alterAmmoCount(int amount)
 /**
  * Change user settings based on what was in userinfo string.
  */
-private void applyUserinfo() 
+private void applyUserinfo()
 	{
 	fName = getUserInfo("name");
 	String s = getUserInfo("skin");
@@ -388,7 +388,7 @@ private void applyUserinfo()
 /**
  * This method was created by a SmartGuide.
  */
-public void beginServerFrame() 
+public void beginServerFrame()
 	{
 	if (fInIntermission)
 		return;
@@ -407,9 +407,7 @@ public void beginServerFrame()
 		if (fWeapon != null)
 			fWeapon.weaponThink();
 		}			
-	
-
-			
+				
 	fLatchedButtons = 0;		
 	}
 /**
@@ -600,7 +598,7 @@ public void cmd_fov(String[] args)
 	{
 	if (args.length < 1)
 		{
-		Engine.dprint("cmd_fov() called with no arguments\n");
+		PrintManager.dprint("cmd_fov() called with no arguments\n");
 		return;
 		}
 		
@@ -653,12 +651,7 @@ public void cmd_say(String[] args)
 			
 	msg += "\n";
 			
-	Enumeration enum = enumeratePlayers();
-	while (enum.hasMoreElements())
-		{
-		Player p = (Player)enum.nextElement();
-		p.cprint(Engine.PRINT_CHAT, msg);
-		}		
+	PrintManager.bprint(Engine.PRINT_CHAT, msg);		
 	}
 /**
  * Treat "say_team" the same as "say" for now.
@@ -687,12 +680,12 @@ public void cmd_wave(String[] args)
 	{
 	if (args.length < 1)
 		{
-		Engine.dprint("cmd_wave() called with no arguments\n");
+		PrintManager.dprint("cmd_wave() called with no arguments\n");
 		return;
 		}
 		
 	int i = Integer.parseInt(args[1]);
-	
+			
 	switch(i)
 		{
 		case 0: setAnimation(ANIMATE_FLIPOFF, false); break;
@@ -700,7 +693,7 @@ public void cmd_wave(String[] args)
 		case 2: setAnimation(ANIMATE_TAUNT, false); break;
 		case 3: setAnimation(ANIMATE_WAVE, false); break;
 		case 4: setAnimation(ANIMATE_POINT, false); break;
-		default: Engine.dprint("Unknown wave: " + i + "\n");
+		default: PrintManager.dprint("Unknown wave: " + i + "\n");
 		}			
 	}
 /**
@@ -1091,7 +1084,7 @@ private void obituary(GameEntity inflictor, GameEntity attacker)
 	{
 	if (attacker == this)
 		{
-		Engine.bprint(Engine.PRINT_MEDIUM, fName + " killed " + (fIsFemale ? "her" : "him") + "self.\n");
+		PrintManager.bprint(Engine.PRINT_MEDIUM, fName + " killed " + (fIsFemale ? "her" : "him") + "self.\n");
 		fScore--;
 //		self->enemy = NULL;
 		return;
@@ -1101,12 +1094,12 @@ private void obituary(GameEntity inflictor, GameEntity attacker)
 	if (attacker instanceof Player)
 		{
 		Player p = (Player) attacker;
-		Engine.bprint(Engine.PRINT_MEDIUM, fName + " was killed by " + p.fName + "\n");
+		PrintManager.bprint(Engine.PRINT_MEDIUM, fName + " was killed by " + p.fName + "\n");
 		p.fScore++;
 		return;
 		}
 
-	Engine.bprint(Engine.PRINT_MEDIUM, fName + " died.\n");
+	PrintManager.bprint(Engine.PRINT_MEDIUM, fName + " died.\n");
 	fScore--;
 	}
 /**
@@ -1145,7 +1138,7 @@ public void playerBegin(boolean loadgame)
 	Engine.writeByte(Engine.MZ_LOGIN);
 	Engine.multicast(getOrigin(), Engine.MULTICAST_PVS);
 
-	Engine.bprint(Engine.PRINT_HIGH, fName + " entered the game\n");
+	PrintManager.bprint(Engine.PRINT_HIGH, fName + " entered the game\n");
 	centerprint(WelcomeMessage.getMessage());
 	// make sure all view stuff is valid
 	endServerFrame();	
@@ -1181,12 +1174,7 @@ public void playerCommand()
 			msg = msg.substring(0, 150);		
 		msg += "\n";
 			
-		Enumeration enum = enumeratePlayers();
-		while (enum.hasMoreElements())
-			{
-			Player p = (Player)enum.nextElement();
-			p.cprint(Engine.PRINT_CHAT, msg);
-			}		
+		PrintManager.bprint(Engine.PRINT_CHAT, msg);
 		}
 	catch (java.lang.reflect.InvocationTargetException e2)		
 		{
@@ -1205,7 +1193,7 @@ public void playerCommand()
 public void playerDisconnect()
 	{
 	Engine.debugLog("Player.disconnect()");
-	Engine.bprint(Engine.PRINT_HIGH, fName + " disconnected\n");
+	PrintManager.bprint(Engine.PRINT_HIGH, fName + " disconnected\n");
 
 	// send effect
 	Engine.writeByte(Engine.SVC_MUZZLEFLASH);
@@ -1304,7 +1292,7 @@ public void putInventory(String itemName, Object ent)
 /**
  * Put a dead player back into the game
  */
-private void respawn() 
+private void respawn()
 	{
 	// leave a corpse behind
 //	Game.copyToBodyQueue(this);
@@ -1414,7 +1402,7 @@ private void spawn()
 		spawnPoint = Game.getSpawnpointSingle();
 				
 	if (spawnPoint == null)
-		Engine.dprint("Couldn't pick spawnpoint\n");
+		PrintManager.dprint("Couldn't pick spawnpoint\n");
 	else
 		{							
 		Vec3 origin = spawnPoint.getOrigin();
