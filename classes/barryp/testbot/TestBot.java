@@ -36,7 +36,7 @@ TestBot(q2java.NativeEntity ent, String name) throws q2java.GameException
 	setName(name);
 	setSkin("male/grunt");
 
-	fEntity.setGroundEntity(q2java.baseq2.BaseQ2.gWorld.fEntity);
+	fEntity.setGroundEntity(NativeEntity.getWorldEntity());
 
 	// place the bot into the game
 	playerBegin();
